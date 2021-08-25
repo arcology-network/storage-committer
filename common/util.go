@@ -1,7 +1,6 @@
 package common
 
 import (
-	"math/big"
 	"sort"
 	"strings"
 )
@@ -93,20 +92,4 @@ func ArrayToMap(keys []string) *map[string]bool {
 		keyMap[k] = true
 	}
 	return &keyMap
-}
-
-func BigIntEncode(value *big.Int) []byte {
-	data, err := value.GobEncode()
-	if err != nil {
-		return []byte{}
-	}
-	return data
-}
-func BigIntDecode(data []byte) *big.Int {
-	bvalue := big.NewInt(0)
-	err := bvalue.GobDecode(data)
-	if err != nil {
-		return bvalue
-	}
-	return bvalue
 }

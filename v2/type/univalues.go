@@ -5,7 +5,6 @@ import (
 
 	"github.com/HPISTechnologies/common-lib/codec"
 	"github.com/HPISTechnologies/common-lib/common"
-	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
 	urlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
 )
 
@@ -13,26 +12,11 @@ type Univalues []urlcommon.UnivalueInterface
 
 func (this Univalues) IfContains(condition urlcommon.UnivalueInterface) bool {
 	for _, v := range this {
-		if (v).(*Univalue).EqualAccess(condition.(*Univalue)) {
+		if (v).(*Univalue).EqualTransition(condition.(*Univalue)) {
 			return true
 		}
 	}
 	return false
-}
-
-func (this Univalues) Print() {
-	for _, v := range this {
-		v.Print()
-	}
-	fmt.Println(" --------------------  ")
-}
-
-func (this Univalues) Deepcopy() interface{} {
-	values := make([]*Univalue, len(this))
-	for i, v := range this {
-		values[i] = v.Deepcopy().(*Univalue)
-	}
-	return values
 }
 
 func (this Univalues) Encode() []byte {
@@ -59,10 +43,19 @@ func (Univalues) Decode(bytes []byte) interface{} {
 	return Univalues(univalues)
 }
 
-func (this Univalues) ToInterface() []ccurlcommon.UnivalueInterface {
-	values := make([]ccurlcommon.UnivalueInterface, len(this))
-	for i, v := range this {
-		values[i] = v
+func (this Univalues) GobEncode() ([]byte, error) {
+	return this.Encode(), nil
+}
+
+func (this Univalues) GobDecode(data []byte) error {
+	v := this.Decode(data)
+	this = v.(Univalues)
+	return nil
+}
+
+func (this Univalues) Print() {
+	for _, v := range this {
+		v.Print()
 	}
-	return values
+	fmt.Println(" --------------------  ")
 }

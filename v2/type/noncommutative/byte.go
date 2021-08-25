@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	codec "github.com/HPISTechnologies/common-lib/codec"
-	"github.com/HPISTechnologies/concurrenturl/v2/common"
 	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
 )
 
@@ -15,16 +14,17 @@ type Bytes struct {
 	data        []byte
 }
 
-func (this *Bytes) TypeID() uint8 {
-	return ccurlcommon.NoncommutativeBytes
-}
-
 func NewBytes(v []byte) interface{} {
+	b := make([]byte, len(v))
+	copy(b, v)
+
 	return &Bytes{
 		placeholder: true,
-		data:        v,
+		data:        b,
 	}
 }
+
+func (this *Bytes) TypeID() uint8 { return ccurlcommon.NoncommutativeBytes }
 
 // create a new path
 func (this *Bytes) Deepcopy() interface{} {
@@ -64,12 +64,16 @@ func (this *Bytes) Set(tx uint32, path string, value interface{}, source interfa
 	return 0, 1, nil
 }
 
-func (this *Bytes) ApplyDelta(tx uint32, other interface{}) {
-	this.Set(tx, "", other.(common.TypeInterface).Value(), nil)
+func (this *Bytes) ApplyDelta(tx uint32, others []ccurlcommon.UnivalueInterface) ccurlcommon.TypeInterface {
+	for _, other := range others {
+		if other != nil && other.Value() != nil {
+			this.Set(tx, "", other.Value().(*Bytes), nil)
+		}
+	}
+	return this
 }
 
 func (this *Bytes) Composite() bool { return false }
-func (this *Bytes) Finalize()       {}
 
 func (this *Bytes) Encode() []byte {
 	byteset := [][]byte{
@@ -108,14 +112,4 @@ func (this *Bytes) Print() {
 
 func (this *Bytes) Data() []byte {
 	return this.data
-}
-
-func (this *Bytes) GobEncode() ([]byte, error) {
-	return this.Encode(), nil
-}
-
-func (this *Bytes) GobDecode(data []byte) error {
-	mybytes := this.Decode(data).(*Bytes)
-	*this = *mybytes
-	return nil
 }

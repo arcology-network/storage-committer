@@ -21,6 +21,8 @@ func NewInt64(value int64, delta int64) interface{} {
 	}
 }
 
+func (this *Int64) TypeID() uint8 { return ccurlcommon.CommutativeInt64 }
+
 func (this *Int64) Deepcopy() interface{} {
 	return &Int64{
 		this.finalized,
@@ -35,10 +37,6 @@ func (this *Int64) Value() interface{} {
 
 func (this *Int64) ToAccess() interface{} {
 	return this
-}
-
-func (this *Int64) TypeID() uint8 {
-	return ccurlcommon.CommutativeInt64
 }
 
 func (this *Int64) Get(tx uint32, path string, source interface{}) (interface{}, uint32, uint32) {
@@ -75,16 +73,19 @@ func (this *Int64) Set(tx uint32, path string, v interface{}, source interface{}
 	return 0, 1, nil
 }
 
-func (this *Int64) ApplyDelta(tx uint32, other interface{}) {
-	this.Set(tx, "", other, nil)
+func (this *Int64) ApplyDelta(tx uint32, others []ccurlcommon.UnivalueInterface) ccurlcommon.TypeInterface {
+	for _, other := range others {
+		if other != nil && other.Value() != nil {
+			this.Set(tx, "", other.Value().(*Int64), nil)
+		}
+	}
+
+	this.value += this.delta
+	this.delta = 0
+	return this
 }
 
 func (this *Int64) Composite() bool { return !this.finalized }
-
-func (this *Int64) Finalize() {
-	this.value += this.delta
-	this.delta = 0
-}
 
 func (this *Int64) Purge() {
 	this.finalized = false
@@ -93,18 +94,6 @@ func (this *Int64) Purge() {
 
 func (this *Int64) Hash(hasher func([]byte) []byte) []byte {
 	return hasher(this.EncodeCompact())
-}
-
-func (this *Int64) GobEncode() ([]byte, error) {
-	return this.Encode(), nil
-}
-
-func (this *Int64) GobDecode(data []byte) error {
-	myInt64 := this.Decode(data).(*Int64)
-	this.delta = myInt64.delta
-	this.finalized = myInt64.finalized
-	this.value = myInt64.value
-	return nil
 }
 
 func (this *Int64) Encode() []byte {

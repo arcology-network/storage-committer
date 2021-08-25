@@ -17,6 +17,8 @@ func NewBigint(v int64) interface{} {
 	return &this
 }
 
+func (this *Bigint) TypeID() uint8 { return uint8(ccurlcommon.NoncommutativeBigint) }
+
 func (this *Bigint) Deepcopy() interface{} {
 	value := *this
 	return (*Bigint)(&value)
@@ -28,10 +30,6 @@ func (this *Bigint) Value() interface{} {
 
 func (this *Bigint) ToAccess() interface{} {
 	return nil
-}
-
-func (this *Bigint) TypeID() uint8 {
-	return uint8(ccurlcommon.NoncommutativeBigint)
 }
 
 // create a new path
@@ -62,22 +60,16 @@ func (this *Bigint) Set(tx uint32, path string, value interface{}, source interf
 	return 0, 1, nil
 }
 
-func (this *Bigint) ApplyDelta(tx uint32, other interface{}) {
-	this.Set(tx, "", other.(ccurlcommon.TypeInterface).Value(), nil)
+func (this *Bigint) ApplyDelta(tx uint32, others []ccurlcommon.UnivalueInterface) ccurlcommon.TypeInterface {
+	for _, other := range others {
+		if other != nil && other.Value() != nil {
+			this.Set(tx, "", other.Value().(*Bigint), nil)
+		}
+	}
+	return this
 }
 
 func (this *Bigint) Composite() bool { return false }
-func (this *Bigint) Finalize()       {}
-
-func (this *Bigint) GobEncode() ([]byte, error) {
-	return this.Encode(), nil
-}
-
-func (this *Bigint) GobDecode(data []byte) error {
-	myint := this.Decode(data).(*Bigint)
-	*this = *myint
-	return nil
-}
 
 func (this *Bigint) Encode() []byte {
 	v := codec.Bigint(*this)

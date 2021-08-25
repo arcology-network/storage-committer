@@ -2,12 +2,10 @@ package concurrenturl
 
 import (
 	"errors"
-	"fmt"
 	"math/big"
 	"reflect"
-	"time"
 
-	common "github.com/HPISTechnologies/common-lib/common"
+	"github.com/HPISTechnologies/common-lib/common"
 	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
 	ccurltype "github.com/HPISTechnologies/concurrenturl/v2/type"
 	commutative "github.com/HPISTechnologies/concurrenturl/v2/type/commutative"
@@ -119,31 +117,23 @@ func (this *ConcurrentUrl) Commit(transitions []ccurlcommon.UnivalueInterface, t
 }
 
 func (this *ConcurrentUrl) Export(needToSort bool) ([]ccurlcommon.UnivalueInterface, []ccurlcommon.UnivalueInterface) {
-	t0 := time.Now()
 	records := this.indexer.ToArray(this.indexer.Buffer(), false)
-	fmt.Println("this.indexer.ToArray():", time.Since(t0))
-
-	t0 = time.Now()
 	recordVec := make([]interface{}, len(records))
 	transVec := make([]interface{}, len(records))
-	auxTranVec := make([]interface{}, len(records))
+
 	worker := func(start, end, index int, args ...interface{}) {
 		for i := start; i < end; i++ {
-			recordVec[i], transVec[i], auxTranVec[i] = records[i].Export(this.indexer)
+			recordVec[i], transVec[i] = records[i].Export(this.indexer)
 		}
 	}
 	common.ParallelWorker(len(records), 4, worker)
-	fmt.Println("Export():", time.Since(t0))
 
-	t0 = time.Now()
 	// Remove duplicates
 	accessDict := make(map[string]ccurlcommon.UnivalueInterface)
 	transDict := make(map[string]ccurlcommon.UnivalueInterface)
-	auxDict := make(map[string]ccurlcommon.UnivalueInterface)
 	for i := range recordVec {
 		record := recordVec[i]
 		trans := transVec[i]
-		auxTran := auxTranVec[i]
 
 		if record != nil {
 			accessDict[record.(ccurlcommon.UnivalueInterface).GetPath()] = record.(ccurlcommon.UnivalueInterface)
@@ -151,23 +141,6 @@ func (this *ConcurrentUrl) Export(needToSort bool) ([]ccurlcommon.UnivalueInterf
 
 		if trans != nil {
 			transDict[trans.(ccurlcommon.UnivalueInterface).GetPath()] = trans.(ccurlcommon.UnivalueInterface)
-		}
-
-		if auxTran != nil {
-			auxDict[auxTran.(ccurlcommon.UnivalueInterface).GetPath()] = auxTran.(ccurlcommon.UnivalueInterface)
-		}
-	}
-	fmt.Println("Remove duplicates:", time.Since(t0))
-
-	/* Add the auxiliary transitions to the dictionary*/
-	for _, v := range auxDict {
-		if _, ok := transDict[v.GetPath()]; !ok {
-			access, trans, _ := v.Export(this.indexer)
-			accessDict[v.GetPath()] = access.(ccurlcommon.UnivalueInterface)
-
-			if trans != nil {
-				transDict[v.GetPath()] = trans.(ccurlcommon.UnivalueInterface)
-			}
 		}
 	}
 

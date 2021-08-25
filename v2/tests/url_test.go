@@ -1,6 +1,7 @@
 package ccurltest
 
 import (
+	"fmt"
 	"math/big"
 	"reflect"
 	"testing"
@@ -15,20 +16,16 @@ import (
 
 func TestBasic(t *testing.T) {
 	store := ccurlcommon.NewDataStore()
-	meta, _ := commutative.NewMeta("blcc://eth1.0/")
-	store.Save("blcc://eth1.0/", meta)
-
 	url := ccurl.NewConcurrentUrl(store)
 	if err := url.Preload(ccurlcommon.SYSTEM, url.Platform.Eth10(), "alice"); err != nil { // Preload account structure {
 		t.Error(err)
 	}
 
-	// create a path
-	path, err := commutative.NewMeta("blcc://eth1.0/account/alice/storage/ctrn-0/")
-	if err != nil {
-		t.Error("Error: Failed to create the path")
-	}
+	_, acctTrans := url.Export(false)
+	url.Commit(acctTrans, []uint32{ccurlcommon.SYSTEM})
 
+	// create a path
+	path, _ := commutative.NewMeta("blcc://eth1.0/account/alice/storage/ctrn-0/")
 	if err := url.Write(1, "blcc://eth1.0/account/alice/storage/ctrn-0/", path); err != nil {
 		t.Error(err)
 	}
@@ -55,12 +52,12 @@ func TestBasic(t *testing.T) {
 
 	// try to read an nonexistent path
 	if value, _ := url.Read(1, "blcc://eth1.0/account/alice/storage/ctrn-0/elem-000"); value != nil {
-		t.Error("Error: Shouldn't be not found")
+		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/elem-000")
 	}
 
 	// Write the entry
-	if value := url.Write(1, "blcc://eth1.0/account/alice/storage/ctrn-0/elem-000", noncommutative.NewInt64(1111)); value != nil {
-		t.Error("Error: Shouldn't be not found")
+	if err := url.Write(1, "blcc://eth1.0/account/alice/storage/ctrn-0/elem-000", noncommutative.NewInt64(1111)); err != nil {
+		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/elem-000")
 	}
 
 	// Read the entry back
@@ -79,11 +76,11 @@ func TestBasic(t *testing.T) {
 
 	_, transitions := url.Export(true)
 
-	if !reflect.DeepEqual(transitions[8].GetValue().(*commutative.Meta).Added(), []string{"elem-000"}) {
+	if !reflect.DeepEqual(transitions[1].Value().(*commutative.Meta).GetAdded(), []string{"elem-000"}) {
 		t.Error("Error: keys don't match")
 	}
 
-	value := transitions[9].GetValue()
+	value := transitions[2].Value()
 	if *(value.(*noncommutative.Int64)) != 1111 {
 		t.Error("Error: keys don't match")
 	}
@@ -93,13 +90,9 @@ func TestBasic(t *testing.T) {
 		t.Error("Error: The variable has been cleared")
 	}
 
-	url.Indexer().Import(transitions)
-	if _, _, errs := url.Indexer().Commit([]uint32{1}); len(errs) != 0 {
-		t.Error(errs)
-	}
+	url.Commit(transitions, []uint32{1})
 
 	/* =========== The second cycle ==============*/
-
 	//try reading an element written in the previous cycle
 	if value, _ := url.Read(1, "blcc://eth1.0/account/alice/storage/ctrn-0/elem-000"); value == nil {
 		t.Error("Error: Entry not found")
@@ -108,19 +101,15 @@ func TestBasic(t *testing.T) {
 
 func TestUrl1(t *testing.T) {
 	store := ccurlcommon.NewDataStore()
-	meta, _ := commutative.NewMeta("blcc://eth1.0/")
-	store.Save("blcc://eth1.0/", meta)
-
 	url := ccurl.NewConcurrentUrl(store)
 	if err := url.Preload(ccurlcommon.SYSTEM, url.Platform.Eth10(), "alice"); err != nil { // Preload account structure {
-		t.Error(err)
+		fmt.Println(err)
 	}
 
-	path, err := commutative.NewMeta("blcc://eth1.0/account/alice/storage/ctrn-0/")
-	if err != nil {
-		t.Error("Error: Failed to create the path")
-	}
+	_, acctTrans := url.Export(false)
+	url.Commit(acctTrans, []uint32{ccurlcommon.SYSTEM})
 
+	path, _ := commutative.NewMeta("blcc://eth1.0/account/alice/storage/ctrn-0/")
 	if err := url.Write(1, "blcc://eth1.0/account/alice/storage/ctrn-0/", path); err != nil {
 		t.Error(err)
 	}
@@ -176,11 +165,11 @@ func TestUrl1(t *testing.T) {
 
 	// Export all access records and state transitions
 	_, transitions := url.Export(true)
-	if (*transitions[8].GetValue().(*noncommutative.String)) != "ctrn-0" {
+	if (*transitions[1].Value().(*noncommutative.String)) != "ctrn-0" {
 		t.Error("Error: keys don't match")
 	}
 
-	if !reflect.DeepEqual(ccurlcommon.SortString(transitions[9].GetValue().(*commutative.Meta).Added()), []string{"elem-000", "elem-001", "elem-002"}) {
+	if !reflect.DeepEqual(ccurlcommon.SortString(transitions[2].Value().(*commutative.Meta).GetAdded()), []string{"elem-000", "elem-001", "elem-002"}) {
 		t.Error("Error: keys don't match")
 	}
 
@@ -196,13 +185,18 @@ func TestUrl2(t *testing.T) {
 		t.Error(err)
 	}
 
+	_, acctTrans := url.Export(false)
+	url.Commit(acctTrans, []uint32{ccurlcommon.SYSTEM})
+
 	// Create a new container
-	path, err := commutative.NewMeta("blcc://eth1.0/account/alice/storage/ctrn-0/")
-	if err != nil {
-		t.Error("Error: Failed to create the path")
-	}
+	path, _ := commutative.NewMeta("blcc://eth1.0/account/alice/storage/ctrn-0/")
 	if err := url.Write(1, "blcc://eth1.0/account/alice/storage/ctrn-0/", path); err != nil {
 		t.Error(err, "Error:  Failed to MakePath: "+"/ctrn-0/")
+	}
+
+	storageV, _ := url.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/alice/storage/")
+	if !reflect.DeepEqual(storageV.(*commutative.Meta).GetKeys(), []string{"ctrn-0/"}) {
+		t.Error("Error: Wrong sub path list")
 	}
 
 	// Add a vaiable directly
@@ -224,7 +218,7 @@ func TestUrl2(t *testing.T) {
 		t.Error(err, "Error:  Failed to Write: "+"/ctrn-0/elem-002")
 	}
 
-	// Write to an nonexistent path, shouldn't succeed, but should leave a couple of access records
+	// Write to an nonexistent path, will f, but will leave a couple of access records
 	if err := url.Write(1, "blcc://eth1.0/account/alice/storage/ctrn-1/elem-002", noncommutative.NewInt64(3333)); err == nil {
 		t.Error(err, "Error:  Failed to Write: "+"/ctrn-1/elem-002")
 	}
@@ -263,7 +257,7 @@ func TestUrl2(t *testing.T) {
 
 	// Delete elem-00
 	if err := url.Write(1, "blcc://eth1.0/account/alice/storage/ctrn-0/elem-000", nil); err != nil {
-		t.Error("Error: Failed to write: " + "/ctrn-0/elem-000")
+		t.Error("Error: Failed to delete: " + "blcc://eth1.0/account/alice/storage/ctrn-0/elem-000")
 	}
 
 	if value, _ := url.Read(1, "blcc://eth1.0/account/alice/storage/ctrn-0/elem-000"); value != nil {
@@ -288,7 +282,7 @@ func TestUrl2(t *testing.T) {
 
 	// Update then read the path info again
 	meta, _ = url.Read(1, "blcc://eth1.0/account/alice/storage/ctrn-0/")
-	if !reflect.DeepEqual(meta.(*commutative.Meta).GetKeys(), []string{"elem-000", "elem-001", "elem-002"}) {
+	if !reflect.DeepEqual(meta.(*commutative.Meta).GetKeys(), []string{"elem-001", "elem-002", "elem-000"}) {
 		t.Error("Error: keys don't match")
 	}
 
@@ -297,47 +291,32 @@ func TestUrl2(t *testing.T) {
 		t.Error("Error: keys don't match")
 	}
 
+	storageV, _ = url.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/alice/storage/")
+	if !reflect.DeepEqual(storageV.(*commutative.Meta).GetKeys(), []string{"ctrn-0/", "elem-0"}) {
+		t.Error("Error: Wrong sub path list")
+	}
+
 	/* Remove the path and all the elements underneath */
 	if err := url.Write(1, "blcc://eth1.0/account/alice/storage/ctrn-0/", nil); err != nil {
 		t.Error(err, "Failed to remove path: "+"/ctrn-0/")
 	}
 
-	/* The path should be gone by now */
-	v, _ = url.Read(1, "blcc://eth1.0/account/alice/storage/ctrn-0/")
-	if v != nil {
+	if v, _ = url.Read(1, "blcc://eth1.0/account/alice/storage/ctrn-0/"); v != nil { /* The path should be gone by now */
 		t.Error("Error: keys don't match")
 	}
 
-	/*  */
-	v, _ = url.Read(1, "blcc://eth1.0/account/alice/storage/elem-0")
-	if v == nil {
+	if v, _ = url.Read(1, "blcc://eth1.0/account/alice/storage/elem-0"); v == nil { /* So does all the sub paths */
 		t.Error("Error: keys don't match")
 	}
 
 	/*  Read the storage path to see what is left*/
 	v, _ = url.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/alice/storage/")
-	if !reflect.DeepEqual(v.(*commutative.Meta).GetKeys(), []string{"containers/", "elem-0", "native/"}) {
+	if !reflect.DeepEqual(v.(*commutative.Meta).GetKeys(), []string{"elem-0"}) {
 		t.Error("Error: keys don't match")
 	}
 
 	/*  Export all */
 	accessRecords, transitions := url.Export(true)
-	if transitions[8].GetPath() != "blcc://eth1.0/account/alice/storage/elem-0" ||
-		*(transitions[8].GetValue().(*noncommutative.String)) != "0000" {
-		t.Error("Error: Transitions don't match")
-	}
-
-	/* ------------- Check access records first  -------------
-	blcc://eth1.0/account/alice/storage/
-	blcc://eth1.0/account/alice/storage/ctrn-0/
-	blcc://eth1.0/account/alice/storage/elem-0
-	blcc://eth1.0/account/alice/storage/ctrn-0/elem-000
-	blcc://eth1.0/account/alice/storage/ctrn-0/elem-001
-	blcc://eth1.0/account/alice/storage/ctrn-0/elem-002
-	blcc://eth1.0/account/alice/storage/ctrn-1/elem-002
-	blcc://eth1.0/account/alice/storage/ctrn-0/elem-005
-	blcc://eth1.0/account/alice/storage/ctrn-1/elem-002
-	*/
 
 	condition := ccurltype.NewUnivalue(1, "blcc://eth1.0/account/alice/storage/ctrn-0/elem-000", 3, 4, nil)
 	if !ccurltype.Univalues(accessRecords).IfContains(condition) {
@@ -364,8 +343,8 @@ func TestUrl2(t *testing.T) {
 
 	out := ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
 	for i := range transitions {
-		if !transitions[i].(*urltype.Univalue).EqualAccess(out[i].(*urltype.Univalue)) {
-			t.Error("Error: Accesses don't match")
+		if !transitions[i].(*urltype.Univalue).EqualTransition(out[i].(*urltype.Univalue)) {
+			t.Error("Error: transitions don't match")
 		}
 	}
 
@@ -376,13 +355,13 @@ func TestUrl2(t *testing.T) {
 	// 	t.Error("Error: Wrong transition count")
 	// }
 
-	if out[5].GetPath() != "blcc://eth1.0/account/alice/storage/" ||
-		reflect.DeepEqual(out[5].GetValue(), []string{"containers/", "elem-0", "native/"}) {
+	if out[0].GetPath() != "blcc://eth1.0/account/alice/storage/" ||
+		reflect.DeepEqual(out[0].Value(), []string{"elem-0"}) {
 		t.Error("Error: Transitions don't match after decoding")
 	}
 
-	if out[8].GetPath() != "blcc://eth1.0/account/alice/storage/elem-0" ||
-		*out[8].GetValue().(*noncommutative.String) != "0000" {
+	if out[1].GetPath() != "blcc://eth1.0/account/alice/storage/elem-0" ||
+		*(out[1].Value()).(*noncommutative.String) != "0000" {
 		t.Error("Error: Transitions don't match after decoding")
 	}
 }
@@ -418,7 +397,7 @@ func TestUrl3(t *testing.T) {
 	in := ccurltype.Univalues(accessRecords).Encode()
 	out := ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
 	for i := range accessRecords {
-		if !accessRecords[i].(*urltype.Univalue).EqualAccess(out[i].(*urltype.Univalue)) {
+		if !accessRecords[i].(*urltype.Univalue).EqualTransition(out[i].(*urltype.Univalue)) {
 			t.Error("Error: Accesses don't match")
 		}
 	}
@@ -499,7 +478,7 @@ func TestCommutative(t *testing.T) {
 	in := ccurltype.Univalues(accessRecords).Encode()
 	out := ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
 	for i := range accessRecords {
-		if !accessRecords[i].(*urltype.Univalue).EqualAccess(out[i].(*urltype.Univalue)) {
+		if !accessRecords[i].(*urltype.Univalue).EqualTransition(out[i].(*urltype.Univalue)) {
 			t.Error("Error: Accesses don't match")
 		}
 	}
@@ -507,8 +486,8 @@ func TestCommutative(t *testing.T) {
 	in = ccurltype.Univalues(transitions).Encode()
 	out = ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
 	for i := range transitions {
-		if !transitions[i].(*urltype.Univalue).EqualAccess(out[i].(*urltype.Univalue)) {
-			t.Error("Error: Accesses don't match")
+		if !transitions[i].(*urltype.Univalue).EqualTransition(out[i].(*urltype.Univalue)) {
+			t.Error("Error: Transitions don't match", transitions[i], out[i])
 		}
 	}
 
@@ -572,7 +551,7 @@ func TestNestedPath(t *testing.T) {
 		t.Error("Error: keys don't match")
 	}
 
-	if !reflect.DeepEqual(v.(*commutative.Meta).Removed(), []string{}) {
+	if !reflect.DeepEqual(v.(*commutative.Meta).GetRemoved(), []string{}) {
 		t.Error("Error: keys don't match")
 	}
 
@@ -591,16 +570,16 @@ func TestNestedPath(t *testing.T) {
 	in := ccurltype.Univalues(accessRecords).Encode()
 	out := ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
 	for i := range accessRecords {
-		if !accessRecords[i].(*urltype.Univalue).EqualAccess(out[i].(*urltype.Univalue)) {
-			t.Error("Error: Accesses don't match")
+		if !accessRecords[i].(*urltype.Univalue).EqualTransition(out[i].(*urltype.Univalue)) {
+			t.Error("Error: Accesses don't match  before and after encoding")
 		}
 	}
 
 	in = ccurltype.Univalues(transitions).Encode()
 	out = ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
 	for i := range transitions {
-		if !transitions[i].(*urltype.Univalue).EqualAccess(out[i].(*urltype.Univalue)) {
-			t.Error("Error: Accesses don't match")
+		if !transitions[i].(*urltype.Univalue).EqualTransition(out[i].(*urltype.Univalue)) {
+			t.Error("Error: Transitions don't match before and after encoding")
 		}
 	}
 }

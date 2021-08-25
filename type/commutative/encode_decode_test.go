@@ -1,12 +1,9 @@
 package commutative
 
 import (
-	"fmt"
 	"math/big"
 	"reflect"
 	"testing"
-
-	ccommon "github.com/HPISTechnologies/concurrenturl/common"
 )
 
 func TestMeta(t *testing.T) {
@@ -54,17 +51,6 @@ func TestBigInt(t *testing.T) {
 	if !reflect.DeepEqual(avalue, bvalue) {
 		t.Error("Error: Bigint Encoding/decoding error, value don't match")
 	}
-}
-
-func TestBigIntUtil(t *testing.T) {
-	avalue := big.NewInt(-252388)
-	fmt.Printf("avalue=%v\n", avalue)
-
-	data := ccommon.BigIntEncode(avalue)
-
-	bvalue := ccommon.BigIntDecode(data)
-
-	fmt.Printf("bvalue=%v\n", bvalue)
 }
 
 func TestBalance(t *testing.T) {

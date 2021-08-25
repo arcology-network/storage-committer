@@ -83,14 +83,18 @@ func (this *Balance) Peek(source interface{}) interface{} {
 	}
 }
 
-func (this *Balance) ApplyDelta(tx uint32, other interface{}) {
-	this.Set(tx, "", other, nil)
-}
+func (this *Balance) ApplyDelta(tx uint32, others []ccurlcommon.UnivalueInterface) ccurlcommon.TypeInterface {
+	for _, other := range others {
+		if other != nil && other.Value() != nil {
+			this.Set(tx, "", other.Value().(*Balance), nil)
+		}
+	}
 
-func (this *Balance) Finalize() {
 	this.value = this.value.Add(this.value, this.delta)
 	this.delta = big.NewInt(0) // reset the delta
+	return this
 }
+
 func (this *Balance) Composite() bool { return !this.finalized }
 
 func (this *Balance) Purge() {
@@ -100,18 +104,6 @@ func (this *Balance) Purge() {
 
 func (this *Balance) Hash(hasher func([]byte) []byte) []byte {
 	return hasher(this.EncodeCompact())
-}
-
-func (this *Balance) GobEncode() ([]byte, error) {
-	return this.Encode(), nil
-}
-
-func (this *Balance) GobDecode(data []byte) error {
-	balance := this.Decode(data).(*Balance)
-	this.delta = balance.delta
-	this.finalized = balance.finalized
-	this.value = balance.value
-	return nil
 }
 
 func (this *Balance) Encode() []byte {

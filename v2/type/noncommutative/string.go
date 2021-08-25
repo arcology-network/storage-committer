@@ -9,14 +9,12 @@ import (
 
 type String string
 
-func (this *String) TypeID() uint8 {
-	return uint8(ccurlcommon.NoncommutativeString)
-}
-
 func NewString(v string) interface{} {
 	var this String = String(v)
 	return &this
 }
+
+func (this *String) TypeID() uint8 { return uint8(ccurlcommon.NoncommutativeString) }
 
 func (this *String) Deepcopy() interface{} {
 	value := *this
@@ -50,12 +48,16 @@ func (this *String) Set(tx uint32, path string, value interface{}, source interf
 	return 0, 1, nil
 }
 
-func (this *String) ApplyDelta(tx uint32, other interface{}) {
-	this.Set(tx, "", other.(ccurlcommon.TypeInterface).Value(), nil)
+func (this *String) ApplyDelta(tx uint32, others []ccurlcommon.UnivalueInterface) ccurlcommon.TypeInterface {
+	for _, other := range others {
+		if other != nil && other.Value() != nil {
+			this.Set(tx, "", other.Value().(*String), nil)
+		}
+	}
+	return this
 }
 
 func (this *String) Composite() bool { return false }
-func (this *String) Finalize()       {}
 
 func (this *String) Encode() []byte {
 	return codec.String(string(*this)).Encode()
@@ -83,14 +85,4 @@ func (this *String) Hash(hasher func([]byte) []byte) []byte {
 func (this *String) Print() {
 	fmt.Println(*this)
 	fmt.Println()
-}
-
-func (this *String) GobEncode() ([]byte, error) {
-	return this.Encode(), nil
-}
-
-func (this *String) GobDecode(data []byte) error {
-	myString := this.Decode(data).(*String)
-	*this = *myString
-	return nil
 }

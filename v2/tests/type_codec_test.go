@@ -3,10 +3,12 @@ package ccurltest
 import (
 	"fmt"
 	"math/big"
+	"math/rand"
 	"reflect"
 	"testing"
 	"time"
 
+	ccurl "github.com/HPISTechnologies/concurrenturl/v2"
 	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
 	ccurltype "github.com/HPISTechnologies/concurrenturl/v2/type"
 	commutative "github.com/HPISTechnologies/concurrenturl/v2/type/commutative"
@@ -80,6 +82,20 @@ func TestCodecCommutative(t *testing.T) {
 	if !reflect.DeepEqual(inBig, outBig) {
 		t.Error("Error: Bigint Encoding/decoding error, numbers don't match")
 	}
+}
+
+func BenchmarkUnivalueCodec(t *testing.B) {
+	store := ccurlcommon.NewDataStore()
+	transitions := []ccurlcommon.UnivalueInterface{}
+	for i := 0; i < 200000; i++ {
+		url := ccurl.NewConcurrentUrl(store)
+		url.Preload(ccurlcommon.SYSTEM, url.Platform.Eth10(), fmt.Sprint(rand.Int())+fmt.Sprint(rand.Int())+fmt.Sprint(rand.Int()))
+		_, transVec := url.Export(false)
+		transitions = append(transitions, transVec...)
+	}
+	t0 := time.Now()
+	ccurltype.Univalues(transitions).Encode()
+	fmt.Println("Encode() ", len(transitions), " univalue in :", time.Since(t0))
 }
 
 func BenchmarkUnivalueEncodeDecode(t *testing.B) {

@@ -18,6 +18,10 @@ func (Decoder) Decode(bytes []byte, vType uint8) interface{} {
 		stringer := noncommutative.String("")
 		return stringer.Decode(bytes)
 
+	case ccurlcommon.NoncommutativeInt64:
+		i64 := noncommutative.Int64(0)
+		return i64.Decode(bytes)
+
 	case ccurlcommon.NoncommutativeBigint: // big int pointer
 		return (&noncommutative.Bigint{}).Decode(bytes)
 

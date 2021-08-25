@@ -103,16 +103,17 @@ func (this *Balance) GobDecode(data []byte) error {
 func (this *Balance) Encode() []byte {
 	return codec.Byteset{
 		codec.Bool(this.finalized).Encode(),
-		ccurlcommon.BigIntEncode(this.value),
-		ccurlcommon.BigIntEncode(this.delta),
+		//codec.Bigint(*this.value)
+		(*codec.Bigint)(this.value).Encode(),
+		(*codec.Bigint)(this.delta).Encode(),
 	}.Encode()
 }
 
 func (*Balance) Decode(data []byte) interface{} {
 	fields := codec.Byteset{}.Decode(data)
 	balance := NewBalance(
-		ccurlcommon.BigIntDecode(fields[1]),
-		ccurlcommon.BigIntDecode(fields[2]),
+		(&codec.Bigint{}).Decode(fields[1]),
+		(&codec.Bigint{}).Decode(fields[2]),
 	)
 
 	balance.(*Balance).finalized = bool(codec.Bool(true).Decode(fields[0]))
@@ -120,11 +121,11 @@ func (*Balance) Decode(data []byte) interface{} {
 }
 
 func (this *Balance) EncodeStripped() []byte {
-	return ccurlcommon.BigIntEncode(this.value)
+	return (*codec.Bigint)(this.value).Encode()
 }
 
 func (this *Balance) DecodeStripped(bytes []byte) interface{} {
-	return NewBalance(ccurlcommon.BigIntDecode(bytes), &big.Int{})
+	return NewBalance((&codec.Bigint{}).Decode(bytes), &big.Int{})
 }
 
 func (this *Balance) Print() {

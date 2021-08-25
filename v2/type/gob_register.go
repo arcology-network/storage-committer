@@ -6,4 +6,5 @@ import (
 
 func init() {
 	gob.Register(&Univalue{})
+	gob.Register(Univalues{})
 }

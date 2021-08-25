@@ -2,7 +2,6 @@ package common
 
 import (
 	"bytes"
-	"math/big"
 	"sort"
 	"strings"
 )
@@ -141,19 +140,19 @@ func Deepcopy(keys []string) []string {
 	return cpy
 }
 
-func BigIntEncode(value *big.Int) []byte {
-	data, err := value.GobEncode()
-	if err != nil {
-		return []byte{}
+func Exclude(source []uint32, toRemove []uint32) []uint32 {
+	txDict := make(map[uint32]bool)
+	for _, tx := range source {
+		txDict[tx] = true
 	}
-	return data
-}
 
-func BigIntDecode(data []byte) *big.Int {
-	bvalue := big.NewInt(0)
-	err := bvalue.GobDecode(data)
-	if err != nil {
-		return bvalue
+	for _, tx := range toRemove {
+		delete(txDict, tx)
 	}
-	return bvalue
+
+	result := []uint32{}
+	for tx := range txDict {
+		result = append(result, tx)
+	}
+	return result
 }

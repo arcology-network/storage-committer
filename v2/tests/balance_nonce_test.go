@@ -37,8 +37,7 @@ func TestSimpleBalance(t *testing.T) {
 
 	// Export variables
 	_, transitions = url.Export(true)
-	url.Indexer().Import(transitions)
-	url.Indexer().Commit([]uint32{0, 1})
+	url.Commit(transitions, []uint32{0, 1})
 
 	// Read alice's balance again
 	balance, _ := url.Read(1, "blcc://eth1.0/account/alice/balance")
@@ -123,7 +122,7 @@ func TestBalance(t *testing.T) {
 	in := ccurltype.Univalues(accessRecords).Encode()
 	out := ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
 	for i := range accessRecords {
-		if !accessRecords[i].(*urltype.Univalue).EqualAccess(out[i].(*urltype.Univalue)) {
+		if !accessRecords[i].(*urltype.Univalue).EqualTransition(out[i].(*urltype.Univalue)) {
 			t.Error("Accesses don't match")
 		}
 	}
@@ -131,7 +130,7 @@ func TestBalance(t *testing.T) {
 	in = ccurltype.Univalues(transitions).Encode()
 	out = ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
 	for i := range transitions {
-		if !transitions[i].(*urltype.Univalue).EqualAccess(out[i].(*urltype.Univalue)) {
+		if !transitions[i].(*urltype.Univalue).EqualTransition(out[i].(*urltype.Univalue)) {
 			t.Error("Accesses don't match")
 		}
 	}
@@ -139,4 +138,26 @@ func TestBalance(t *testing.T) {
 	url.Indexer().Import(transitions)
 	url.Indexer().Commit([]uint32{0, 1})
 	//url.Indexer().Store().Print()
+}
+
+func TestNonce(t *testing.T) {
+	store := ccurlcommon.NewDataStore()
+	url1 := ccurl.NewConcurrentUrl(store)
+	if err := url1.Preload(ccurlcommon.SYSTEM, url1.Platform.Eth10(), "alice"); err != nil { // Preload account structure {
+		t.Error(err)
+	}
+
+	if err := url1.Write(0, "blcc://eth1.0/account/alice/nonce", commutative.NewInt64(10, 100)); err != nil { //initialization
+		t.Error(err, "blcc://eth1.0/account/alice/balance")
+	}
+
+	if err := url1.Write(0, "blcc://eth1.0/account/alice/nonce", commutative.NewInt64(10, 9)); err != nil { //initialization
+		t.Error(err, "blcc://eth1.0/account/alice/balance")
+	}
+
+	nonce, _ := url1.Read(0, "blcc://eth1.0/account/alice/nonce")
+	v := nonce.(ccurlcommon.TypeInterface).(*commutative.Int64).Value().(int64)
+	if v != 109 {
+		t.Error("Error: blcc://eth1.0/account/alice/nonce ")
+	}
 }

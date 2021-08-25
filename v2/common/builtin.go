@@ -22,7 +22,7 @@ func NewPlatform() *Platform {
 }
 
 func (this *Platform) Eth10() string        { return "blcc://eth1.0/" }
-func (this *Platform) Eth10Account() string { return "blcc://eth1.0/account/" }
+func (this *Platform) Eth10Account() string { return this.Eth10() + "account/" }
 
 // Get ths builtin paths
 func (this *Platform) Builtin(platform string, acct string) ([]string, map[string]Syspath, error) {

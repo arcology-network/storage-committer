@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
-	"sync"
 	"time"
 
 	"github.com/HPISTechnologies/common-lib/common"
@@ -52,15 +51,15 @@ func (this *Indexer) Buffer() *map[string]ccurlcommon.UnivalueInterface { return
 func (this *Indexer) Merkles() *map[string]*merkle.Merkle               { return &this.merkles }
 
 func (this *Indexer) IfExists(path string) bool {
-	return this.buffer[path] != nil || this.Retrive(path) != nil
+	return this.buffer[path] != nil || this.RetriveShallow(path) != nil
 }
 
 // If the access has been recorded
-func (this *Indexer) CheckHistory(tx uint32, path string, ifSave bool) ccurlcommon.UnivalueInterface {
+func (this *Indexer) CheckHistory(tx uint32, path string, ifAddToBuffer bool) ccurlcommon.UnivalueInterface {
 	univalue := this.buffer[path]
 	if univalue == nil { // Not in the buffer, check the datastore
-		univalue = this.NewValue(tx, path, this.Retrive(path))
-		if ifSave {
+		univalue = this.NewValue(tx, path, this.RetriveShallow(path)) // Make a shallow copy only by default
+		if ifAddToBuffer {
 			this.buffer[path] = univalue
 		}
 	}
@@ -72,25 +71,38 @@ func (this *Indexer) Read(tx uint32, path string) interface{} {
 	return univalue.Get(tx, path, this.Buffer())
 }
 
+// Get the value directly, bypassing the univalue level
 func (this *Indexer) TryRead(tx uint32, path string) interface{} {
-	univalue := this.CheckHistory(tx, path, false)
-	return univalue.Peek(this.Buffer())
+	if v, ok := this.buffer[path]; ok {
+		return v.Peek(this.Buffer())
+	}
+	return this.RetriveShallow(path)
 }
 
 func (this *Indexer) Write(tx uint32, path string, value interface{}) error {
 	parentPath := ccurlcommon.GetParentPath(path)
-	if this.IfExists(parentPath) || tx == ccurlcommon.SYSTEM { // The parent path exists or inject paths directly
+	if this.IfExists(parentPath) || tx == ccurlcommon.SYSTEM { // The parent path exists or to inject the path directly
 		univalue := this.CheckHistory(tx, path, true)
-		return univalue.Set(tx, path, value, this)
+		err := univalue.Set(tx, path, value, this)
+		if tx != ccurlcommon.SYSTEM && err == nil {
+			if parentValue := this.CheckHistory(tx, parentPath, true); parentValue != nil {
+				err = parentValue.UpdateParentMeta(tx, univalue, this)
+			}
+		}
+		return err
 	}
-	return errors.New("Error: The fe path doesn't exist: " + parentPath)
+	return errors.New("Error: The parent path doesn't exist: " + parentPath)
 }
 
 func (this *Indexer) Insert(path string, value interface{}) {
 	this.buffer[path] = value.(ccurlcommon.UnivalueInterface)
 }
 
-func (this *Indexer) Retrive(key string) interface{} {
+func (this *Indexer) RetriveShallow(key string) interface{} {
+	return this.store.Retrive(key)
+}
+
+func (this *Indexer) RetriveDeep(key string) interface{} {
 	if v := this.store.Retrive(key); v != nil {
 		return v.(ccurlcommon.TypeInterface).Deepcopy()
 	}
@@ -109,11 +121,13 @@ func (this *Indexer) Import(txTrans []ccurlcommon.UnivalueInterface) {
 }
 
 func (this *Indexer) addToBuffers(v ccurlcommon.UnivalueInterface) {
-	if value := this.Retrive(v.GetPath()); value != nil { // Get the initial states
-		this.baseStates[v.GetPath()] = this.NewValue(ccurlcommon.SYSTEM, v.GetPath(), value)
-	} else {
-		if v.GetValue() == nil { // Tried to delete non-existent elements or the directly INJECTED paths
-			return
+	if _, ok := this.baseStates[v.GetPath()]; !ok {
+		if value := this.RetriveShallow(v.GetPath()); value != nil { // Get the initial states, shallow copy only
+			this.baseStates[v.GetPath()] = this.NewValue(ccurlcommon.SYSTEM, v.GetPath(), value)
+		} else {
+			if v.Value() == nil { // Tried to delete non-existent elements or the directly INJECTED paths
+				return
+			}
 		}
 	}
 
@@ -185,35 +199,24 @@ func (this *Indexer) Commit(whitelist []uint32) ([]string, []interface{}, []erro
 	for _, tran := range newTrans {
 		this.baseStates[tran.GetPath()] = tran
 	}
-
-	fmt.Println("Find the new elements having no initial values:", time.Since(t0))
+	fmt.Println("Add to the baseStates:", time.Since(t0))
 
 	// Merge and finalize
 	t0 = time.Now()
-	this.GetFinalStates()
-	fmt.Println("GetFinalStates:", time.Since(t0))
+	this.FinalizeStates()
+	fmt.Println("FinalizeStates:", time.Since(t0))
 
 	t0 = time.Now()
-	// Strip access info
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		this.Presist()
-		defer wg.Done()
-	}()
 
-	wg.Add(1)
-	go func() {
-		this.ComputeMerkle()
-		defer wg.Done()
-	}()
-	wg.Wait()
-	fmt.Println("Presist + ComputeMerkle:", time.Since(t0))
+	paths, states := this.ReadyPersistence() // Strip access info
+	this.ComputeMerkle()
+
+	fmt.Println("ReadyPersistence + ComputeMerkle:", time.Since(t0))
 	this.clear()
-	return nil, nil, errs
+	return paths, states, errs
 }
 
-func (this *Indexer) GetFinalStates() {
+func (this *Indexer) FinalizeStates() {
 	keys := make([]string, 0, len(this.byPath))
 	for k := range this.byPath {
 		keys = append(keys, k)
@@ -223,23 +226,14 @@ func (this *Indexer) GetFinalStates() {
 		for i := start; i < end; i++ {
 			k := keys[i]
 			v := this.baseStates[k]
-			for _, tran := range this.byPath[k] {
-				if tran == nil {
-					continue
-				}
-
-				if err := v.ApplyDelta(ccurlcommon.SYSTEM, tran); err != nil {
-					panic(err)
-				}
-			}
-			v.Finalize()
+			v.ApplyDelta(ccurlcommon.SYSTEM, this.byPath[k])
 		}
 	}
 	common.ParallelWorker(len(keys), 4, finalizer)
 }
 
 // Purge data before persisting to the storage
-func (this *Indexer) Presist() {
+func (this *Indexer) ReadyPersistence() ([]string, []interface{}) {
 	keys := make([]string, 0, len(this.byPath))
 	for k := range this.byPath {
 		keys = append(keys, k)
@@ -253,15 +247,14 @@ func (this *Indexer) Presist() {
 		}
 
 		paths = append(paths, k)
-		v := this.baseStates[k].GetValue()
+		v := this.baseStates[k].Value()
 		if v != nil {
 			v.(ccurlcommon.TypeInterface).Purge()
 		}
 		states = append(states, v)
 	}
-	t0 := time.Now()
-	this.store.BatchSave(paths, states)
-	fmt.Println("BatchSave():", time.Since(t0))
+
+	return paths, states
 }
 
 // Build a Merkle for every updated account
@@ -279,8 +272,8 @@ func (this *Indexer) ComputeMerkle() []string {
 			data := make([][]byte, 0, subDict.(*orderedmap.OrderedMap).Len())
 			for _, k := range subDict.(*orderedmap.OrderedMap).Keys() {
 				if v := this.baseStates[k.(string)]; v != nil {
-					if v.GetValue() != nil {
-						data = append(data, v.GetValue().(ccurlcommon.TypeInterface).EncodeCompact())
+					if v.Value() != nil {
+						data = append(data, v.Value().(ccurlcommon.TypeInterface).EncodeCompact())
 					} else {
 						data = append(data, []byte{})
 					}
