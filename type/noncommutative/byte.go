@@ -3,7 +3,7 @@ package noncommutative
 import (
 	"fmt"
 
-	ccurlcommon "github.com/HPISTechnologies/concurrenturl/common"
+	ccurlcommon "github.com/arcology/concurrenturl/common"
 )
 
 type Bytes []byte

@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	merkle "github.com/HPISTechnologies/common-lib/merkle"
-	ccurl "github.com/HPISTechnologies/concurrenturl/v2"
-	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
-	commutative "github.com/HPISTechnologies/concurrenturl/v2/type/commutative"
-	noncommutative "github.com/HPISTechnologies/concurrenturl/v2/type/noncommutative"
+	merkle "github.com/arcology/common-lib/merkle"
+	ccurl "github.com/arcology/concurrenturl/v2"
+	ccurlcommon "github.com/arcology/concurrenturl/v2/common"
+	commutative "github.com/arcology/concurrenturl/v2/type/commutative"
+	noncommutative "github.com/arcology/concurrenturl/v2/type/noncommutative"
 	orderedmap "github.com/elliotchance/orderedmap"
 )
 

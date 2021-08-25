@@ -7,8 +7,8 @@ import (
 	"sort"
 	"strings"
 
-	codec "github.com/HPISTechnologies/common-lib/codec"
-	ccurlcommon "github.com/HPISTechnologies/concurrenturl/common"
+	codec "github.com/arcology/common-lib/codec"
+	ccurlcommon "github.com/arcology/concurrenturl/common"
 )
 
 type Meta struct {

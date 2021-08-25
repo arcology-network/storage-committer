@@ -3,9 +3,9 @@ package concurrenturl
 import (
 	"reflect"
 
-	ccurlcommon "github.com/HPISTechnologies/concurrenturl/common"
-	commutative "github.com/HPISTechnologies/concurrenturl/type/commutative"
-	noncommutative "github.com/HPISTechnologies/concurrenturl/type/noncommutative"
+	ccurlcommon "github.com/arcology/concurrenturl/common"
+	commutative "github.com/arcology/concurrenturl/type/commutative"
+	noncommutative "github.com/arcology/concurrenturl/type/noncommutative"
 )
 
 type Decoder struct{}

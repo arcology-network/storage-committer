@@ -3,9 +3,9 @@ package urltype
 import (
 	"fmt"
 
-	"github.com/HPISTechnologies/common-lib/codec"
-	"github.com/HPISTechnologies/common-lib/common"
-	urlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
+	"github.com/arcology/common-lib/codec"
+	"github.com/arcology/common-lib/common"
+	urlcommon "github.com/arcology/concurrenturl/v2/common"
 )
 
 type Univalues []urlcommon.UnivalueInterface

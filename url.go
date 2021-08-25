@@ -6,9 +6,9 @@ import (
 	"reflect"
 	"sort"
 
-	ccurlcommon "github.com/HPISTechnologies/concurrenturl/common"
-	ccurltype "github.com/HPISTechnologies/concurrenturl/type"
-	commutative "github.com/HPISTechnologies/concurrenturl/type/commutative"
+	ccurlcommon "github.com/arcology/concurrenturl/common"
+	ccurltype "github.com/arcology/concurrenturl/type"
+	commutative "github.com/arcology/concurrenturl/type/commutative"
 )
 
 type ConcurrentUrl struct {

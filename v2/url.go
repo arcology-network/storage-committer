@@ -5,11 +5,11 @@ import (
 	"math/big"
 	"reflect"
 
-	"github.com/HPISTechnologies/common-lib/common"
-	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
-	ccurltype "github.com/HPISTechnologies/concurrenturl/v2/type"
-	commutative "github.com/HPISTechnologies/concurrenturl/v2/type/commutative"
-	noncommutative "github.com/HPISTechnologies/concurrenturl/v2/type/noncommutative"
+	"github.com/arcology/common-lib/common"
+	ccurlcommon "github.com/arcology/concurrenturl/v2/common"
+	ccurltype "github.com/arcology/concurrenturl/v2/type"
+	commutative "github.com/arcology/concurrenturl/v2/type/commutative"
+	noncommutative "github.com/arcology/concurrenturl/v2/type/noncommutative"
 )
 
 type ConcurrentUrl struct {

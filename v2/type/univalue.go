@@ -7,11 +7,11 @@ import (
 	"strconv"
 	"strings"
 
-	codec "github.com/HPISTechnologies/common-lib/codec"
-	encoding "github.com/HPISTechnologies/common-lib/encoding"
-	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
-	commutative "github.com/HPISTechnologies/concurrenturl/v2/type/commutative"
-	noncommutative "github.com/HPISTechnologies/concurrenturl/v2/type/noncommutative"
+	codec "github.com/arcology/common-lib/codec"
+	encoding "github.com/arcology/common-lib/encoding"
+	ccurlcommon "github.com/arcology/concurrenturl/v2/common"
+	commutative "github.com/arcology/concurrenturl/v2/type/commutative"
+	noncommutative "github.com/arcology/concurrenturl/v2/type/noncommutative"
 )
 
 type Univalue struct {

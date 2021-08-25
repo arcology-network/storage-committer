@@ -4,11 +4,11 @@ import (
 	"math/big"
 	"testing"
 
-	ccurlcommon "github.com/HPISTechnologies/concurrenturl/common"
-	ccurltype "github.com/HPISTechnologies/concurrenturl/type"
-	urltype "github.com/HPISTechnologies/concurrenturl/type"
-	commutative "github.com/HPISTechnologies/concurrenturl/type/commutative"
-	noncommutative "github.com/HPISTechnologies/concurrenturl/type/noncommutative"
+	ccurlcommon "github.com/arcology/concurrenturl/common"
+	ccurltype "github.com/arcology/concurrenturl/type"
+	urltype "github.com/arcology/concurrenturl/type"
+	commutative "github.com/arcology/concurrenturl/type/commutative"
+	noncommutative "github.com/arcology/concurrenturl/type/noncommutative"
 )
 
 func TestSimpleBalance(t *testing.T) {

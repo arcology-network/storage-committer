@@ -8,9 +8,9 @@ import (
 	"sort"
 	"time"
 
-	"github.com/HPISTechnologies/common-lib/common"
-	merkle "github.com/HPISTechnologies/common-lib/merkle"
-	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
+	"github.com/arcology/common-lib/common"
+	merkle "github.com/arcology/common-lib/merkle"
+	ccurlcommon "github.com/arcology/concurrenturl/v2/common"
 	"github.com/elliotchance/orderedmap"
 )
 

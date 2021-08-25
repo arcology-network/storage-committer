@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	commutative "github.com/HPISTechnologies/concurrenturl/type/commutative"
-	noncommutative "github.com/HPISTechnologies/concurrenturl/type/noncommutative"
+	commutative "github.com/arcology/concurrenturl/type/commutative"
+	noncommutative "github.com/arcology/concurrenturl/type/noncommutative"
 )
 
 func TestCodecNoncommutative(t *testing.T) {

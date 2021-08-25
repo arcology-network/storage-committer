@@ -6,12 +6,12 @@ import (
 	"reflect"
 	"testing"
 
-	ccurl "github.com/HPISTechnologies/concurrenturl/v2"
-	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
-	ccurltype "github.com/HPISTechnologies/concurrenturl/v2/type"
-	urltype "github.com/HPISTechnologies/concurrenturl/v2/type"
-	commutative "github.com/HPISTechnologies/concurrenturl/v2/type/commutative"
-	noncommutative "github.com/HPISTechnologies/concurrenturl/v2/type/noncommutative"
+	ccurl "github.com/arcology/concurrenturl/v2"
+	ccurlcommon "github.com/arcology/concurrenturl/v2/common"
+	ccurltype "github.com/arcology/concurrenturl/v2/type"
+	urltype "github.com/arcology/concurrenturl/v2/type"
+	commutative "github.com/arcology/concurrenturl/v2/type/commutative"
+	noncommutative "github.com/arcology/concurrenturl/v2/type/noncommutative"
 )
 
 func TestBasic(t *testing.T) {

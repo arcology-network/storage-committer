@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	ccurlcommon "github.com/HPISTechnologies/concurrenturl/common"
+	ccurlcommon "github.com/arcology/concurrenturl/common"
 )
 
 /* Export access records */
