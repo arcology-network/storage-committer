@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"math/big"
 
-	codec "github.com/arcology/common-lib/codec"
-	ccurlcommon "github.com/arcology/concurrenturl/v2/common"
+	codec "github.com/arcology-network/common-lib/codec"
+	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
+	"github.com/elliotchance/orderedmap"
 )
 
 type Bigint big.Int
@@ -60,11 +61,21 @@ func (this *Bigint) Set(tx uint32, path string, value interface{}, source interf
 	return 0, 1, nil
 }
 
-func (this *Bigint) ApplyDelta(tx uint32, others []ccurlcommon.UnivalueInterface) ccurlcommon.TypeInterface {
-	for _, other := range others {
-		if other != nil && other.Value() != nil {
-			this.Set(tx, "", other.Value().(*Bigint), nil)
+func (this *Bigint) ApplyDelta(tx uint32, v interface{}) ccurlcommon.TypeInterface {
+	for iter := v.(*orderedmap.Element); iter != nil; iter = iter.Next() {
+		if iter.Value == nil {
+			continue
 		}
+
+		if iter.Value.(*Bigint).Value() != nil {
+			this.Set(tx, "", iter.Value.(*Bigint), nil)
+		} else {
+			this = nil
+		}
+	}
+
+	if this == nil {
+		return nil
 	}
 	return this
 }

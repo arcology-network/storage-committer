@@ -3,8 +3,8 @@ package noncommutative
 import (
 	"fmt"
 
-	"github.com/arcology/common-lib/codec"
-	ccurlcommon "github.com/arcology/concurrenturl/common"
+	"github.com/arcology-network/common-lib/codec"
+	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 )
 
 type Int64 int64

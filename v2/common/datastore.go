@@ -2,37 +2,55 @@ package common
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"fmt"
+	"math"
 	"sort"
+	"sync"
+	"time"
 
-	"github.com/arcology/common-lib/common"
+	"github.com/arcology-network/common-lib/common"
+	orderedmap "github.com/elliotchance/orderedmap"
 )
 
 type DataStore struct {
-	sharded [256]map[[32]byte]interface{}
+	numShards uint32
+	sharded   []map[string]interface{}
 }
 
-func NewDataStore() *DataStore {
-	var dataStore DataStore
-	for i := 0; i < len(dataStore.sharded); i++ {
-		dataStore.sharded[i] = make(map[[32]byte]interface{}, 64)
+func NewDataStore(args ...interface{}) *DataStore {
+	dataStore := DataStore{
+		numShards: 6,
 	}
+
+	dataStore.sharded = make([]map[string]interface{}, dataStore.numShards)
+	for i := 0; i < int(dataStore.numShards); i++ {
+		dataStore.sharded[i] = make(map[string]interface{}, 64)
+	}
+
 	return &dataStore
 }
 
-func (this *DataStore) Save(path string, v interface{}) {
-	key := sha256.Sum256([]byte(path))
+func (this *DataStore) Save(key string, v interface{}) {
 	if v == nil {
 		delete(this.sharded[key[0]], key)
 		return
 	}
-	this.sharded[key[0]][key] = v
+
+	var total uint32 = 0
+	for j := 0; j < len(key); j++ {
+		total += uint32(key[j])
+	}
+
+	this.sharded[total%this.numShards][key] = v
 }
 
-func (this *DataStore) Retrive(path string) interface{} {
-	key := sha256.Sum256([]byte(path))
-	if v, ok := this.sharded[key[0]][key]; ok {
+func (this *DataStore) Retrive(key string) interface{} {
+	var total uint32 = 0
+	for j := 0; j < len(key); j++ {
+		total += uint32(key[j])
+	}
+
+	if v, ok := this.sharded[total%this.numShards][key]; ok {
 		return v
 	}
 	return nil
@@ -40,22 +58,77 @@ func (this *DataStore) Retrive(path string) interface{} {
 
 func (*DataStore) Clear() {}
 
-func (this *DataStore) BatchSave(paths []string, states []interface{}) {
-	keys := make([][32]byte, len(paths))
+func (this *DataStore) BatchSave(keys []string, state interface{}) {
+	dict := state.(*map[string]*orderedmap.OrderedMap)
+	ids := make([]uint32, len(keys))
 	worker := func(start, end, index int, args ...interface{}) {
 		for i := start; i < end; i++ {
-			keys[i] = sha256.Sum256([]byte(paths[i]))
+			if _, ok := (*dict)[keys[i]]; ok { // Found the element in the dict
+				key := keys[i]
+				var total uint32 = 0
+				for j := 0; j < len(key); j++ {
+					total += uint32(key[j])
+				}
+				ids[i] = total % this.numShards
+			} else {
+				ids[i] = math.MaxInt32
+			}
 		}
 	}
-	common.ParallelWorker(len(paths), 4, worker)
+	common.ParallelWorker(len(keys), 8, worker)
 
-	for i, key := range keys {
-		this.sharded[key[0]][key] = states[i]
+	var wg sync.WaitGroup
+	for threadID := 0; threadID < int(this.numShards); threadID++ {
+		wg.Add(1)
+		go func(threadID int) {
+			defer wg.Done()
+			for i := 0; i < len(keys); i++ {
+				if ids[i] == uint32(threadID) {
+					this.sharded[threadID][keys[i]] = (*dict)[keys[i]].Front().Value.(UnivalueInterface).Value()
+				}
+			}
+		}(threadID)
 	}
+	wg.Wait()
+}
+
+func (this *DataStore) _BatchSave(keys []string, transitions []interface{}) {
+	t0 := time.Now()
+	ids := make([]uint32, len(transitions))
+	worker := func(start, end, index int, args ...interface{}) {
+		for i := start; i < end; i++ {
+			if transitions[i] != nil {
+				key := keys[i]
+				var total uint32 = 0
+				for j := 0; j < len(key); j++ {
+					total += uint32(key[j])
+				}
+				ids[i] = total % this.numShards
+			}
+		}
+	}
+	common.ParallelWorker(len(transitions), 8, worker)
+	fmt.Println("total % 4 "+fmt.Sprint(100000*9), time.Since(t0))
+
+	var wg sync.WaitGroup
+	for threadID := 0; threadID < int(this.numShards); threadID++ {
+		wg.Add(1)
+		go func(threadID int) {
+			defer wg.Done()
+			for i := 0; i < len(transitions); i++ {
+				if transitions[i] != nil {
+					if ids[i] == uint32(threadID) {
+						this.sharded[threadID][keys[i]] = transitions[i].(UnivalueInterface).Value()
+					}
+				}
+			}
+		}(threadID)
+	}
+	wg.Wait()
 }
 
 func (this *DataStore) Print() {
-	keys := [][32]byte{}
+	keys := []string{}
 	for _, shard := range this.sharded {
 		for k, v := range shard {
 			if v != nil {
@@ -65,7 +138,7 @@ func (this *DataStore) Print() {
 	}
 
 	sort.SliceStable(keys, func(i, j int) bool {
-		return bytes.Compare(keys[i][:], keys[j][:]) < 0
+		return bytes.Compare([]byte(keys[i][:]), []byte(keys[j][:])) < 0
 	})
 
 	for _, key := range keys {

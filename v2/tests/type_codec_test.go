@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	ccurl "github.com/arcology/concurrenturl/v2"
-	ccurlcommon "github.com/arcology/concurrenturl/v2/common"
-	ccurltype "github.com/arcology/concurrenturl/v2/type"
-	commutative "github.com/arcology/concurrenturl/v2/type/commutative"
-	noncommutative "github.com/arcology/concurrenturl/v2/type/noncommutative"
+	ccurl "github.com/arcology-network/concurrenturl/v2"
+	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
+	ccurltype "github.com/arcology-network/concurrenturl/v2/type"
+	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
+	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
 )
 
 func TestCodecNoncommutative(t *testing.T) {
@@ -89,7 +89,7 @@ func BenchmarkUnivalueCodec(t *testing.B) {
 	transitions := []ccurlcommon.UnivalueInterface{}
 	for i := 0; i < 200000; i++ {
 		url := ccurl.NewConcurrentUrl(store)
-		url.Preload(ccurlcommon.SYSTEM, url.Platform.Eth10(), fmt.Sprint(rand.Int())+fmt.Sprint(rand.Int())+fmt.Sprint(rand.Int()))
+		url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), fmt.Sprint(rand.Int())+fmt.Sprint(rand.Int())+fmt.Sprint(rand.Int()))
 		_, transVec := url.Export(false)
 		transitions = append(transitions, transVec...)
 	}

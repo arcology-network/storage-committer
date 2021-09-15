@@ -20,12 +20,15 @@ func (db *TransientDB) Retrive(path string) interface{} {
 	v := db.DataStore.Retrive(path)
 	if v == nil {
 		v = db.parent.Retrive(path)
+		// if v != nil {
+		// 	v = v.(TypeInterface).Deepcopy()
+		// }
 	}
 	return v
 }
 
-func (db *TransientDB) BatchSave(paths []string, states []interface{}) {
-	db.DataStore.BatchSave(paths, states)
+func (db *TransientDB) BatchSave(paths []string, dict interface{}) {
+	db.DataStore.BatchSave(paths, dict)
 }
 
 func (this *TransientDB) Print() {

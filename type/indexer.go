@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	ccurlcommon "github.com/arcology/concurrenturl/common"
+	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 )
 
 type Indexer struct {

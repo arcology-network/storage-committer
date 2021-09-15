@@ -3,7 +3,7 @@ package common
 // User access control
 const (
 	USER_READABLE = iota
-	USER_WRITABLE
+	USER_CREATABLE
 	USER_UPDATABLE
 )
 
@@ -22,29 +22,3 @@ const (
 	CommutativeString  uint8 = 106
 	CommutativeBalance uint8 = 107
 )
-
-// func GetTypeID(value interface{}) (uint8, error) {
-// 	if value != nil {
-// 		name := reflect.TypeOf(value).String()
-// 		switch name {
-// 		/* Non Commutative */
-// 		case "*commutative.Meta": // Meta
-// 			return NoncommutativeMeta, nil
-// 		case "*noncommutative.Bigint":
-// 			return NoncommutativeBigint, nil
-// 		case "*noncommutative.Int64":
-// 			return NoncommutativeInt64, nil
-// 		case "*noncommutative.String":
-// 			return NoncommutativeString, nil
-// 		case "*noncommutative.Bytes":
-// 			return NoncommutativeBytes, nil
-
-// 		/* Commutative */
-// 		case "*commutative.Balance":
-// 			return CommutativeBalance, nil
-// 		case "*commutative.Int64":
-// 			return CommutativeInt64, nil
-// 		}
-// 	}
-// 	return uint8(reflect.Invalid), errors.New("Error: Unknown type ID !")
-// }

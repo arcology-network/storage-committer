@@ -1,4 +1,4 @@
-package urltype
+package ccurltype
 
 import (
 	"errors"
@@ -7,23 +7,24 @@ import (
 	"strconv"
 	"strings"
 
-	codec "github.com/arcology/common-lib/codec"
-	encoding "github.com/arcology/common-lib/encoding"
-	ccurlcommon "github.com/arcology/concurrenturl/v2/common"
-	commutative "github.com/arcology/concurrenturl/v2/type/commutative"
-	noncommutative "github.com/arcology/concurrenturl/v2/type/noncommutative"
+	codec "github.com/arcology-network/common-lib/codec"
+	encoding "github.com/arcology-network/common-lib/encoding"
+	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
+	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
+	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
+	"github.com/elliotchance/orderedmap"
 )
 
 type Univalue struct {
-	vType       uint8
-	tx          uint32
-	path        string
-	reads       uint32
-	writes      uint32
-	value       interface{}
-	preexists   bool
-	addOrDelete bool
-	composite   bool
+	vType     uint8
+	tx        uint32
+	path      string
+	reads     uint32
+	writes    uint32
+	value     interface{}
+	preexists bool
+	composite bool
+	reserved  interface{}
 }
 
 func CreateUnivalueForTest(tx uint32, path string, reads, writes uint32, value interface{}, preexists, composite bool) *Univalue {
@@ -35,25 +36,24 @@ func CreateUnivalueForTest(tx uint32, path string, reads, writes uint32, value i
 		value:     value,
 		preexists: preexists,
 		composite: composite,
+		reserved:  nil,
 	}
 }
 
 func NewUnivalue(tx uint32, key string, reads, writes uint32, args ...interface{}) *Univalue {
 	v := &Univalue{
-		vType:       (&Univalue{}).GetTypeID(args[0]),
-		tx:          tx,
-		path:        key,
-		reads:       reads,
-		writes:      writes,
-		value:       args[0],
-		preexists:   false,
-		addOrDelete: false,
-		composite:   false,
+		vType:     (&Univalue{}).GetTypeID(args[0]),
+		tx:        tx,
+		path:      key,
+		reads:     reads,
+		writes:    writes,
+		value:     args[0],
+		preexists: false,
+		composite: false,
 	}
 
 	if len(args) > 1 {
 		v.SetPreexist(args[1])
-		v.addOrDelete = v.IfAddOrDelete()
 		v.composite = v.IfComposite()
 	}
 
@@ -82,6 +82,20 @@ func (*Univalue) GetTypeID(value interface{}) uint8 {
 	return uint8(reflect.Invalid)
 }
 
+func (this *Univalue) IsCommutative() bool {
+	if this.value != nil {
+		switch this.value.(type) {
+		case *commutative.Meta:
+			return true
+		case *commutative.Balance: /* Commutatives */
+			return true
+		case *commutative.Int64:
+			return true
+		}
+	}
+	return false
+}
+
 func (this *Univalue) GetTx() uint32      { return this.tx }
 func (this *Univalue) GetPath() string    { return this.path }
 func (this *Univalue) Value() interface{} { return this.value }
@@ -96,10 +110,6 @@ func (this *Univalue) IncrementWrite() { this.writes++ }
 func (this *Univalue) SetPreexist(source interface{}) {
 	// this.preexists = source.(ccurlcommon.LocalCacheInterface).IfExists(this.path)
 	this.preexists = source.(ccurlcommon.LocalCacheInterface).RetriveShallow(this.path) != nil
-}
-
-func (this *Univalue) IfAddOrDelete() bool {
-	return (!this.Preexist() && this.Writes() > 0) || (this.Preexist() && this.Value() == nil)
 }
 
 func (this *Univalue) IfComposite() bool { // Call this before setting the value attribute to nil
@@ -120,7 +130,7 @@ func (this *Univalue) UpdateParentMeta(tx uint32, value interface{}, source inte
 	}
 
 	meta := this.Value().(*commutative.Meta)
-	meta.RefreshCaches(tx, value.(ccurlcommon.UnivalueInterface), source)
+	meta.UpdateCaches(tx, value.(ccurlcommon.UnivalueInterface), source)
 	this.IncrementWrite()
 	return nil
 }
@@ -131,15 +141,14 @@ func (this *Univalue) Export(source interface{}) (interface{}, interface{}) {
 	}
 
 	accessRecord := &Univalue{ // For the arbitrator, just make a deep copy and clear the value field
-		tx:          this.GetTx(),
-		vType:       this.GetTypeID(this.Value()),
-		path:        this.GetPath(),
-		reads:       this.Reads(),
-		writes:      this.Writes(),
-		value:       this.Value(),
-		preexists:   this.Preexist(),
-		addOrDelete: this.IfAddOrDelete(),
-		composite:   this.IfComposite(),
+		tx:        this.GetTx(),
+		vType:     this.GetTypeID(this.Value()),
+		path:      this.GetPath(),
+		reads:     this.Reads(),
+		writes:    this.Writes(),
+		value:     this.Value(),
+		preexists: this.Preexist(),
+		composite: this.IfComposite(),
 	}
 
 	if accessRecord.Value() != nil {
@@ -177,57 +186,49 @@ func (this *Univalue) Peek(source interface{}) interface{} {
 }
 
 func (this *Univalue) Set(tx uint32, path string, value interface{}, source interface{}) error { // update the value
-	if this.writes == 0 && this.value != nil { // make a deep copy if haven't yet
-		this.value = this.value.(ccurlcommon.TypeInterface).Deepcopy()
-	}
-
-	this.writes++
 	this.tx = tx
-
+	this.writes++
 	if this.Value() != nil && value != nil && this.vType != value.(ccurlcommon.TypeInterface).TypeID() {
 		return errors.New("Error: Types don't match !")
 	}
 
-	if this.Value() == nil && value == nil { // Try to delete something nonexistent
-		return errors.New("Error: Tried to delete an nonexistent element !")
-	}
-
-	if this.Value() == nil && value != nil { // new value
+	if this.Value() == nil && value != nil { // A New value
 		this.vType = value.(ccurlcommon.TypeInterface).TypeID()
 		this.value = value
-		this.addOrDelete = this.IfAddOrDelete()
 		return nil
 	}
+	this.writes-- // Reset writes
 
-	this.writes--
-	if r, w, err := this.value.(ccurlcommon.TypeInterface).Set(tx, path, value, source); err == nil { // assignment
-		this.writes += w
-		this.reads += r
-	} else {
-		return err
+	if this.writes == 0 && this.value != nil && value != nil { // Make a deep copy if haven't yet
+		this.value = this.value.(ccurlcommon.TypeInterface).Deepcopy()
 	}
+
+	r, w, err := this.value.(ccurlcommon.TypeInterface).Set(tx, path, value, source) // Update the current value
+	this.writes += w
+	this.reads += r
 
 	if value == nil { // Delete an entry
 		this.vType = uint8(reflect.Invalid)
 		this.value = value
 	}
-	return nil
+	return err
 }
 
 func (this *Univalue) ApplyDelta(tx uint32, v interface{}) error {
-	others := v.([]ccurlcommon.UnivalueInterface)
-	for _, other := range others {
-		if other == nil {
-			continue
+	for iter := v.(*orderedmap.Element); iter != nil; iter = iter.Next() {
+		if iter.Value == nil {
+			continue // Removed because of conflicting with others ?
 		}
 
-		this.PrecheckAttributes(this, other.(*Univalue)) /* Precheck */
-		this.writes += other.(*Univalue).writes          /* Merge info */
-		this.reads += other.(*Univalue).reads
-		this.composite = this.composite && other.(*Univalue).composite
+		this.PrecheckAttributes(this, iter.Value.(*Univalue)) /* Precheck */
+		this.writes += iter.Value.(*Univalue).writes          /* Merge info */
+		this.reads += iter.Value.(*Univalue).reads
+		this.composite = this.composite && iter.Value.(*Univalue).composite
 	}
 
-	this.value = this.Value().(ccurlcommon.TypeInterface).ApplyDelta(tx, others)
+	if this.Value() != nil {
+		this.value = this.Value().(ccurlcommon.TypeInterface).ApplyDelta(tx, v)
+	}
 	return nil
 }
 
@@ -236,22 +237,12 @@ func (*Univalue) PrecheckAttributes(this *Univalue, other *Univalue) error {
 		panic("Error: Value type mismatched!")
 	}
 
-	if this.composite != other.composite {
+	if this.composite != other.composite &&
+		this.Value().(ccurlcommon.TypeInterface).TypeID() != ccurlcommon.CommutativeMeta {
+		this.Print()
+		fmt.Println("================================================================")
+		other.Print()
 		panic("Error: The composite attribute must match in different transitions")
-	}
-
-	if this.addOrDelete != other.addOrDelete {
-		this.Print()
-		fmt.Println("================================================================")
-		other.Print()
-		panic("Error: addOrDelete must match")
-	}
-
-	if this.preexists != other.preexists {
-		this.Print()
-		fmt.Println("================================================================")
-		other.Print()
-		panic("Error: Preexistence must match")
 	}
 
 	if this.Value() == nil && this.composite {
@@ -274,15 +265,14 @@ func (this *Univalue) PostcheckAttributes() error {
 
 func (this *Univalue) Deepcopy() interface{} {
 	v := &Univalue{
-		vType:       this.vType,
-		tx:          this.tx,
-		path:        this.path,
-		reads:       this.reads,
-		writes:      this.writes,
-		value:       this.value,
-		preexists:   this.preexists,
-		addOrDelete: this.addOrDelete,
-		composite:   this.composite,
+		vType:     this.vType,
+		tx:        this.tx,
+		path:      this.path,
+		reads:     this.reads,
+		writes:    this.writes,
+		value:     this.value,
+		preexists: this.preexists,
+		composite: this.composite,
 	}
 
 	if v.value != nil {
@@ -299,7 +289,6 @@ func (this *Univalue) Print() {
 	fmt.Println(spaces+"path: ", this.path)
 	fmt.Println(spaces+"value: ", this.value)
 	fmt.Println(spaces+"preexists: ", this.preexists)
-	fmt.Println(spaces+"addOrDelete: ", this.addOrDelete)
 	fmt.Println(spaces+"composite: ", this.composite)
 	//this.value.(ccurlcommon.TypeInterface).Print()
 	fmt.Println("--------------------------------------------------------")
@@ -311,7 +300,7 @@ func (this *Univalue) Encode() []byte {
 		vBytes = this.value.(ccurlcommon.TypeInterface).Encode()
 
 	}
-	//fmt.Printf("this.path=%v,vBytes=%x,this.vType=%v\n", this.path, vBytes, this.vType)
+
 	return codec.Byteset{
 		codec.Uint32(this.vType).Encode(),
 		codec.Uint32(uint32(this.tx)).Encode(),
@@ -320,12 +309,11 @@ func (this *Univalue) Encode() []byte {
 		codec.Uint32(this.writes).Encode(),
 		vBytes,
 		codec.Bool(this.preexists).Encode(),
-		codec.Bool(this.addOrDelete).Encode(),
 		codec.Bool(this.composite).Encode(),
 	}.Encode()
 }
 
-func (this *Univalue) Decode(bytes []byte) interface{} {
+func (*Univalue) Decode(bytes []byte) interface{} {
 	fields := encoding.Byteset{}.Decode(bytes)
 	if len(fields) == 0 {
 		return nil
@@ -333,19 +321,32 @@ func (this *Univalue) Decode(bytes []byte) interface{} {
 
 	vType := uint8(reflect.Kind(codec.Uint32(0).Decode(fields[0])))
 	univalue := &Univalue{
-		tx:          uint32(codec.Uint32(0).Decode(fields[1])),
-		path:        codec.String("").Decode(fields[2]),
-		reads:       uint32(codec.Uint32(0).Decode(fields[3])),
-		writes:      uint32(codec.Uint32(0).Decode(fields[4])),
-		vType:       vType,
-		value:       (&Decoder{}).Decode(fields[5], vType),
-		preexists:   bool(codec.Bool(true).Decode(fields[6])),
-		addOrDelete: bool(codec.Bool(true).Decode(fields[7])),
-		composite:   bool(codec.Bool(true).Decode(fields[8])),
+		tx:        uint32(codec.Uint32(0).Decode(fields[1])),
+		path:      codec.String("").Decode(fields[2]),
+		reads:     uint32(codec.Uint32(0).Decode(fields[3])),
+		writes:    uint32(codec.Uint32(0).Decode(fields[4])),
+		vType:     vType,
+		value:     (&Decoder{}).Decode(fields[5], vType),
+		preexists: bool(codec.Bool(true).Decode(fields[6])),
+		composite: bool(codec.Bool(true).Decode(fields[7])),
+		reserved:  fields[5],
 	}
 
-	//fmt.Printf("this.path=%v,vBytes=%x,value=%v\n", univalue.path, fields[5], univalue.Value())
+	if univalue.value == nil || univalue.IsCommutative() {
+		univalue.reserved = nil
+	}
 	return univalue
+}
+
+func (this *Univalue) GetCachedEncoded() []byte {
+	if this.value == nil || this.IsCommutative() {
+		return []byte{}
+	}
+
+	if this.reserved == nil {
+		return this.value.(ccurlcommon.TypeInterface).EncodeCompact()
+	}
+	return this.reserved.([]byte)
 }
 
 func (this *Univalue) GobEncode() ([]byte, error) {
@@ -355,13 +356,12 @@ func (this *Univalue) GobEncode() ([]byte, error) {
 func (this *Univalue) GobDecode(data []byte) error {
 	v := this.Decode(data).(*Univalue)
 	this.vType = v.vType
-	this.addOrDelete = v.addOrDelete
 	this.composite = v.composite
 	this.path = v.path
 	this.preexists = v.preexists
 	this.reads = v.reads
 	this.tx = v.tx
-	this.value = v.Value
+	this.value = v.value
 	this.writes = v.writes
 	return nil
 }
@@ -373,8 +373,7 @@ func (this *Univalue) Equal(other *Univalue) bool {
 		this.reads == other.reads &&
 		this.writes == other.writes &&
 		this.value == other.value &&
-		this.preexists == other.preexists &&
-		this.addOrDelete == other.addOrDelete {
+		this.preexists == other.preexists {
 		return true
 	}
 	return false

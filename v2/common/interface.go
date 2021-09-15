@@ -9,7 +9,7 @@ type TypeInterface interface { // value type
 	Get(uint32, string, interface{}) (interface{}, uint32, uint32)
 	Set(uint32, string, interface{}, interface{}) (uint32, uint32, error)
 	Peek(interface{}) interface{}
-	ApplyDelta(uint32, []UnivalueInterface) TypeInterface
+	ApplyDelta(uint32, interface{}) TypeInterface
 	Composite() bool
 	Hash(func([]byte) []byte) []byte
 	Encode() []byte
@@ -35,6 +35,7 @@ type UnivalueInterface interface { // value type
 	Composite() bool
 	Deepcopy() interface{}
 	Export(interface{}) (interface{}, interface{})
+	GetCachedEncoded() []byte
 	Encode() []byte
 	Decode([]byte) interface{}
 	Print()
@@ -48,17 +49,16 @@ type LocalCacheInterface interface {
 	Insert(string, interface{})
 	IfExists(string) bool
 	RetriveShallow(string) interface{}
-	RetriveDeep(string) interface{}
 	CheckHistory(uint32, string, bool) UnivalueInterface
 	Buffer() *map[string]UnivalueInterface
 	Store() *DB
-	Commit([]uint32) ([]string, []interface{}, []error)
+	Commit([]uint32) ([]string, interface{}, []error)
 }
 
 type DB interface {
 	Save(string, interface{})
 	Retrive(string) interface{}
-	BatchSave([]string, []interface{})
+	BatchSave([]string, interface{})
 	Clear()
 	Print()
 }

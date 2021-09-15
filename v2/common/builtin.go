@@ -67,7 +67,7 @@ func (this *Platform) IsPermitted(path string, operation uint8) bool {
 }
 
 // THe path on the control list
-func (this *Platform) OnList(path string) bool {
+func (this *Platform) OnControlList(path string) bool {
 	_, ok := this.syspaths[path]
 	return ok
 }

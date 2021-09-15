@@ -3,8 +3,8 @@ package commutative
 import (
 	"fmt"
 
-	codec "github.com/arcology/common-lib/codec"
-	ccurlcommon "github.com/arcology/concurrenturl/common"
+	codec "github.com/arcology-network/common-lib/codec"
+	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 )
 
 type Int64 struct {

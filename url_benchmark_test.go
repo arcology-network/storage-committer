@@ -5,15 +5,15 @@ import (
 	"testing"
 	"time"
 
-	ccurlcommon "github.com/arcology/concurrenturl/common"
-	commutative "github.com/arcology/concurrenturl/type/commutative"
-	noncommutative "github.com/arcology/concurrenturl/type/noncommutative"
+	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	commutative "github.com/arcology-network/concurrenturl/type/commutative"
+	noncommutative "github.com/arcology-network/concurrenturl/type/noncommutative"
 )
 
 func BenchmarkWriteRead(b *testing.B) {
 	store := ccurlcommon.NewDataStore()
 	url := NewConcurrentUrl(store)
-	if err := url.Preload(ccurlcommon.SYSTEM, url.Platform.Eth10(), "Alice"); err != nil { // Preload account structure {
+	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), "Alice"); err != nil { // CreateAccount account structure {
 		fmt.Println(err)
 	}
 

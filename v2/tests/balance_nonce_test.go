@@ -4,18 +4,17 @@ import (
 	"math/big"
 	"testing"
 
-	ccurl "github.com/arcology/concurrenturl/v2"
-	ccurlcommon "github.com/arcology/concurrenturl/v2/common"
-	ccurltype "github.com/arcology/concurrenturl/v2/type"
-	urltype "github.com/arcology/concurrenturl/v2/type"
-	commutative "github.com/arcology/concurrenturl/v2/type/commutative"
-	noncommutative "github.com/arcology/concurrenturl/v2/type/noncommutative"
+	ccurl "github.com/arcology-network/concurrenturl/v2"
+	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
+	ccurltype "github.com/arcology-network/concurrenturl/v2/type"
+	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
+	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
 )
 
 func TestSimpleBalance(t *testing.T) {
 	store := ccurlcommon.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
-	if err := url.Preload(ccurlcommon.SYSTEM, url.Platform.Eth10(), "alice"); err != nil { // Preload account structure {
+	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), "alice"); err != nil { // CreateAccount account structure {
 		t.Error(err)
 	}
 
@@ -37,7 +36,11 @@ func TestSimpleBalance(t *testing.T) {
 
 	// Export variables
 	_, transitions = url.Export(true)
-	url.Commit(transitions, []uint32{0, 1})
+
+	in := ccurltype.Univalues(transitions).Encode()
+	out := ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
+	url.Import(out)
+	url.Commit([]uint32{0, 1})
 
 	// Read alice's balance again
 	balance, _ := url.Read(1, "blcc://eth1.0/account/alice/balance")
@@ -50,7 +53,7 @@ func TestSimpleBalance(t *testing.T) {
 func TestBalance(t *testing.T) {
 	store := ccurlcommon.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
-	if err := url.Preload(ccurlcommon.SYSTEM, url.Platform.Eth10(), "alice"); err != nil { // Preload account structure {
+	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), "alice"); err != nil { // CreateAccount account structure {
 		t.Error(err)
 	}
 
@@ -122,7 +125,7 @@ func TestBalance(t *testing.T) {
 	in := ccurltype.Univalues(accessRecords).Encode()
 	out := ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
 	for i := range accessRecords {
-		if !accessRecords[i].(*urltype.Univalue).EqualTransition(out[i].(*urltype.Univalue)) {
+		if !accessRecords[i].(*ccurltype.Univalue).EqualTransition(out[i].(*ccurltype.Univalue)) {
 			t.Error("Accesses don't match")
 		}
 	}
@@ -130,12 +133,12 @@ func TestBalance(t *testing.T) {
 	in = ccurltype.Univalues(transitions).Encode()
 	out = ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
 	for i := range transitions {
-		if !transitions[i].(*urltype.Univalue).EqualTransition(out[i].(*urltype.Univalue)) {
+		if !transitions[i].(*ccurltype.Univalue).EqualTransition(out[i].(*ccurltype.Univalue)) {
 			t.Error("Accesses don't match")
 		}
 	}
 
-	url.Indexer().Import(transitions)
+	url.Indexer().Import(out)
 	url.Indexer().Commit([]uint32{0, 1})
 	//url.Indexer().Store().Print()
 }
@@ -143,7 +146,7 @@ func TestBalance(t *testing.T) {
 func TestNonce(t *testing.T) {
 	store := ccurlcommon.NewDataStore()
 	url1 := ccurl.NewConcurrentUrl(store)
-	if err := url1.Preload(ccurlcommon.SYSTEM, url1.Platform.Eth10(), "alice"); err != nil { // Preload account structure {
+	if err := url1.CreateAccount(ccurlcommon.SYSTEM, url1.Platform.Eth10(), "alice"); err != nil { // CreateAccount account structure {
 		t.Error(err)
 	}
 

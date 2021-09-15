@@ -4,22 +4,23 @@ import (
 	"reflect"
 	"testing"
 
-	ccurl "github.com/arcology/concurrenturl/v2"
-	ccurlcommon "github.com/arcology/concurrenturl/v2/common"
-	commutative "github.com/arcology/concurrenturl/v2/type/commutative"
-	noncommutative "github.com/arcology/concurrenturl/v2/type/noncommutative"
-	assert "github.com/magiconair/properties/assert"
+	ccurl "github.com/arcology-network/concurrenturl/v2"
+	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
+	ccurltype "github.com/arcology-network/concurrenturl/v2/type"
+	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
+	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
 )
 
 func TestAuxTrans(t *testing.T) {
 	store := ccurlcommon.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
-	if err := url.Preload(ccurlcommon.SYSTEM, url.Platform.Eth10(), "alice"); err != nil { // Preload account structure {
+	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), "alice"); err != nil { // CreateAccount account structure {
 		t.Error(err)
 	}
 
 	_, trans00 := url.Export(true)
-	url.Commit(trans00, []uint32{ccurlcommon.SYSTEM}) // Commit
+	url.Import(trans00)
+	url.Commit([]uint32{ccurlcommon.SYSTEM}) // Commit
 
 	// create a path
 	path, err := commutative.NewMeta("blcc://eth1.0/account/alice/storage/ctrn-0/")
@@ -70,17 +71,17 @@ func TestAuxTrans(t *testing.T) {
 	if value, _ := url.Read(1, "blcc://eth1.0/account/alice/storage/ctrn-0/"); value == nil {
 		t.Error(value)
 	} else {
-		if !reflect.DeepEqual(value.(*commutative.Meta).GetKeys(), []string{"elem-000"}) {
+		if !reflect.DeepEqual(value.(*commutative.Meta).PeekKeys(), []string{"elem-000"}) {
 			t.Error("Wrong value ")
 		}
 	}
 
 	_, transitions := url.Export(true)
-	if !reflect.DeepEqual(transitions[1].Value().(*commutative.Meta).GetAdded(), []string{"elem-000"}) {
+	if !reflect.DeepEqual(transitions[0].Value().(*commutative.Meta).PeekAdded(), []string{"elem-000"}) {
 		t.Error("keys don't match")
 	}
 
-	value := transitions[2].Value()
+	value := transitions[1].Value()
 	if *(value.(*noncommutative.Int64)) != 1111 {
 		t.Error("keys don't match")
 	}
@@ -90,7 +91,10 @@ func TestAuxTrans(t *testing.T) {
 		t.Error("The variable has been cleared")
 	}
 
-	url.Indexer().Import(transitions)
+	in := ccurltype.Univalues(transitions).Encode()
+	out := ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
+
+	url.Indexer().Import(out)
 	if _, _, errs := url.Indexer().Commit([]uint32{1}); len(errs) != 0 {
 		t.Error(errs)
 	}
@@ -99,12 +103,13 @@ func TestAuxTrans(t *testing.T) {
 func TestCheckAccessRecords(t *testing.T) {
 	store := ccurlcommon.NewDataStore()
 	url1 := ccurl.NewConcurrentUrl(store)
-	if err := url1.Preload(ccurlcommon.SYSTEM, url1.Platform.Eth10(), "alice"); err != nil { // Preload account structure {
+	if err := url1.CreateAccount(ccurlcommon.SYSTEM, url1.Platform.Eth10(), "alice"); err != nil { // CreateAccount account structure {
 		t.Error(err)
 	}
 
 	_, trans00 := url1.Export(true)
-	url1.Commit(trans00, []uint32{1}) // Commit
+	url1.Import(trans00)
+	url1.Commit([]uint32{1}) // Commit
 
 	path, _ := commutative.NewMeta("blcc://eth1.0/account/alice/storage/ctrn-0/")
 	if url1.Write(1, "blcc://eth1.0/account/alice/storage/ctrn-0/", path) != nil {
@@ -112,7 +117,8 @@ func TestCheckAccessRecords(t *testing.T) {
 	}
 
 	_, trans10 := url1.Export(true)
-	url1.Commit(trans10, []uint32{1}) // Commit
+	url1.Import(trans10)
+	url1.Commit([]uint32{1}) // Commit
 
 	if url1.Write(1, "blcc://eth1.0/account/alice/storage/ctrn-0/1", noncommutative.NewInt64(1111)) != nil {
 		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/1") // create a path
@@ -123,14 +129,20 @@ func TestCheckAccessRecords(t *testing.T) {
 	}
 
 	accesses10, trans11 := url1.Export(true)
-	url1.Commit(trans11, []uint32{1}) // Commit
+	url1.Import(trans11)
+	url1.Commit([]uint32{1}) // Commit
 
 	if len(trans11) != 3 {
 		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/2") // create a path
 	}
 
-	assert.Equal(t, len(trans11), 3, "Error: There should be 3 transitions in url1")
-	assert.Equal(t, len(accesses10), 3, "Error: There should be 3 accesse records url1")
+	if len(trans11) != 3 {
+		t.Error("Error: There should be 3 transitions in url1") // create a path
+	}
+
+	if len(accesses10) != 3 {
+		t.Error("Error: There should be 3 accesse records url1") // create a path
+	}
 
 	if url1.Write(1, "blcc://eth1.0/account/alice/storage/ctrn-0/3", noncommutative.NewInt64(3333)) != nil {
 		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/3") // create a path
@@ -141,7 +153,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	}
 
 	v1, _ := url1.Read(1, "blcc://eth1.0/account/alice/storage/ctrn-0/")
-	keys := v1.(*commutative.Meta).GetKeys()
+	keys := v1.(*commutative.Meta).PeekKeys()
 	if len(keys) != 3 {
 		t.Error("Error: There should be 3 elements only") // create a path
 	}

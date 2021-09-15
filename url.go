@@ -6,9 +6,9 @@ import (
 	"reflect"
 	"sort"
 
-	ccurlcommon "github.com/arcology/concurrenturl/common"
-	ccurltype "github.com/arcology/concurrenturl/type"
-	commutative "github.com/arcology/concurrenturl/type/commutative"
+	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	ccurltype "github.com/arcology-network/concurrenturl/type"
+	commutative "github.com/arcology-network/concurrenturl/type/commutative"
 )
 
 type ConcurrentUrl struct {
@@ -24,7 +24,7 @@ func NewConcurrentUrl(store ccurlcommon.DB) *ConcurrentUrl {
 }
 
 // load accounts
-func (this *ConcurrentUrl) Preload(tx uint32, platform string, acct string) error {
+func (this *ConcurrentUrl) CreateAccount(tx uint32, platform string, acct string) error {
 	paths, err := this.Platform.Builtin(platform, acct)
 	for _, path := range paths {
 		// if this.indexer.Read(tx, path) == nil { // Add the root paths
@@ -59,7 +59,7 @@ func (this *ConcurrentUrl) Read(tx uint32, path string) (interface{}, error) {
 }
 
 func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}) error {
-	if !this.Permit(tx, path, ccurlcommon.USER_WRITABLE) {
+	if !this.Permit(tx, path, ccurlcommon.USER_CREATABLE) {
 		return errors.New("Error: No permission to write " + path)
 	}
 
@@ -73,7 +73,7 @@ func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}) erro
 
 // It the access is permitted
 func (this *ConcurrentUrl) Permit(tx uint32, path string, operation uint8) bool {
-	if tx == ccurlcommon.SYSTEM || !this.Platform.OnList(path) { // Either by the system or no need to control
+	if tx == ccurlcommon.SYSTEM || !this.Platform.OnControlList(path) { // Either by the system or no need to control
 		return true
 	}
 
@@ -81,8 +81,8 @@ func (this *ConcurrentUrl) Permit(tx uint32, path string, operation uint8) bool 
 	case ccurlcommon.USER_READABLE:
 		return this.Platform.IsPermissible(path, ccurlcommon.USER_READABLE)
 
-	case ccurlcommon.USER_WRITABLE:
-		return (this.Platform.IsPermissible(path, ccurlcommon.USER_WRITABLE) && !this.indexer.IfExists(path)) || // Initialization
+	case ccurlcommon.USER_CREATABLE:
+		return (this.Platform.IsPermissible(path, ccurlcommon.USER_CREATABLE) && !this.indexer.IfExists(path)) || // Initialization
 			(this.Platform.IsPermissible(path, ccurlcommon.USER_UPDATABLE) && this.indexer.IfExists(path)) // Update
 
 	}

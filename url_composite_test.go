@@ -4,16 +4,16 @@ import (
 	"reflect"
 	"testing"
 
-	ccurlcommon "github.com/arcology/concurrenturl/common"
-	commutative "github.com/arcology/concurrenturl/type/commutative"
-	noncommutative "github.com/arcology/concurrenturl/type/noncommutative"
+	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	commutative "github.com/arcology-network/concurrenturl/type/commutative"
+	noncommutative "github.com/arcology-network/concurrenturl/type/noncommutative"
 	assert "github.com/magiconair/properties/assert"
 )
 
 func TestComp(t *testing.T) {
 	store := ccurlcommon.NewDataStore()
 	url := NewConcurrentUrl(store)
-	if err := url.Preload(ccurlcommon.SYSTEM, url.Platform.Eth10(), "Alice"); err != nil { // Preload account structure {
+	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), "Alice"); err != nil { // CreateAccount account structure {
 		t.Error(err)
 	}
 
@@ -30,7 +30,7 @@ func TestComp(t *testing.T) {
 func TestAuxTrans(t *testing.T) {
 	store := ccurlcommon.NewDataStore()
 	url := NewConcurrentUrl(store)
-	if err := url.Preload(ccurlcommon.SYSTEM, url.Platform.Eth10(), "Alice"); err != nil { // Preload account structure {
+	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), "Alice"); err != nil { // CreateAccount account structure {
 		t.Error(err)
 	}
 
@@ -118,7 +118,7 @@ func TestAuxTrans(t *testing.T) {
 func TestCheckAccessRecords(t *testing.T) {
 	store := ccurlcommon.NewDataStore()
 	url1 := NewConcurrentUrl(store)
-	if err := url1.Preload(ccurlcommon.SYSTEM, url1.Platform.Eth10(), "Alice"); err != nil { // Preload account structure {
+	if err := url1.CreateAccount(ccurlcommon.SYSTEM, url1.Platform.Eth10(), "Alice"); err != nil { // CreateAccount account structure {
 		t.Error(err)
 	}
 
@@ -139,7 +139,7 @@ func TestCheckAccessRecords(t *testing.T) {
 
 	/* A new url*/
 	url2 := NewConcurrentUrl(store)
-	if err := url1.Preload(ccurlcommon.SYSTEM, url2.Platform.Eth10(), "Alice"); err != nil { // Preload account structure {
+	if err := url1.CreateAccount(ccurlcommon.SYSTEM, url2.Platform.Eth10(), "Alice"); err != nil { // CreateAccount account structure {
 		t.Error(err)
 	}
 
@@ -165,7 +165,7 @@ func TestCheckAccessRecords(t *testing.T) {
 func TestNonce(t *testing.T) {
 	store := ccurlcommon.NewDataStore()
 	url1 := NewConcurrentUrl(store)
-	if err := url1.Preload(ccurlcommon.SYSTEM, url1.Platform.Eth10(), "Alice"); err != nil { // Preload account structure {
+	if err := url1.CreateAccount(ccurlcommon.SYSTEM, url1.Platform.Eth10(), "Alice"); err != nil { // CreateAccount account structure {
 		t.Error(err)
 	}
 

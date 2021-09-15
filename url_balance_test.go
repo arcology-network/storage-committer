@@ -4,17 +4,17 @@ import (
 	"math/big"
 	"testing"
 
-	ccurlcommon "github.com/arcology/concurrenturl/common"
-	ccurltype "github.com/arcology/concurrenturl/type"
-	urltype "github.com/arcology/concurrenturl/type"
-	commutative "github.com/arcology/concurrenturl/type/commutative"
-	noncommutative "github.com/arcology/concurrenturl/type/noncommutative"
+	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	ccurltype "github.com/arcology-network/concurrenturl/type"
+	urltype "github.com/arcology-network/concurrenturl/type"
+	commutative "github.com/arcology-network/concurrenturl/type/commutative"
+	noncommutative "github.com/arcology-network/concurrenturl/type/noncommutative"
 )
 
 func TestSimpleBalance(t *testing.T) {
 	store := ccurlcommon.NewDataStore()
 	url := NewConcurrentUrl(store)
-	if err := url.Preload(ccurlcommon.SYSTEM, url.Platform.Eth10(), "Alice"); err != nil { // Preload account structure {
+	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), "Alice"); err != nil { // CreateAccount account structure {
 		t.Error(err)
 	}
 	url.Print()
@@ -52,7 +52,7 @@ func TestSimpleBalance(t *testing.T) {
 func TestBalance(t *testing.T) {
 	store := ccurlcommon.NewDataStore()
 	url := NewConcurrentUrl(store)
-	if err := url.Preload(ccurlcommon.SYSTEM, url.Platform.Eth10(), "Alice"); err != nil { // Preload account structure {
+	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), "Alice"); err != nil { // CreateAccount account structure {
 		t.Error(err)
 	}
 

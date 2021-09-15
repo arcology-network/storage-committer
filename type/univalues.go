@@ -3,8 +3,8 @@ package urltype
 import (
 	"fmt"
 
-	"github.com/arcology/common-lib/codec"
-	urlcommon "github.com/arcology/concurrenturl/common"
+	"github.com/arcology-network/common-lib/codec"
+	urlcommon "github.com/arcology-network/concurrenturl/common"
 )
 
 type Univalues []urlcommon.UnivalueInterface

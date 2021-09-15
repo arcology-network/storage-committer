@@ -5,21 +5,22 @@ import (
 	"reflect"
 	"testing"
 
-	ccurl "github.com/arcology/concurrenturl/v2"
-	ccurlcommon "github.com/arcology/concurrenturl/v2/common"
-	commutative "github.com/arcology/concurrenturl/v2/type/commutative"
-	noncommutative "github.com/arcology/concurrenturl/v2/type/noncommutative"
+	ccurl "github.com/arcology-network/concurrenturl/v2"
+	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
+	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
+	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
 )
 
 func TestMetaIterator(t *testing.T) {
 	store := ccurlcommon.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
-	if err := url.Preload(ccurlcommon.SYSTEM, url.Platform.Eth10(), "alice"); err != nil { // Preload account structure {
+	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), "alice"); err != nil { // CreateAccount account structure {
 		t.Error(err)
 	}
 
 	_, acctTrans := url.Export(false)
-	url.Commit(acctTrans, []uint32{ccurlcommon.SYSTEM})
+	url.Import(acctTrans)
+	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	path, _ := commutative.NewMeta("blcc://eth1.0/account/alice/storage/ctrn-0/")
 	url.Write(1, "blcc://eth1.0/account/alice/storage/ctrn-0/", path)

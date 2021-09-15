@@ -1,4 +1,4 @@
-package urltype
+package ccurltype
 
 import (
 	"bytes"
@@ -8,36 +8,32 @@ import (
 	"sort"
 	"time"
 
-	"github.com/arcology/common-lib/common"
-	merkle "github.com/arcology/common-lib/merkle"
-	ccurlcommon "github.com/arcology/concurrenturl/v2/common"
-	"github.com/elliotchance/orderedmap"
+	"github.com/arcology-network/common-lib/common"
+	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
+	orderedmap "github.com/elliotchance/orderedmap"
 )
 
 type Indexer struct {
-	store   ccurlcommon.DB
-	buffer  map[string]ccurlcommon.UnivalueInterface
-	merkles map[string]*merkle.Merkle
-
-	byTx         map[uint32]*map[string]ccurlcommon.UnivalueInterface
-	byPath       map[string][]ccurlcommon.UnivalueInterface
-	byAcct       *orderedmap.OrderedMap
-	baseStates   map[string]ccurlcommon.UnivalueInterface
+	store        ccurlcommon.DB
+	buffer       map[string]ccurlcommon.UnivalueInterface
+	byTx         map[uint32][]ccurlcommon.UnivalueInterface
+	byPath       map[string]*orderedmap.OrderedMap
+	byPathFirst  map[string]*orderedmap.Element
+	uniquePaths  []string
 	importBuffer map[string]ccurlcommon.UnivalueInterface
+	platform     *ccurlcommon.Platform
 }
 
-func NewIndexer(store ccurlcommon.DB) *Indexer {
+func NewIndexer(store ccurlcommon.DB, platform *ccurlcommon.Platform) *Indexer {
 	var indexer Indexer
 	indexer.store = store
 	indexer.buffer = make(map[string]ccurlcommon.UnivalueInterface, 1024)
-	indexer.merkles = make(map[string]*merkle.Merkle)
-
-	indexer.byTx = make(map[uint32]*map[string]ccurlcommon.UnivalueInterface)
-	indexer.byPath = make(map[string][]ccurlcommon.UnivalueInterface)
-	indexer.byAcct = orderedmap.NewOrderedMap()
-
-	indexer.baseStates = make(map[string]ccurlcommon.UnivalueInterface)
+	indexer.byTx = make(map[uint32][]ccurlcommon.UnivalueInterface)
 	indexer.importBuffer = make(map[string]ccurlcommon.UnivalueInterface)
+	indexer.byPath = make(map[string]*orderedmap.OrderedMap)
+	indexer.byPathFirst = make(map[string]*orderedmap.Element)
+	indexer.uniquePaths = make([]string, 1024)
+	indexer.platform = platform
 	return &indexer
 }
 
@@ -48,7 +44,10 @@ func (this *Indexer) NewValue(tx uint32, path string, value interface{}) ccurlco
 
 func (this *Indexer) Store() *ccurlcommon.DB                            { return &this.store }
 func (this *Indexer) Buffer() *map[string]ccurlcommon.UnivalueInterface { return &this.buffer }
-func (this *Indexer) Merkles() *map[string]*merkle.Merkle               { return &this.merkles }
+func (this *Indexer) ByPath() *map[string]*orderedmap.OrderedMap        { return &this.byPath }
+func (this *Indexer) ByPathFirst() *map[string]*orderedmap.Element      { return &this.byPathFirst }
+
+//func (this *Indexer) Merkles() *map[string]*merkle.Merkle               { return &this.merkles }
 
 func (this *Indexer) IfExists(path string) bool {
 	return this.buffer[path] != nil || this.RetriveShallow(path) != nil
@@ -63,6 +62,8 @@ func (this *Indexer) CheckHistory(tx uint32, path string, ifAddToBuffer bool) cc
 			this.buffer[path] = univalue
 		}
 	}
+
+	this.uniquePaths = append(this.uniquePaths, path)
 	return univalue
 }
 
@@ -83,13 +84,17 @@ func (this *Indexer) Write(tx uint32, path string, value interface{}) error {
 	parentPath := ccurlcommon.GetParentPath(path)
 	if this.IfExists(parentPath) || tx == ccurlcommon.SYSTEM { // The parent path exists or to inject the path directly
 		univalue := this.CheckHistory(tx, path, true)
-		err := univalue.Set(tx, path, value, this)
-		if tx != ccurlcommon.SYSTEM && err == nil {
-			if parentValue := this.CheckHistory(tx, parentPath, true); parentValue != nil {
-				err = parentValue.UpdateParentMeta(tx, univalue, this)
+		if univalue.Value() == nil && value == nil { // Try to delete something nonexistent
+			return nil
+		} else {
+			err := univalue.Set(tx, path, value, this)
+			if !this.platform.OnControlList(parentPath) && tx != ccurlcommon.SYSTEM && err == nil {
+				if parentValue := this.CheckHistory(tx, parentPath, true); parentValue != nil && parentValue.Value() != nil {
+					err = parentValue.UpdateParentMeta(tx, univalue, this)
+				}
 			}
+			return err
 		}
-		return err
 	}
 	return errors.New("Error: The parent path doesn't exist: " + parentPath)
 }
@@ -100,13 +105,6 @@ func (this *Indexer) Insert(path string, value interface{}) {
 
 func (this *Indexer) RetriveShallow(key string) interface{} {
 	return this.store.Retrive(key)
-}
-
-func (this *Indexer) RetriveDeep(key string) interface{} {
-	if v := this.store.Retrive(key); v != nil {
-		return v.(ccurlcommon.TypeInterface).Deepcopy()
-	}
-	return nil
 }
 
 func (this *Indexer) Save(key string, v interface{}) {
@@ -121,186 +119,85 @@ func (this *Indexer) Import(txTrans []ccurlcommon.UnivalueInterface) {
 }
 
 func (this *Indexer) addToBuffers(v ccurlcommon.UnivalueInterface) {
-	if _, ok := this.baseStates[v.GetPath()]; !ok {
-		if value := this.RetriveShallow(v.GetPath()); value != nil { // Get the initial states, shallow copy only
-			this.baseStates[v.GetPath()] = this.NewValue(ccurlcommon.SYSTEM, v.GetPath(), value)
-		} else {
-			if v.Value() == nil { // Tried to delete non-existent elements or the directly INJECTED paths
-				return
+	path := v.GetPath()
+	if _, ok := this.byPath[path]; !ok {
+		this.byPath[path] = orderedmap.NewOrderedMap()
+		if initialState := this.RetriveShallow(path); initialState != nil {
+			v := this.NewValue(ccurlcommon.SYSTEM, path, initialState.(ccurlcommon.TypeInterface).Deepcopy())
+			this.byPath[path].Set(-1, v) //Txs are ordered by Tx, -1 will guarantee the initial state is always the first one
+		}
+	}
+	this.byPath[path].Set(int(v.GetTx()), v)
+	this.byPathFirst[path] = this.byPath[path].Front()
+
+	// Add to the transation index
+	if this.byTx[v.GetTx()] == nil {
+		this.byTx[v.GetTx()] = []ccurlcommon.UnivalueInterface{}
+	}
+	this.byTx[v.GetTx()] = append(this.byTx[v.GetTx()], v)
+}
+
+func (this *Indexer) FinalizeStates() {
+	finalizer := func(start, end, index int, args ...interface{}) {
+		for i := start; i < end; i++ {
+			k := this.uniquePaths[i]
+			if this.byPath[k] == nil {
+				continue
+			}
+
+			begin := this.byPathFirst[k] // Use the first non-nil as the base state
+			v := begin.Value.(ccurlcommon.UnivalueInterface)
+			v.ApplyDelta(ccurlcommon.SYSTEM, begin.Next())
+			if v.Value() != nil {
+				v.Value().(ccurlcommon.TypeInterface).Purge() // clear transient data
 			}
 		}
 	}
-
-	if this.byTx[v.GetTx()] == nil {
-		txMap := make(map[string]ccurlcommon.UnivalueInterface)
-		this.byTx[v.GetTx()] = &txMap
-	}
-
-	(*this.byTx[v.GetTx()])[v.GetPath()] = v
-	this.byPath[v.GetPath()] = append(this.byPath[v.GetPath()], v)
-
-	path := v.GetPath()
-	parent := (&ccurlcommon.Platform{}).Eth10Account()
-	pos := ccurlcommon.SubpathOf(parent, path)
-	if pos >= 0 {
-		pathDict, ok := this.byAcct.Get(path[:pos])
-		if !ok {
-			this.byAcct.Set(path[:pos], orderedmap.NewOrderedMap())
-			pathDict, _ = this.byAcct.Get(path[:pos])
-		}
-		pathDict.(*orderedmap.OrderedMap).Set(path, true)
-
-		// Merkle tree
-		if this.merkles[path[:pos]] == nil {
-			this.merkles[path[:pos]] = merkle.NewMerkle(8, merkle.Sha256)
-		}
-	}
+	common.ParallelWorker(len(this.uniquePaths), 6, finalizer)
 }
 
-func (this *Indexer) Commit(whitelist []uint32) ([]string, []interface{}, []error) {
-	t0 := time.Now()
+// Only keep transation within the whitelist
+func (this *Indexer) WhilteList(whitelist []uint32) []error {
 	errs := []error{}
-	whitelistDict := make(map[uint32]bool, 64)
 	for _, txID := range whitelist {
 		if this.byTx[txID] == nil {
 			errs = append(errs, errors.New("Unknown Transaction ID: "+fmt.Sprint(txID)))
 		} else {
-			whitelistDict[txID] = true
-		}
-	}
-
-	// Keep the whitelisted entries only
-	for txID, txs := range this.byTx {
-		if _, ok := whitelistDict[txID]; !ok {
-			for k := range *txs {
-				(*txs)[k] = nil
+			for i := range this.byTx[txID] {
+				this.byTx[txID][i] = nil
 			}
 		}
 	}
+	return errs
+}
+
+func (this *Indexer) Commit(whitelist []uint32) ([]string, interface{}, []error) {
+	t0 := time.Now()
+	errs := this.WhilteList(whitelist)
 	fmt.Println("Whitelisting:", time.Since(t0))
 
+	/* Get unique keys */
 	t0 = time.Now()
-	// Find the new elements having no initial values
-	newTrans := make([]ccurlcommon.UnivalueInterface, 0, len(this.byPath))
+	this.uniquePaths = make([]string, 0, len(this.byPath))
 	for k := range this.byPath {
-		if this.baseStates[k] == nil {
-			for j, tran := range this.byPath[k] {
-				if tran != nil {
-					newTrans = append(newTrans, tran) // Use the first non-nil element as the initial value
-					this.byPath[k][j] = nil           // Remove it from the buffer
-					break
-				}
-			}
-		}
+		this.uniquePaths = append(this.uniquePaths, k)
 	}
-	fmt.Println("Find the new elements having no initial values:", time.Since(t0))
-
-	// Add the initial values back in
-	for _, tran := range newTrans {
-		this.baseStates[tran.GetPath()] = tran
-	}
-	fmt.Println("Add to the baseStates:", time.Since(t0))
+	fmt.Println("UniqueString "+fmt.Sprint(100000*9), time.Since(t0))
 
 	// Merge and finalize
 	t0 = time.Now()
 	this.FinalizeStates()
 	fmt.Println("FinalizeStates:", time.Since(t0))
 
-	t0 = time.Now()
-
-	paths, states := this.ReadyPersistence() // Strip access info
-	this.ComputeMerkle()
-
-	fmt.Println("ReadyPersistence + ComputeMerkle:", time.Since(t0))
-	this.clear()
-	return paths, states, errs
-}
-
-func (this *Indexer) FinalizeStates() {
-	keys := make([]string, 0, len(this.byPath))
-	for k := range this.byPath {
-		keys = append(keys, k)
-	}
-
-	finalizer := func(start, end, index int, args ...interface{}) {
-		for i := start; i < end; i++ {
-			k := keys[i]
-			v := this.baseStates[k]
-			v.ApplyDelta(ccurlcommon.SYSTEM, this.byPath[k])
-		}
-	}
-	common.ParallelWorker(len(keys), 4, finalizer)
-}
-
-// Purge data before persisting to the storage
-func (this *Indexer) ReadyPersistence() ([]string, []interface{}) {
-	keys := make([]string, 0, len(this.byPath))
-	for k := range this.byPath {
-		keys = append(keys, k)
-	}
-
-	paths := make([]string, 0, len(this.baseStates))
-	states := make([]interface{}, 0, len(this.baseStates))
-	for _, k := range keys {
-		if len(k) == 0 || this.baseStates[k] == nil {
-			continue
-		}
-
-		paths = append(paths, k)
-		v := this.baseStates[k].Value()
-		if v != nil {
-			v.(ccurlcommon.TypeInterface).Purge()
-		}
-		states = append(states, v)
-	}
-
-	return paths, states
-}
-
-// Build a Merkle for every updated account
-func (this *Indexer) ComputeMerkle() []string {
-	uniqueAccts := this.byAcct.Keys()
-
-	hasher := func(start, end, index int, args ...interface{}) {
-		for i := start; i < end; i++ {
-			subDict, ok := this.byAcct.Get(uniqueAccts[i])
-			if !ok {
-				continue
-			}
-
-			// Encode individual transitions
-			data := make([][]byte, 0, subDict.(*orderedmap.OrderedMap).Len())
-			for _, k := range subDict.(*orderedmap.OrderedMap).Keys() {
-				if v := this.baseStates[k.(string)]; v != nil {
-					if v.Value() != nil {
-						data = append(data, v.Value().(ccurlcommon.TypeInterface).EncodeCompact())
-					} else {
-						data = append(data, []byte{})
-					}
-				}
-			}
-			this.merkles[uniqueAccts[i].(string)].Init(data)
-		}
-	}
-	common.ParallelWorker(len(uniqueAccts), 6, hasher)
-
-	accounts := make([]string, 0, len(uniqueAccts))
-	for _, k := range uniqueAccts {
-		if this.baseStates[k.(string)] != nil {
-			accounts = append(accounts, k.(string))
-		}
-	}
-	return accounts
+	return this.uniquePaths, &this.byPath, errs
 }
 
 // Clear all
-func (this *Indexer) clear() {
+func (this *Indexer) Clear() {
 	this.buffer = make(map[string]ccurlcommon.UnivalueInterface)
-	this.byTx = make(map[uint32]*map[string]ccurlcommon.UnivalueInterface)
-	this.byPath = make(map[string][]ccurlcommon.UnivalueInterface)
-	this.byAcct = orderedmap.NewOrderedMap()
-	this.baseStates = make(map[string]ccurlcommon.UnivalueInterface)
+	this.byTx = make(map[uint32][]ccurlcommon.UnivalueInterface)
 	this.importBuffer = make(map[string]ccurlcommon.UnivalueInterface)
+	this.byPath = make(map[string]*orderedmap.OrderedMap)
 }
 
 /* Map to array */

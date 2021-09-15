@@ -24,11 +24,11 @@ github.com/Azure/azure-storage-blob-go v0.7.0/go.mod h1:f9YQKtsG1nMisotuTPpO0tjN
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/DATA-DOG/go-sqlmock v1.3.3/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q5eFN3EC/SaM=
-github.com/arcology/3rd-party v0.9.2-0.20210626004852-924da2642860 h1:KtclB8xECBjucMEJPvyJQlUkhBVhweOuc2HSv3Uh+1s=
-github.com/arcology/3rd-party v0.9.2-0.20210626004852-924da2642860/go.mod h1:lHJmJKi2lvJ/tnpHYxMXeRl9eE8e3Z1rkV0gdm5vnEA=
-github.com/arcology/common-lib v0.9.2-0.20210813024119-47fec6ab26de h1:rpV6JZ3GIqcV5KBDeVH+zc1s5jhLUJeLLaPAWDlAJVw=
-github.com/arcology/common-lib v0.9.2-0.20210813024119-47fec6ab26de/go.mod h1:4xRCtFY4MYczu4f4mloS7j8P8TQ1xEa7n7MVwFZizeY=
-github.com/arcology/evm v1.10.4-0.20210723080918-610ef3636717/go.mod h1:QTbfTezqW8Aj/Dit2Qrcyl6M4ZWN+ZYanB2YIWQa72o=
+github.com/arcology-network/3rd-party v0.9.2-0.20210626004852-924da2642860 h1:KtclB8xECBjucMEJPvyJQlUkhBVhweOuc2HSv3Uh+1s=
+github.com/arcology-network/3rd-party v0.9.2-0.20210626004852-924da2642860/go.mod h1:lHJmJKi2lvJ/tnpHYxMXeRl9eE8e3Z1rkV0gdm5vnEA=
+github.com/arcology-network/common-lib v0.9.2-0.20210813024119-47fec6ab26de h1:rpV6JZ3GIqcV5KBDeVH+zc1s5jhLUJeLLaPAWDlAJVw=
+github.com/arcology-network/common-lib v0.9.2-0.20210813024119-47fec6ab26de/go.mod h1:4xRCtFY4MYczu4f4mloS7j8P8TQ1xEa7n7MVwFZizeY=
+github.com/arcology-network/evm v1.10.4-0.20210723080918-610ef3636717/go.mod h1:QTbfTezqW8Aj/Dit2Qrcyl6M4ZWN+ZYanB2YIWQa72o=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/VictoriaMetrics/fastcache v1.5.7/go.mod h1:ptDBkNMQI4RtmVo8VS/XwRY6RoTu1dAWCbrk+6WsEM8=
 github.com/aead/siphash v1.0.1/go.mod h1:Nywa3cDsYNNK3gaciGTWPwHt0wlpNV15vwmswBAUSII=

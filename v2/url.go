@@ -1,15 +1,20 @@
 package concurrenturl
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
 	"math/big"
 	"reflect"
+	"runtime"
+	"sort"
+	"time"
 
-	"github.com/arcology/common-lib/common"
-	ccurlcommon "github.com/arcology/concurrenturl/v2/common"
-	ccurltype "github.com/arcology/concurrenturl/v2/type"
-	commutative "github.com/arcology/concurrenturl/v2/type/commutative"
-	noncommutative "github.com/arcology/concurrenturl/v2/type/noncommutative"
+	"github.com/arcology-network/common-lib/common"
+	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
+	ccurltype "github.com/arcology-network/concurrenturl/v2/type"
+	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
+	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
 )
 
 type ConcurrentUrl struct {
@@ -17,15 +22,16 @@ type ConcurrentUrl struct {
 	Platform *ccurlcommon.Platform
 }
 
-func NewConcurrentUrl(store ccurlcommon.DB) *ConcurrentUrl {
+func NewConcurrentUrl(store ccurlcommon.DB, args ...interface{}) *ConcurrentUrl {
+	platform := ccurlcommon.NewPlatform()
 	return &ConcurrentUrl{
-		indexer:  ccurltype.NewIndexer(store),
-		Platform: ccurlcommon.NewPlatform(),
+		indexer:  ccurltype.NewIndexer(store, platform),
+		Platform: platform,
 	}
 }
 
 // load accounts
-func (this *ConcurrentUrl) Preload(tx uint32, platform string, acct string) error {
+func (this *ConcurrentUrl) CreateAccount(tx uint32, platform string, acct string) error {
 	paths, syspaths, err := this.Platform.Builtin(platform, acct)
 	for _, p := range paths {
 		path := syspaths[p]
@@ -77,7 +83,7 @@ func (this *ConcurrentUrl) Read(tx uint32, path string) (interface{}, error) {
 }
 
 func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}) error {
-	if !this.Permit(tx, path, ccurlcommon.USER_WRITABLE) {
+	if !this.Permit(tx, path, ccurlcommon.USER_CREATABLE) {
 		return errors.New("Error: No permission to write " + path)
 	}
 
@@ -91,7 +97,7 @@ func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}) erro
 
 // It the access is permitted
 func (this *ConcurrentUrl) Permit(tx uint32, path string, operation uint8) bool {
-	if tx == ccurlcommon.SYSTEM || !this.Platform.OnList(path) { // Either by the system or no need to control
+	if tx == ccurlcommon.SYSTEM || !this.Platform.OnControlList(path) { // Either by the system or no need to control
 		return true
 	}
 
@@ -99,53 +105,113 @@ func (this *ConcurrentUrl) Permit(tx uint32, path string, operation uint8) bool 
 	case ccurlcommon.USER_READABLE:
 		return this.Platform.IsPermitted(path, ccurlcommon.USER_READABLE)
 
-	case ccurlcommon.USER_WRITABLE:
-		return (this.Platform.IsPermitted(path, ccurlcommon.USER_WRITABLE) && !this.indexer.IfExists(path)) || // Initialization
+	case ccurlcommon.USER_CREATABLE:
+		return (this.Platform.IsPermitted(path, ccurlcommon.USER_CREATABLE) && !this.indexer.IfExists(path)) || // Initialization
 			(this.Platform.IsPermitted(path, ccurlcommon.USER_UPDATABLE) && this.indexer.IfExists(path)) // Update
 
 	}
 	return false
 }
 
-func (this *ConcurrentUrl) Commit(transitions []ccurlcommon.UnivalueInterface, txs []uint32) []error {
+func (this *ConcurrentUrl) Import(transitions []ccurlcommon.UnivalueInterface) {
 	this.indexer.Import(transitions)
+}
+
+func (this *ConcurrentUrl) Commit(txs []uint32) []error {
 	paths, states, errs := this.indexer.Commit(txs)
+
 	store := this.indexer.Store()
 	(*store).BatchSave(paths, states) // Commit to the state store
+
 	(*store).Clear()
+	this.Indexer().Clear()
+
 	return errs
 }
 
-func (this *ConcurrentUrl) Export(needToSort bool) ([]ccurlcommon.UnivalueInterface, []ccurlcommon.UnivalueInterface) {
-	records := this.indexer.ToArray(this.indexer.Buffer(), false)
-	recordVec := make([]interface{}, len(records))
-	transVec := make([]interface{}, len(records))
+func (this *ConcurrentUrl) AllInOneCommit(transitions []ccurlcommon.UnivalueInterface, txs []uint32) []error {
+	t0 := time.Now()
+	this.indexer.Import(transitions)
+	fmt.Println("indexer Import :--------------------------------", time.Since(t0))
 
+	/*Account Merkle Tree */
+	t0 = time.Now()
+	accountMerkle := ccurltype.NewAccountMerkle(this.Platform)
+	accountMerkle.Import(transitions)
+	fmt.Println("accountMerkle Import :--------------------------------", time.Since(t0))
+
+	t0 = time.Now()
+	paths, states, errs := this.indexer.Commit(txs)
+	fmt.Println("indexer.Commit :--------------------------------", time.Since(t0))
+
+	t0 = time.Now()
+	runtime.GC()
+	fmt.Println("GC 0:--------------------------------", time.Since(t0))
+
+	// Build the merkle tree
+	t0 = time.Now()
+	accountMerkle.Build(8, this.Indexer().ByPathFirst())
+	fmt.Println("ComputeMerkle:", time.Since(t0))
+
+	t0 = time.Now()
+	store := this.indexer.Store()
+	(*store).BatchSave(paths, states) // Commit to the state store
+	fmt.Println("BatchSave :--------------------------------", time.Since(t0))
+
+	t0 = time.Now()
+	(*store).Clear()
+	this.Indexer().Clear()
+	fmt.Println("Clear :", time.Since(t0))
+	return errs
+}
+
+func (this *ConcurrentUrl) singleThredExport(records []ccurlcommon.UnivalueInterface, recordVec, transVec []interface{}) {
+	for i := 0; i < len(records); i++ {
+		recordVec[i], transVec[i] = records[i].Export(this.indexer)
+	}
+}
+
+func (this *ConcurrentUrl) multiThredExport(records []ccurlcommon.UnivalueInterface, recordVec, transVec []interface{}) {
 	worker := func(start, end, index int, args ...interface{}) {
 		for i := start; i < end; i++ {
 			recordVec[i], transVec[i] = records[i].Export(this.indexer)
 		}
 	}
 	common.ParallelWorker(len(records), 4, worker)
+}
 
-	// Remove duplicates
-	accessDict := make(map[string]ccurlcommon.UnivalueInterface)
-	transDict := make(map[string]ccurlcommon.UnivalueInterface)
-	for i := range recordVec {
-		record := recordVec[i]
-		trans := transVec[i]
+func (this *ConcurrentUrl) Export(needToSort bool) ([]ccurlcommon.UnivalueInterface, []ccurlcommon.UnivalueInterface) {
+	records := this.indexer.ToArray(this.indexer.Buffer(), false)
+	recordVec := make([]interface{}, len(records))
+	transVec := make([]interface{}, len(records))
+	if len(records) < 64 {
+		this.singleThredExport(records, recordVec, transVec)
+	} else {
+		this.multiThredExport(records, recordVec, transVec)
+	}
 
-		if record != nil {
-			accessDict[record.(ccurlcommon.UnivalueInterface).GetPath()] = record.(ccurlcommon.UnivalueInterface)
+	accesses := make([]ccurlcommon.UnivalueInterface, 0, len(records))
+	transitions := make([]ccurlcommon.UnivalueInterface, 0, len(records))
+	for i := 0; i < len(records); i++ {
+		if recordVec[i] != nil {
+			accesses = append(accesses, recordVec[i].(ccurlcommon.UnivalueInterface))
 		}
 
-		if trans != nil {
-			transDict[trans.(ccurlcommon.UnivalueInterface).GetPath()] = trans.(ccurlcommon.UnivalueInterface)
+		if transVec[i] != nil {
+			transitions = append(transitions, transVec[i].(ccurlcommon.UnivalueInterface))
 		}
 	}
 
-	accesses := this.indexer.ToArray(&accessDict, needToSort)
-	transitions := this.indexer.ToArray(&transDict, needToSort)
+	if needToSort { // Sort by path, debug only
+		sort.SliceStable(accesses, func(i, j int) bool {
+			return bytes.Compare([]byte(accesses[i].GetPath()[:]), []byte(accesses[j].GetPath()[:])) < 0
+		})
+
+		sort.SliceStable(transitions, func(i, j int) bool {
+			return bytes.Compare([]byte(transitions[i].GetPath()[:]), []byte(transitions[j].GetPath()[:])) < 0
+		})
+	}
+
 	return accesses, transitions
 }
 

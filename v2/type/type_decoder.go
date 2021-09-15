@@ -1,9 +1,9 @@
-package urltype
+package ccurltype
 
 import (
-	ccurlcommon "github.com/arcology/concurrenturl/v2/common"
-	commutative "github.com/arcology/concurrenturl/v2/type/commutative"
-	noncommutative "github.com/arcology/concurrenturl/v2/type/noncommutative"
+	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
+	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
+	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
 )
 
 type Decoder struct{}

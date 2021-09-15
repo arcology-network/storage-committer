@@ -3,8 +3,9 @@ package noncommutative
 import (
 	"fmt"
 
-	"github.com/arcology/common-lib/codec"
-	ccurlcommon "github.com/arcology/concurrenturl/v2/common"
+	"github.com/arcology-network/common-lib/codec"
+	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
+	"github.com/elliotchance/orderedmap"
 )
 
 type String string
@@ -48,11 +49,20 @@ func (this *String) Set(tx uint32, path string, value interface{}, source interf
 	return 0, 1, nil
 }
 
-func (this *String) ApplyDelta(tx uint32, others []ccurlcommon.UnivalueInterface) ccurlcommon.TypeInterface {
-	for _, other := range others {
-		if other != nil && other.Value() != nil {
-			this.Set(tx, "", other.Value().(*String), nil)
+func (this *String) ApplyDelta(tx uint32, v interface{}) ccurlcommon.TypeInterface {
+	for iter := v.(*orderedmap.Element); iter != nil; iter = iter.Next() {
+		if iter.Value == nil {
+			continue
 		}
+
+		if v := iter.Value.(ccurlcommon.UnivalueInterface).Value(); v != nil {
+			this.Set(tx, "", v.(*String), nil)
+		} else {
+			this = nil
+		}
+	}
+	if this == nil {
+		return nil
 	}
 	return this
 }

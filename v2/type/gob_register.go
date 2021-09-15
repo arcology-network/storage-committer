@@ -1,4 +1,4 @@
-package urltype
+package ccurltype
 
 import (
 	"encoding/gob"

@@ -1,69 +1,56 @@
 package ccurltest
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"math/rand"
 	"testing"
 	"time"
 
-	merkle "github.com/arcology/common-lib/merkle"
-	ccurl "github.com/arcology/concurrenturl/v2"
-	ccurlcommon "github.com/arcology/concurrenturl/v2/common"
-	commutative "github.com/arcology/concurrenturl/v2/type/commutative"
-	noncommutative "github.com/arcology/concurrenturl/v2/type/noncommutative"
+	merkle "github.com/arcology-network/common-lib/merkle"
+	ccurl "github.com/arcology-network/concurrenturl/v2"
+	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
+	ccurltype "github.com/arcology-network/concurrenturl/v2/type"
+	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
+	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
 	orderedmap "github.com/elliotchance/orderedmap"
 )
 
 func BenchmarkSingleAccountCommit(b *testing.B) {
 	store := ccurlcommon.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
-	if err := url.Preload(ccurlcommon.SYSTEM, url.Platform.Eth10(), "alice"); err != nil { // Preload account structure {
+	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), "alice"); err != nil { // CreateAccount account structure {
 		fmt.Println(err)
 	}
 
 	path, _ := commutative.NewMeta("blcc://eth1.0/account/alice/storage/ctrn-0/") // create a path
-	if err := url.Write(0, "blcc://eth1.0/account/alice/storage/ctrn-0/", path); err != nil {
+	if err := url.Write(1, "blcc://eth1.0/account/alice/storage/ctrn-0/", path); err != nil {
 		b.Error(err)
 	}
 
-	t0 := time.Now()
 	for i := 0; i < 100000; i++ {
 		if err := url.Write(0, "blcc://eth1.0/account/alice/storage/ctrn-0/elem-0"+fmt.Sprint(i), noncommutative.NewString("fmt.Sprint(i)")); err != nil { /* The first Element */
 			b.Error(err)
 		}
 	}
-	fmt.Println("First Write:", time.Since(t0))
 
-	t0 = time.Now()
-	for i := 0; i < 100000; i++ {
-		url.Read(0, "blcc://eth1.0/account/alice/storage/ctrn-0/elem-0"+fmt.Sprint(i)) /* The first Element */
-	}
-	fmt.Println("First Read:", time.Since(t0))
+	//t0 = time.Now()
+	_, transitions := url.Export(false)
+	in := ccurltype.Univalues(transitions).Encode()
+	out := ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
 
-	t0 = time.Now()
-	_, trans := url.Export(false)
-	fmt.Println("Export:", time.Since(t0))
+	//fmt.Println("Export:", time.Since(t0))
 
-	t0 = time.Now()
-	url.Indexer().Import(trans)
-	fmt.Println("Import:", time.Since(t0))
-
-	t0 = time.Now()
-	_, _, err := url.Indexer().Commit([]uint32{0})
-	fmt.Println("Commit:", time.Since(t0))
-
-	if len(err) > 0 {
-		b.Error(err)
-	}
-
-	nilHash := merkle.Sha256(nil)
-	fmt.Print(nilHash)
+	t0 := time.Now()
+	url.Import(out)
+	url.Commit([]uint32{0})
+	fmt.Println("Total :", time.Since(t0))
 }
 
 func BenchmarkMultipleAccountCommit(b *testing.B) {
 	store := ccurlcommon.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
-	if err := url.Preload(ccurlcommon.SYSTEM, url.Platform.Eth10(), "alice"); err != nil { // Preload account structure {
+	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), "alice"); err != nil { // CreateAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -75,7 +62,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	t0 := time.Now()
 	for i := 0; i < 2500; i++ {
 		acct := fmt.Sprint(rand.Int())
-		if err := url.Preload(ccurlcommon.SYSTEM, url.Platform.Eth10(), acct); err != nil { // Preload account structure {
+		if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), acct); err != nil { // CreateAccount account structure {
 			fmt.Println(err)
 		}
 
@@ -118,9 +105,10 @@ func BenchmarkUrlAddThenDelete(b *testing.B) {
 	meta, _ := commutative.NewMeta(ccurlcommon.NewPlatform().Eth10Account())
 	url.Write(ccurlcommon.SYSTEM, ccurlcommon.NewPlatform().Eth10Account(), meta)
 	_, trans := url.Export(false)
-	url.Commit(trans, []uint32{ccurlcommon.SYSTEM})
+	url.Import(trans)
+	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
-	if err := url.Preload(ccurlcommon.SYSTEM, url.Platform.Eth10(), "alice"); err != nil { // Preload account structure {
+	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), "alice"); err != nil { // CreateAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -151,9 +139,10 @@ func BenchmarkUrlAddThenPop(b *testing.B) {
 	meta, _ := commutative.NewMeta(ccurlcommon.NewPlatform().Eth10Account())
 	url.Write(ccurlcommon.SYSTEM, ccurlcommon.NewPlatform().Eth10Account(), meta)
 	_, trans := url.Export(false)
-	url.Commit(trans, []uint32{ccurlcommon.SYSTEM})
+	url.Import(trans)
+	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
-	if err := url.Preload(ccurlcommon.SYSTEM, url.Platform.Eth10(), "alice"); err != nil { // Preload account structure {
+	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), "alice"); err != nil { // CreateAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -265,9 +254,10 @@ func BenchmarkShrinkSlice(b *testing.B) {
 func BenchmarkMetaIterator(b *testing.B) {
 	store := ccurlcommon.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
-	url.Preload(ccurlcommon.SYSTEM, url.Platform.Eth10(), "alice")
+	url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), "alice")
 	_, acctTrans := url.Export(false)
-	url.Commit(acctTrans, []uint32{ccurlcommon.SYSTEM})
+	url.Import(acctTrans)
+	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	path, _ := commutative.NewMeta("blcc://eth1.0/account/alice/storage/ctrn-0/")
 	url.Write(1, "blcc://eth1.0/account/alice/storage/ctrn-0/", path)
@@ -300,3 +290,104 @@ func BenchmarkMetaIterator(b *testing.B) {
 		v.(*commutative.Meta).Previous()
 	}
 }
+
+func BenchmarkMapKeyLengthComparison(b *testing.B) {
+	t0 := time.Now()
+	short := make([]string, 100000)
+	long := make([]string, 100000)
+	for i := 0; i < 100000; i++ {
+		long[i] = "blcc://eth1.0/account/alice/storage/ctrn-0/elem-" + fmt.Sprint(i)
+		short[i] = fmt.Sprint(i)
+	}
+	fmt.Println("Write "+fmt.Sprint(100000), time.Since(t0))
+
+	t0 = time.Now()
+	longMap := make(map[[32]byte]string)
+	for i := 0; i < len(long); i++ {
+		longMap[sha256.Sum256([]byte(long[i]))] = long[i]
+	}
+	fmt.Println("longMap / [32]byte key"+fmt.Sprint(100000), time.Since(t0))
+
+	t0 = time.Now()
+	shortKeyMap := make(map[string]string)
+	for i := 0; i < len(short); i++ {
+		shortKeyMap[short[i]] = long[i]
+	}
+	fmt.Println("shortMap / short key"+fmt.Sprint(100000), time.Since(t0))
+
+	t0 = time.Now()
+	longkeyshortMap := make(map[string]string)
+	for i := 0; i < len(short); i++ {
+		longkeyshortMap[short[i]] = long[i]
+	}
+	fmt.Println("shortMap / long key"+fmt.Sprint(100000), time.Since(t0))
+}
+
+func BenchmarkAccountCreationWithMerkle(b *testing.B) {
+	store := ccurlcommon.NewDataStore()
+	meta, _ := commutative.NewMeta((ccurlcommon.NewPlatform().Eth10Account()))
+	store.Save((ccurlcommon.NewPlatform().Eth10Account()), meta)
+
+	t0 := time.Now()
+	url := ccurl.NewConcurrentUrl(store)
+	for i := 0; i < 100000; i++ {
+		if err := url.CreateAccount(0, (url.Platform.Eth10()), fmt.Sprint(rand.Float64())); err != nil { // Preload account structure {
+			b.Error(err)
+		}
+	}
+	fmt.Println("Write "+fmt.Sprint(100000*9), time.Since(t0))
+
+	t0 = time.Now()
+	_, acctTrans := url.Export(false)
+	fmt.Println("Export "+fmt.Sprint(100000*9), time.Since(t0))
+
+	t0 = time.Now()
+	//url.Import(acctTrans)
+	errs := url.AllInOneCommit(acctTrans, []uint32{0})
+	if len(errs) > 0 {
+		fmt.Println(errs)
+	}
+	fmt.Println("Commit + Merkle "+fmt.Sprint(100000*9), time.Since(t0))
+}
+
+func BenchmarkMapKeyForSharding(b *testing.B) {
+	total := 0
+	//keys := make([]string, 100000)
+	key := fmt.Sprint(rand.Int())
+	t0 := time.Now()
+	for i := 0; i < 10; i++ {
+		for j := 0; j < len(key); j++ {
+			//fmt.Print(key[j])
+			total += int(key[j])
+		}
+	}
+	fmt.Println("Total :", total, fmt.Sprint(100000*9), time.Since(t0))
+}
+
+// func TestStringEngine(t *testing.T) {
+// 	paths := make([]string, 4)
+// 	paths[2] = "000000000000000000"
+// 	paths[1] = "1111111111111111111110"
+// 	paths[0] = "2222222222222222"
+// 	paths[3] = "2222222222222222"
+
+// 	se := mhasher.Start()
+// 	err := se.ToBuffer(paths)
+// 	if err != nil {
+// 		fmt.Printf("ToBuffer err: %v\n", err)
+// 		return
+// 	}
+
+// 	retpaths, err := se.FromBuffer(paths)
+// 	if err != nil {
+// 		fmt.Printf("FromBuffer err: %v\n", err)
+// 		return
+// 	}
+
+// 	for i := range retpaths {
+// 		fmt.Printf("paths=%x\n", retpaths[i])
+// 	}
+
+// 	se.Clear()
+// 	se.Stop()
+// }

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"sort"
 
-	ccurlcommon "github.com/arcology/concurrenturl/v2/common"
+	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 	"github.com/elliotchance/orderedmap"
 )
 

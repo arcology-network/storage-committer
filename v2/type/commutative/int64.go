@@ -3,8 +3,9 @@ package commutative
 import (
 	"fmt"
 
-	codec "github.com/arcology/common-lib/codec"
-	ccurlcommon "github.com/arcology/concurrenturl/v2/common"
+	codec "github.com/arcology-network/common-lib/codec"
+	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
+	orderedmap "github.com/elliotchance/orderedmap"
 )
 
 type Int64 struct {
@@ -73,11 +74,21 @@ func (this *Int64) Set(tx uint32, path string, v interface{}, source interface{}
 	return 0, 1, nil
 }
 
-func (this *Int64) ApplyDelta(tx uint32, others []ccurlcommon.UnivalueInterface) ccurlcommon.TypeInterface {
-	for _, other := range others {
-		if other != nil && other.Value() != nil {
-			this.Set(tx, "", other.Value().(*Int64), nil)
+func (this *Int64) ApplyDelta(tx uint32, v interface{}) ccurlcommon.TypeInterface {
+	for iter := v.(*orderedmap.Element); iter != nil; iter = iter.Next() {
+		if iter.Value == nil {
+			continue
 		}
+
+		if v := iter.Value.(ccurlcommon.UnivalueInterface).Value(); v != nil {
+			this.Set(tx, "", v.(*Int64), nil)
+		} else {
+			this = nil
+		}
+	}
+
+	if this == nil {
+		return nil
 	}
 
 	this.value += this.delta

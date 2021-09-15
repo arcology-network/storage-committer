@@ -1,6 +1,8 @@
 package common
 
-import "sync"
+import (
+	"sync"
+)
 
 type ConcurrentDB struct {
 	store DB
@@ -28,11 +30,11 @@ func (db *ConcurrentDB) Retrive(path string) interface{} {
 	return v
 }
 
-func (db *ConcurrentDB) BatchSave(paths []string, states []interface{}) {
+func (db *ConcurrentDB) BatchSave(paths []string, dict interface{}) {
 	db.lock.Lock()
 	defer db.lock.Unlock()
 
-	db.store.BatchSave(paths, states)
+	db.store.BatchSave(paths, dict)
 }
 
 func (db *ConcurrentDB) Print() {
