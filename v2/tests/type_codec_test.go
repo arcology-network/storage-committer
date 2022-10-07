@@ -2,28 +2,29 @@ package ccurltest
 
 import (
 	"fmt"
-	"math/big"
-	"math/rand"
 	"reflect"
 	"testing"
 	"time"
 
-	ccurl "github.com/arcology-network/concurrenturl/v2"
-	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
-	ccurltype "github.com/arcology-network/concurrenturl/v2/type"
-	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
-	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
+	cachedstorage "github.com/HPISTechnologies/common-lib/cachedstorage"
+	datacompression "github.com/HPISTechnologies/common-lib/datacompression"
+	ccurl "github.com/HPISTechnologies/concurrenturl/v2"
+	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
+	ccurltype "github.com/HPISTechnologies/concurrenturl/v2/type"
+	commutative "github.com/HPISTechnologies/concurrenturl/v2/type/commutative"
+	noncommutative "github.com/HPISTechnologies/concurrenturl/v2/type/noncommutative"
 )
 
-func TestCodecNoncommutative(t *testing.T) {
+func TestNoncommutativeCodec(t *testing.T) {
 	/* Noncommutative Path Test*/
-	inPath, err := commutative.NewMeta("blcc://eth1.0/account/alice/storage/ctrn-0/")
+	alice := datacompression.RandomAccount()
+	inPath, err := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
 	if err != nil {
 		t.Error(err)
 	}
 
 	pathBytes := inPath.(*commutative.Meta).Encode()
-	outPath := (&commutative.Meta{}).Decode(pathBytes).(*commutative.Meta)
+	outPath := (&commutative.Meta{}).Decode(pathBytes)
 	if !reflect.DeepEqual(inPath, outPath) {
 		t.Error("Error: Path Encoding/decoding error, paths don't match")
 	}
@@ -66,55 +67,50 @@ func TestCodecNoncommutative(t *testing.T) {
 	}
 }
 
-func TestCodecCommutative(t *testing.T) {
-	/* Commutative Int64 Test */
-	inInt64 := commutative.NewInt64(12345, 0)
-	int64Bytes := inInt64.(*commutative.Int64).Encode()
-	outInt64 := (&commutative.Int64{}).Decode(int64Bytes).(*commutative.Int64)
-	if !reflect.DeepEqual(inInt64, outInt64) {
-		t.Error("Error: Int64 Encoding/decoding error, numbers don't match")
-	}
+func TestUnivalueCodec(t *testing.T) {
+	store := cachedstorage.NewDataStore()
+	transitions := []ccurlcommon.UnivalueInterface{}
 
-	/* Commutative Bigint Test */
-	inBig := commutative.NewBalance(big.NewInt(789456), big.NewInt(0))
-	bigBytes := inBig.(*commutative.Balance).Encode()
-	outBig := (&commutative.Balance{}).Decode(bigBytes).(*commutative.Balance)
-	if !reflect.DeepEqual(inBig, outBig) {
-		t.Error("Error: Bigint Encoding/decoding error, numbers don't match")
+	url := ccurl.NewConcurrentUrl(store)
+	url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), fmt.Sprint("rand.Int()"))
+	_, transVec := url.Export(false)
+	transitions = append(transitions, transVec...)
+
+	for i := 0; i < len(transitions); i++ {
+		buffer := transitions[i].Encode()
+		in := transitions[i]
+		out := (&ccurltype.Univalue{}).Decode(buffer).(ccurlcommon.UnivalueInterface)
+		out.(*ccurltype.Univalue).ClearReserve()
+		if !reflect.DeepEqual(in, out) {
+			fmt.Println("Error: Missmatched")
+		}
 	}
 }
 
-func BenchmarkUnivalueCodec(t *testing.B) {
-	store := ccurlcommon.NewDataStore()
+func TestUnivaluesCodec(t *testing.T) {
+	store := cachedstorage.NewDataStore()
 	transitions := []ccurlcommon.UnivalueInterface{}
-	for i := 0; i < 200000; i++ {
+	for i := 0; i < 110000; i++ {
+		acct := datacompression.RandomAccount()
 		url := ccurl.NewConcurrentUrl(store)
-		url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), fmt.Sprint(rand.Int())+fmt.Sprint(rand.Int())+fmt.Sprint(rand.Int()))
+		url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), acct)
 		_, transVec := url.Export(false)
 		transitions = append(transitions, transVec...)
 	}
 	t0 := time.Now()
-	ccurltype.Univalues(transitions).Encode()
+	buffer := ccurltype.Univalues(transitions).Encode()
 	fmt.Println("Encode() ", len(transitions), " univalue in :", time.Since(t0))
-}
-
-func BenchmarkUnivalueEncodeDecode(t *testing.B) {
-	/* Commutative Int64 Test */
-	v, _ := commutative.NewMeta("blcc://eth1.0/account/alice/storage/ctrn-0/")
-	univalue := ccurltype.NewUnivalue(1, "blcc://eth1.0/account/alice/storage/ctrn-0/elem-000", 3, 4, v)
-	bytes := univalue.Encode()
-	fmt.Println("Encoded length of one entry:", len(bytes)*4)
-
-	in := make([]ccurlcommon.UnivalueInterface, 100000)
-	for i := 0; i < len(in); i++ {
-		in[i] = ccurltype.NewUnivalue(1, "blcc://eth1.0/account/alice/storage/ctrn-0/elem-000", 3, 4, v)
-	}
-
-	t0 := time.Now()
-	bytes = ccurltype.Univalues(in).Encode()
-	fmt.Println("Encoded 100000 entires in :", time.Since(t0), "Total size: ", len(bytes)*4)
 
 	t0 = time.Now()
-	(ccurltype.Univalues([]ccurlcommon.UnivalueInterface{})).Decode(bytes)
-	fmt.Println("Decoded 100000 entires in :", time.Since(t0))
+	out := (ccurltype.Univalues([]ccurlcommon.UnivalueInterface{})).Decode(buffer).(ccurltype.Univalues)
+	fmt.Println("Decode() ", len(transitions), " univalue in :", time.Since(t0))
+
+	for i := 0; i < len(transitions); i++ {
+		tran := transitions[i]
+		univ := out[i].(*ccurltype.Univalue)
+		univ.ClearReserve()
+		if !reflect.DeepEqual(tran, univ) {
+			//fmt.Println("Error: Missmatched")
+		}
+	}
 }

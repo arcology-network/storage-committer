@@ -3,9 +3,8 @@ package noncommutative
 import (
 	"fmt"
 
-	"github.com/arcology-network/common-lib/codec"
-	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
-	"github.com/elliotchance/orderedmap"
+	"github.com/HPISTechnologies/common-lib/codec"
+	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
 )
 
 type Int64 int64
@@ -21,6 +20,10 @@ func (this *Int64) TypeID() uint8 { return ccurlcommon.NoncommutativeInt64 }
 func (this *Int64) Deepcopy() interface{} {
 	value := *this
 	return (*Int64)(&value)
+}
+
+func (this *Int64) Size() uint32 {
+	return 8 // 8 bytes
 }
 
 func (this *Int64) Value() interface{} {
@@ -51,14 +54,22 @@ func (this *Int64) Set(tx uint32, path string, value interface{}, source interfa
 }
 
 func (this *Int64) ApplyDelta(tx uint32, v interface{}) ccurlcommon.TypeInterface {
-	for iter := v.(*orderedmap.Element); iter != nil; iter = iter.Next() {
-		if iter.Value == nil {
-			continue
+	vec := v.([]ccurlcommon.UnivalueInterface)
+	for i := 0; i < len(vec); i++ {
+		v := vec[i].Value()
+		if this == nil && v != nil { // New value
+			this = v.(*Int64)
 		}
 
-		if v := iter.Value.(ccurlcommon.UnivalueInterface).Value(); v != nil {
+		if this == nil && v == nil {
+			this = nil
+		}
+
+		if this != nil && v != nil {
 			this.Set(tx, "", v.(*Int64), nil)
-		} else {
+		}
+
+		if this != nil && v == nil {
 			this = nil
 		}
 	}
@@ -75,8 +86,12 @@ func (this *Int64) Encode() []byte {
 	return codec.Int64(int64(*this)).Encode()
 }
 
+func (this *Int64) EncodeToBuffer(buffer []byte) {
+	codec.Int64(*this).EncodeToBuffer(buffer)
+}
+
 func (*Int64) Decode(bytes []byte) interface{} {
-	this := Int64(codec.Int64(0).Decode(bytes))
+	this := Int64(codec.Int64(0).Decode(bytes).(codec.Int64))
 	return &this
 }
 
@@ -88,7 +103,7 @@ func (this *Int64) DecodeCompact(bytes []byte) interface{} {
 	return this.Decode(bytes)
 }
 
-func (*Int64) Purge() {}
+func (this *Int64) Purge() {}
 
 func (this *Int64) Hash(hasher func([]byte) []byte) []byte {
 	return hasher(this.EncodeCompact())

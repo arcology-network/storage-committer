@@ -1,25 +1,50 @@
 package ccurltype
 
 import (
+	"bytes"
+	"crypto/sha256"
 	"fmt"
+	"sort"
 
-	"github.com/arcology-network/common-lib/codec"
-	"github.com/arcology-network/common-lib/common"
-	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
+	"github.com/HPISTechnologies/common-lib/codec"
+	"github.com/HPISTechnologies/common-lib/common"
+	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
 )
 
 type Univalues []ccurlcommon.UnivalueInterface
 
-func (this Univalues) IfContains(condition ccurlcommon.UnivalueInterface) bool {
-	for _, v := range this {
-		if (v).(*Univalue).EqualTransition(condition.(*Univalue)) {
-			return true
+/* --------------------------------------------------------------- */
+func (this Univalues) Encode() []byte {
+	lengths := make([]uint32, len(this))
+	worker := func(start, end, index int, args ...interface{}) {
+		for i := start; i < end; i++ {
+			if this[i] != nil {
+				lengths[i] = this[i].(*Univalue).Size()
+			}
 		}
 	}
-	return false
+	common.ParallelWorker(len(this), 6, worker)
+
+	offsets := make([]uint32, len(this)+1)
+	for i := 0; i < len(lengths); i++ {
+		offsets[i+1] = offsets[i] + lengths[i]
+	}
+
+	headerLen := uint32((len(this) + 1) * codec.UINT32_LEN)
+	buffer := make([]byte, headerLen+offsets[len(offsets)-1])
+
+	codec.Uint32(len(this)).EncodeToBuffer(buffer)
+	worker = func(start, end, index int, args ...interface{}) {
+		for i := start; i < end; i++ {
+			codec.Uint32(offsets[i]).EncodeToBuffer(buffer[(i+1)*codec.UINT32_LEN:])
+			this[i].(*Univalue).EncodeToBuffer(buffer[headerLen+offsets[i]:])
+		}
+	}
+	common.ParallelWorker(len(this), 6, worker)
+	return buffer
 }
 
-func (this Univalues) Encode() []byte {
+func (this Univalues) EncodeSimple() []byte {
 	byteset := make([][]byte, len(this))
 	worker := func(start, end, index int, args ...interface{}) {
 		for i := start; i < end; i++ {
@@ -30,19 +55,6 @@ func (this Univalues) Encode() []byte {
 	return codec.Byteset(byteset).Encode()
 }
 
-func (Univalues) Decode(bytes []byte) interface{} {
-	bytesset := codec.Byteset{}.Decode(bytes)
-	univalues := make([]ccurlcommon.UnivalueInterface, len(bytesset))
-	worker := func(start, end, index int, args ...interface{}) {
-		for i := start; i < end; i++ {
-			v := (&Univalue{}).Decode(bytesset[i])
-			univalues[i] = v.(ccurlcommon.UnivalueInterface)
-		}
-	}
-	common.ParallelWorker(len(bytesset), 6, worker)
-	return Univalues(univalues)
-}
-
 func (this Univalues) EncodeV2() [][]byte {
 	byteset := make([][]byte, len(this))
 	for i := range this {
@@ -51,11 +63,30 @@ func (this Univalues) EncodeV2() [][]byte {
 	return byteset
 }
 
-func (Univalues) DecodeV2(bytesset [][]byte) Univalues {
+func (Univalues) Decode(bytes []byte) interface{} {
+	if len(bytes) == 0 {
+		return nil
+	}
+
+	buffers := [][]byte(codec.Byteset{}.Decode(bytes).(codec.Byteset))
+	univalues := make([]ccurlcommon.UnivalueInterface, len(buffers))
+	worker := func(start, end, index int, args ...interface{}) {
+		for i := start; i < end; i++ {
+			v := (&Univalue{}).Decode(buffers[i])
+			univalues[i] = v.(ccurlcommon.UnivalueInterface)
+		}
+	}
+	common.ParallelWorker(len(buffers), 6, worker)
+	return Univalues(univalues)
+}
+
+func (Univalues) DecodeV2(bytesset [][]byte, get func() interface{}, put func(interface{})) Univalues {
 	univalues := make([]ccurlcommon.UnivalueInterface, len(bytesset))
 	for i := range bytesset {
-		v := (&Univalue{}).Decode(bytesset[i])
-		univalues[i] = v.(ccurlcommon.UnivalueInterface)
+		v := get().(*Univalue)
+		v.reclaimFunc = put
+		v.Decode(bytesset[i])
+		univalues[i] = v
 	}
 	return Univalues(univalues)
 }
@@ -75,4 +106,35 @@ func (this Univalues) Print() {
 		v.Print()
 	}
 	fmt.Println(" --------------------  ")
+}
+
+func (this Univalues) GetEncodedSize() [][]int {
+	sizes := make([][]int, len(this))
+	for i, v := range this {
+		sizes[i] = v.(*Univalue).GetEncodedSize()
+	}
+	return sizes
+}
+
+func (this Univalues) Sort() {
+	sort.SliceStable(this, func(i, j int) bool {
+		lhs := (*(this[i].GetPath()))
+		rhs := (*(this[j].GetPath()))
+		return bytes.Compare([]byte(lhs)[:], []byte(rhs)[:]) < 0
+	})
+	//return this
+}
+
+func (this Univalues) IfContains(condition ccurlcommon.UnivalueInterface) bool {
+	for _, v := range this {
+		if (v).(*Univalue).EqualTransition(condition.(*Univalue)) {
+			return true
+		}
+	}
+	return false
+}
+
+// For debug only
+func (this Univalues) Checksum() [32]byte {
+	return sha256.Sum256(this.Encode())
 }

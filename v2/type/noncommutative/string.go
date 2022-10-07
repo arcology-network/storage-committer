@@ -3,9 +3,9 @@ package noncommutative
 import (
 	"fmt"
 
-	"github.com/arcology-network/common-lib/codec"
-	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
-	"github.com/elliotchance/orderedmap"
+	"github.com/HPISTechnologies/common-lib/codec"
+	"github.com/HPISTechnologies/common-lib/common"
+	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
 )
 
 type String string
@@ -20,6 +20,10 @@ func (this *String) TypeID() uint8 { return uint8(ccurlcommon.NoncommutativeStri
 func (this *String) Deepcopy() interface{} {
 	value := *this
 	return (*String)(&value)
+}
+
+func (this *String) Size() uint32 {
+	return uint32(len(*this))
 }
 
 func (this *String) Value() interface{} {
@@ -50,17 +54,26 @@ func (this *String) Set(tx uint32, path string, value interface{}, source interf
 }
 
 func (this *String) ApplyDelta(tx uint32, v interface{}) ccurlcommon.TypeInterface {
-	for iter := v.(*orderedmap.Element); iter != nil; iter = iter.Next() {
-		if iter.Value == nil {
-			continue
+	vec := v.([]ccurlcommon.UnivalueInterface)
+	for i := 0; i < len(vec); i++ {
+		v := vec[i].Value()
+		if this == nil && v != nil { // New value
+			this = v.(*String)
 		}
 
-		if v := iter.Value.(ccurlcommon.UnivalueInterface).Value(); v != nil {
+		if this == nil && v == nil {
+			this = nil
+		}
+
+		if this != nil && v != nil {
 			this.Set(tx, "", v.(*String), nil)
-		} else {
+		}
+
+		if this != nil && v == nil {
 			this = nil
 		}
 	}
+
 	if this == nil {
 		return nil
 	}
@@ -73,8 +86,12 @@ func (this *String) Encode() []byte {
 	return codec.String(string(*this)).Encode()
 }
 
+func (this *String) EncodeToBuffer(buffer []byte) {
+	codec.String(*this).EncodeToBuffer(buffer)
+}
+
 func (this *String) Decode(bytes []byte) interface{} {
-	*this = String(codec.String("").Decode(bytes))
+	*this = String(codec.String("").Decode(common.ArrayCopy(bytes)).(codec.String))
 	return this
 }
 

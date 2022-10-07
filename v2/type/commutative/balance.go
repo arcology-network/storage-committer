@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"math/big"
 
-	codec "github.com/arcology-network/common-lib/codec"
-	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
-	orderedmap "github.com/elliotchance/orderedmap"
+	codec "github.com/HPISTechnologies/common-lib/codec"
+	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
 )
 
 type Balance struct {
@@ -30,6 +29,10 @@ func (this *Balance) Deepcopy() interface{} {
 		new(big.Int).Set(this.value),
 		new(big.Int).Set(this.delta),
 	}
+}
+
+func (this *Balance) HeaderSize() uint32 {
+	return 4 * codec.UINT32_LEN
 }
 
 func (this *Balance) Value() interface{} {
@@ -85,15 +88,22 @@ func (this *Balance) Peek(source interface{}) interface{} {
 }
 
 func (this *Balance) ApplyDelta(tx uint32, v interface{}) ccurlcommon.TypeInterface {
-	for iter := v.(*orderedmap.Element); iter != nil; iter = iter.Next() {
-		if iter.Value == nil {
-			continue
+	vec := v.([]ccurlcommon.UnivalueInterface)
+	for i := 0; i < len(vec); i++ {
+		v := vec[i].Value()
+		if this == nil && v != nil { // New value
+			this = v.(*Balance)
 		}
 
-		v := iter.Value.(ccurlcommon.UnivalueInterface).Value()
-		if v != nil {
+		if this == nil && v == nil {
+			this = nil
+		}
+
+		if this != nil && v != nil {
 			this.Set(tx, "", v.(*Balance), nil)
-		} else {
+		}
+
+		if this != nil && v == nil {
 			this = nil
 		}
 	}
@@ -118,31 +128,67 @@ func (this *Balance) Hash(hasher func([]byte) []byte) []byte {
 	return hasher(this.EncodeCompact())
 }
 
+func (this *Balance) Size() uint32 {
+	v := codec.Bigint(*this.value)
+	d := codec.Bigint(*this.delta)
+	return this.HeaderSize() +
+		codec.Bool(this.finalized).Size() +
+		(&v).Size() +
+		(&d).Size()
+}
+
 func (this *Balance) Encode() []byte {
+	buffer := make([]byte, this.Size())
+	this.EncodeToBuffer(buffer)
+	return buffer
+}
+
+func (this *Balance) EncodeToBuffer(buffer []byte) {
 	v := codec.Bigint(*(this.value))
 	d := codec.Bigint(*(this.delta))
-	return codec.Byteset{
-		codec.Bool(this.finalized).Encode(),
-		(&v).Encode(),
-		(&d).Encode(),
-	}.Encode()
+
+	codec.Uint32(3).EncodeToBuffer(buffer)
+
+	offset := uint32(0)
+	codec.Uint32(offset).EncodeToBuffer(buffer[codec.UINT32_LEN*1:])
+	codec.Bool(this.finalized).EncodeToBuffer(buffer[4*codec.UINT32_LEN+offset:])
+	offset += codec.Bool(this.finalized).Size()
+
+	codec.Uint32(offset).EncodeToBuffer(buffer[codec.UINT32_LEN*2:])
+	v.EncodeToBuffer(buffer[4*codec.UINT32_LEN+offset:])
+	offset += v.Size()
+
+	codec.Uint32(offset).EncodeToBuffer(buffer[codec.UINT32_LEN*3:])
+	d.EncodeToBuffer(buffer[4*codec.UINT32_LEN+offset:])
 }
 
 func (*Balance) Decode(data []byte) interface{} {
-	fields := codec.Byteset{}.Decode(data)
+	fields := codec.Byteset{}.Decode(data).(codec.Byteset)
 	return &Balance{
-		finalized: bool(codec.Bool(true).Decode(fields[0])),
-		value:     (&codec.Bigint{}).Decode(fields[1]),
-		delta:     (&codec.Bigint{}).Decode(fields[2]),
+		finalized: bool(codec.Bool(true).Decode(fields[0]).(codec.Bool)),
+		value:     (*big.Int)((&codec.Bigint{}).Decode(fields[1]).(*codec.Bigint)),
+		delta:     (*big.Int)((&codec.Bigint{}).Decode(fields[2]).(*codec.Bigint)),
 	}
 }
 
 func (this *Balance) EncodeCompact() []byte {
-	return this.value.Bytes()
+	v := codec.Bigint(*(this.value))
+	totalSize := 2*codec.UINT32_LEN + (&v).Size()
+	buffer := make([]byte, totalSize)
+
+	codec.Uint32(1).EncodeToBuffer(buffer)
+
+	offset := uint32(0)
+	codec.Uint32(offset).EncodeToBuffer(buffer[codec.UINT32_LEN*1:])
+	v.EncodeToBuffer(buffer[2*codec.UINT32_LEN+offset:])
+
+	return buffer //this.value.Bytes()
 }
 
 func (this *Balance) DecodeCompact(bytes []byte) interface{} {
-	return NewBalance((&big.Int{}).SetBytes(bytes), &big.Int{})
+	//return NewBalance((&big.Int{}).SetBytes(bytes), &big.Int{})
+	fields := codec.Byteset{}.Decode(bytes).(codec.Byteset)
+	return NewBalance((*big.Int)((&codec.Bigint{}).Decode(fields[0]).(*codec.Bigint)), &big.Int{})
 }
 
 func (this *Balance) Print() {
@@ -151,6 +197,6 @@ func (this *Balance) Print() {
 	fmt.Println()
 }
 
-func (this *Balance) GetDelta() *big.Int {
+func (this *Balance) GetDelta() interface{} {
 	return this.delta
 }

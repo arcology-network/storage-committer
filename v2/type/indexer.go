@@ -6,64 +6,76 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
-	"time"
 
-	"github.com/arcology-network/common-lib/common"
-	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
-	orderedmap "github.com/elliotchance/orderedmap"
+	common "github.com/HPISTechnologies/common-lib/common"
+	cccontainermap "github.com/HPISTechnologies/common-lib/concurrentcontainer/map"
+	"github.com/HPISTechnologies/common-lib/mempool"
+	performance "github.com/HPISTechnologies/common-lib/mhasher"
+	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
 )
 
 type Indexer struct {
-	store        ccurlcommon.DB
-	buffer       map[string]ccurlcommon.UnivalueInterface
-	byTx         map[uint32][]ccurlcommon.UnivalueInterface
-	byPath       map[string]*orderedmap.OrderedMap
-	byPathFirst  map[string]*orderedmap.Element
-	uniquePaths  []string
-	importBuffer map[string]ccurlcommon.UnivalueInterface
-	platform     *ccurlcommon.Platform
+	numThreads int
+	store      ccurlcommon.DatastoreInterface
+	buffer     map[string]ccurlcommon.UnivalueInterface // KV lookup
+	byTx       map[uint32][]ccurlcommon.UnivalueInterface
+	byPath     *cccontainermap.ConcurrentMap
+
+	platform      *ccurlcommon.Platform
+	updatedKeys   []string      // Keys updated in the circle
+	updatedValues []interface{} // Value updated in the circle
+	seqPool       *mempool.Mempool
+	uniPool       *mempool.Mempool
 }
 
-func NewIndexer(store ccurlcommon.DB, platform *ccurlcommon.Platform) *Indexer {
+func NewIndexer(store ccurlcommon.DatastoreInterface, platform *ccurlcommon.Platform, args ...interface{}) *Indexer {
 	var indexer Indexer
+	indexer.numThreads = 8
 	indexer.store = store
-	indexer.buffer = make(map[string]ccurlcommon.UnivalueInterface, 1024)
+	indexer.buffer = make(map[string]ccurlcommon.UnivalueInterface)
 	indexer.byTx = make(map[uint32][]ccurlcommon.UnivalueInterface)
-	indexer.importBuffer = make(map[string]ccurlcommon.UnivalueInterface)
-	indexer.byPath = make(map[string]*orderedmap.OrderedMap)
-	indexer.byPathFirst = make(map[string]*orderedmap.Element)
-	indexer.uniquePaths = make([]string, 1024)
 	indexer.platform = platform
+	indexer.byPath = cccontainermap.NewConcurrentMap()
+
+	indexer.seqPool = mempool.NewMempool("seq", func() interface{} {
+		return NewDeltaSequence()
+	})
+
+	indexer.uniPool = mempool.NewMempool("univalue", func() interface{} {
+		return new(Univalue)
+	})
 	return &indexer
 }
 
-func (this *Indexer) NewValue(tx uint32, path string, value interface{}) ccurlcommon.UnivalueInterface {
-	univalue := NewUnivalue(tx, path, 0, 0, value, this)
-	return univalue
+func (indexer *Indexer) Init(store ccurlcommon.DatastoreInterface) {
+	indexer.store = store
+	indexer.Clear()
 }
 
-func (this *Indexer) Store() *ccurlcommon.DB                            { return &this.store }
+func (this *Indexer) Store() *ccurlcommon.DatastoreInterface            { return &this.store }
 func (this *Indexer) Buffer() *map[string]ccurlcommon.UnivalueInterface { return &this.buffer }
-func (this *Indexer) ByPath() *map[string]*orderedmap.OrderedMap        { return &this.byPath }
-func (this *Indexer) ByPathFirst() *map[string]*orderedmap.Element      { return &this.byPathFirst }
-
-//func (this *Indexer) Merkles() *map[string]*merkle.Merkle               { return &this.merkles }
+func (this *Indexer) ByPath() interface{}                               { return this.byPath }
 
 func (this *Indexer) IfExists(path string) bool {
 	return this.buffer[path] != nil || this.RetriveShallow(path) != nil
+}
+
+func (this *Indexer) NewUnivalue() *Univalue {
+	v := this.uniPool.Get().(*Univalue)
+	return v
 }
 
 // If the access has been recorded
 func (this *Indexer) CheckHistory(tx uint32, path string, ifAddToBuffer bool) ccurlcommon.UnivalueInterface {
 	univalue := this.buffer[path]
 	if univalue == nil { // Not in the buffer, check the datastore
-		univalue = this.NewValue(tx, path, this.RetriveShallow(path)) // Make a shallow copy only by default
+		univalue = this.NewUnivalue()
+		univalue.(*Univalue).Init(ccurlcommon.VARIATE_TRANSITIONS, tx, path, 0, 0, this.RetriveShallow(path), this)
+
 		if ifAddToBuffer {
 			this.buffer[path] = univalue
 		}
 	}
-
-	this.uniquePaths = append(this.uniquePaths, path)
 	return univalue
 }
 
@@ -88,10 +100,13 @@ func (this *Indexer) Write(tx uint32, path string, value interface{}) error {
 			return nil
 		} else {
 			err := univalue.Set(tx, path, value, this)
-			if !this.platform.OnControlList(parentPath) && tx != ccurlcommon.SYSTEM && err == nil {
-				if parentValue := this.CheckHistory(tx, parentPath, true); parentValue != nil && parentValue.Value() != nil {
-					err = parentValue.UpdateParentMeta(tx, univalue, this)
+			if !this.platform.OnControlList(parentPath) && tx != ccurlcommon.SYSTEM && err == nil { // System paths don't keep track of child paths
+				if parentValue := this.CheckHistory(tx, parentPath, false); parentValue != nil && parentValue.Value() != nil {
+					if parentValue.UpdateParentMeta(tx, univalue, this) {
+						this.buffer[parentPath] = parentValue
+					}
 				}
+
 			}
 			return err
 		}
@@ -104,126 +119,192 @@ func (this *Indexer) Insert(path string, value interface{}) {
 }
 
 func (this *Indexer) RetriveShallow(key string) interface{} {
-	return this.store.Retrive(key)
+	ret, _ := this.store.Retrive(key)
+	return ret
 }
 
-func (this *Indexer) Save(key string, v interface{}) {
-	this.store.Save(key, v)
-}
-
-// All transitions from one traxiton
-func (this *Indexer) Import(txTrans []ccurlcommon.UnivalueInterface) {
-	for _, v := range txTrans {
-		this.addToBuffers(v)
+func (this *Indexer) Import(txTrans []ccurlcommon.UnivalueInterface, args ...interface{}) {
+	ifCommit := true
+	if len(args) > 0 && args[0] != nil {
+		ifCommit = args[0].(bool)
 	}
-}
 
-func (this *Indexer) addToBuffers(v ccurlcommon.UnivalueInterface) {
-	path := v.GetPath()
-	if _, ok := this.byPath[path]; !ok {
-		this.byPath[path] = orderedmap.NewOrderedMap()
-		if initialState := this.RetriveShallow(path); initialState != nil {
-			v := this.NewValue(ccurlcommon.SYSTEM, path, initialState.(ccurlcommon.TypeInterface).Deepcopy())
-			this.byPath[path].Set(-1, v) //Txs are ordered by Tx, -1 will guarantee the initial state is always the first one
+	nKeys := make([]string, len(txTrans))
+	for i, v := range txTrans {
+		nKeys[i] = *v.GetPath()
+	}
+
+	// Create delta sequences all at once
+	deltaSeq := this.byPath.BatchGet(nKeys) // If the entries exist in the buffer already
+
+	inLocalCache := this.store.BatchRetrive(nKeys)
+	worker := func(start, end, index int, args ...interface{}) {
+		seqPool := this.seqPool.GetTlsMempool(index)
+		uniPool := this.uniPool.GetTlsMempool(index)
+		for i := start; i < end; i++ {
+			if deltaSeq[i] == nil { // The entry does't exist in the buffer
+				preexist := txTrans[i].Preexist()
+				if inLocalCache[i] == nil && ifCommit && preexist { //preexists but not available locally
+					nKeys[i] = ""
+					txTrans[i] = nil
+					continue
+				}
+
+				deltaSeq[i] = seqPool.Get().(*DeltaSequence)                // create a new delta sequence from the pool
+				deltaSeq[i].(*DeltaSequence).Reset(nKeys[i], this, uniPool) // Reset the sequence
+
+				if !preexist { //new entry
+					continue
+				}
+				deltaSeq[i].(*DeltaSequence).Init(nKeys[i], this, uniPool) // Get the initial value from the cache / persistent DB
+			}
 		}
 	}
-	this.byPath[path].Set(int(v.GetTx()), v)
-	this.byPathFirst[path] = this.byPath[path].Front()
+	common.ParallelWorker(len(nKeys), this.numThreads, worker)
 
-	// Add to the transation index
-	if this.byTx[v.GetTx()] == nil {
-		this.byTx[v.GetTx()] = []ccurlcommon.UnivalueInterface{}
-	}
-	this.byTx[v.GetTx()] = append(this.byTx[v.GetTx()], v)
-}
-
-func (this *Indexer) FinalizeStates() {
-	finalizer := func(start, end, index int, args ...interface{}) {
+	this.byPath.BatchSet(nKeys, deltaSeq)                          // Create new empty sequences all at once
+	Inserter := func(start, end, index int, args ...interface{}) { // Insert the transitions to the sequences
 		for i := start; i < end; i++ {
-			k := this.uniquePaths[i]
-			if this.byPath[k] == nil {
+			if deltaSeq[i] == nil {
 				continue
 			}
 
-			begin := this.byPathFirst[k] // Use the first non-nil as the base state
-			v := begin.Value.(ccurlcommon.UnivalueInterface)
-			v.ApplyDelta(ccurlcommon.SYSTEM, begin.Next())
-			if v.Value() != nil {
-				v.Value().(ccurlcommon.TypeInterface).Purge() // clear transient data
-			}
+			deltaSeq, _ := this.byPath.Get(*txTrans[i].GetPath())
+			deltaSeq.(*DeltaSequence).Insert(txTrans[i])
 		}
 	}
-	common.ParallelWorker(len(this.uniquePaths), 6, finalizer)
+	common.ParallelWorker(len(txTrans), this.numThreads, Inserter)
+
+	for i := 0; i < len(txTrans); i++ { // Update the transaction ID index
+		v := txTrans[i]
+		if v == nil {
+			continue
+		}
+
+		if this.byTx[v.GetTx()] == nil {
+			this.byTx[v.GetTx()] = make([]ccurlcommon.UnivalueInterface, 0, 32)
+		}
+		this.byTx[v.GetTx()] = append(this.byTx[v.GetTx()], v)
+	}
 }
 
 // Only keep transation within the whitelist
 func (this *Indexer) WhilteList(whitelist []uint32) []error {
-	errs := []error{}
+	dict := make(map[uint32]bool)
 	for _, txID := range whitelist {
-		if this.byTx[txID] == nil {
-			errs = append(errs, errors.New("Unknown Transaction ID: "+fmt.Sprint(txID)))
-		} else {
-			for i := range this.byTx[txID] {
-				this.byTx[txID][i] = nil
+		dict[txID] = true
+	}
+
+	for k, vec := range this.byTx {
+		if k == ccurlcommon.SYSTEM {
+			continue
+		}
+
+		if _, ok := dict[k]; !ok {
+			for _, v := range vec {
+				v.(*Univalue).path = nil
 			}
 		}
 	}
-	return errs
+	return []error{}
 }
 
-func (this *Indexer) Commit(whitelist []uint32) ([]string, interface{}, []error) {
-	t0 := time.Now()
-	errs := this.WhilteList(whitelist)
-	fmt.Println("Whitelisting:", time.Since(t0))
-
-	/* Get unique keys */
-	t0 = time.Now()
-	this.uniquePaths = make([]string, 0, len(this.byPath))
-	for k := range this.byPath {
-		this.uniquePaths = append(this.uniquePaths, k)
+func (this *Indexer) SortTransitions() {
+	this.updatedKeys = this.byPath.Keys()
+	var err error
+	this.updatedKeys, err = performance.SortStrings(this.updatedKeys) // Keys should be unique
+	if err != nil {
+		panic(err)
 	}
-	fmt.Println("UniqueString "+fmt.Sprint(100000*9), time.Since(t0))
 
-	// Merge and finalize
-	t0 = time.Now()
-	this.FinalizeStates()
-	fmt.Println("FinalizeStates:", time.Since(t0))
+	sorter := func(start, end, index int, args ...interface{}) {
+		for i := start; i < end; i++ {
+			deltaSeq, _ := this.byPath.Get(this.updatedKeys[i])
+			deltaSeq.(*DeltaSequence).Sort()
+		}
+	}
+	common.ParallelWorker(len(this.updatedKeys), this.numThreads, sorter)
+}
 
-	return this.uniquePaths, &this.byPath, errs
+// 	Merge and finalize state deltas
+func (this *Indexer) FinalizeStates() {
+	this.updatedValues = this.updatedValues[:0]
+	this.updatedValues = append(this.updatedValues, make([]interface{}, len(this.updatedKeys))...)
+	finalizer := func(start, end, index int, args ...interface{}) {
+		for i := start; i < end; i++ {
+			deltaSeq, _ := this.byPath.Get(this.updatedKeys[i])
+			deltaSeq.(*DeltaSequence).Finalize()
+			if deltaSeq.(*DeltaSequence).Value() == nil { // Some sequences may have been deleted with transactions they belong
+				this.updatedKeys[i] = ""
+				this.updatedValues[i] = nil
+				continue
+			}
+			this.updatedValues[i] = deltaSeq.(*DeltaSequence).Value().(ccurlcommon.UnivalueInterface)
+		}
+	}
+	common.ParallelWorker(len(this.updatedKeys), this.numThreads, finalizer)
+	common.RemoveEmptyStrings(&this.updatedKeys)
+	common.RemoveNils(&this.updatedValues)
+}
+
+func (this *Indexer) KVs() ([]string, []interface{}) {
+	common.RemoveEmptyStrings(&this.updatedKeys)
+	common.RemoveNils(&this.updatedValues)
+	return this.updatedKeys, this.updatedValues
 }
 
 // Clear all
 func (this *Indexer) Clear() {
 	this.buffer = make(map[string]ccurlcommon.UnivalueInterface)
-	this.byTx = make(map[uint32][]ccurlcommon.UnivalueInterface)
-	this.importBuffer = make(map[string]ccurlcommon.UnivalueInterface)
-	this.byPath = make(map[string]*orderedmap.OrderedMap)
+	for k, v := range this.byTx {
+		this.byTx[k] = v[:0]
+	}
+
+	this.byPath = cccontainermap.NewConcurrentMap()
+	this.updatedKeys = this.updatedKeys[:0]
+	this.updatedValues = this.updatedValues[:0]
+
+	this.seqPool.ForEachAllocated(func(obj interface{}) {
+		obj.(*DeltaSequence).Reclaim()
+	})
+
+	this.uniPool.ForEachAllocated(func(obj interface{}) {
+		obj.(*Univalue).Reclaim()
+	})
+
+	this.seqPool.ReclaimRecursive()
+	this.uniPool.ReclaimRecursive()
+	this.store.Clear()
 }
 
 /* Map to array */
-func (*Indexer) ToArray(dict *map[string]ccurlcommon.UnivalueInterface, needToSort bool) []ccurlcommon.UnivalueInterface {
-	array := make([]ccurlcommon.UnivalueInterface, 0, len(*dict))
+func (*Indexer) Vectorize(dict *map[string]ccurlcommon.UnivalueInterface, valBuf *[]ccurlcommon.UnivalueInterface, needToSort bool) {
+	*valBuf = (*valBuf)[:0]
 	for _, v := range *dict {
-		array = append(array, v)
+		*valBuf = append((*valBuf), v)
 	}
 
 	if needToSort { // Sort by path
-		sort.SliceStable(array, func(i, j int) bool {
-			return bytes.Compare([]byte(array[i].GetPath()[:]), []byte(array[j].GetPath()[:])) < 0
+		sort.SliceStable(*valBuf, func(i, j int) bool {
+			return bytes.Compare([]byte(*(*valBuf)[i].GetPath())[:], []byte(*(*valBuf)[j].GetPath())[:]) < 0
 		})
 	}
-	return array
 }
 
 func (this *Indexer) Equal(other *Indexer) bool {
-	cache0 := this.ToArray(&this.buffer, true)
-	cache1 := other.ToArray(&this.buffer, true)
+	cache0 := []ccurlcommon.UnivalueInterface{}
+	cache1 := []ccurlcommon.UnivalueInterface{}
+
+	this.Vectorize(&this.buffer, &cache0, true)
+	other.Vectorize(&this.buffer, &cache1, true)
 	cacheFlag := reflect.DeepEqual(cache0, cache1)
 	return cacheFlag
 }
 
 func (this *Indexer) Print() {
-	for i, elem := range this.ToArray(&this.buffer, true) {
+	values := []ccurlcommon.UnivalueInterface{}
+	this.Vectorize(&this.buffer, &values, true)
+	for i, elem := range values {
 		fmt.Println("Level : ", i)
 		elem.Print()
 	}

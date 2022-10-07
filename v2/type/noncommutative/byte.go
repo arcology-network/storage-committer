@@ -3,9 +3,9 @@ package noncommutative
 import (
 	"fmt"
 
-	codec "github.com/arcology-network/common-lib/codec"
-	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
-	"github.com/elliotchance/orderedmap"
+	codec "github.com/HPISTechnologies/common-lib/codec"
+	"github.com/HPISTechnologies/common-lib/common"
+	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
 )
 
 //type Bytes []byte
@@ -34,6 +34,14 @@ func (this *Bytes) Deepcopy() interface{} {
 		placeholder: true,
 		data:        value,
 	}
+}
+
+func (this *Bytes) HeaderSize() uint32 {
+	return 3 * codec.UINT32_LEN
+}
+
+func (this *Bytes) Size() uint32 {
+	return this.HeaderSize() + uint32(1+len(this.data))
 }
 
 func (this *Bytes) Value() interface{} {
@@ -65,14 +73,22 @@ func (this *Bytes) Set(tx uint32, path string, value interface{}, source interfa
 }
 
 func (this *Bytes) ApplyDelta(tx uint32, v interface{}) ccurlcommon.TypeInterface {
-	for iter := v.(*orderedmap.Element); iter != nil; iter = iter.Next() {
-		if iter.Value == nil {
-			continue
+	vec := v.([]ccurlcommon.UnivalueInterface)
+	for i := 0; i < len(vec); i++ {
+		v := vec[i].Value()
+		if this == nil && v != nil { // New value
+			this = v.(*Bytes)
 		}
 
-		if v := iter.Value.(ccurlcommon.UnivalueInterface).Value(); v != nil {
+		if this == nil && v == nil {
+			this = nil
+		}
+
+		if this != nil && v != nil {
 			this.Set(tx, "", v.(*Bytes), nil)
-		} else {
+		}
+
+		if this != nil && v == nil {
 			this = nil
 		}
 	}
@@ -93,11 +109,21 @@ func (this *Bytes) Encode() []byte {
 	return codec.Byteset(byteset).Encode()
 }
 
+func (this *Bytes) EncodeToBuffer(buffer []byte) {
+	codec.Encoder{}.ToBuffer(
+		buffer,
+		[]interface{}{
+			codec.Bool(this.placeholder),
+			codec.Bytes(this.data),
+		},
+	)
+}
+
 func (*Bytes) Decode(bytes []byte) interface{} {
-	fields := codec.Byteset{}.Decode(bytes)
+	fields := codec.Byteset{}.Decode(bytes).(codec.Byteset)
 	return &Bytes{
-		placeholder: bool(codec.Bool(true).Decode(fields[0])),
-		data:        fields[1],
+		placeholder: bool(codec.Bool(true).Decode(fields[0]).(codec.Bool)),
+		data:        common.ArrayCopy(fields[1]),
 	}
 }
 
@@ -109,7 +135,7 @@ func (this *Bytes) DecodeCompact(bytes []byte) interface{} {
 	return this.Decode(bytes)
 }
 
-func (*Bytes) Purge() {}
+func (this *Bytes) Purge() {}
 
 func (this *Bytes) Hash(hasher func([]byte) []byte) []byte {
 	return hasher(this.EncodeCompact())

@@ -1,7 +1,6 @@
 package common
 
 import (
-	"bytes"
 	"sort"
 	"strings"
 )
@@ -11,89 +10,15 @@ func IsPath(path string) bool {
 }
 
 func CheckDepth(path string) bool {
-	parts := strings.Split(path, "/")
-	return len(parts) <= int(MaxDepth)
-}
-
-func GetLevel(path string) uint8 {
-	return uint8(len(strings.Split(path, "/")))
-}
-
-func Find(str string, start int, end int, c byte) int {
-	for i := start; i < end; i++ {
-		if str[i] == c {
-			return i
-		}
-	}
-	return -1
-}
-
-func SubpathOf(parent string, path string) int {
-	if parent[len(parent)-1] != '/' {
-		return -1
-	}
-	return Find(path, len(parent), len(path), '/')
-}
-
-func Unique(paths []string) []string {
-	lookup := make(map[string]bool, len(paths))
-	for _, v := range paths {
-		lookup[v] = true
-	}
-
-	uniquePath := make([]string, 0, len(lookup))
-	for v := range lookup {
-		uniquePath = append(uniquePath, v)
-	}
-
-	return uniquePath
-}
-
-func UniqueOrdered(paths []string) []string {
-	uniquePaths := make([]string, 0, len(paths))
-	current := paths[0]
-	for i := 1; i < len(paths); i++ {
-		if !bytes.Equal([]byte(current), []byte(paths[i-1])) {
-			current = paths[i]
-			uniquePaths = append(uniquePaths, current)
-		}
-	}
-	return append(uniquePaths, current)
-}
-
-func IdxRange(start, end uint32) []uint32 {
-	idxArr := make([]uint32, end-start)
-	for i := start; i < end; i++ {
-		idxArr[i-start] = i
-	}
-	return idxArr
-}
-
-func EqualLevel(lft, rgt string) bool {
-	return len(strings.Split(lft, "/")) == len(strings.Split(rgt, "/"))
+	return strings.Count(path, "/") <= int(MaxDepth)
 }
 
 func GetParentPath(key string) string {
 	if len(key) == 0 || key == Root {
 		return key
 	}
-
-	parts := strings.Split(key, "/")
-	if len(parts) == 1 {
-		return key
-	}
-
-	if key[len(key)-1] == '/' { // a path
-		return strings.Join(parts[:len(parts)-2], "/") + "/"
-	}
-	return strings.Join(parts[:len(parts)-1], "/") + "/"
-}
-
-func IsDescent(ancestorPath string, path string) bool {
-	if len(ancestorPath) > len(path) {
-		return false
-	}
-	return bytes.Equal([]byte(path[0:len(ancestorPath)]), []byte(path[:]))
+	path := key[:strings.LastIndex(key[:len(key)-1], "/")+1]
+	return path
 }
 
 func RemoveFrom(from []string, toRemove []string) []string {
@@ -155,4 +80,30 @@ func Exclude(source []uint32, toRemove []uint32) []uint32 {
 		result = append(result, tx)
 	}
 	return result
+}
+
+func RemoveNils(values *[]UnivalueInterface) {
+	pos := int64(-1)
+	for i := 0; i < len((*values)); i++ {
+		if pos < 0 && (*values)[i] == nil {
+			pos = int64(i)
+			continue
+		}
+
+		if pos < 0 && (*values)[i] != nil {
+			continue
+		}
+
+		if pos >= 0 && (*values)[i] == nil {
+			(*values)[pos] = (*values)[i]
+			continue
+		}
+
+		(*values)[pos] = (*values)[i]
+		pos++
+	}
+
+	if pos >= 0 {
+		(*values) = (*values)[:pos]
+	}
 }

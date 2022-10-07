@@ -14,13 +14,15 @@ const (
 	SYSTEM          = math.MaxInt32
 	Root     string = "/"
 
-	CommutativeMeta      uint8 = 100
-	NoncommutativeInt64  uint8 = 101
-	NoncommutativeString uint8 = 102
-	NoncommutativeBigint uint8 = 103
-	NoncommutativeBytes  uint8 = 104
+	CommutativeMeta    uint8 = 100
+	CommutativeInt64   uint8 = 101
+	CommutativeBalance uint8 = 102
 
-	CommutativeInt64   uint8 = 105
-	CommutativeString  uint8 = 106
-	CommutativeBalance uint8 = 107
+	NoncommutativeInt64  uint8 = 103
+	NoncommutativeString uint8 = 104
+	NoncommutativeBigint uint8 = 105
+	NoncommutativeBytes  uint8 = 106
+
+	VARIATE_TRANSITIONS   uint8 = 0
+	INVARIATE_TRANSITIONS uint8 = 1
 )

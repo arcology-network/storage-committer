@@ -13,7 +13,9 @@ type TypeInterface interface { // value type
 	Composite() bool
 	Hash(func([]byte) []byte) []byte
 	Encode() []byte
+	EncodeToBuffer([]byte)
 	Decode([]byte) interface{}
+	Size() uint32
 	EncodeCompact() []byte
 	DecodeCompact([]byte) interface{}
 	Purge()
@@ -23,48 +25,59 @@ type TypeInterface interface { // value type
 type UnivalueInterface interface { // value type
 	Set(uint32, string, interface{}, interface{}) error
 	Get(uint32, string, interface{}) interface{}
-	UpdateParentMeta(uint32, interface{}, interface{}) error
+	UpdateParentMeta(uint32, interface{}, interface{}) bool
 	Peek(interface{}) interface{}
 	GetTx() uint32
-	GetPath() string
+	GetPath() *string
+	SetPath(string)
 	Value() interface{}
+	SetValue(interface{})
 	Reads() uint32
 	Writes() uint32
+	GetTransitionType() uint8
+	SetTransitionType(uint8)
 	ApplyDelta(uint32, interface{}) error
 	Preexist() bool
 	Composite() bool
 	Deepcopy() interface{}
 	Export(interface{}) (interface{}, interface{})
-	GetCachedEncoded() []byte
+	GetEncoded() []byte
 	Encode() []byte
 	Decode([]byte) interface{}
+	ClearReserve()
 	Print()
 }
 
-type LocalCacheInterface interface {
-	NewValue(uint32, string, interface{}) UnivalueInterface
+type IndexerInterface interface {
 	Read(uint32, string) interface{}
 	TryRead(tx uint32, path string) interface{}
 	Write(uint32, string, interface{}) error
 	Insert(string, interface{})
-	IfExists(string) bool
+
 	RetriveShallow(string) interface{}
 	CheckHistory(uint32, string, bool) UnivalueInterface
 	Buffer() *map[string]UnivalueInterface
-	Store() *DB
-	Commit([]uint32) ([]string, interface{}, []error)
+	Store() *DatastoreInterface
 }
 
-type DB interface {
-	Save(string, interface{})
-	Retrive(string) interface{}
-	BatchSave([]string, interface{})
+type DatastoreInterface interface {
+	Inject(string, interface{})
+	BatchInject([]string, []interface{})
+	Retrive(string) (interface{}, error)
+	BatchRetrive([]string) []interface{}
+	Precommit([]string, interface{})
+	Commit() error
+	UpdateCacheStats([]interface{})
+	Dump() ([]string, []interface{})
+	Checksum() [32]byte
 	Clear()
 	Print()
+	CheckSum() [32]byte
+	Query(string, func(string, string) bool) ([]string, [][]byte, error)
 }
 
-type Decoder interface { // value type
-	Decode(bytes []byte, dtype uint8) interface{}
-}
+// type DecoderInterface interface { // value type
+// 	Decode(bytes []byte, dtype uint8) interface{}
+// }
 
 type Hasher func(TypeInterface) []byte

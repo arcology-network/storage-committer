@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"math/big"
 
-	codec "github.com/arcology-network/common-lib/codec"
-	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
-	"github.com/elliotchance/orderedmap"
+	codec "github.com/HPISTechnologies/common-lib/codec"
+	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
 )
 
 type Bigint big.Int
@@ -23,6 +22,11 @@ func (this *Bigint) TypeID() uint8 { return uint8(ccurlcommon.NoncommutativeBigi
 func (this *Bigint) Deepcopy() interface{} {
 	value := *this
 	return (*Bigint)(&value)
+}
+
+func (this *Bigint) Size() uint32 {
+	v := codec.Bigint(*this)
+	return v.Size()
 }
 
 func (this *Bigint) Value() interface{} {
@@ -62,14 +66,22 @@ func (this *Bigint) Set(tx uint32, path string, value interface{}, source interf
 }
 
 func (this *Bigint) ApplyDelta(tx uint32, v interface{}) ccurlcommon.TypeInterface {
-	for iter := v.(*orderedmap.Element); iter != nil; iter = iter.Next() {
-		if iter.Value == nil {
-			continue
+	vec := v.([]ccurlcommon.UnivalueInterface)
+	for i := 0; i < len(vec); i++ {
+		v := vec[i].Value()
+		if this == nil && v != nil { // New value
+			this = v.(*Bigint)
 		}
 
-		if iter.Value.(*Bigint).Value() != nil {
-			this.Set(tx, "", iter.Value.(*Bigint), nil)
-		} else {
+		if this == nil && v == nil {
+			this = nil
+		}
+
+		if this != nil && v != nil {
+			this.Set(tx, "", v.(*Bigint), nil)
+		}
+
+		if this != nil && v == nil {
 			this = nil
 		}
 	}
@@ -87,9 +99,17 @@ func (this *Bigint) Encode() []byte {
 	return v.Encode()
 }
 
-func (*Bigint) Decode(bytes []byte) interface{} {
-	this := Bigint(*(&codec.Bigint{}).Decode(bytes))
-	return &this
+func (this *Bigint) EncodeToBuffer(buffer []byte) {
+	v := codec.Bigint(*this)
+	v.EncodeToBuffer(buffer)
+
+	buf := make([]byte, (*big.Int)(&v).BitLen())
+	(*big.Int)(&v).FillBytes(buf)
+}
+
+func (this *Bigint) Decode(bytes []byte) interface{} {
+	this = (*Bigint)((&codec.Bigint{}).Decode(bytes).(*codec.Bigint))
+	return this
 }
 
 func (this *Bigint) EncodeCompact() []byte {
@@ -100,7 +120,7 @@ func (this *Bigint) DecodeCompact(bytes []byte) interface{} {
 	return this.Decode(bytes)
 }
 
-func (*Bigint) Purge() {}
+func (this *Bigint) Purge() {}
 
 func (this *Bigint) Hash(hasher func([]byte) []byte) []byte {
 	return hasher(this.EncodeCompact())

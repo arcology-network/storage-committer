@@ -5,6 +5,10 @@ import (
 	"math/big"
 )
 
+const (
+	ETH10_ACCOUNT_LENGTH = 40
+)
+
 type Syspath struct {
 	Permissions []bool
 	ID          uint8
@@ -23,6 +27,20 @@ func NewPlatform() *Platform {
 
 func (this *Platform) Eth10() string        { return "blcc://eth1.0/" }
 func (this *Platform) Eth10Account() string { return this.Eth10() + "account/" }
+func Eth10AccountShard(numOfShard int, key string) int {
+	if len(key) < 24 {
+		panic("Invalid eth1.0 account shard key: " + key)
+	}
+	return (hex2int(key[22])*16 + hex2int(key[23])) % numOfShard
+}
+
+func hex2int(c byte) int {
+	if c >= 'a' {
+		return int(c-'a') + 10
+	} else {
+		return int(c - '0')
+	}
+}
 
 // Get ths builtin paths
 func (this *Platform) Builtin(platform string, acct string) ([]string, map[string]Syspath, error) {
@@ -69,5 +87,5 @@ func (this *Platform) IsPermitted(path string, operation uint8) bool {
 // THe path on the control list
 func (this *Platform) OnControlList(path string) bool {
 	_, ok := this.syspaths[path]
-	return ok
+	return ok || path == this.Eth10() || path == this.Eth10Account()
 }

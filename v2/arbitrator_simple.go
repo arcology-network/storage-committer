@@ -4,8 +4,11 @@ import (
 	"bytes"
 	"sort"
 
-	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
-	"github.com/elliotchance/orderedmap"
+	"github.com/HPISTechnologies/common-lib/codec"
+	"github.com/HPISTechnologies/common-lib/common"
+	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
+	orderedmap "github.com/elliotchance/orderedmap"
+	murmur "github.com/spaolacci/murmur3"
 )
 
 type ArbitratorSlow struct {
@@ -26,19 +29,19 @@ func (this *ArbitratorSlow) Detect(newTrans []ccurlcommon.UnivalueInterface, whi
 
 	for _, trans := range newTrans {
 		if _, ok := whitelistDict[trans.GetTx()]; !ok {
-			this.transitions[trans.GetPath()] = []ccurlcommon.UnivalueInterface{}
+			this.transitions[*trans.GetPath()] = []ccurlcommon.UnivalueInterface{}
 		}
-		this.transitions[trans.GetPath()] = append(this.transitions[trans.GetPath()], trans)
+		this.transitions[*trans.GetPath()] = append(this.transitions[*trans.GetPath()], trans)
 	}
 
 	for _, v := range this.transitions {
 		sort.SliceStable(v, func(i, j int) bool {
-			if len(v[i].GetPath()) != len(v[j].GetPath()) {
-				return len(v[i].GetPath()) < len(v[j].GetPath())
+			if len(*v[i].GetPath()) != len(*v[j].GetPath()) {
+				return len(*v[i].GetPath()) < len(*v[j].GetPath())
 			}
 
-			if !bytes.Equal([]byte(v[i].GetPath()), []byte(v[j].GetPath())) {
-				return bytes.Compare([]byte(v[i].GetPath()), []byte(v[j].GetPath())) < 0
+			if !bytes.Equal([]byte(*v[i].GetPath()), []byte(*v[j].GetPath())) {
+				return bytes.Compare([]byte(*v[i].GetPath()), []byte(*v[j].GetPath())) < 0
 			}
 
 			if v[i].GetTx() != v[j].GetTx() {
@@ -69,7 +72,7 @@ func (this *ArbitratorSlow) Detect(newTrans []ccurlcommon.UnivalueInterface, whi
 			}
 
 			if v[0].Writes() > 0 || v[i].Writes() > 0 {
-				conflictDict[v[0].GetPath()] = append(conflictDict[v[0].GetPath()], v[i])
+				conflictDict[*v[0].GetPath()] = append(conflictDict[*v[0].GetPath()], v[i])
 				txToRemove.Set(v[i].GetTx(), true)
 			}
 		}
@@ -82,4 +85,19 @@ func (this *ArbitratorSlow) Detect(newTrans []ccurlcommon.UnivalueInterface, whi
 
 	this.transitions = make(map[string][]ccurlcommon.UnivalueInterface)
 	return conflictDict, txs
+}
+
+func HashPaths(records []ccurlcommon.UnivalueInterface) {
+	numThreads := 1
+	if len(records) > 128 {
+		numThreads = 4
+	}
+
+	hasher := func(start, end, index int, args ...interface{}) {
+		for i := start; i < end; i++ {
+			h0, h1 := murmur.Sum128(codec.String(*records[i].GetPath()).Encode())
+			records[i].SetPath(codec.Bytes(codec.Uint64(h0).Encode()).ToString() + codec.Bytes(codec.Uint64(h1).Encode()).ToString())
+		}
+	}
+	common.ParallelWorker(len(records), numThreads, hasher)
 }
