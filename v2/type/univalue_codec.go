@@ -3,9 +3,9 @@ package ccurltype
 import (
 	"reflect"
 
-	codec "github.com/HPISTechnologies/common-lib/codec"
-	common "github.com/HPISTechnologies/common-lib/common"
-	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
+	codec "github.com/arcology-network/common-lib/codec"
+	common "github.com/arcology-network/common-lib/common"
+	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 )
 
 func (this *Univalue) Encode() []byte {

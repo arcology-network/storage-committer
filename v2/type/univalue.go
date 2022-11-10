@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
-	commutative "github.com/HPISTechnologies/concurrenturl/v2/type/commutative"
-	noncommutative "github.com/HPISTechnologies/concurrenturl/v2/type/noncommutative"
+	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
+	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
+	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
 )
 
 type Univalue struct {
@@ -180,6 +180,10 @@ func (this *Univalue) Export(source interface{}) (interface{}, interface{}) {
 		accessRecord.value = accessRecord.Value().(ccurlcommon.TypeInterface).ToAccess()
 	}
 
+	if source.(ccurlcommon.IndexerInterface).SkipExportTransitions(this) {
+		return accessRecord, nil
+	}
+
 	if this.Writes() > 0 && this.Value() != nil { // Rewrite an existing entry or create a new one
 		return accessRecord, this
 	}
@@ -245,7 +249,7 @@ func (this *Univalue) ApplyDelta(tx uint32, v interface{}) error {
 
 	/* Precheck & Merge attributes*/
 	for i := 0; i < len(vec); i++ {
-		this.PrecheckAttributes(this, vec[i].(*Univalue))
+		this.PrecheckAttributes(vec[i].(*Univalue))
 		this.writes += vec[i].Writes()
 		this.reads += vec[i].Reads()
 		this.composite = this.composite && vec[i].Composite()
@@ -258,13 +262,12 @@ func (this *Univalue) ApplyDelta(tx uint32, v interface{}) error {
 	return nil
 }
 
-func (*Univalue) PrecheckAttributes(this *Univalue, other *Univalue) {
+func (this *Univalue) PrecheckAttributes(other *Univalue) {
 	if other.writes == 0 {
 		panic("Error: Value type mismatched!")
 	}
 
-	if this.composite != other.composite &&
-		this.Value().(ccurlcommon.TypeInterface).TypeID() != ccurlcommon.CommutativeMeta {
+	if this.preexists && this.IsCommutative() && this.Reads() > 0 && this.composite == other.composite {
 		this.Print()
 		fmt.Println("================================================================")
 		other.Print()

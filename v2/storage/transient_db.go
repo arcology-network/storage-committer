@@ -3,8 +3,8 @@ package ccdb
 import (
 	"crypto/sha256"
 
-	cachedstorage "github.com/HPISTechnologies/common-lib/cachedstorage"
-	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
+	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
+	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 )
 
 type TransientDB struct {
@@ -96,4 +96,11 @@ func (this *TransientDB) Dump() ([]string, []interface{}) {
 
 func (this *TransientDB) UpdateCacheStats(vals []interface{}) {
 	this.DataStore.UpdateCacheStats(vals)
+}
+
+func (this *TransientDB) CacheRetrive(key string, valueTransformer func(interface{}) interface{}) (interface{}, error) {
+	if v, err := this.DataStore.CacheRetrive(key, valueTransformer); v != nil {
+		return v, err
+	}
+	return this.parent.CacheRetrive(key, valueTransformer)
 }

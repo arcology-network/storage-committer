@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strings"
 
-	common "github.com/HPISTechnologies/common-lib/common"
-	cccontainermap "github.com/HPISTechnologies/common-lib/concurrentcontainer/map"
-	"github.com/HPISTechnologies/common-lib/mempool"
-	performance "github.com/HPISTechnologies/common-lib/mhasher"
-	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
+	common "github.com/arcology-network/common-lib/common"
+	cccontainermap "github.com/arcology-network/common-lib/concurrentcontainer/map"
+	"github.com/arcology-network/common-lib/mempool"
+
+	performance "github.com/arcology-network/common-lib/mhasher"
+	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 )
 
 type Indexer struct {
@@ -216,17 +218,27 @@ func (this *Indexer) SortTransitions() {
 	if err != nil {
 		panic(err)
 	}
+	// sort.Strings(this.updatedKeys)
 
 	sorter := func(start, end, index int, args ...interface{}) {
 		for i := start; i < end; i++ {
 			deltaSeq, _ := this.byPath.Get(this.updatedKeys[i])
-			deltaSeq.(*DeltaSequence).Sort()
+
+			typeValue := deltaSeq.(*DeltaSequence).base
+			if typeValue == nil {
+				typeValue = deltaSeq.(*DeltaSequence).values[0]
+			}
+
+			if typeValue.GetTransitionType() == ccurlcommon.CommutativeMeta {
+				deltaSeq.(*DeltaSequence).Sort()
+			}
+
 		}
 	}
 	common.ParallelWorker(len(this.updatedKeys), this.numThreads, sorter)
 }
 
-// 	Merge and finalize state deltas
+// Merge and finalize state deltas
 func (this *Indexer) FinalizeStates() {
 	this.updatedValues = this.updatedValues[:0]
 	this.updatedValues = append(this.updatedValues, make([]interface{}, len(this.updatedKeys))...)
@@ -308,4 +320,10 @@ func (this *Indexer) Print() {
 		fmt.Println("Level : ", i)
 		elem.Print()
 	}
+}
+
+func (this *Indexer) SkipExportTransitions(univalue interface{}) bool {
+	uv := univalue.(ccurlcommon.UnivalueInterface)
+	return uv.Preexist() && strings.HasSuffix(*uv.GetPath(), "/storage/native/")
+
 }

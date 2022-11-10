@@ -3,9 +3,9 @@ package noncommutative
 import (
 	"fmt"
 
-	codec "github.com/HPISTechnologies/common-lib/codec"
-	"github.com/HPISTechnologies/common-lib/common"
-	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
+	codec "github.com/arcology-network/common-lib/codec"
+	"github.com/arcology-network/common-lib/common"
+	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 )
 
 //type Bytes []byte

@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/HPISTechnologies/common-lib/cachedstorage"
-	datacompression "github.com/HPISTechnologies/common-lib/datacompression"
+	"github.com/arcology-network/common-lib/cachedstorage"
+	datacompression "github.com/arcology-network/common-lib/datacompression"
 )
 
 type ReadonlyClient struct {

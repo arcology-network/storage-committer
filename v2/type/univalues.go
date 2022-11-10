@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/HPISTechnologies/common-lib/codec"
-	"github.com/HPISTechnologies/common-lib/common"
-	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
+	"github.com/arcology-network/common-lib/codec"
+	"github.com/arcology-network/common-lib/common"
+	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 )
 
 type Univalues []ccurlcommon.UnivalueInterface

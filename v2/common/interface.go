@@ -58,6 +58,8 @@ type IndexerInterface interface {
 	CheckHistory(uint32, string, bool) UnivalueInterface
 	Buffer() *map[string]UnivalueInterface
 	Store() *DatastoreInterface
+
+	SkipExportTransitions(univalue interface{}) bool
 }
 
 type DatastoreInterface interface {
@@ -74,6 +76,7 @@ type DatastoreInterface interface {
 	Print()
 	CheckSum() [32]byte
 	Query(string, func(string, string) bool) ([]string, [][]byte, error)
+	CacheRetrive(key string, valueTransformer func(interface{}) interface{}) (interface{}, error)
 }
 
 // type DecoderInterface interface { // value type

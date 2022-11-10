@@ -4,13 +4,13 @@ import (
 	"math/big"
 	"testing"
 
-	cachedstorage "github.com/HPISTechnologies/common-lib/cachedstorage"
-	datacompression "github.com/HPISTechnologies/common-lib/datacompression"
-	ccurl "github.com/HPISTechnologies/concurrenturl/v2"
-	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
-	ccurltype "github.com/HPISTechnologies/concurrenturl/v2/type"
-	commutative "github.com/HPISTechnologies/concurrenturl/v2/type/commutative"
-	noncommutative "github.com/HPISTechnologies/concurrenturl/v2/type/noncommutative"
+	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
+	datacompression "github.com/arcology-network/common-lib/datacompression"
+	ccurl "github.com/arcology-network/concurrenturl/v2"
+	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
+	ccurltype "github.com/arcology-network/concurrenturl/v2/type"
+	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
+	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
 )
 
 func TestSimpleBalance(t *testing.T) {

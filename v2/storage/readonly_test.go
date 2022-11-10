@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	cachedstorage "github.com/HPISTechnologies/common-lib/cachedstorage"
-	ccurltype "github.com/HPISTechnologies/concurrenturl/v2/type"
-	noncommutative "github.com/HPISTechnologies/concurrenturl/v2/type/noncommutative"
+	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
+	ccurltype "github.com/arcology-network/concurrenturl/v2/type"
+	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
 )
 
 func TestReadonlyStorageLocal(t *testing.T) {

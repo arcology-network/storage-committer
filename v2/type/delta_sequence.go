@@ -4,8 +4,8 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/HPISTechnologies/common-lib/mempool"
-	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
+	"github.com/arcology-network/common-lib/mempool"
+	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 )
 
 type DeltaSequence struct {

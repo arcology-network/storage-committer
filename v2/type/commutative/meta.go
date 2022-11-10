@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-	"time"
 
-	codec "github.com/HPISTechnologies/common-lib/codec"
-	common "github.com/HPISTechnologies/common-lib/common"
-	performance "github.com/HPISTechnologies/common-lib/mhasher"
-	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
+	codec "github.com/arcology-network/common-lib/codec"
+	common "github.com/arcology-network/common-lib/common"
+	performance "github.com/arcology-network/common-lib/mhasher"
+	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 	orderedmap "github.com/elliotchance/orderedmap"
 )
 
@@ -132,9 +131,23 @@ func (this *Meta) ApplyDelta(tx uint32, v interface{}) ccurlcommon.TypeInterface
 
 	if this != nil {
 		if len(toRemove) > 0 {
-			t0 := time.Now()
+			// t0 := time.Now()
 			keys, _ = performance.RemoveString(keys, toRemove)
-			fmt.Println("RemoveBytes ", time.Since(t0))
+			// toRemoveDict := make(map[string]struct{})
+			// for _, v := range toRemove {
+			// 	toRemoveDict[v] = struct{}{}
+			// }
+			// next := 0
+			// for i := 0; i < len(keys); i++ {
+			// 	if _, ok := toRemoveDict[keys[i]]; ok {
+			// 		continue
+			// 	} else {
+			// 		keys[next] = keys[i]
+			// 		next++
+			// 	}
+			// }
+			// keys = keys[:next]
+			// fmt.Println("RemoveBytes ", time.Since(t0))
 		}
 
 		this.keys = keys
