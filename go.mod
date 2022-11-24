@@ -2,7 +2,7 @@ module github.com/arcology-network/concurrenturl
 
 go 1.19
 
-replace github.com/arcology-network/common-lib => ../common-lib/
+// replace github.com/arcology-network/common-lib => ../common-lib/
 
 require (
 	github.com/elliotchance/orderedmap v1.5.0
