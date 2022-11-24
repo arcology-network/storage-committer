@@ -5,8 +5,6 @@ github.com/OneOfOne/xxhash v1.2.2 h1:KMrpdQIwFcEqXDklaen+P1axHaj9BSKzvpUUfnHldSE
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/arcology-network/3rd-party v0.0.0-20221110004651-3ae5c3009a22 h1:rWxSiYnmZ/2fGjuGxfvC74t/yFF+yLUa3w1GXCpXryo=
 github.com/arcology-network/3rd-party v0.0.0-20221110004651-3ae5c3009a22/go.mod h1:FWc3OKkOV9n5Vm4m3p2C3O5ajqSMGDCqj03o+ARN5ts=
-github.com/arcology-network/common-lib v0.0.0-20221110013709-f355641f88df h1:nO47w71lQXLoGJrowTBU1g5DD3YiC04oFltSTQDkf1g=
-github.com/arcology-network/common-lib v0.0.0-20221110013709-f355641f88df/go.mod h1:8rs8xQEkI3CVxBmOvunTfHRvLLqQw99HH3/wfc9PSsw=
 github.com/armon/consul-api v0.0.0-20180202201655-eb2c6b5be1b6/go.mod h1:grANhF5doyWs3UAsr3K4I6qtAmlQcZDesFNEHPZAzj8=
 github.com/cespare/xxhash v1.1.0 h1:a6HrQnmkObjyL+Gs60czilIUGqrzKutQD6XZog3p+ko=
 github.com/cespare/xxhash v1.1.0/go.mod h1:XrSqR1VqqWfGrhpAt58auRo0WTKS1nRRg3ghfAqPWnc=

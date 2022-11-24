@@ -2,14 +2,17 @@ module github.com/arcology-network/concurrenturl
 
 go 1.19
 
+replace github.com/arcology-network/common-lib => ../common-lib/
+
 require (
-	github.com/arcology-network/common-lib v0.0.0-20221110013709-f355641f88df
 	github.com/elliotchance/orderedmap v1.5.0
 	github.com/google/btree v1.1.2
 	github.com/petar/GoLLRB v0.0.0-20210522233825-ae3b015fd3e9
 	github.com/segmentio/fasthash v1.0.3
 	github.com/spaolacci/murmur3 v1.1.0
 )
+
+require github.com/arcology-network/common-lib v0.0.0-20221124074600-09b0a62272cb
 
 require (
 	github.com/AndreasBriese/bbloom v0.0.0-20190825152654-46b345b51c96 // indirect
