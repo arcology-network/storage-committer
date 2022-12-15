@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	codec "github.com/HPISTechnologies/common-lib/codec"
-	common "github.com/HPISTechnologies/common-lib/common"
-	performance "github.com/HPISTechnologies/common-lib/mhasher"
-	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
+	codec "github.com/arcology/common-lib/codec"
+	common "github.com/arcology/common-lib/common"
+	performance "github.com/arcology/common-lib/mhasher"
+	ccurlcommon "github.com/arcology/concurrenturl/v2/common"
 	orderedmap "github.com/elliotchance/orderedmap"
 )
 

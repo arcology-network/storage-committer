@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HPISTechnologies/common-lib/datacompression"
-	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
-	commutative "github.com/HPISTechnologies/concurrenturl/v2/type/commutative"
+	"github.com/arcology/common-lib/datacompression"
+	ccurlcommon "github.com/arcology/concurrenturl/v2/common"
+	commutative "github.com/arcology/concurrenturl/v2/type/commutative"
 )
 
 func TestUnivalueEncodeDecode(t *testing.T) {

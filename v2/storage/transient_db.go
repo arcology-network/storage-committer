@@ -3,8 +3,8 @@ package ccdb
 import (
 	"crypto/sha256"
 
-	cachedstorage "github.com/HPISTechnologies/common-lib/cachedstorage"
-	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
+	cachedstorage "github.com/arcology/common-lib/cachedstorage"
+	ccurlcommon "github.com/arcology/concurrenturl/v2/common"
 )
 
 type TransientDB struct {

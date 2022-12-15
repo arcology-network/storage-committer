@@ -7,11 +7,11 @@ import (
 	"reflect"
 	"sort"
 
-	common "github.com/HPISTechnologies/common-lib/common"
-	cccontainermap "github.com/HPISTechnologies/common-lib/concurrentcontainer/map"
-	"github.com/HPISTechnologies/common-lib/mempool"
-	performance "github.com/HPISTechnologies/common-lib/mhasher"
-	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
+	common "github.com/arcology/common-lib/common"
+	cccontainermap "github.com/arcology/common-lib/concurrentcontainer/map"
+	"github.com/arcology/common-lib/mempool"
+	performance "github.com/arcology/common-lib/mhasher"
+	ccurlcommon "github.com/arcology/concurrenturl/v2/common"
 )
 
 type Indexer struct {

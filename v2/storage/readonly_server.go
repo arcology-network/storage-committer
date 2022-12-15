@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	cachedstorage "github.com/HPISTechnologies/common-lib/cachedstorage"
+	cachedstorage "github.com/arcology/common-lib/cachedstorage"
 )
 
 type ReadonlyServer struct {

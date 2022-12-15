@@ -5,10 +5,10 @@ import (
 	"strings"
 	"time"
 
-	common "github.com/HPISTechnologies/common-lib/common"
-	mempool "github.com/HPISTechnologies/common-lib/mempool"
-	merkle "github.com/HPISTechnologies/common-lib/merkle"
-	ccurlcommon "github.com/HPISTechnologies/concurrenturl/v2/common"
+	common "github.com/arcology/common-lib/common"
+	mempool "github.com/arcology/common-lib/mempool"
+	merkle "github.com/arcology/common-lib/merkle"
+	ccurlcommon "github.com/arcology/concurrenturl/v2/common"
 )
 
 const (
