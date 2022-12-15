@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	cachedstorage "github.com/arcology/common-lib/cachedstorage"
-	ccurlcommon "github.com/arcology/concurrenturl/v2/common"
-	ccurltype "github.com/arcology/concurrenturl/v2/type"
-	noncommutative "github.com/arcology/concurrenturl/v2/type/noncommutative"
+	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
+	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
+	ccurltype "github.com/arcology-network/concurrenturl/v2/type"
+	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
 )
 
 func TestCachePolicyLowScore(t *testing.T) {

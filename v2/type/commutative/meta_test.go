@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/arcology/common-lib/datacompression"
+	"github.com/arcology-network/common-lib/datacompression"
 )
 
 func TestMeta(t *testing.T) {

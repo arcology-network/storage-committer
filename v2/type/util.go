@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	ccurlcommon "github.com/arcology/concurrenturl/v2/common"
+	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 )
 
 func CreateUnivalueForTest(transitType uint8, vType uint8, tx uint32, path string, reads, writes uint32, value interface{}, preexists, composite bool) *Univalue {

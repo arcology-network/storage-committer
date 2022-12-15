@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"math/big"
 
-	codec "github.com/arcology/common-lib/codec"
-	ccurlcommon "github.com/arcology/concurrenturl/v2/common"
+	codec "github.com/arcology-network/common-lib/codec"
+	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 )
 
 type Bigint big.Int
