@@ -72,6 +72,10 @@ func (this *Bytes) Set(tx uint32, path string, value interface{}, source interfa
 	return 0, 1, nil
 }
 
+func (this *Bytes) Reset(tx uint32, path string, value interface{}, source interface{}) (uint32, uint32, error) {
+	return this.Set(tx, path, value, source)
+}
+
 func (this *Bytes) ApplyDelta(tx uint32, v interface{}) ccurlcommon.TypeInterface {
 	vec := v.([]ccurlcommon.UnivalueInterface)
 	for i := 0; i < len(vec); i++ {

@@ -8,6 +8,7 @@ type TypeInterface interface { // value type
 	ToAccess() interface{}
 	Get(uint32, string, interface{}) (interface{}, uint32, uint32)
 	Set(uint32, string, interface{}, interface{}) (uint32, uint32, error)
+	Reset(uint32, string, interface{}, interface{}) (uint32, uint32, error)
 	Peek(interface{}) interface{}
 	ApplyDelta(uint32, interface{}) TypeInterface
 	Composite() bool
@@ -23,6 +24,7 @@ type TypeInterface interface { // value type
 }
 
 type UnivalueInterface interface { // value type
+	DecrementReads()
 	Set(uint32, string, interface{}, interface{}) error
 	Get(uint32, string, interface{}) interface{}
 	UpdateParentMeta(uint32, interface{}, interface{}) bool

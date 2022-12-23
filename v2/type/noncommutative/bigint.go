@@ -65,6 +65,10 @@ func (this *Bigint) Set(tx uint32, path string, value interface{}, source interf
 	return 0, 1, nil
 }
 
+func (this *Bigint) Reset(tx uint32, path string, value interface{}, source interface{}) (uint32, uint32, error) {
+	return this.Set(tx, path, value, source)
+}
+
 func (this *Bigint) ApplyDelta(tx uint32, v interface{}) ccurlcommon.TypeInterface {
 	vec := v.([]ccurlcommon.UnivalueInterface)
 	for i := 0; i < len(vec); i++ {

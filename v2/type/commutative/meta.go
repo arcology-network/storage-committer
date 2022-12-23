@@ -255,6 +255,11 @@ func (this *Meta) Set(tx uint32, path string, value interface{}, source interfac
 	return 0, 1, errors.New("Error: Path can only be created or deleted !")
 }
 
+func (this *Meta) Reset(tx uint32, path string, value interface{}, source interface{}) (uint32, uint32, error) {
+	panic("Error: This function should never be called!!")
+	return 0, 1, nil
+}
+
 func (this *Meta) Composite() bool          { return !this.finalized }
 func (this *Meta) SetKeys(keys []string)    { this.keys = keys }
 func (this *Meta) SetAdded(keys []string)   { this.added = keys }   // Debug only

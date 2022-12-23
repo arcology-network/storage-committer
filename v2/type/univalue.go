@@ -131,8 +131,15 @@ func (this *Univalue) Writes() uint32  { return this.writes }    // Exist in cac
 func (this *Univalue) Preexist() bool  { return this.preexists } // Exist in cache as a failed read
 func (this *Univalue) Composite() bool { return this.composite }
 
-func (this *Univalue) IncrementRead()  { this.reads++ }
-func (this *Univalue) IncrementWrite() { this.writes++ }
+func (this *Univalue) IncrementReads()  { this.reads++ }
+func (this *Univalue) IncrementWrites() { this.writes++ }
+
+func (this *Univalue) DecrementReads() {
+	if this.reads <= uint32(0) {
+		panic("Reads cannot be negative !!!")
+	}
+	this.reads--
+}
 
 func (this *Univalue) SetPreexist(key string, source interface{}) {
 	this.preexists = source.(ccurlcommon.IndexerInterface).RetriveShallow(key) != nil
@@ -154,7 +161,7 @@ func (this *Univalue) UpdateParentMeta(tx uint32, value interface{}, source inte
 	child := value.(*Univalue)
 	meta := this.Value().(*commutative.Meta)
 	if meta.UpdateCaches(tx, child, source) {
-		this.IncrementWrite()
+		this.IncrementWrites()
 		return true
 	}
 	return false
@@ -203,7 +210,7 @@ func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{
 		this.composite = tempV.(ccurlcommon.TypeInterface).Composite()
 		return tempV
 	}
-	this.IncrementRead()
+	this.IncrementReads()
 	return this.value
 }
 
@@ -214,7 +221,15 @@ func (this *Univalue) Peek(source interface{}) interface{} {
 	return this.value
 }
 
+func (this *Univalue) Reset(tx uint32, path string, value interface{}, source interface{}) error { // update the value
+	return this.set(tx, path, value, source, ccurlcommon.REWRITE)
+}
+
 func (this *Univalue) Set(tx uint32, path string, value interface{}, source interface{}) error { // update the value
+	return this.set(tx, path, value, source, ccurlcommon.WRITE)
+}
+
+func (this *Univalue) set(tx uint32, path string, value interface{}, source interface{}, op uint8) error { // update the value
 	this.tx = tx
 	this.writes++
 	if this.Value() != nil && value != nil && this.vType != value.(ccurlcommon.TypeInterface).TypeID() {
@@ -232,7 +247,14 @@ func (this *Univalue) Set(tx uint32, path string, value interface{}, source inte
 		this.value = this.value.(ccurlcommon.TypeInterface).Deepcopy()
 	}
 
-	r, w, err := this.value.(ccurlcommon.TypeInterface).Set(tx, path, value, source) // Update the current value
+	r, w := uint32(0), uint32(0)
+	var err error
+	if op == ccurlcommon.WRITE {
+		r, w, err = this.value.(ccurlcommon.TypeInterface).Set(tx, path, value, source) // Update the current value
+	} else {
+		r, w, err = this.value.(ccurlcommon.TypeInterface).Reset(tx, path, value, source) // Update the current value
+	}
+
 	this.writes += w
 	this.reads += r
 

@@ -26,3 +26,8 @@ const (
 	VARIATE_TRANSITIONS   uint8 = 0
 	INVARIATE_TRANSITIONS uint8 = 1
 )
+
+const (
+	WRITE   uint8 = 0
+	REWRITE uint8 = 12
+)

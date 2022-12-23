@@ -79,6 +79,18 @@ func (this *Balance) Set(tx uint32, path string, v interface{}, source interface
 	return 0, 1, nil
 }
 
+func (this *Balance) Reset(tx uint32, path string, v interface{}, source interface{}) (uint32, uint32, error) {
+	if v.(*big.Int).Cmp(big.NewInt(0)) == -1 {
+		panic("Uint256 cannot be negative")
+	}
+
+	this.value = big.NewInt(0) // A better protection for balance
+	this.delta = v.(*big.Int)  // This is by design
+	this.finalized = true
+
+	return 0, 1, nil
+}
+
 func (this *Balance) Peek(source interface{}) interface{} {
 	return &Balance{
 		this.finalized,

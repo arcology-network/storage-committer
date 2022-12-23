@@ -105,6 +105,13 @@ func (this *Int64) Set(tx uint32, path string, v interface{}, source interface{}
 	return 0, 1, nil
 }
 
+func (this *Int64) Reset(tx uint32, path string, v interface{}, source interface{}) (uint32, uint32, error) {
+	this.value = 0
+	this.delta = v.(int64) // This is by design
+	this.finalized = true
+	return 0, 1, nil
+}
+
 func (this *Int64) ApplyDelta(tx uint32, v interface{}) ccurlcommon.TypeInterface {
 	vec := v.([]ccurlcommon.UnivalueInterface)
 	for i := 0; i < len(vec); i++ {

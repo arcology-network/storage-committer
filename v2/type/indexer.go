@@ -87,11 +87,11 @@ func (this *Indexer) Read(tx uint32, path string) interface{} {
 }
 
 // Get the value directly, bypassing the univalue level
-func (this *Indexer) TryRead(tx uint32, path string) interface{} {
+func (this *Indexer) TryRead(tx uint32, path string) (interface{}, bool) {
 	if v, ok := this.buffer[path]; ok {
-		return v.Peek(this.Buffer())
+		return v.Peek(this.Buffer()), true
 	}
-	return this.RetriveShallow(path)
+	return this.RetriveShallow(path), false
 }
 
 func (this *Indexer) Write(tx uint32, path string, value interface{}) error {
@@ -108,7 +108,6 @@ func (this *Indexer) Write(tx uint32, path string, value interface{}) error {
 						this.buffer[parentPath] = parentValue
 					}
 				}
-
 			}
 			return err
 		}

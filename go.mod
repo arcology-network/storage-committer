@@ -5,6 +5,7 @@ go 1.19
 // replace github.com/arcology-network/common-lib => ../common-lib/
 
 require (
+	github.com/arcology-network/common-lib v1.7.1
 	github.com/elliotchance/orderedmap v1.5.0
 	github.com/google/btree v1.1.2
 	github.com/petar/GoLLRB v0.0.0-20210522233825-ae3b015fd3e9
@@ -12,11 +13,9 @@ require (
 	github.com/spaolacci/murmur3 v1.1.0
 )
 
-require github.com/arcology-network/common-lib v0.0.0-20221124074600-09b0a62272cb
-
 require (
 	github.com/AndreasBriese/bbloom v0.0.0-20190825152654-46b345b51c96 // indirect
-	github.com/arcology-network/3rd-party v0.0.0-20221110004651-3ae5c3009a22 // indirect
+	github.com/arcology-network/3rd-party v1.7.1 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/dgraph-io/badger v1.6.2 // indirect
 	github.com/dgraph-io/ristretto v0.0.2 // indirect
