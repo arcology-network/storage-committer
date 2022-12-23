@@ -52,7 +52,7 @@ type UnivalueInterface interface { // value type
 
 type IndexerInterface interface {
 	Read(uint32, string) interface{}
-	TryRead(tx uint32, path string) interface{}
+	TryRead(tx uint32, path string) (interface{}, bool)
 	Write(uint32, string, interface{}) error
 	Insert(string, interface{})
 

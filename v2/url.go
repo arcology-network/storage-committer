@@ -108,7 +108,9 @@ func (this *ConcurrentUrl) TryRead(tx uint32, path string) (interface{}, error) 
 	if !this.Permit(tx, path, ccurlcommon.USER_READABLE) {
 		return nil, errors.New("Error: No permission to read " + path)
 	}
-	return this.indexer.TryRead(tx, path), nil // Read an element
+
+	value, _ := this.indexer.TryRead(tx, path)
+	return value, nil
 }
 
 func (this *ConcurrentUrl) Read(tx uint32, path string) (interface{}, error) {
