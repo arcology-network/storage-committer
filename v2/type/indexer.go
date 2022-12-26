@@ -86,7 +86,7 @@ func (this *Indexer) Read(tx uint32, path string) interface{} {
 	return univalue.Get(tx, path, this.Buffer())
 }
 
-// Get the value directly, bypassing the univalue level
+// Get the value directly, skip the access counting at the univalue level
 func (this *Indexer) TryRead(tx uint32, path string) (interface{}, bool) {
 	if v, ok := this.buffer[path]; ok {
 		return v.Peek(this.Buffer()), true
