@@ -3,36 +3,50 @@ package commutative
 import (
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 
 	codec "github.com/arcology-network/common-lib/codec"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
+	uint256 "github.com/holiman/uint256"
 )
 
 type Balance struct {
 	finalized bool
-	value     *big.Int
+	value     uint256.Int
+	min       *uint256.Int
+	max       *uint256.Int
 	delta     *big.Int
 }
 
-func NewBalance(initialV *big.Int, deltaV *big.Int) interface{} {
+func NewBalance(initialV *big.Int, deltaV *big.Int, min, max uint256.Int) interface{} {
+	v, overflow := uint256.FromBig(initialV)
+	if overflow {
+		panic("Overflow!")
+	}
 	return &Balance{
 		false,
-		initialV,
+		*v,
+		nil,
+		nil,
 		deltaV,
 	}
 }
 
 func (this *Balance) Deepcopy() interface{} {
+	min := *this.min
+	max := *this.max
 	return &Balance{
 		this.finalized,
-		new(big.Int).Set(this.value),
+		this.value,
+		&min,
+		&max,
 		new(big.Int).Set(this.delta),
 	}
 }
 
 func (this *Balance) HeaderSize() uint32 {
-	return 4 * codec.UINT32_LEN
+	return 6 * codec.UINT32_LEN
 }
 
 func (this *Balance) Value() interface{} {
@@ -44,7 +58,29 @@ func (this *Balance) ToAccess() interface{} {
 }
 
 func (this *Balance) TypeID() uint8 {
-	return ccurlcommon.CommutativeBalance
+	return ccurlcommon.CommutativeUint256
+}
+
+func (*Balance) check(value uint256.Int, deltaBigInt *big.Int, min, max *uint256.Int) (bool, *uint256.Int, error) {
+	isNegative := deltaBigInt.Sign() == -1
+	deltaBigInt.Abs(big.NewInt(0))
+
+	delta, ok := uint256.FromBig(deltaBigInt)
+	if ok {
+		panic("Error: Failed convert to uint256!!!")
+	}
+
+	if isNegative {
+		if value.Cmp(delta) == -1 || (min != nil && value.Sub(&value, delta).Cmp(min) == -1) { // Check against the min value
+			return isNegative, delta, errors.New("Error: Underflow!!!")
+		}
+		return isNegative, delta, nil
+	}
+
+	if max != nil && value.Add(&value, delta).Cmp(max) == 1 { // Check against the MAX value
+		return isNegative, delta, errors.New("Error: Overflow!!!")
+	}
+	return isNegative, delta, nil
 }
 
 func (this *Balance) Get(tx uint32, path string, source interface{}) (interface{}, uint32, uint32) {
@@ -54,13 +90,21 @@ func (this *Balance) Get(tx uint32, path string, source interface{}) (interface{
 
 	this.finalized = true
 	temp := &Balance{
-		finalized: true,
-		value:     new(big.Int).Add(this.value, this.delta),
-		delta:     big.NewInt(0),
+		finalized: this.finalized,
+		value:     this.value,
+		min:       this.min,
+		max:       this.max,
 	}
 
-	if temp.value.Cmp(big.NewInt(0)) == -1 {
-		panic("Balance cannot be negative")
+	isNegative, delta, err := this.check(temp.value, this.delta, this.min, this.max)
+	if err != nil {
+		return nil, 1, 1
+	}
+
+	if isNegative {
+		temp.value.Sub(&temp.value, delta)
+	} else {
+		temp.value.Add(&temp.value, delta)
 	}
 	return temp, 1, 1
 }
@@ -71,32 +115,23 @@ func (this *Balance) Delta(source interface{}) interface{} {
 
 // Set delta
 func (this *Balance) Set(tx uint32, path string, v interface{}, source interface{}) (uint32, uint32, error) {
-	if this.value.Cmp(big.NewInt(0)) == -1 {
-		return 0, 1, errors.New("Balance cannot be negative")
-	}
-
-	this.delta = this.delta.Add(this.delta, v.(*Balance).delta)
+	this.delta.Add(this.delta, v.(*big.Int))
 	return 0, 1, nil
 }
 
 func (this *Balance) Reset(tx uint32, path string, v interface{}, source interface{}) (uint32, uint32, error) {
-	if v.(*big.Int).Cmp(big.NewInt(0)) == -1 {
-		panic("Uint256 cannot be negative")
-	}
-
-	this.value = big.NewInt(0) // A better protection for balance
-	this.delta = v.(*big.Int)  // This is by design
+	this.value = *(v.(*uint256.Int))
+	this.delta = big.NewInt(0)
 	this.finalized = true
+	this.min = nil
+	this.max = nil
 
 	return 0, 1, nil
 }
 
 func (this *Balance) Peek(source interface{}) interface{} {
-	return &Balance{
-		this.finalized,
-		new(big.Int).Add(this.value, this.delta),
-		big.NewInt(0),
-	}
+	v, _, _ := this.Deepcopy().(*Balance).Get(math.MaxUint32, "", source)
+	return v
 }
 
 func (this *Balance) ApplyDelta(tx uint32, v interface{}) ccurlcommon.TypeInterface {
@@ -124,7 +159,17 @@ func (this *Balance) ApplyDelta(tx uint32, v interface{}) ccurlcommon.TypeInterf
 		return nil
 	}
 
-	this.value = this.value.Add(this.value, this.delta)
+	isNegative, delta, err := this.check(this.value, this.delta, this.min, this.max)
+	if err != nil {
+		panic(err)
+	}
+
+	if isNegative {
+		this.value.Sub(&this.value, delta)
+	} else {
+		this.value.Add(&this.value, delta)
+	}
+
 	this.delta = big.NewInt(0) // reset the delta
 	return this
 }
@@ -141,11 +186,11 @@ func (this *Balance) Hash(hasher func([]byte) []byte) []byte {
 }
 
 func (this *Balance) Size() uint32 {
-	v := codec.Bigint(*this.value)
+	// v := codec.Bigint(*this.value)
 	d := codec.Bigint(*this.delta)
 	return this.HeaderSize() +
 		codec.Bool(this.finalized).Size() +
-		(&v).Size() +
+		//(&v).Size() +
 		(&d).Size()
 }
 
@@ -156,7 +201,8 @@ func (this *Balance) Encode() []byte {
 }
 
 func (this *Balance) EncodeToBuffer(buffer []byte) {
-	v := codec.Bigint(*(this.value))
+
+	// v := codec.Bigint(*(uint256.ToBig(*this.value)))
 	d := codec.Bigint(*(this.delta))
 
 	codec.Uint32(3).EncodeToBuffer(buffer)
@@ -167,8 +213,8 @@ func (this *Balance) EncodeToBuffer(buffer []byte) {
 	offset += codec.Bool(this.finalized).Size()
 
 	codec.Uint32(offset).EncodeToBuffer(buffer[codec.UINT32_LEN*2:])
-	v.EncodeToBuffer(buffer[4*codec.UINT32_LEN+offset:])
-	offset += v.Size()
+	// v.EncodeToBuffer(buffer[4*codec.UINT32_LEN+offset:])
+	// offset += v.Size()
 
 	codec.Uint32(offset).EncodeToBuffer(buffer[codec.UINT32_LEN*3:])
 	d.EncodeToBuffer(buffer[4*codec.UINT32_LEN+offset:])
@@ -178,29 +224,31 @@ func (*Balance) Decode(data []byte) interface{} {
 	fields := codec.Byteset{}.Decode(data).(codec.Byteset)
 	return &Balance{
 		finalized: bool(codec.Bool(true).Decode(fields[0]).(codec.Bool)),
-		value:     (*big.Int)((&codec.Bigint{}).Decode(fields[1]).(*codec.Bigint)),
-		delta:     (*big.Int)((&codec.Bigint{}).Decode(fields[2]).(*codec.Bigint)),
+		// value:     (*big.Int)((&codec.Bigint{}).Decode(fields[1]).(*codec.Bigint)),
+		delta: (*big.Int)((&codec.Bigint{}).Decode(fields[2]).(*codec.Bigint)),
 	}
 }
 
 func (this *Balance) EncodeCompact() []byte {
-	v := codec.Bigint(*(this.value))
-	totalSize := 2*codec.UINT32_LEN + (&v).Size()
+	// v := codec.Bigint(*(this.value))
+	vSize := len(this.value)
+	totalSize := 2*codec.UINT32_LEN + vSize //(&v).Size()
 	buffer := make([]byte, totalSize)
 
 	codec.Uint32(1).EncodeToBuffer(buffer)
 
 	offset := uint32(0)
 	codec.Uint32(offset).EncodeToBuffer(buffer[codec.UINT32_LEN*1:])
-	v.EncodeToBuffer(buffer[2*codec.UINT32_LEN+offset:])
+	//v.EncodeToBuffer(buffer[2*codec.UINT32_LEN+offset:])
 
 	return buffer //this.value.Bytes()
 }
 
 func (this *Balance) DecodeCompact(bytes []byte) interface{} {
 	//return NewBalance((&big.Int{}).SetBytes(bytes), &big.Int{})
-	fields := codec.Byteset{}.Decode(bytes).(codec.Byteset)
-	return NewBalance((*big.Int)((&codec.Bigint{}).Decode(fields[0]).(*codec.Bigint)), &big.Int{})
+	// fields := codec.Byteset{}.Decode(bytes).(codec.Byteset)
+	// return NewBalance((*big.Int)((&codec.Bigint{}).Decode(fields[0]).(*codec.Bigint)), &big.Int{})
+	return nil
 }
 
 func (this *Balance) Print() {

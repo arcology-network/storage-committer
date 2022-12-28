@@ -93,7 +93,7 @@ func (*Univalue) GetTypeID(value interface{}) uint8 {
 		case *commutative.Meta:
 			return ccurlcommon.CommutativeMeta
 		case *commutative.Balance: /* Commutatives */
-			return ccurlcommon.CommutativeBalance
+			return ccurlcommon.CommutativeUint256
 		case *commutative.Int64:
 			return ccurlcommon.CommutativeInt64
 		}

@@ -54,7 +54,7 @@ func (this *Platform) Builtin(platform string, acct string) ([]string, map[strin
 	this.syspaths[this.Eth10Account()+acct+"/"] = Syspath{[]bool{true, false, false}, CommutativeMeta, this.Eth10Account() + acct + "/"}
 	this.syspaths[this.Eth10Account()+acct+"/code"] = Syspath{[]bool{true, true, true}, NoncommutativeBytes, []byte{}}
 	this.syspaths[this.Eth10Account()+acct+"/nonce"] = Syspath{[]bool{true, true, true}, CommutativeInt64, int64(0)}
-	this.syspaths[this.Eth10Account()+acct+"/balance"] = Syspath{[]bool{true, true, true}, CommutativeBalance, []*big.Int{big.NewInt(0), big.NewInt(0)}}
+	this.syspaths[this.Eth10Account()+acct+"/balance"] = Syspath{[]bool{true, true, true}, CommutativeUint256, []*big.Int{big.NewInt(0), big.NewInt(0)}}
 	this.syspaths[this.Eth10Account()+acct+"/defer/"] = Syspath{[]bool{true, true, true}, CommutativeMeta, this.Eth10Account() + acct + "/defer/"}
 	this.syspaths[this.Eth10Account()+acct+"/storage/"] = Syspath{[]bool{true, false, false}, CommutativeMeta, this.Eth10Account() + acct + "/storage/"}
 	this.syspaths[this.Eth10Account()+acct+"/storage/containers/"] = Syspath{[]bool{true, true, false}, CommutativeMeta, this.Eth10Account() + acct + "/storage/containers/"}

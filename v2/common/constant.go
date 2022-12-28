@@ -16,7 +16,7 @@ const (
 
 	CommutativeMeta    uint8 = 100
 	CommutativeInt64   uint8 = 101
-	CommutativeBalance uint8 = 102
+	CommutativeUint256 uint8 = 102
 
 	NoncommutativeInt64  uint8 = 103
 	NoncommutativeString uint8 = 104

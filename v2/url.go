@@ -80,7 +80,7 @@ func (this *ConcurrentUrl) CreateAccount(tx uint32, platform string, acct string
 		case uint8(reflect.Kind(ccurlcommon.NoncommutativeString)): // delta big int
 			v = noncommutative.NewString(path.Default.(string))
 
-		case uint8(reflect.Kind(ccurlcommon.CommutativeBalance)): // delta big int
+		case uint8(reflect.Kind(ccurlcommon.CommutativeUint256)): // delta big int
 			v = commutative.NewBalance(path.Default.([]*big.Int)[0], path.Default.([]*big.Int)[1])
 
 		case uint8(reflect.Kind(ccurlcommon.CommutativeInt64)): // big int pointer

@@ -8,6 +8,7 @@ require (
 	github.com/arcology-network/common-lib v1.7.1
 	github.com/elliotchance/orderedmap v1.5.0
 	github.com/google/btree v1.1.2
+	github.com/holiman/uint256 v1.2.1
 	github.com/petar/GoLLRB v0.0.0-20210522233825-ae3b015fd3e9
 	github.com/segmentio/fasthash v1.0.3
 	github.com/spaolacci/murmur3 v1.1.0
