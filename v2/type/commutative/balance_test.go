@@ -11,14 +11,16 @@ import (
 func TestCodecBalance(t *testing.T) {
 	/* Noncommutative Path Test*/
 	balance := NewBalance(big.NewInt(5), big.NewInt(-2), *uint256.NewInt(0), *uint256.NewInt(100)).(*Balance)
+	fmt.Println("Value :", balance)
 
 	if _, _, err := balance.Set(0, "", big.NewInt(-2), nil); err != nil {
 		fmt.Println(err)
 	}
 	v, _, _ := balance.Get(0, "", nil)
 
-	fmt.Println("Balance Encoded size :", v)
-	fmt.Println("Balance Encoded size :", len(balance.Encode()))
+	u256 := v.(*Balance).Value().(uint256.Int)
+	fmt.Println("Value :", u256.Uint64())
+	// fmt.Println("Balance Encoded size :", len(balance.Encode()))
 
 	// fmt.Println("Balance Encoded Compact size :", len(balance.EncodeCompact()))
 

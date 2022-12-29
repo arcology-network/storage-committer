@@ -62,14 +62,13 @@ func (this *Balance) TypeID() uint8 {
 }
 
 func (*Balance) check(value uint256.Int, deltaBigInt *big.Int, min, max *uint256.Int) (bool, *uint256.Int, error) {
-	isNegative := deltaBigInt.Sign() == -1
-	deltaBigInt.Abs(big.NewInt(0))
-
-	delta, ok := uint256.FromBig(deltaBigInt)
-	if ok {
+	b := new(big.Int).Set(deltaBigInt)
+	delta, failed := uint256.FromBig(b.Abs(b))
+	if failed {
 		panic("Error: Failed convert to uint256!!!")
 	}
 
+	isNegative := deltaBigInt.Sign() == -1
 	if isNegative {
 		if value.Cmp(delta) == -1 || (min != nil && value.Sub(&value, delta).Cmp(min) == -1) { // Check against the min value
 			return isNegative, delta, errors.New("Error: Underflow!!!")
