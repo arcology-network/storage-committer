@@ -19,7 +19,7 @@ type Balance struct {
 	delta     *big.Int
 }
 
-func NewBalance(initialV *big.Int, deltaV *big.Int, min, max uint256.Int) interface{} {
+func NewBalance(initialV *big.Int, deltaV *big.Int, min, max *uint256.Int) interface{} {
 	v, overflow := uint256.FromBig(initialV)
 	if overflow {
 		panic("Overflow!")
@@ -27,8 +27,8 @@ func NewBalance(initialV *big.Int, deltaV *big.Int, min, max uint256.Int) interf
 	return &Balance{
 		false,
 		*v,
-		nil,
-		nil,
+		min,
+		max,
 		deltaV,
 	}
 }
@@ -69,14 +69,15 @@ func (*Balance) check(value uint256.Int, deltaBigInt *big.Int, min, max *uint256
 	}
 
 	isNegative := deltaBigInt.Sign() == -1
+
 	if isNegative {
-		if value.Cmp(delta) == -1 || (min != nil && value.Sub(&value, delta).Cmp(min) == -1) { // Check against the min value
+		if value.Cmp(delta) == -1 || (min != nil && new(uint256.Int).Sub(&value, delta).Cmp(min) == -1) { // Check against the min value
 			return isNegative, delta, errors.New("Error: Underflow!!!")
 		}
 		return isNegative, delta, nil
 	}
 
-	if max != nil && value.Add(&value, delta).Cmp(max) == 1 { // Check against the MAX value
+	if max != nil && new(uint256.Int).Add(&value, delta).Cmp(max) == 1 { // Check against the MAX value
 		return isNegative, delta, errors.New("Error: Overflow!!!")
 	}
 	return isNegative, delta, nil
@@ -114,6 +115,12 @@ func (this *Balance) Delta(source interface{}) interface{} {
 
 // Set delta
 func (this *Balance) Set(tx uint32, path string, v interface{}, source interface{}) (uint32, uint32, error) {
+	sum := new(big.Int).Add(this.delta, v.(*big.Int))
+	_, _, err := this.check(this.value, sum, this.min, this.max)
+	if err != nil {
+		return 0, 1, errors.New("Wrong Value!!!")
+	}
+
 	this.delta.Add(this.delta, v.(*big.Int))
 	return 0, 1, nil
 }
