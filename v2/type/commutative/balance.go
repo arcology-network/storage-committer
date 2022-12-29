@@ -45,10 +45,6 @@ func (this *Balance) Deepcopy() interface{} {
 	}
 }
 
-func (this *Balance) HeaderSize() uint32 {
-	return 6 * codec.UINT32_LEN
-}
-
 func (this *Balance) Value() interface{} {
 	return this.value
 }
@@ -94,6 +90,7 @@ func (this *Balance) Get(tx uint32, path string, source interface{}) (interface{
 		value:     this.value,
 		min:       this.min,
 		max:       this.max,
+		delta:     big.NewInt(0),
 	}
 
 	isNegative, delta, err := this.check(temp.value, this.delta, this.min, this.max)
@@ -115,9 +112,7 @@ func (this *Balance) Delta(source interface{}) interface{} {
 
 // Set delta
 func (this *Balance) Set(tx uint32, path string, v interface{}, source interface{}) (uint32, uint32, error) {
-	sum := new(big.Int).Add(this.delta, v.(*big.Int))
-	_, _, err := this.check(this.value, sum, this.min, this.max)
-	if err != nil {
+	if _, _, err := this.check(this.value, new(big.Int).Add(this.delta, v.(*big.Int)), this.min, this.max); err != nil {
 		return 0, 1, errors.New("Wrong Value!!!")
 	}
 
@@ -153,7 +148,9 @@ func (this *Balance) ApplyDelta(tx uint32, v interface{}) ccurlcommon.TypeInterf
 		}
 
 		if this != nil && v != nil {
-			this.Set(tx, "", v.(*Balance), nil)
+			if _, _, err := this.Set(tx, "", v.(*Balance), nil); err != nil {
+				panic(err)
+			}
 		}
 
 		if this != nil && v == nil {
@@ -161,22 +158,8 @@ func (this *Balance) ApplyDelta(tx uint32, v interface{}) ccurlcommon.TypeInterf
 		}
 	}
 
-	if this == nil {
-		return nil
-	}
-
-	isNegative, delta, err := this.check(this.value, this.delta, this.min, this.max)
-	if err != nil {
-		panic(err)
-	}
-
-	if isNegative {
-		this.value.Sub(&this.value, delta)
-	} else {
-		this.value.Add(&this.value, delta)
-	}
-
-	this.delta = big.NewInt(0) // reset the delta
+	newValue, _, _ := this.Get(tx, "", nil)
+	*this = (*newValue.(*Balance))
 	return this
 }
 
@@ -184,19 +167,24 @@ func (this *Balance) Composite() bool { return !this.finalized }
 
 func (this *Balance) Purge() {
 	this.finalized = false
-	this.delta = &big.Int{}
+	this.delta = big.NewInt(0)
 }
 
 func (this *Balance) Hash(hasher func([]byte) []byte) []byte {
 	return hasher(this.EncodeCompact())
 }
 
+func (this *Balance) HeaderSize() uint32 {
+	return (1 + 5) * codec.UINT32_LEN // Total number of fields + offsets of these fields
+}
+
 func (this *Balance) Size() uint32 {
-	// v := codec.Bigint(*this.value)
 	d := codec.Bigint(*this.delta)
 	return this.HeaderSize() +
 		codec.Bool(this.finalized).Size() +
-		//(&v).Size() +
+		uint32(len(this.value.Bytes())) +
+		uint32(len(this.min.Bytes())) +
+		uint32(len(this.max.Bytes())) +
 		(&d).Size()
 }
 
@@ -207,23 +195,22 @@ func (this *Balance) Encode() []byte {
 }
 
 func (this *Balance) EncodeToBuffer(buffer []byte) {
+	// codec.Uint32(5).EncodeToBuffer(buffer) // Encode the total number of elements first
 
-	// v := codec.Bigint(*(uint256.ToBig(*this.value)))
-	d := codec.Bigint(*(this.delta))
+	// v := this.value.Bytes()          // Value
+	// d := codec.Bigint(*(this.delta)) // Delta
 
-	codec.Uint32(3).EncodeToBuffer(buffer)
+	// offset := uint32(0)
+	// codec.Uint32(offset).EncodeToBuffer(buffer[codec.UINT32_LEN*1:])
+	// codec.Bool(this.finalized).EncodeToBuffer(buffer[(1+1)*codec.UINT32_LEN+offset:])
+	// offset += codec.Bool(this.finalized).Size()
 
-	offset := uint32(0)
-	codec.Uint32(offset).EncodeToBuffer(buffer[codec.UINT32_LEN*1:])
-	codec.Bool(this.finalized).EncodeToBuffer(buffer[4*codec.UINT32_LEN+offset:])
-	offset += codec.Bool(this.finalized).Size()
+	// codec.Uint32(offset).EncodeToBuffer(buffer[codec.UINT32_LEN*2:])
+	// // v.EncodeToBuffer(buffer[4*codec.UINT32_LEN+offset:])
+	// // offset += v.Size()
 
-	codec.Uint32(offset).EncodeToBuffer(buffer[codec.UINT32_LEN*2:])
-	// v.EncodeToBuffer(buffer[4*codec.UINT32_LEN+offset:])
-	// offset += v.Size()
-
-	codec.Uint32(offset).EncodeToBuffer(buffer[codec.UINT32_LEN*3:])
-	d.EncodeToBuffer(buffer[4*codec.UINT32_LEN+offset:])
+	// codec.Uint32(offset).EncodeToBuffer(buffer[codec.UINT32_LEN*3:])
+	// d.EncodeToBuffer(buffer[4*codec.UINT32_LEN+offset:])
 }
 
 func (*Balance) Decode(data []byte) interface{} {
