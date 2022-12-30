@@ -21,7 +21,7 @@ type Balance struct {
 
 func NewBalance(initialV *uint256.Int, min, max *uint256.Int) (interface{}, error) {
 	var err error
-	if initialV.Cmp(min) == -1 || initialV.Cmp(max) == 1 {
+	if (min != nil && initialV.Cmp(min) == -1) || (max != nil && initialV.Cmp(max) == 1) || (min != nil && max != nil && min.Cmp(max) == 1) {
 		err = errors.New("Error: Out of range!!!")
 	}
 
@@ -219,25 +219,53 @@ func (*Balance) Decode(buffer []byte) interface{} {
 }
 
 func (this *Balance) EncodeCompact() []byte {
-	// v := codec.Bigint(*(this.value))
-	vSize := len(this.value)
-	totalSize := 2*codec.UINT32_LEN + vSize //(&v).Size()
-	buffer := make([]byte, totalSize)
+	totalLen := 32
+	if this.min != nil {
+		totalLen += 32
+	}
 
-	codec.Uint32(1).EncodeToBuffer(buffer)
+	if this.max != nil {
+		totalLen += 32
+	}
 
-	offset := uint32(0)
-	codec.Uint32(offset).EncodeToBuffer(buffer[codec.UINT32_LEN*1:])
-	//v.EncodeToBuffer(buffer[2*codec.UINT32_LEN+offset:])
+	buffer := make([]byte, 2+totalLen) // labels + actual length
 
-	return buffer //this.value.Bytes()
+	offset := codec.Uint64s(this.value[:]).EncodeToBuffer(buffer[2:])
+	if this.min != nil {
+		buffer[0] = 1
+		offset += codec.Uint64s(this.min[:]).EncodeToBuffer(buffer[offset+2:])
+	}
+
+	if this.max != nil {
+		buffer[1] = 1
+		codec.Uint64s(this.max[:]).EncodeToBuffer(buffer[offset+2:])
+	}
+	return buffer
 }
 
-func (this *Balance) DecodeCompact(bytes []byte) interface{} {
-	//return NewBalance((&big.Int{}).SetBytes(bytes), &big.Int{})
-	// fields := codec.Byteset{}.Decode(bytes).(codec.Byteset)
-	// return NewBalance((*big.Int)((&codec.Bigint{}).Decode(fields[0]).(*codec.Bigint)), &big.Int{})
-	return nil
+func (this *Balance) DecodeCompact(buffer []byte) interface{} {
+	v := uint256.NewInt(0)
+	offset := 2
+	copy((*v)[:], codec.Uint64s{}.Decode(buffer[offset:offset+32]).(codec.Uint64s))
+
+	var min, max *uint256.Int
+	offset += 32
+	if buffer[0] == 1 {
+		min = uint256.NewInt(0)
+		copy(min[:], codec.Uint64s{}.Decode(buffer[offset:offset+32]).(codec.Uint64s))
+		offset += 32
+	}
+
+	if buffer[1] == 1 {
+		max = uint256.NewInt(0)
+		copy(max[:], codec.Uint64s{}.Decode(buffer[offset:offset+32]).(codec.Uint64s))
+	}
+
+	value, err := NewBalance(v, min, max)
+	if err != nil {
+		panic(err)
+	}
+	return value
 }
 
 func (this *Balance) Print() {
