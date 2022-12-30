@@ -9,7 +9,8 @@ import (
 )
 
 func TestUint256Basic(t *testing.T) {
-	balance := NewBalance(big.NewInt(5), big.NewInt(-2), uint256.NewInt(0), uint256.NewInt(100)).(*Balance)
+	b, _ := NewBalance(uint256.NewInt(5), uint256.NewInt(0), uint256.NewInt(100))
+	balance := b.(*Balance)
 	fmt.Println("Value :", balance)
 
 	if _, _, err := balance.Set(0, "", big.NewInt(-2), nil); err != nil {
@@ -29,13 +30,14 @@ func TestUint256Basic(t *testing.T) {
 	u256 := v.(*Balance).Value().(uint256.Int)
 	fmt.Println("Value :", u256.Uint64())
 
-	if u256.Uint64() != 3 {
+	if u256.Uint64() != 5 {
 		t.Error("Wrong value")
 	}
 }
 
 func TestUint256LowerLimit(t *testing.T) {
-	balance := NewBalance(big.NewInt(5), big.NewInt(-2), uint256.NewInt(0), uint256.NewInt(100)).(*Balance)
+	b, err := NewBalance(uint256.NewInt(5), uint256.NewInt(0), uint256.NewInt(100))
+	balance := b.(*Balance)
 	fmt.Println("Value :", balance)
 
 	if _, _, err := balance.Set(0, "", big.NewInt(-2), nil); err != nil {
@@ -50,13 +52,17 @@ func TestUint256LowerLimit(t *testing.T) {
 		fmt.Println(err)
 	}
 
-	if _, _, err := balance.Set(0, "", big.NewInt(-4), nil); err == nil {
-		fmt.Println("Error: Out of range, should have failed")
+	b, err = NewBalance(uint256.NewInt(5), uint256.NewInt(6), uint256.NewInt(100))
+	balance = b.(*Balance)
+
+	if err == nil {
+		t.Error("Should report an error !")
 	}
 }
 
 func TestUint256UpperLimit(t *testing.T) {
-	balance := NewBalance(big.NewInt(5), big.NewInt(-2), uint256.NewInt(0), uint256.NewInt(100)).(*Balance)
+	b, _ := NewBalance(uint256.NewInt(5), uint256.NewInt(0), uint256.NewInt(100))
+	balance := b.(*Balance)
 	fmt.Println("Value :", balance)
 
 	if _, _, err := balance.Set(0, "", big.NewInt(-2), nil); err != nil {
@@ -77,8 +83,8 @@ func TestUint256UpperLimit(t *testing.T) {
 }
 
 func TestCodecBalance(t *testing.T) {
-	/* Noncommutative Path Test*/
-	balance := NewBalance(big.NewInt(5), big.NewInt(-2), uint256.NewInt(0), uint256.NewInt(100)).(*Balance)
+	b, _ := NewBalance(uint256.NewInt(5), uint256.NewInt(0), uint256.NewInt(100))
+	balance := b.(*Balance)
 	fmt.Println("Value :", balance)
 
 	if _, _, err := balance.Set(0, "", big.NewInt(-2), nil); err != nil {
@@ -92,25 +98,18 @@ func TestCodecBalance(t *testing.T) {
 	if _, _, err := balance.Set(0, "", big.NewInt(3), nil); err != nil {
 		fmt.Println(err)
 	}
-
 	v, _, _ := balance.Get(0, "", nil)
 
 	u256 := v.(*Balance).Value().(uint256.Int)
-	fmt.Println("Value :", u256.Uint64())
-	// fmt.Println("Balance Encoded size :", len(balance.Encode()))
+	if u256.Uint64() != 5 {
+		fmt.Println("Error: Wrong value!!!")
+	}
 
-	// fmt.Println("Balance Encoded Compact size :", len(balance.EncodeCompact()))
+	buffer := balance.Encode()
+	out := (&(Balance{})).Decode(buffer).(*Balance)
+	fmt.Println("Balance Encoded size :", out)
 
-	// buffer0 := balance.Encode()
-
-	// buffer := make([]byte, balance.Size())
-	// balance.EncodeToBuffer(buffer)
-	// out := (&(Balance{})).Decode(buffer).(*Balance)
-
-	// if balance.Value().(*big.Int).Cmp(out.Value().(*big.Int)) != 0 ||
-	// 	balance.GetDelta().(*big.Int).Cmp(out.GetDelta().(*big.Int)) != 0 {
-	// 	fmt.Println(buffer0)
-	// 	fmt.Println(buffer)
-	// 	t.Error("Error")
-	// }
+	if out.value.Uint64() != 5 || out.delta.Uint64() != 2 || out.delta.Sign() != 1 || (*out.min).Uint64() != 0 || (*out.max).Uint64() != 100 {
+		fmt.Println("Error: Out of range, should have failed")
+	}
 }

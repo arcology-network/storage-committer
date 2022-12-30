@@ -14,7 +14,7 @@ type TypeInterface interface { // value type
 	Composite() bool
 	Hash(func([]byte) []byte) []byte
 	Encode() []byte
-	EncodeToBuffer([]byte)
+	EncodeToBuffer([]byte) int
 	Decode([]byte) interface{}
 	Size() uint32
 	EncodeCompact() []byte

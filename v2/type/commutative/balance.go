@@ -19,18 +19,19 @@ type Balance struct {
 	delta     *big.Int
 }
 
-func NewBalance(initialV *big.Int, deltaV *big.Int, min, max *uint256.Int) interface{} {
-	v, overflow := uint256.FromBig(initialV)
-	if overflow {
-		panic("Overflow!")
+func NewBalance(initialV *uint256.Int, min, max *uint256.Int) (interface{}, error) {
+	var err error
+	if initialV.Cmp(min) == -1 || initialV.Cmp(max) == 1 {
+		err = errors.New("Error: Out of range!!!")
 	}
+
 	return &Balance{
 		false,
-		*v,
+		*initialV,
 		min,
 		max,
-		deltaV,
-	}
+		big.NewInt(0),
+	}, err
 }
 
 func (this *Balance) Deepcopy() interface{} {
@@ -179,13 +180,12 @@ func (this *Balance) HeaderSize() uint32 {
 }
 
 func (this *Balance) Size() uint32 {
-	d := codec.Bigint(*this.delta)
-	return this.HeaderSize() +
-		codec.Bool(this.finalized).Size() +
-		uint32(len(this.value.Bytes())) +
-		uint32(len(this.min.Bytes())) +
-		uint32(len(this.max.Bytes())) +
-		(&d).Size()
+	delta := codec.Bigint(*this.delta)
+	return codec.Bool(this.finalized).Size() +
+		32 + // Values
+		32 + // Min
+		32 + // Max
+		delta.Size()
 }
 
 func (this *Balance) Encode() []byte {
@@ -194,32 +194,28 @@ func (this *Balance) Encode() []byte {
 	return buffer
 }
 
-func (this *Balance) EncodeToBuffer(buffer []byte) {
-	// codec.Uint32(5).EncodeToBuffer(buffer) // Encode the total number of elements first
+func (this *Balance) EncodeToBuffer(buffer []byte) int {
+	offset := codec.Bool(this.finalized).EncodeToBuffer(buffer)
+	offset += codec.Uint64s(this.value[:]).EncodeToBuffer(buffer[offset:])
+	offset += codec.Uint64s(this.min[:]).EncodeToBuffer(buffer[offset:])
+	offset += codec.Uint64s(this.max[:]).EncodeToBuffer(buffer[offset:])
 
-	// v := this.value.Bytes()          // Value
-	// d := codec.Bigint(*(this.delta)) // Delta
-
-	// offset := uint32(0)
-	// codec.Uint32(offset).EncodeToBuffer(buffer[codec.UINT32_LEN*1:])
-	// codec.Bool(this.finalized).EncodeToBuffer(buffer[(1+1)*codec.UINT32_LEN+offset:])
-	// offset += codec.Bool(this.finalized).Size()
-
-	// codec.Uint32(offset).EncodeToBuffer(buffer[codec.UINT32_LEN*2:])
-	// // v.EncodeToBuffer(buffer[4*codec.UINT32_LEN+offset:])
-	// // offset += v.Size()
-
-	// codec.Uint32(offset).EncodeToBuffer(buffer[codec.UINT32_LEN*3:])
-	// d.EncodeToBuffer(buffer[4*codec.UINT32_LEN+offset:])
+	delta := codec.Bigint(*this.delta)
+	return offset + (&delta).EncodeToBuffer(buffer[offset:])
 }
 
-func (*Balance) Decode(data []byte) interface{} {
-	fields := codec.Byteset{}.Decode(data).(codec.Byteset)
-	return &Balance{
-		finalized: bool(codec.Bool(true).Decode(fields[0]).(codec.Bool)),
-		// value:     (*big.Int)((&codec.Bigint{}).Decode(fields[1]).(*codec.Bigint)),
-		delta: (*big.Int)((&codec.Bigint{}).Decode(fields[2]).(*codec.Bigint)),
+func (*Balance) Decode(buffer []byte) interface{} {
+	balance := &Balance{
+		finalized: bool(codec.Bool(true).Decode(buffer).(codec.Bool)),
+		min:       uint256.NewInt(0),
+		max:       uint256.NewInt(0),
 	}
+
+	copy(balance.value[:], codec.Uint64s{}.Decode(buffer[1+32*0:1+32*1]).(codec.Uint64s))
+	copy(balance.min[:], codec.Uint64s{}.Decode(buffer[1+32*1:1+32*2]).(codec.Uint64s))
+	copy(balance.max[:], codec.Uint64s{}.Decode(buffer[1+32*2:1+32*3]).(codec.Uint64s))
+	balance.delta = (*big.Int)((&codec.Bigint{}).Decode(buffer[1+32*3:]).(*codec.Bigint))
+	return balance
 }
 
 func (this *Balance) EncodeCompact() []byte {

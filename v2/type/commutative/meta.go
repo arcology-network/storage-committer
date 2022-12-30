@@ -376,21 +376,15 @@ func (this *Meta) FillHeader(buffer []byte) {
 	codec.Uint32(total).EncodeToBuffer(buffer[codec.UINT32_LEN*4:])
 }
 
-func (this *Meta) EncodeToBuffer(buffer []byte) {
+func (this *Meta) EncodeToBuffer(buffer []byte) int {
 	this.FillHeader(buffer)
-	headerLen := this.HeaderSize()
+	offset := int(this.HeaderSize())
 
-	offset := uint32(0)
-	codec.Strings(this.keys).EncodeToBuffer(buffer[headerLen+offset:])
-	offset += codec.Strings(this.keys).Size()
+	offset += codec.Strings(this.keys).EncodeToBuffer(buffer[offset:])
+	offset += codec.Strings(this.added).EncodeToBuffer(buffer[offset:])
+	offset += codec.Strings(this.removed).EncodeToBuffer(buffer[offset:])
 
-	codec.Strings(this.added).EncodeToBuffer(buffer[headerLen+offset:])
-	offset += codec.Strings(this.added).Size()
-
-	codec.Strings(this.removed).EncodeToBuffer(buffer[headerLen+offset:])
-	offset += codec.Strings(this.removed).Size()
-
-	codec.Bool(this.finalized).EncodeToBuffer(buffer[headerLen+offset:])
+	return int(offset) + codec.Bool(this.finalized).EncodeToBuffer(buffer[offset:])
 }
 
 func (this *Meta) Decode(bytes []byte) interface{} {

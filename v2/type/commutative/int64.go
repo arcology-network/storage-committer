@@ -48,10 +48,10 @@ func (this *Int64) Encode() []byte {
 	return buffer
 }
 
-func (this *Int64) EncodeToBuffer(buffer []byte) {
-	codec.Bool(this.finalized).EncodeToBuffer(buffer)
-	codec.Int64(this.value).EncodeToBuffer(buffer[1 : codec.UINT64_LEN+1])
-	codec.Int64(this.delta).EncodeToBuffer(buffer[codec.UINT64_LEN+1:])
+func (this *Int64) EncodeToBuffer(buffer []byte) int {
+	offset := codec.Bool(this.finalized).EncodeToBuffer(buffer)
+	offset += codec.Int64(this.value).EncodeToBuffer(buffer[offset:])
+	return offset + codec.Int64(this.delta).EncodeToBuffer(buffer[offset:])
 }
 
 func (this *Int64) Decode(buffer []byte) interface{} {
