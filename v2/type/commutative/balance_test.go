@@ -132,6 +132,22 @@ func TestUint256LowerAndUpperLimit(t *testing.T) {
 	}
 }
 
+func TestUint256LowerGreaterThanUpper(t *testing.T) {
+	b, err := NewBalance(uint256.NewInt(5), uint256.NewInt(100), uint256.NewInt(0))
+	balance := b.(*Balance)
+	fmt.Println("Value :", balance)
+	if err == nil {
+		t.Error("Error: Out of range, should have failed")
+	}
+
+	b, err = NewBalance(uint256.NewInt(99), uint256.NewInt(100), uint256.NewInt(0))
+	balance = b.(*Balance)
+	fmt.Println("Value :", balance)
+	if err == nil {
+		t.Error("Error: Out of range, should have failed")
+	}
+}
+
 func TestCodecBalance(t *testing.T) {
 	b, _ := NewBalance(uint256.NewInt(5), uint256.NewInt(0), uint256.NewInt(100))
 	balance := b.(*Balance)
