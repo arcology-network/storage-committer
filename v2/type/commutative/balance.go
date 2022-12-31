@@ -62,21 +62,28 @@ func (*Balance) check(value uint256.Int, deltaBigInt *big.Int, min, max *uint256
 	b := new(big.Int).Set(deltaBigInt)
 	delta, failed := uint256.FromBig(b.Abs(b))
 	if failed {
-		panic("Error: Failed convert to uint256!!!")
+		return false, nil, errors.New("Error: Delta Overflow!!!")
 	}
 
 	isNegative := deltaBigInt.Sign() == -1
-
 	if isNegative {
-		if value.Cmp(delta) == -1 || (min != nil && new(uint256.Int).Sub(&value, delta).Cmp(min) == -1) { // Check against the min value
-			return isNegative, delta, errors.New("Error: Underflow!!!")
+		if diff, overflow := new(uint256.Int).SubOverflow(&value, delta); overflow {
+			return isNegative, nil, errors.New("Error: Underflow!!!")
+		} else {
+			if min != nil && diff.Cmp(min) == -1 {
+				return isNegative, nil, errors.New("Error: Sum overflow!!!")
+			}
 		}
-		return isNegative, delta, nil
+	} else {
+		if sum, overflow := new(uint256.Int).AddOverflow(&value, delta); overflow {
+			return isNegative, nil, errors.New("Error: Sum overflow!!!")
+		} else {
+			if max != nil && sum.Cmp(max) == 1 {
+				return isNegative, nil, errors.New("Error: Sum overflow!!!")
+			}
+		}
 	}
 
-	if max != nil && new(uint256.Int).Add(&value, delta).Cmp(max) == 1 { // Check against the MAX value
-		return isNegative, delta, errors.New("Error: Overflow!!!")
-	}
 	return isNegative, delta, nil
 }
 
@@ -114,7 +121,7 @@ func (this *Balance) Delta(source interface{}) interface{} {
 // Set delta
 func (this *Balance) Set(tx uint32, path string, v interface{}, source interface{}) (uint32, uint32, error) {
 	if _, _, err := this.check(this.value, new(big.Int).Add(this.delta, v.(*big.Int)), this.min, this.max); err != nil {
-		return 0, 1, errors.New("Wrong Value!!!")
+		return 0, 1, err
 	}
 
 	this.delta.Add(this.delta, v.(*big.Int))

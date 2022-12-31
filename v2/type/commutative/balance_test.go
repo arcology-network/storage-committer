@@ -2,6 +2,7 @@ package commutative
 
 import (
 	"fmt"
+	"math"
 	"math/big"
 	"testing"
 
@@ -37,6 +38,10 @@ func TestUint256Basic(t *testing.T) {
 
 func TestUint256LowerLimitOnly(t *testing.T) {
 	b, err := NewBalance(uint256.NewInt(5), uint256.NewInt(0), nil)
+	if err != nil {
+		t.Error(err)
+	}
+
 	balance := b.(*Balance)
 	fmt.Println("Value :", balance)
 
@@ -148,7 +153,37 @@ func TestUint256LowerGreaterThanUpper(t *testing.T) {
 	}
 }
 
-func TestCodecBalance(t *testing.T) {
+func TestBigNumber(t *testing.T) {
+	initv := uint256.NewInt(0)
+	for i := 0; i < 4; i++ {
+		initv[i] = math.MaxUint64
+	}
+
+	b, err := NewBalance(initv, uint256.NewInt(0), uint256.NewInt(100))
+	if err == nil {
+		t.Error("Error: Should have reported out-of-range error")
+	}
+
+	fmt.Println("Value :", b)
+
+	b, err = NewBalance(initv, nil, nil)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println("Value :", b)
+
+	_, _, err = b.(*Balance).Set(0, "", big.NewInt(0), nil)
+	if err != nil {
+		t.Error(err)
+	}
+
+	_, _, err = b.(*Balance).Set(0, "", big.NewInt(1), nil)
+	if err == nil {
+		t.Error("Error: Should have reported out of range error!!")
+	}
+}
+
+func TestCodec(t *testing.T) {
 	b, _ := NewBalance(uint256.NewInt(5), uint256.NewInt(0), uint256.NewInt(100))
 	balance := b.(*Balance)
 	fmt.Println("Value :", balance)
