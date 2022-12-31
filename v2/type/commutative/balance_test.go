@@ -153,7 +153,15 @@ func TestUint256LowerGreaterThanUpper(t *testing.T) {
 	}
 }
 
-func TestBigNumber(t *testing.T) {
+func TestUnderflow(t *testing.T) {
+	b, _ := NewBalance(uint256.NewInt(0), nil, uint256.NewInt(100))
+	_, _, err := b.(*Balance).Set(0, "", big.NewInt(-1), nil)
+	if err == nil {
+		t.Error("Error: Should have reported out of range error!!")
+	}
+}
+
+func TestOverflow(t *testing.T) {
 	initv := uint256.NewInt(0)
 	for i := 0; i < 4; i++ {
 		initv[i] = math.MaxUint64
