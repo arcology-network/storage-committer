@@ -20,9 +20,8 @@ type Balance struct {
 }
 
 func NewBalance(initialV *uint256.Int, min, max *uint256.Int) (interface{}, error) {
-	var err error
 	if (min != nil && initialV.Cmp(min) == -1) || (max != nil && initialV.Cmp(max) == 1) || (min != nil && max != nil && min.Cmp(max) == 1) {
-		err = errors.New("Error: Out of range!!!")
+		return nil, errors.New("Error: Out of range!!!")
 	}
 
 	return &Balance{
@@ -31,7 +30,7 @@ func NewBalance(initialV *uint256.Int, min, max *uint256.Int) (interface{}, erro
 		min,
 		max,
 		big.NewInt(0),
-	}, err
+	}, nil
 }
 
 func (this *Balance) Deepcopy() interface{} {
