@@ -12,7 +12,7 @@ import (
 	cccontainermap "github.com/arcology-network/common-lib/concurrentcontainer/map"
 	"github.com/arcology-network/common-lib/mempool"
 
-	performance "github.com/arcology-network/common-lib/mhasher"
+	// performance "github.com/arcology-network/common-lib/mhasher"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 )
 
@@ -94,14 +94,19 @@ func (this *Indexer) TryRead(tx uint32, path string) (interface{}, bool) {
 	return this.RetriveShallow(path), false
 }
 
-func (this *Indexer) Write(tx uint32, path string, value interface{}) error {
+func (this *Indexer) Write(tx uint32, path string, value interface{}, reset bool) error {
 	parentPath := ccurlcommon.GetParentPath(path)
 	if this.IfExists(parentPath) || tx == ccurlcommon.SYSTEM { // The parent path exists or to inject the path directly
 		univalue := this.CheckHistory(tx, path, true)
 		if univalue.Value() == nil && value == nil { // Try to delete something nonexistent
 			return nil
 		} else {
-			err := univalue.Set(tx, path, value, this)
+			var err error
+			if reset {
+				err = univalue.Reset(tx, path, value, this)
+			} else {
+				err = univalue.Set(tx, path, value, this)
+			}
 			if !this.platform.OnControlList(parentPath) && tx != ccurlcommon.SYSTEM && err == nil { // System paths don't keep track of child paths
 				if parentValue := this.CheckHistory(tx, parentPath, false); parentValue != nil && parentValue.Value() != nil {
 					if parentValue.UpdateParentMeta(tx, univalue, this) {
@@ -212,12 +217,12 @@ func (this *Indexer) WhilteList(whitelist []uint32) []error {
 
 func (this *Indexer) SortTransitions() {
 	this.updatedKeys = this.byPath.Keys()
-	var err error
-	this.updatedKeys, err = performance.SortStrings(this.updatedKeys) // Keys should be unique
-	if err != nil {
-		panic(err)
-	}
-	// sort.Strings(this.updatedKeys)
+	// var err error
+	// this.updatedKeys, err = performance.SortStrings(this.updatedKeys) // Keys should be unique
+	// if err != nil {
+	// 	panic(err)
+	// }
+	sort.Strings(this.updatedKeys)
 
 	sorter := func(start, end, index int, args ...interface{}) {
 		for i := start; i < end; i++ {

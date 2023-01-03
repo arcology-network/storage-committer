@@ -8,7 +8,8 @@ import (
 
 	codec "github.com/arcology-network/common-lib/codec"
 	common "github.com/arcology-network/common-lib/common"
-	performance "github.com/arcology-network/common-lib/mhasher"
+
+	// performance "github.com/arcology-network/common-lib/mhasher"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 	orderedmap "github.com/elliotchance/orderedmap"
 )
@@ -132,21 +133,21 @@ func (this *Meta) ApplyDelta(tx uint32, v interface{}) ccurlcommon.TypeInterface
 	if this != nil {
 		if len(toRemove) > 0 {
 			// t0 := time.Now()
-			keys, _ = performance.RemoveString(keys, toRemove)
-			// toRemoveDict := make(map[string]struct{})
-			// for _, v := range toRemove {
-			// 	toRemoveDict[v] = struct{}{}
-			// }
-			// next := 0
-			// for i := 0; i < len(keys); i++ {
-			// 	if _, ok := toRemoveDict[keys[i]]; ok {
-			// 		continue
-			// 	} else {
-			// 		keys[next] = keys[i]
-			// 		next++
-			// 	}
-			// }
-			// keys = keys[:next]
+			// keys, _ = performance.RemoveString(keys, toRemove)
+			toRemoveDict := make(map[string]struct{})
+			for _, v := range toRemove {
+				toRemoveDict[v] = struct{}{}
+			}
+			next := 0
+			for i := 0; i < len(keys); i++ {
+				if _, ok := toRemoveDict[keys[i]]; ok {
+					continue
+				} else {
+					keys[next] = keys[i]
+					next++
+				}
+			}
+			keys = keys[:next]
 			// fmt.Println("RemoveBytes ", time.Since(t0))
 		}
 
@@ -248,7 +249,7 @@ func (this *Meta) Set(tx uint32, path string, value interface{}, source interfac
 		indexer := source.(ccurlcommon.IndexerInterface)
 		univalue := indexer.Read(tx, path)
 		for _, subpath := range univalue.(*Meta).PeekKeys() {
-			indexer.Write(tx, path+subpath, nil) // Remove all the sub paths
+			indexer.Write(tx, path+subpath, nil, false) // Remove all the sub paths
 		}
 		return 0, 1, nil
 	}

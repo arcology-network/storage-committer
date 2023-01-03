@@ -26,6 +26,7 @@ type TypeInterface interface { // value type
 type UnivalueInterface interface { // value type
 	DecrementReads()
 	Set(uint32, string, interface{}, interface{}) error
+	Reset(uint32, string, interface{}, interface{}) error
 	Get(uint32, string, interface{}) interface{}
 	UpdateParentMeta(uint32, interface{}, interface{}) bool
 	Peek(interface{}) interface{}
@@ -53,7 +54,7 @@ type UnivalueInterface interface { // value type
 type IndexerInterface interface {
 	Read(uint32, string) interface{}
 	TryRead(tx uint32, path string) (interface{}, bool)
-	Write(uint32, string, interface{}) error
+	Write(uint32, string, interface{}, bool) error
 	Insert(string, interface{})
 
 	RetriveShallow(string) interface{}

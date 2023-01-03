@@ -9,18 +9,19 @@ import (
 	"github.com/arcology-network/common-lib/datacompression"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
+	"github.com/holiman/uint256"
 )
 
 func TestUnivalueEncodeDecode(t *testing.T) {
 	/* Commutative Int64 Test */
 	alice := datacompression.RandomAccount()
 	// v, _ := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
-	balance := commutative.NewBalance(big.NewInt(100), big.NewInt(0))
+	balance := commutative.NewBalance(uint256.NewInt(100), big.NewInt(0))
 	univalue := NewUnivalue(ccurlcommon.VARIATE_TRANSITIONS, 1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, balance)
 	bytes := univalue.Encode()
 	out := (&Univalue{}).Decode(bytes).(*Univalue).Value()
 
-	if univalue.Value().(*commutative.Balance).Value().(*big.Int).Cmp(out.(*commutative.Balance).Value().(*big.Int)) != 0 ||
+	if univalue.Value().(*commutative.Balance).Value().(*uint256.Int).Cmp(out.(*commutative.Balance).Value().(*uint256.Int)) != 0 ||
 		univalue.Value().(*commutative.Balance).GetDelta().(*big.Int).Cmp(out.(*commutative.Balance).GetDelta().(*big.Int)) != 0 {
 		t.Error("Error")
 	}

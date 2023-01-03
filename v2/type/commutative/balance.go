@@ -11,36 +11,41 @@ import (
 	uint256 "github.com/holiman/uint256"
 )
 
+var (
+	uint256min = uint256.NewInt(0)
+	uint256max = uint256.NewInt(0).SetAllOne()
+)
+
 type Balance struct {
 	finalized bool
-	value     uint256.Int
+	value     *uint256.Int
 	min       *uint256.Int
 	max       *uint256.Int
 	delta     *big.Int
 }
 
-func NewBalance(initialV *uint256.Int, min, max *uint256.Int) (interface{}, error) {
-	if (min != nil && initialV.Cmp(min) == -1) || (max != nil && initialV.Cmp(max) == 1) || (min != nil && max != nil && min.Cmp(max) == 1) {
-		return nil, errors.New("Error: Out of range!!!")
-	}
-
+func NewBalance(value *uint256.Int, delta *big.Int) interface{} {
 	return &Balance{
-		false,
-		*initialV,
-		min,
-		max,
-		big.NewInt(0),
-	}, nil
+		value: value,
+		delta: delta,
+		min:   uint256min.Clone(),
+		max:   uint256max.Clone(),
+	}
+}
+
+func NewBalanceWithLimit(min, max *uint256.Int) interface{} {
+	return &Balance{
+		min: min,
+		max: max,
+	}
 }
 
 func (this *Balance) Deepcopy() interface{} {
-	min := *this.min
-	max := *this.max
 	return &Balance{
 		this.finalized,
-		this.value,
-		&min,
-		&max,
+		this.value.Clone(),
+		this.min.Clone(),
+		this.max.Clone(),
 		new(big.Int).Set(this.delta),
 	}
 }
@@ -57,7 +62,7 @@ func (this *Balance) TypeID() uint8 {
 	return ccurlcommon.CommutativeUint256
 }
 
-func (*Balance) check(value uint256.Int, deltaBigInt *big.Int, min, max *uint256.Int) (bool, *uint256.Int, error) {
+func (*Balance) check(value *uint256.Int, deltaBigInt *big.Int, min, max *uint256.Int) (bool, *uint256.Int, error) {
 	b := new(big.Int).Set(deltaBigInt)
 	delta, failed := uint256.FromBig(b.Abs(b))
 	if failed {
@@ -66,7 +71,7 @@ func (*Balance) check(value uint256.Int, deltaBigInt *big.Int, min, max *uint256
 
 	isNegative := deltaBigInt.Sign() == -1
 	if isNegative {
-		if diff, overflow := new(uint256.Int).SubOverflow(&value, delta); overflow {
+		if diff, overflow := new(uint256.Int).SubOverflow(value, delta); overflow {
 			return isNegative, nil, errors.New("Error: Underflow!!!")
 		} else {
 			if min != nil && diff.Cmp(min) == -1 {
@@ -74,7 +79,7 @@ func (*Balance) check(value uint256.Int, deltaBigInt *big.Int, min, max *uint256
 			}
 		}
 	} else {
-		if sum, overflow := new(uint256.Int).AddOverflow(&value, delta); overflow {
+		if sum, overflow := new(uint256.Int).AddOverflow(value, delta); overflow {
 			return isNegative, nil, errors.New("Error: Sum overflow!!!")
 		} else {
 			if max != nil && sum.Cmp(max) == 1 {
@@ -106,9 +111,9 @@ func (this *Balance) Get(tx uint32, path string, source interface{}) (interface{
 	}
 
 	if isNegative {
-		temp.value.Sub(&temp.value, delta)
+		temp.value.Sub(temp.value, delta)
 	} else {
-		temp.value.Add(&temp.value, delta)
+		temp.value.Add(temp.value, delta)
 	}
 	return temp, 1, 1
 }
@@ -119,20 +124,29 @@ func (this *Balance) Delta(source interface{}) interface{} {
 
 // Set delta
 func (this *Balance) Set(tx uint32, path string, v interface{}, source interface{}) (uint32, uint32, error) {
-	if _, _, err := this.check(this.value, new(big.Int).Add(this.delta, v.(*big.Int)), this.min, this.max); err != nil {
+	b := v.(*Balance)
+	if _, _, err := this.check(this.value, new(big.Int).Add(this.delta, b.delta), this.min, this.max); err != nil {
 		return 0, 1, err
 	}
 
-	this.delta.Add(this.delta, v.(*big.Int))
+	this.delta.Add(this.delta, b.delta)
 	return 0, 1, nil
 }
 
 func (this *Balance) Reset(tx uint32, path string, v interface{}, source interface{}) (uint32, uint32, error) {
-	this.value = *(v.(*uint256.Int))
-	this.delta = big.NewInt(0)
-	this.finalized = true
-	this.min = nil
-	this.max = nil
+	b := v.(*Balance)
+	if b.value != nil {
+		this.value = b.value
+	}
+	if b.delta != nil {
+		this.delta = b.delta
+	}
+	if b.min != nil {
+		this.min = b.min
+	}
+	if b.max != nil {
+		this.max = b.max
+	}
 
 	return 0, 1, nil
 }
@@ -213,6 +227,7 @@ func (this *Balance) EncodeToBuffer(buffer []byte) int {
 func (*Balance) Decode(buffer []byte) interface{} {
 	balance := &Balance{
 		finalized: bool(codec.Bool(true).Decode(buffer).(codec.Bool)),
+		value:     uint256.NewInt(0),
 		min:       uint256.NewInt(0),
 		max:       uint256.NewInt(0),
 	}
@@ -267,11 +282,12 @@ func (this *Balance) DecodeCompact(buffer []byte) interface{} {
 		copy(max[:], codec.Uint64s{}.Decode(buffer[offset:offset+32]).(codec.Uint64s))
 	}
 
-	value, err := NewBalance(v, min, max)
-	if err != nil {
-		panic(err)
+	return &Balance{
+		value: v,
+		delta: big.NewInt(0),
+		min:   min,
+		max:   max,
 	}
-	return value
 }
 
 func (this *Balance) Print() {

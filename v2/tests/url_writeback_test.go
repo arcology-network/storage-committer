@@ -13,6 +13,7 @@ import (
 	ccurltype "github.com/arcology-network/concurrenturl/v2/type"
 	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
 	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
+	"github.com/holiman/uint256"
 )
 
 func TestAddAndDelete(t *testing.T) {
@@ -412,23 +413,23 @@ func TestAccessControl(t *testing.T) {
 		t.Error(err)
 	}
 
-	err = url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewBalance(big.NewInt(100), big.NewInt(100)))
+	err = url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewBalance(uint256.NewInt(100), big.NewInt(100)))
 	if err != nil {
 		t.Error("Error: Failed to write the balance")
 	}
 
-	err = url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewBalance(big.NewInt(100), big.NewInt(0)))
+	err = url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewBalance(uint256.NewInt(100), big.NewInt(0)))
 	if err != nil {
 		t.Error("Error: Failed to initialize balance")
 	}
 
-	err = url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewBalance(big.NewInt(100), big.NewInt(100)))
+	err = url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewBalance(uint256.NewInt(100), big.NewInt(100)))
 	if err != nil {
 		t.Error("Error: Failed to initialize balance")
 	}
 
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/balance")
-	if v.(*commutative.Balance).Value().(*big.Int).Cmp(big.NewInt(200)) != 0 {
+	if v.(*commutative.Balance).Value().(*uint256.Int).Cmp(uint256.NewInt(200)) != 0 {
 		t.Error("Error: blcc://eth1.0/account/alice/balance, should be 300")
 	}
 

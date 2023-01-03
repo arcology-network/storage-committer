@@ -14,6 +14,7 @@ import (
 	ccurltype "github.com/arcology-network/concurrenturl/v2/type"
 	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
 	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
+	"github.com/holiman/uint256"
 )
 
 func TestSize(t *testing.T) {
@@ -523,42 +524,42 @@ func TestCommutative(t *testing.T) {
 	}
 
 	// -------------------Create a commutative bigint ------------------------------
-	comtVInit := commutative.NewBalance(big.NewInt(300), big.NewInt(0))
+	comtVInit := commutative.NewBalance(uint256.NewInt(300), big.NewInt(0))
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", comtVInit); err != nil {
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewBalance(big.NewInt(300), big.NewInt(1))); err != nil {
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewBalance(uint256.NewInt(300), big.NewInt(1))); err != nil {
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewBalance(big.NewInt(300), big.NewInt(2))); err != nil {
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewBalance(uint256.NewInt(300), big.NewInt(2))); err != nil {
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0")
-	if v.(*commutative.Balance).Value().(*big.Int).Cmp(big.NewInt(303)) != 0 {
+	if v.(*commutative.Balance).Value().(*uint256.Int).Cmp(uint256.NewInt(303)) != 0 {
 		t.Error("Error: comt-0 has a wrong returned value")
 	}
 
 	// ----------------------------Balance ---------------------------------------------------
-	if err := url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewBalance(big.NewInt(0), big.NewInt(0))); err != nil { //initialization
+	if err := url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewBalance(uint256.NewInt(0), big.NewInt(0))); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
 	// Add the first delta
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewBalance(big.NewInt(0), big.NewInt(22))); err != nil {
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewBalance(uint256.NewInt(0), big.NewInt(22))); err != nil {
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
 	// Add the second delta
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewBalance(big.NewInt(0), big.NewInt(11))); err != nil {
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewBalance(uint256.NewInt(0), big.NewInt(11))); err != nil {
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
 	// Read alice's balance
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/balance")
-	if v.(*commutative.Balance).Value().(*big.Int).Cmp(big.NewInt(33)) != 0 {
+	if v.(*commutative.Balance).Value().(*uint256.Int).Cmp(uint256.NewInt(33)) != 0 {
 		t.Error("Error: blcc://eth1.0/account/alice/balance")
 	}
 

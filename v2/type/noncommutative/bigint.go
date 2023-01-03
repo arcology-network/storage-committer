@@ -103,12 +103,9 @@ func (this *Bigint) Encode() []byte {
 	return v.Encode()
 }
 
-func (this *Bigint) EncodeToBuffer(buffer []byte) {
+func (this *Bigint) EncodeToBuffer(buffer []byte) int {
 	v := codec.Bigint(*this)
-	v.EncodeToBuffer(buffer)
-
-	buf := make([]byte, (*big.Int)(&v).BitLen())
-	(*big.Int)(&v).FillBytes(buf)
+	return v.EncodeToBuffer(buffer)
 }
 
 func (this *Bigint) Decode(bytes []byte) interface{} {

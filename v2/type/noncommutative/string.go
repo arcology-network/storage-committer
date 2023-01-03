@@ -90,8 +90,8 @@ func (this *String) Encode() []byte {
 	return codec.String(string(*this)).Encode()
 }
 
-func (this *String) EncodeToBuffer(buffer []byte) {
-	codec.String(*this).EncodeToBuffer(buffer)
+func (this *String) EncodeToBuffer(buffer []byte) int {
+	return codec.String(*this).EncodeToBuffer(buffer)
 }
 
 func (this *String) Decode(bytes []byte) interface{} {

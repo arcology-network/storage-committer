@@ -6,14 +6,16 @@ import (
 	"math/big"
 	"reflect"
 	"runtime"
+	"sort"
 	"time"
 
 	"github.com/arcology-network/common-lib/common"
-	performance "github.com/arcology-network/common-lib/mhasher"
+	// performance "github.com/arcology-network/common-lib/mhasher"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 	ccurltype "github.com/arcology-network/concurrenturl/v2/type"
 	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
 	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
+	"github.com/holiman/uint256"
 )
 
 type ConcurrentUrl struct {
@@ -81,7 +83,7 @@ func (this *ConcurrentUrl) CreateAccount(tx uint32, platform string, acct string
 			v = noncommutative.NewString(path.Default.(string))
 
 		case uint8(reflect.Kind(ccurlcommon.CommutativeUint256)): // delta big int
-			v = commutative.NewBalance(path.Default.([]*big.Int)[0], path.Default.([]*big.Int)[1])
+			v = commutative.NewBalance(path.Default.(*uint256.Int), big.NewInt(0))
 
 		case uint8(reflect.Kind(ccurlcommon.CommutativeInt64)): // big int pointer
 			v = commutative.NewInt64(path.Default.(int64), path.Default.(int64))
@@ -94,7 +96,7 @@ func (this *ConcurrentUrl) CreateAccount(tx uint32, platform string, acct string
 		}
 
 		if !this.indexer.IfExists(p) {
-			err = this.indexer.Write(tx, p, v) // root path
+			err = this.indexer.Write(tx, p, v, true) // root path
 		}
 	}
 	return err
@@ -121,6 +123,14 @@ func (this *ConcurrentUrl) Read(tx uint32, path string) (interface{}, error) {
 }
 
 func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}) error {
+	return this.write(tx, path, value, false)
+}
+
+func (this *ConcurrentUrl) Rewrite(tx uint32, path string, value interface{}) error {
+	return this.write(tx, path, value, true)
+}
+
+func (this *ConcurrentUrl) write(tx uint32, path string, value interface{}, reset bool) error {
 	if !this.Permit(tx, path, ccurlcommon.USER_CREATABLE) {
 		return errors.New("Error: No permission to write " + path)
 	}
@@ -130,7 +140,7 @@ func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}) erro
 			return errors.New("Error: Unknown data type !")
 		}
 	}
-	return this.indexer.Write(tx, path, value)
+	return this.indexer.Write(tx, path, value, reset)
 }
 
 // It the access is permitted
@@ -179,12 +189,12 @@ func (this *ConcurrentUrl) KVs() ([]string, []interface{}) {
 		kvs[key] = invVals[i]
 	}
 
-	sortedKeys, err := performance.SortStrings(append(keys, invKeys...)) // Keys should be unique
-	if err != nil {
-		panic(err)
-	}
-	// sortedKeys := append(keys, invKeys...)
-	// sort.Strings(sortedKeys)
+	// sortedKeys, err := performance.SortStrings(append(keys, invKeys...)) // Keys should be unique
+	// if err != nil {
+	// 	panic(err)
+	// }
+	sortedKeys := append(keys, invKeys...)
+	sort.Strings(sortedKeys)
 
 	sortedVals := make([]interface{}, len(sortedKeys))
 	sorter := func(start, end, index int, args ...interface{}) {

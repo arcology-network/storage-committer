@@ -10,26 +10,31 @@ import (
 	"github.com/holiman/uint256"
 )
 
+func TestMaxUint256(t *testing.T) {
+	max := uint256.NewInt(0).SetAllOne()
+	t.Log(max)
+}
+
 func TestUint256Basic(t *testing.T) {
-	b, _ := NewBalance(uint256.NewInt(5), uint256.NewInt(0), uint256.NewInt(100))
+	b := NewBalance(uint256.NewInt(5), big.NewInt(0))
 	balance := b.(*Balance)
 	fmt.Println("Value :", balance)
 
-	if _, _, err := balance.Set(0, "", big.NewInt(-2), nil); err != nil {
+	if _, _, err := balance.Set(0, "", NewBalance(nil, big.NewInt(-2)), nil); err != nil {
 		t.Error(err)
 	}
 
-	if _, _, err := balance.Set(0, "", big.NewInt(-1), nil); err != nil {
+	if _, _, err := balance.Set(0, "", NewBalance(nil, big.NewInt(-1)), nil); err != nil {
 		t.Error(err)
 	}
 
-	if _, _, err := balance.Set(0, "", big.NewInt(3), nil); err != nil {
+	if _, _, err := balance.Set(0, "", NewBalance(nil, big.NewInt(3)), nil); err != nil {
 		t.Error(err)
 	}
 
 	v, _, _ := balance.Get(0, "", nil)
 
-	u256 := v.(*Balance).Value().(uint256.Int)
+	u256 := v.(*Balance).Value().(*uint256.Int)
 	fmt.Println("Value :", u256.Uint64())
 
 	if u256.Uint64() != 5 {
@@ -37,122 +42,57 @@ func TestUint256Basic(t *testing.T) {
 	}
 }
 
-func TestUint256LowerLimitOnly(t *testing.T) {
-	b, err := NewBalance(uint256.NewInt(5), uint256.NewInt(0), nil)
-	if err != nil {
-		t.Error(err)
-	}
-
-	balance := b.(*Balance)
-	fmt.Println("Value :", balance)
-
-	if _, _, err := balance.Set(0, "", big.NewInt(-2), nil); err != nil {
-		t.Error(err)
-	}
-
-	if _, _, err := balance.Set(0, "", big.NewInt(-1), nil); err != nil {
-		t.Error(err)
-	}
-
-	if _, _, err := balance.Set(0, "", big.NewInt(2), nil); err != nil {
-		t.Error(err)
-	}
-
-	_, err = NewBalance(uint256.NewInt(5), uint256.NewInt(6), uint256.NewInt(100))
-	if err == nil {
-		t.Error("Should report an error !")
-	}
-
-	if v, _, _ := balance.Get(0, "", nil); v.(*Balance).value.Uint64() != 4 {
-		t.Error("Should report an error !")
-	}
-}
-
-func TestUint256UpperLimitOnly(t *testing.T) {
-	b, _ := NewBalance(uint256.NewInt(5), nil, uint256.NewInt(100))
-	balance := b.(*Balance)
-	fmt.Println("Value :", balance)
-
-	if _, _, err := balance.Set(0, "", big.NewInt(-2), nil); err != nil {
-		t.Error("Should report an error !")
-	}
-
-	if _, _, err := balance.Set(0, "", big.NewInt(-1), nil); err != nil {
-		t.Error(err)
-	}
-
-	if _, _, err := balance.Set(0, "", big.NewInt(30), nil); err != nil {
-		t.Error(err)
-	}
-
-	if _, _, err := balance.Set(0, "", big.NewInt(300), nil); err == nil {
-		t.Error("Error: Out of range, should have failed")
-	}
-}
-
 func TestUint256NoLimit(t *testing.T) {
-	b, _ := NewBalance(uint256.NewInt(5), nil, nil)
+	b := NewBalance(uint256.NewInt(5), big.NewInt(0))
 	balance := b.(*Balance)
 	fmt.Println("Value :", balance)
 
-	if _, _, err := balance.Set(0, "", big.NewInt(-2), nil); err != nil {
+	if _, _, err := balance.Set(0, "", NewBalance(nil, big.NewInt(-2)), nil); err != nil {
 		t.Error("Should report an error !")
 	}
 
-	if _, _, err := balance.Set(0, "", big.NewInt(-1), nil); err != nil {
+	if _, _, err := balance.Set(0, "", NewBalance(nil, big.NewInt(-1)), nil); err != nil {
 		t.Error(err)
 	}
 
-	if _, _, err := balance.Set(0, "", big.NewInt(30), nil); err != nil {
+	if _, _, err := balance.Set(0, "", NewBalance(nil, big.NewInt(30)), nil); err != nil {
 		t.Error(err)
 	}
 
-	if _, _, err := balance.Set(0, "", big.NewInt(300), nil); err != nil {
+	if _, _, err := balance.Set(0, "", NewBalance(nil, big.NewInt(300)), nil); err != nil {
 		t.Error(err)
 	}
 }
 
 func TestUint256LowerAndUpperLimit(t *testing.T) {
-	b, _ := NewBalance(uint256.NewInt(5), uint256.NewInt(0), uint256.NewInt(100))
+	b := NewBalance(uint256.NewInt(5), big.NewInt(0))
 	balance := b.(*Balance)
 	fmt.Println("Value :", balance)
 
-	if _, _, err := balance.Set(0, "", big.NewInt(-2), nil); err != nil {
+	if _, _, err := balance.Reset(0, "", NewBalanceWithLimit(uint256.NewInt(0), uint256.NewInt(100)), nil); err != nil {
+		t.Error("Failed to reset limit.")
+	}
+
+	if _, _, err := balance.Set(0, "", NewBalance(nil, big.NewInt(-2)), nil); err != nil {
 		t.Error("Should report an error !")
 	}
 
-	if _, _, err := balance.Set(0, "", big.NewInt(-1), nil); err != nil {
+	if _, _, err := balance.Set(0, "", NewBalance(nil, big.NewInt(-1)), nil); err != nil {
 		t.Error(err)
 	}
 
-	if _, _, err := balance.Set(0, "", big.NewInt(30), nil); err != nil {
+	if _, _, err := balance.Set(0, "", NewBalance(nil, big.NewInt(30)), nil); err != nil {
 		t.Error(err)
 	}
 
-	if _, _, err := balance.Set(0, "", big.NewInt(300), nil); err == nil {
-		t.Error("Error: Out of range, should have failed")
-	}
-}
-
-func TestUint256LowerGreaterThanUpper(t *testing.T) {
-	b, err := NewBalance(uint256.NewInt(5), uint256.NewInt(100), uint256.NewInt(0))
-	balance := b.(*Balance)
-	fmt.Println("Value :", balance)
-	if err == nil {
-		t.Error("Error: Out of range, should have failed")
-	}
-
-	b, err = NewBalance(uint256.NewInt(99), uint256.NewInt(100), uint256.NewInt(0))
-	balance = b.(*Balance)
-	fmt.Println("Value :", balance)
-	if err == nil {
+	if _, _, err := balance.Set(0, "", NewBalance(nil, big.NewInt(300)), nil); err == nil {
 		t.Error("Error: Out of range, should have failed")
 	}
 }
 
 func TestUnderflow(t *testing.T) {
-	b, _ := NewBalance(uint256.NewInt(0), nil, uint256.NewInt(100))
-	_, _, err := b.(*Balance).Set(0, "", big.NewInt(-1), nil)
+	b := NewBalance(uint256.NewInt(0), big.NewInt(0))
+	_, _, err := b.(*Balance).Set(0, "", NewBalance(nil, big.NewInt(-1)), nil)
 	if err == nil {
 		t.Error("Error: Should have reported out of range error!!")
 	}
@@ -164,49 +104,43 @@ func TestOverflow(t *testing.T) {
 		initv[i] = math.MaxUint64
 	}
 
-	b, err := NewBalance(initv, uint256.NewInt(0), uint256.NewInt(100))
-	if err == nil {
-		t.Error("Error: Should have reported out-of-range error")
-	}
-
+	b := NewBalance(initv, big.NewInt(0))
 	fmt.Println("Value :", b)
 
-	b, err = NewBalance(initv, nil, nil)
-	if err != nil {
-		t.Error(err)
-	}
-	fmt.Println("Value :", b)
-
-	_, _, err = b.(*Balance).Set(0, "", big.NewInt(0), nil)
+	_, _, err := b.(*Balance).Set(0, "", NewBalance(nil, big.NewInt(0)), nil)
 	if err != nil {
 		t.Error(err)
 	}
 
-	_, _, err = b.(*Balance).Set(0, "", big.NewInt(1), nil)
+	_, _, err = b.(*Balance).Set(0, "", NewBalance(nil, big.NewInt(1)), nil)
 	if err == nil {
 		t.Error("Error: Should have reported out of range error!!")
 	}
 }
 
 func TestCodec(t *testing.T) {
-	b, _ := NewBalance(uint256.NewInt(5), uint256.NewInt(0), uint256.NewInt(100))
+	b := NewBalance(uint256.NewInt(5), big.NewInt(0))
 	balance := b.(*Balance)
 	fmt.Println("Value :", balance)
 
-	if _, _, err := balance.Set(0, "", big.NewInt(-2), nil); err != nil {
+	if _, _, err := balance.Reset(0, "", NewBalanceWithLimit(uint256.NewInt(0), uint256.NewInt(100)), nil); err != nil {
+		t.Error("Failed to reset limit.")
+	}
+
+	if _, _, err := balance.Set(0, "", NewBalance(nil, big.NewInt(-2)), nil); err != nil {
 		t.Error(err)
 	}
 
-	if _, _, err := balance.Set(0, "", big.NewInt(-1), nil); err != nil {
+	if _, _, err := balance.Set(0, "", NewBalance(nil, big.NewInt(-1)), nil); err != nil {
 		t.Error(err)
 	}
 
-	if _, _, err := balance.Set(0, "", big.NewInt(3), nil); err != nil {
+	if _, _, err := balance.Set(0, "", NewBalance(nil, big.NewInt(3)), nil); err != nil {
 		t.Error(err)
 	}
 	v, _, _ := balance.Get(0, "", nil)
 
-	u256 := v.(*Balance).Value().(uint256.Int)
+	u256 := v.(*Balance).Value().(*uint256.Int)
 	if u256.Uint64() != 5 {
 		t.Error("Error: Wrong value!!!")
 	}
@@ -229,14 +163,11 @@ func TestCodec(t *testing.T) {
 }
 
 func TestDeepCopy(t *testing.T) {
-	b, _ := NewBalance(uint256.NewInt(5), uint256.NewInt(0), uint256.NewInt(100))
+	b := NewBalance(uint256.NewInt(5), big.NewInt(0))
+	b.(*Balance).Reset(0, "", NewBalanceWithLimit(uint256.NewInt(0), uint256.NewInt(100)), nil)
 	b0 := b.(*Balance).Deepcopy()
 
-	if b.(*Balance).value != b0.(*Balance).value {
-		t.Error("Error: Out of range, should have failed")
-	}
-
-	b0.(*Balance).value = *uint256.NewInt(7)
+	b0.(*Balance).value = uint256.NewInt(7)
 	b0.(*Balance).delta = big.NewInt(11)
 
 	if b.(*Balance).value.Uint64() != 5 || b.(*Balance).delta.Cmp(big.NewInt(0)) != 0 || b0.(*Balance).delta.Cmp(big.NewInt(11)) != 0 {
