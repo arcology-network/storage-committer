@@ -46,6 +46,10 @@ func NewConcurrentUrl(store ccurlcommon.DatastoreInterface, args ...interface{})
 	}
 }
 
+func (this *ConcurrentUrl) Indexer() *ccurltype.Indexer {
+	return this.indexer
+}
+
 func (this *ConcurrentUrl) Init(store ccurlcommon.DatastoreInterface) {
 	this.indexer.Init(store)
 	this.invIndexer.Init(store)

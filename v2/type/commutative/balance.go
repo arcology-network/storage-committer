@@ -40,7 +40,14 @@ func NewBalanceWithLimit(min, max *uint256.Int) interface{} {
 	}
 }
 
+func (this *Balance) HasCustomizedLimit() bool {
+	return this.min.Cmp(uint256min) != 0 || this.max.Cmp(uint256max) != 0
+}
+
 func (this *Balance) Deepcopy() interface{} {
+	if this.value == nil {
+		this.value = uint256.NewInt(0)
+	}
 	return &Balance{
 		this.finalized,
 		this.value.Clone(),
@@ -92,7 +99,7 @@ func (*Balance) check(value *uint256.Int, deltaBigInt *big.Int, min, max *uint25
 }
 
 func (this *Balance) Get(tx uint32, path string, source interface{}) (interface{}, uint32, uint32) {
-	if this.delta.Cmp(big.NewInt(0)) == 0 {
+	if this.delta == nil || this.delta.Cmp(big.NewInt(0)) == 0 {
 		return this, 1, 0
 	}
 
@@ -134,12 +141,19 @@ func (this *Balance) Set(tx uint32, path string, v interface{}, source interface
 }
 
 func (this *Balance) Reset(tx uint32, path string, v interface{}, source interface{}) (uint32, uint32, error) {
+	this.finalized = true
 	b := v.(*Balance)
 	if b.value != nil {
 		this.value = b.value
 	}
+	if this.value == nil {
+		this.value = uint256.NewInt(0)
+	}
 	if b.delta != nil {
 		this.delta = b.delta
+	}
+	if this.delta == nil {
+		this.delta = big.NewInt(0)
 	}
 	if b.min != nil {
 		this.min = b.min
@@ -169,8 +183,14 @@ func (this *Balance) ApplyDelta(tx uint32, v interface{}) ccurlcommon.TypeInterf
 		}
 
 		if this != nil && v != nil {
-			if _, _, err := this.Set(tx, "", v.(*Balance), nil); err != nil {
-				panic(err)
+			if v.(*Balance).Composite() {
+				if _, _, err := this.Set(tx, "", v.(*Balance), nil); err != nil {
+					panic(err)
+				}
+			} else {
+				if _, _, err := this.Reset(tx, "", v.(*Balance), nil); err != nil {
+					panic(err)
+				}
 			}
 		}
 
