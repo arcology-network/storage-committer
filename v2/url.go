@@ -46,6 +46,14 @@ func NewConcurrentUrl(store ccurlcommon.DatastoreInterface, args ...interface{})
 	}
 }
 
+// Get data from the DB direcly, still under conflict protection
+func (this *ConcurrentUrl) ReadCommitted(tx uint32, key string) (interface{}, error) {
+	if _, err := this.Read(tx, key); err != nil { // For conflict detection
+		return nil, err
+	}
+	return (*this.Store()).Retrive(key)
+}
+
 func (this *ConcurrentUrl) Indexer() *ccurltype.Indexer {
 	return this.indexer
 }
@@ -333,11 +341,12 @@ func (this *ConcurrentUrl) Export(needToSort bool) ([]ccurlcommon.UnivalueInterf
 		ccurltype.Univalues(this.transitBuf).Sort()
 	}
 
-	objs := make([]interface{}, len(this.accesseBuf))
-	for i := range this.accesseBuf {
-		objs[i] = this.accesseBuf[i]
-	}
-	(*this.indexer.Store()).UpdateCacheStats(objs)
+	// Not in use yet.
+	// objs := make([]interface{}, len(this.accesseBuf))
+	// for i := range this.accesseBuf {
+	// 	objs[i] = this.accesseBuf[i]
+	// }
+	// (*this.indexer.Store()).UpdateCacheStats(objs)
 	return this.accesseBuf, this.transitBuf
 }
 

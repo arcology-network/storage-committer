@@ -34,11 +34,11 @@ func (this *Int64) ToAccess() interface{} {
 	return nil
 }
 
-func (this *Int64) Get(tx uint32, path string, source interface{}) (interface{}, uint32, uint32) {
+func (this *Int64) Get(path string, source interface{}) (interface{}, uint32, uint32) {
 	return this, 1, 0
 }
 
-func (this *Int64) Peek(source interface{}) interface{} {
+func (this *Int64) This(source interface{}) interface{} {
 	return this
 }
 
@@ -46,18 +46,18 @@ func (this *Int64) Delta(source interface{}) interface{} {
 	return this
 }
 
-func (this *Int64) Set(tx uint32, path string, value interface{}, source interface{}) (uint32, uint32, error) {
+func (this *Int64) Set(path string, value interface{}, source interface{}) (uint32, uint32, error) {
 	if value != nil {
 		*this = Int64(*(value.(*Int64)))
 	}
 	return 0, 1, nil
 }
 
-func (this *Int64) Reset(tx uint32, path string, value interface{}, source interface{}) (uint32, uint32, error) {
-	return this.Set(tx, path, value, source)
+func (this *Int64) Reset(path string, value interface{}, source interface{}) (uint32, uint32, error) {
+	return this.Set(path, value, source)
 }
 
-func (this *Int64) ApplyDelta(tx uint32, v interface{}) ccurlcommon.TypeInterface {
+func (this *Int64) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 	vec := v.([]ccurlcommon.UnivalueInterface)
 	for i := 0; i < len(vec); i++ {
 		v := vec[i].Value()
@@ -70,7 +70,7 @@ func (this *Int64) ApplyDelta(tx uint32, v interface{}) ccurlcommon.TypeInterfac
 		}
 
 		if this != nil && v != nil {
-			this.Set(tx, "", v.(*Int64), nil)
+			this.Set("", v.(*Int64), nil)
 		}
 
 		if this != nil && v == nil {

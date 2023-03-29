@@ -32,7 +32,7 @@ func (this *Int64) Deepcopy() interface{} {
 }
 
 func (this *Int64) HeaderSize() uint32 {
-	return 0 // 8 bytes, static sizes only , no header needed,
+	return 0 //static size only , no header needed,
 }
 
 func (this *Int64) Size() uint32 {
@@ -71,7 +71,7 @@ func (this *Int64) ToAccess() interface{} {
 	return this
 }
 
-func (this *Int64) Get(tx uint32, path string, source interface{}) (interface{}, uint32, uint32) {
+func (this *Int64) Get(path string, source interface{}) (interface{}, uint32, uint32) {
 	if this.delta == 0 {
 		return this, 1, 0
 	}
@@ -84,7 +84,7 @@ func (this *Int64) Get(tx uint32, path string, source interface{}) (interface{},
 	}, 1, 1
 }
 
-func (this *Int64) Peek(source interface{}) interface{} {
+func (this *Int64) This(source interface{}) interface{} {
 	return &Int64{
 		this.finalized,
 		this.value + this.delta,
@@ -100,19 +100,19 @@ func (this *Int64) Delta(source interface{}) interface{} {
 	}
 }
 
-func (this *Int64) Set(tx uint32, path string, v interface{}, source interface{}) (uint32, uint32, error) {
+func (this *Int64) Set(path string, v interface{}, source interface{}) (uint32, uint32, error) {
 	this.delta += v.(*Int64).delta
 	return 0, 1, nil
 }
 
-func (this *Int64) Reset(tx uint32, path string, v interface{}, source interface{}) (uint32, uint32, error) {
+func (this *Int64) Reset(path string, v interface{}, source interface{}) (uint32, uint32, error) {
 	this.value = 0
 	this.delta = v.(int64) // This is by design
 	this.finalized = true
 	return 0, 1, nil
 }
 
-func (this *Int64) ApplyDelta(tx uint32, v interface{}) ccurlcommon.TypeInterface {
+func (this *Int64) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 	vec := v.([]ccurlcommon.UnivalueInterface)
 	for i := 0; i < len(vec); i++ {
 		v := vec[i].Value()
@@ -125,7 +125,7 @@ func (this *Int64) ApplyDelta(tx uint32, v interface{}) ccurlcommon.TypeInterfac
 		}
 
 		if this != nil && v != nil {
-			this.Set(tx, "", v.(*Int64), nil)
+			this.Set("", v.(*Int64), nil)
 		}
 
 		if this != nil && v == nil {

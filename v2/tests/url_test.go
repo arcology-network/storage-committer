@@ -135,6 +135,11 @@ func TestBasic(t *testing.T) {
 		t.Error("Error: Failed to write blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-000")
 	}
 
+	// Write the entry
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-111", noncommutative.NewInt64(9999)); err != nil {
+		t.Error("Error: Failed to write blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-111")
+	}
+
 	// Read the entry back
 	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"); (*value.(*noncommutative.Int64)) != 1111 {
 		t.Error("Error: Shouldn't be not found")
@@ -144,15 +149,15 @@ func TestBasic(t *testing.T) {
 	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/"); value == nil {
 		t.Error(value)
 	} else {
-		if !reflect.DeepEqual(value.(*commutative.Meta).PeekKeys(), []string{"elem-000"}) {
+		if !reflect.DeepEqual(value.(*commutative.Meta).PeekKeys(), []string{"elem-000", "elem-111"}) {
 			t.Error("Error: Wrong value !!!!")
 		}
 	}
 
 	_, transitions := url.Export(true)
 
-	if !reflect.DeepEqual(transitions[0].Value().(*commutative.Meta).PeekAdded(), []string{"elem-000"}) {
-		t.Error("Error: keys don't match")
+	if !reflect.DeepEqual(transitions[0].Value().(*commutative.Meta).PeekAdded(), []string{"elem-000", "elem-111"}) {
+		t.Error("Error: keys are missing from the added buffer!")
 	}
 
 	value := transitions[1].Value()
@@ -304,7 +309,7 @@ func TestUrl2(t *testing.T) {
 		t.Error(err, "Error:  Failed to Write: "+"/ctrn-0/elem-002")
 	}
 
-	// Write to an nonexistent path, will f, but will leave a couple of access records
+	// Write to an nonexistent path, will fail, but leave a couple of access records
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-1/elem-002", noncommutative.NewInt64(3333)); err == nil {
 		t.Error(err, "Error:  Failed to Write: "+"/ctrn-1/elem-002")
 	}

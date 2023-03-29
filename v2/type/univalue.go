@@ -25,8 +25,6 @@ type Univalue struct {
 	composite   bool
 	reserved    interface{}
 	reclaimFunc func(interface{})
-
-	inited bool
 }
 
 func NewUnivalue(transitType uint8, tx uint32, key string, reads, writes uint32, args ...interface{}) *Univalue {
@@ -51,10 +49,6 @@ func NewUnivalue(transitType uint8, tx uint32, key string, reads, writes uint32,
 }
 
 func (value *Univalue) Init(transitType uint8, tx uint32, key string, reads, writes uint32, v interface{}, args ...interface{}) {
-	if value.inited {
-		panic(fmt.Sprintf("Univalue.Init called twice.\n\toriginal obj = %v\n\tvalue = %v\n\treserved = %v", value, value.value, value.reserved))
-	}
-
 	value.transitType = transitType
 	value.vType = (&Univalue{}).GetTypeID(v)
 	value.tx = tx
@@ -69,14 +63,12 @@ func (value *Univalue) Init(transitType uint8, tx uint32, key string, reads, wri
 		value.SetPreexist(key, args[0]) // Check if the key  exists in indexer already
 		value.composite = value.IfComposite()
 	}
-	value.inited = true
 }
 
 func (value *Univalue) Reclaim() {
 	if value.reclaimFunc != nil {
 		value.reclaimFunc(value)
 	}
-	value.inited = false
 }
 
 func (*Univalue) GetTypeID(value interface{}) uint8 {
@@ -160,7 +152,7 @@ func (this *Univalue) UpdateParentMeta(tx uint32, value interface{}, source inte
 
 	child := value.(*Univalue)
 	meta := this.Value().(*commutative.Meta)
-	if meta.UpdateCaches(tx, child, source) {
+	if meta.UpdateCaches(child, source) {
 		this.IncrementWrites()
 		return true
 	}
@@ -204,7 +196,7 @@ func (this *Univalue) Export(source interface{}) (interface{}, interface{}) {
 
 func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{} {
 	if this.value != nil {
-		tempV, r, w := this.value.(ccurlcommon.TypeInterface).Get(tx, path, source) //RW: Affiliated reads and writes
+		tempV, r, w := this.value.(ccurlcommon.TypeInterface).Get(path, source) //RW: Affiliated reads and writes
 		this.reads += r
 		this.writes += w
 		this.composite = tempV.(ccurlcommon.TypeInterface).Composite()
@@ -214,9 +206,9 @@ func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{
 	return this.value
 }
 
-func (this *Univalue) Peek(source interface{}) interface{} {
+func (this *Univalue) This(source interface{}) interface{} {
 	if this.value != nil {
-		return this.value.(ccurlcommon.TypeInterface).Peek(source)
+		return this.value.(ccurlcommon.TypeInterface).This(source)
 	}
 	return this.value
 }
@@ -243,22 +235,22 @@ func (this *Univalue) set(tx uint32, path string, value interface{}, source inte
 	}
 	this.writes-- // Reset writes
 
-	if this.writes == 0 && this.value != nil && value != nil { // Make a deep copy if haven't yet
+	if this.writes == 0 && this.value != nil && value != nil { // Make a deep copy if haven't done so
 		this.value = this.value.(ccurlcommon.TypeInterface).Deepcopy()
 	}
 
 	r, w := uint32(0), uint32(0)
 	var err error
 	if op == ccurlcommon.WRITE {
-		r, w, err = this.value.(ccurlcommon.TypeInterface).Set(tx, path, value, source) // Update the current value
+		r, w, err = this.value.(ccurlcommon.TypeInterface).Set(path, value, [2]interface{}{tx, source}) // Update the current value
 	} else {
-		r, w, err = this.value.(ccurlcommon.TypeInterface).Reset(tx, path, value, source) // Update the current value
+		r, w, err = this.value.(ccurlcommon.TypeInterface).Reset(path, value, source) // Rewrite
 	}
 
 	this.writes += w
 	this.reads += r
 
-	if value == nil { // Delete an entry
+	if value == nil { // Delete an entry but keep the access records.
 		this.vType = uint8(reflect.Invalid)
 		this.value = value
 	}
@@ -279,7 +271,7 @@ func (this *Univalue) ApplyDelta(tx uint32, v interface{}) error {
 
 	// Apply transitions
 	if this.Value() != nil {
-		this.value = this.Value().(ccurlcommon.TypeInterface).ApplyDelta(tx, v)
+		this.value = this.Value().(ccurlcommon.TypeInterface).ApplyDelta(v)
 	}
 	return nil
 }

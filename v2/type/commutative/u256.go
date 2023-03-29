@@ -3,7 +3,6 @@ package commutative
 import (
 	"errors"
 	"fmt"
-	"math"
 	"math/big"
 
 	codec "github.com/arcology-network/common-lib/codec"
@@ -12,10 +11,8 @@ import (
 )
 
 var (
-	uint256min  = uint256.NewInt(0)
-	uint256max  = uint256.NewInt(0).SetAllOne()
-	uint256Zero = uint256.NewInt(0)
-	bigZero     = big.NewInt(0)
+	uint256min = uint256.NewInt(0)
+	uint256max = uint256.NewInt(0).SetAllOne()
 )
 
 type Balance struct {
@@ -37,10 +34,8 @@ func NewBalance(value *uint256.Int, delta *big.Int) interface{} {
 
 func NewBalanceWithLimit(min, max *uint256.Int) interface{} {
 	return &Balance{
-		value: uint256Zero.Clone(),
-		delta: big.NewInt(0),
-		min:   min,
-		max:   max,
+		min: min,
+		max: max,
 	}
 }
 
@@ -89,10 +84,6 @@ func (*Balance) check(value *uint256.Int, deltaBigInt *big.Int, min, max *uint25
 				return isNegative, nil, errors.New("Error: Sum overflow!!!")
 			}
 		}
-
-		if new(uint256.Int).Sub(value, delta).Cmp(max) > 0 {
-			return isNegative, nil, errors.New("greater than upper limit")
-		}
 	} else {
 		if sum, overflow := new(uint256.Int).AddOverflow(value, delta); overflow {
 			return isNegative, nil, errors.New("Error: Sum overflow!!!")
@@ -101,16 +92,12 @@ func (*Balance) check(value *uint256.Int, deltaBigInt *big.Int, min, max *uint25
 				return isNegative, nil, errors.New("Error: Sum overflow!!!")
 			}
 		}
-
-		if new(uint256.Int).Add(value, delta).Cmp(min) < 0 {
-			return isNegative, nil, errors.New("less than lower limit")
-		}
 	}
 
 	return isNegative, delta, nil
 }
 
-func (this *Balance) Get(tx uint32, path string, source interface{}) (interface{}, uint32, uint32) {
+func (this *Balance) Get(path string, source interface{}) (interface{}, uint32, uint32) {
 	if this.delta == nil || this.delta.Cmp(big.NewInt(0)) == 0 {
 		return this, 1, 0
 	}
@@ -118,18 +105,16 @@ func (this *Balance) Get(tx uint32, path string, source interface{}) (interface{
 	this.finalized = true
 	temp := &Balance{
 		finalized: this.finalized,
-		value:     this.value,
+		value:     this.value.Clone(),
 		min:       this.min,
 		max:       this.max,
 		delta:     big.NewInt(0),
 	}
 
-	// isNegative, delta, err := this.check(temp.value, this.delta, this.min, this.max)
-	// if err != nil {
-	// 	return nil, 1, 1
-	// }
-	isNegative := this.delta.Sign() < 0
-	delta, _ := uint256.FromBig(new(big.Int).Abs(this.delta))
+	isNegative, delta, err := this.check(temp.value, this.delta, this.min, this.max)
+	if err != nil {
+		return nil, 1, 1
+	}
 
 	if isNegative {
 		temp.value.Sub(temp.value, delta)
@@ -144,7 +129,7 @@ func (this *Balance) Delta(source interface{}) interface{} {
 }
 
 // Set delta
-func (this *Balance) Set(tx uint32, path string, v interface{}, source interface{}) (uint32, uint32, error) {
+func (this *Balance) Set(path string, v interface{}, source interface{}) (uint32, uint32, error) {
 	b := v.(*Balance)
 	if _, _, err := this.check(this.value, new(big.Int).Add(this.delta, b.delta), this.min, this.max); err != nil {
 		return 0, 1, err
@@ -154,28 +139,39 @@ func (this *Balance) Set(tx uint32, path string, v interface{}, source interface
 	return 0, 1, nil
 }
 
-func (this *Balance) Reset(tx uint32, path string, v interface{}, source interface{}) (uint32, uint32, error) {
+func (this *Balance) Reset(path string, v interface{}, source interface{}) (uint32, uint32, error) {
 	this.finalized = true
 	b := v.(*Balance)
-	if b.value.Cmp(uint256Zero) != 0 || b.delta.Cmp(bigZero) != 0 {
+	if b.value != nil {
 		this.value = b.value
-		this.delta = b.delta
 	}
 
-	if b.min.Cmp(uint256min) != 0 || b.max.Cmp(uint256max) != 0 {
+	if this.value == nil {
+		this.value = uint256.NewInt(0)
+	}
+
+	if b.delta != nil {
+		this.delta = b.delta
+	} else {
+		this.delta = big.NewInt(0)
+	}
+
+	if b.min != nil {
 		this.min = b.min
+	}
+	if b.max != nil {
 		this.max = b.max
 	}
 
 	return 0, 1, nil
 }
 
-func (this *Balance) Peek(source interface{}) interface{} {
-	v, _, _ := this.Deepcopy().(*Balance).Get(math.MaxUint32, "", source)
+func (this *Balance) This(source interface{}) interface{} {
+	v, _, _ := this.Deepcopy().(*Balance).Get("", source)
 	return v
 }
 
-func (this *Balance) ApplyDelta(tx uint32, v interface{}) ccurlcommon.TypeInterface {
+func (this *Balance) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 	vec := v.([]ccurlcommon.UnivalueInterface)
 	for i := 0; i < len(vec); i++ {
 		v := vec[i].Value()
@@ -183,28 +179,28 @@ func (this *Balance) ApplyDelta(tx uint32, v interface{}) ccurlcommon.TypeInterf
 			this = v.(*Balance)
 		}
 
-		if this == nil && v == nil {
+		if this == nil && v == nil { // Delete a non-existent
 			this = nil
 		}
 
-		if this != nil && v != nil {
+		if this != nil && v != nil { // Update an existent
 			if v.(*Balance).Composite() {
-				if _, _, err := this.Set(tx, "", v.(*Balance), nil); err != nil {
+				if _, _, err := this.Set("", v.(*Balance), nil); err != nil {
 					panic(err)
 				}
 			} else {
-				if _, _, err := this.Reset(tx, "", v.(*Balance), nil); err != nil {
+				if _, _, err := this.Reset("", v.(*Balance), nil); err != nil {
 					panic(err)
 				}
 			}
 		}
 
-		if this != nil && v == nil {
+		if this != nil && v == nil { // Delete an existent
 			this = nil
 		}
 	}
 
-	newValue, _, _ := this.Get(tx, "", nil)
+	newValue, _, _ := this.Get("", nil)
 	*this = (*newValue.(*Balance))
 	return this
 }

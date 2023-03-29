@@ -46,7 +46,7 @@ func (this *Bigint) New(value interface{}) (interface{}, error) {
 	return this, nil
 }
 
-func (this *Bigint) Get(tx uint32, path string, source interface{}) (interface{}, uint32, uint32) {
+func (this *Bigint) Get(path string, source interface{}) (interface{}, uint32, uint32) {
 	return this, 1, 0
 }
 
@@ -54,22 +54,22 @@ func (this *Bigint) Delta(source interface{}) interface{} {
 	return this
 }
 
-func (this *Bigint) Peek(source interface{}) interface{} {
+func (this *Bigint) This(source interface{}) interface{} {
 	return this
 }
 
-func (this *Bigint) Set(tx uint32, path string, value interface{}, source interface{}) (uint32, uint32, error) {
+func (this *Bigint) Set(path string, value interface{}, source interface{}) (uint32, uint32, error) {
 	if value != nil {
 		*this = Bigint(*(value.(*big.Int)))
 	}
 	return 0, 1, nil
 }
 
-func (this *Bigint) Reset(tx uint32, path string, value interface{}, source interface{}) (uint32, uint32, error) {
-	return this.Set(tx, path, value, source)
+func (this *Bigint) Reset(path string, value interface{}, source interface{}) (uint32, uint32, error) {
+	return this.Set(path, value, source)
 }
 
-func (this *Bigint) ApplyDelta(tx uint32, v interface{}) ccurlcommon.TypeInterface {
+func (this *Bigint) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 	vec := v.([]ccurlcommon.UnivalueInterface)
 	for i := 0; i < len(vec); i++ {
 		v := vec[i].Value()
@@ -82,7 +82,7 @@ func (this *Bigint) ApplyDelta(tx uint32, v interface{}) ccurlcommon.TypeInterfa
 		}
 
 		if this != nil && v != nil {
-			this.Set(tx, "", v.(*Bigint), nil)
+			this.Set("", v.(*Bigint), nil)
 		}
 
 		if this != nil && v == nil {

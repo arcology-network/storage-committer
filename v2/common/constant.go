@@ -31,3 +31,7 @@ const (
 	WRITE   uint8 = 0
 	REWRITE uint8 = 12
 )
+
+func IsTypeValid(typeID uint8) bool {
+	return typeID >= CommutativeMeta && typeID <= NoncommutativeBytes
+}

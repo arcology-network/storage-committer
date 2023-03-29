@@ -6,11 +6,11 @@ type TypeInterface interface { // value type
 	Value() interface{}
 	Delta(source interface{}) interface{}
 	ToAccess() interface{}
-	Get(uint32, string, interface{}) (interface{}, uint32, uint32)
-	Set(uint32, string, interface{}, interface{}) (uint32, uint32, error)
-	Reset(uint32, string, interface{}, interface{}) (uint32, uint32, error)
-	Peek(interface{}) interface{}
-	ApplyDelta(uint32, interface{}) TypeInterface
+	Get(string, interface{}) (interface{}, uint32, uint32)
+	Set(string, interface{}, interface{}) (uint32, uint32, error)
+	Reset(string, interface{}, interface{}) (uint32, uint32, error)
+	This(interface{}) interface{}
+	ApplyDelta(interface{}) TypeInterface
 	Composite() bool
 	Hash(func([]byte) []byte) []byte
 	Encode() []byte
@@ -29,7 +29,7 @@ type UnivalueInterface interface { // value type
 	Reset(uint32, string, interface{}, interface{}) error
 	Get(uint32, string, interface{}) interface{}
 	UpdateParentMeta(uint32, interface{}, interface{}) bool
-	Peek(interface{}) interface{}
+	This(interface{}) interface{}
 	GetTx() uint32
 	GetPath() *string
 	SetPath(string)

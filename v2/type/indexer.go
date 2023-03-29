@@ -89,7 +89,7 @@ func (this *Indexer) Read(tx uint32, path string) interface{} {
 // Get the value directly, skip the access counting at the univalue level
 func (this *Indexer) TryRead(tx uint32, path string) (interface{}, bool) {
 	if v, ok := this.buffer[path]; ok {
-		return v.Peek(this.Buffer()), true
+		return v.This(this.Buffer()), true
 	}
 	return this.RetriveShallow(path), false
 }
@@ -259,13 +259,13 @@ func (this *Indexer) FinalizeStates() {
 		}
 	}
 	common.ParallelWorker(len(this.updatedKeys), this.numThreads, finalizer)
-	common.RemoveEmptyStrings(&this.updatedKeys)
-	common.RemoveNils(&this.updatedValues)
+	common.Remove(&this.updatedKeys, "")
+	common.RemoveIf(&this.updatedValues, func(v interface{}) bool { return v == nil })
 }
 
 func (this *Indexer) KVs() ([]string, []interface{}) {
-	common.RemoveEmptyStrings(&this.updatedKeys)
-	common.RemoveNils(&this.updatedValues)
+	common.Remove(&this.updatedKeys, "")
+	common.RemoveIf(&this.updatedValues, func(v interface{}) bool { return v == nil })
 	return this.updatedKeys, this.updatedValues
 }
 

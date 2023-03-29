@@ -11,19 +11,26 @@ import (
 func TestMeta(t *testing.T) {
 	/* Noncommutative Path Test*/
 	alice := datacompression.RandomAccount()
-	inPath, _ := NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
-	inPath.(*Meta).SetAdded([]string{"blcc://eth1.0/account/0", "blcc://eth1.0/account/1"})
-	inPath.(*Meta).SetRemoved([]string{"blcc://eth1.0/account/2", "blcc://eth1.0/account/3"})
+	meta, _ := NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
+	inPath := meta.(*Meta)
 
-	buffer := inPath.(*Meta).Encode()
-	out := (&Meta{}).Decode(buffer).(*Meta)
+	inPath.keys = ([]string{"0", "1", "2", "3"})
+	inPath.added = ([]string{"5", "6"})
+	inPath.removed = []string{"2", "3"}
 
-	reflect.DeepEqual(inPath, out)
+	meta, _, _ = inPath.Get("blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil)
+	fmt.Println(meta)
 
-	fmt.Println("Path Encoded size :", len(inPath.(*Meta).Encode()))
-	fmt.Println("Balance Encoded Compact size :", len(inPath.(*Meta).Encode()))
+	//inPath.Get()
+
+	// buffer := inPath.(*Meta).Encode()
+	// out := (&Meta{}).Decode(buffer).(*Meta)
+
+	// reflect.DeepEqual(inPath, out)
+
+	// fmt.Println("Path Encoded size :", len(inPath.(*Meta).Encode()))
+	// fmt.Println("Balance Encoded Compact size :", len(inPath.(*Meta).Encode()))
 }
-
 func TestCodecPathMeta(t *testing.T) {
 	/* Commutative Int64 Test */
 	in, _ := NewMeta("blcc://eth1.0/account/0x12345456/")
