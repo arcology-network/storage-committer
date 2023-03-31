@@ -34,6 +34,7 @@ func RandomAccount() string {
 	return string(b)
 }
 
+// Only work when
 func SetInvariate(trans []ccurlcommon.UnivalueInterface, name string) {
 	for i := 0; i < len(trans); i++ {
 		if strings.Contains(*(trans[i].GetPath()), name) {

@@ -149,14 +149,14 @@ func TestBasic(t *testing.T) {
 	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/"); value == nil {
 		t.Error(value)
 	} else {
-		if !reflect.DeepEqual(value.(*commutative.Meta).PeekKeys(), []string{"elem-000", "elem-111"}) {
+		if !reflect.DeepEqual(value.(*commutative.Meta).KeyView(), []string{"elem-000", "elem-111"}) {
 			t.Error("Error: Wrong value !!!!")
 		}
 	}
 
 	_, transitions := url.Export(true)
 
-	if !reflect.DeepEqual(transitions[0].Value().(*commutative.Meta).PeekAdded(), []string{"elem-000", "elem-111"}) {
+	if !reflect.DeepEqual(transitions[0].Value().(*commutative.Meta).Added(), []string{"elem-000", "elem-111"}) {
 		t.Error("Error: keys are missing from the added buffer!")
 	}
 
@@ -256,7 +256,7 @@ func TestUrl1(t *testing.T) {
 		t.Error("Error: keys don't match")
 	}
 
-	if !reflect.DeepEqual(ccurlcommon.SortString(transitions[1].Value().(*commutative.Meta).PeekAdded()), []string{"elem-000", "elem-001", "elem-002"}) {
+	if !reflect.DeepEqual(ccurlcommon.SortString(transitions[1].Value().(*commutative.Meta).Added()), []string{"elem-000", "elem-001", "elem-002"}) {
 		t.Error("Error: keys don't match")
 	}
 
@@ -286,7 +286,7 @@ func TestUrl2(t *testing.T) {
 	}
 
 	// storageV, _ := url.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/" + alice + "/storage/")
-	// if !reflect.DeepEqual(storageV.(*commutative.Meta).PeekKeys(), []string{"ctrn-0/"}) {
+	// if !reflect.DeepEqual(storageV.(*commutative.Meta).KeyView(), []string{"ctrn-0/"}) {
 	// 	t.Error("Error: Wrong sub path list")
 	// }
 
@@ -331,13 +331,13 @@ func TestUrl2(t *testing.T) {
 
 	// Update then return path meta info
 	meta0, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	if !reflect.DeepEqual(meta0.(*commutative.Meta).PeekKeys(), []string{"elem-000", "elem-001", "elem-002"}) {
+	if !reflect.DeepEqual(meta0.(*commutative.Meta).KeyView(), []string{"elem-000", "elem-001", "elem-002"}) {
 		t.Error("Error: Keys don't match")
 	}
 
 	// Do again
 	meta1, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	if !reflect.DeepEqual(meta1.(*commutative.Meta).PeekKeys(), []string{"elem-000", "elem-001", "elem-002"}) {
+	if !reflect.DeepEqual(meta1.(*commutative.Meta).KeyView(), []string{"elem-000", "elem-001", "elem-002"}) {
 		t.Error("Error: Keys don't match")
 	}
 
@@ -357,7 +357,7 @@ func TestUrl2(t *testing.T) {
 
 	// The elem-00 has been deleted, only "elem-001", "elem-002" left
 	meta, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	if !reflect.DeepEqual(meta.(*commutative.Meta).PeekKeys(), []string{"elem-001", "elem-002"}) {
+	if !reflect.DeepEqual(meta.(*commutative.Meta).KeyView(), []string{"elem-001", "elem-002"}) {
 		t.Error("Error: keys don't match")
 	}
 
@@ -373,7 +373,7 @@ func TestUrl2(t *testing.T) {
 
 	// Update then read the path info again
 	meta, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	if !reflect.DeepEqual(meta.(*commutative.Meta).PeekKeys(), []string{"elem-001", "elem-002", "elem-000"}) {
+	if !reflect.DeepEqual(meta.(*commutative.Meta).KeyView(), []string{"elem-001", "elem-002", "elem-000"}) {
 		t.Error("Error: keys don't match")
 	}
 
@@ -383,7 +383,7 @@ func TestUrl2(t *testing.T) {
 	}
 
 	// storageV, _ = url.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/" + alice + "/storage/")
-	// if !reflect.DeepEqual(storageV.(*commutative.Meta).PeekKeys(), []string{"ctrn-0/", "elem-0"}) {
+	// if !reflect.DeepEqual(storageV.(*commutative.Meta).KeyView(), []string{"ctrn-0/", "elem-0"}) {
 	// 	t.Error("Error: Wrong sub path list")
 	// }
 
@@ -402,7 +402,7 @@ func TestUrl2(t *testing.T) {
 
 	/*  Read the storage path to see what is left*/
 	// v, _ = url.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/" + alice + "/storage/")
-	// if !reflect.DeepEqual(v.(*commutative.Meta).PeekKeys(), []string{"elem-0"}) {
+	// if !reflect.DeepEqual(v.(*commutative.Meta).KeyView(), []string{"elem-0"}) {
 	// 	t.Error("Error: keys don't match")
 	// }
 
@@ -529,42 +529,42 @@ func TestCommutative(t *testing.T) {
 	}
 
 	// -------------------Create a commutative bigint ------------------------------
-	comtVInit := commutative.NewBalance(uint256.NewInt(300), big.NewInt(0))
+	comtVInit := commutative.NewU256(uint256.NewInt(300), big.NewInt(0))
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", comtVInit); err != nil {
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewBalance(uint256.NewInt(300), big.NewInt(1))); err != nil {
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256(uint256.NewInt(300), big.NewInt(1))); err != nil {
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewBalance(uint256.NewInt(300), big.NewInt(2))); err != nil {
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256(uint256.NewInt(300), big.NewInt(2))); err != nil {
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0")
-	if v.(*commutative.Balance).Value().(*uint256.Int).Cmp(uint256.NewInt(303)) != 0 {
+	if v.(*commutative.U256).Value().(*uint256.Int).Cmp(uint256.NewInt(303)) != 0 {
 		t.Error("Error: comt-0 has a wrong returned value")
 	}
 
-	// ----------------------------Balance ---------------------------------------------------
-	if err := url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewBalance(uint256.NewInt(0), big.NewInt(0))); err != nil { //initialization
+	// ----------------------------U256 ---------------------------------------------------
+	if err := url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256(uint256.NewInt(0), big.NewInt(0))); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
 	// Add the first delta
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewBalance(uint256.NewInt(0), big.NewInt(22))); err != nil {
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256(uint256.NewInt(0), big.NewInt(22))); err != nil {
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
 	// Add the second delta
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewBalance(uint256.NewInt(0), big.NewInt(11))); err != nil {
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256(uint256.NewInt(0), big.NewInt(11))); err != nil {
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
 	// Read alice's balance
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/balance")
-	if v.(*commutative.Balance).Value().(*uint256.Int).Cmp(uint256.NewInt(33)) != 0 {
+	if v.(*commutative.U256).Value().(*uint256.Int).Cmp(uint256.NewInt(33)) != 0 {
 		t.Error("Error: blcc://eth1.0/account/alice/balance")
 	}
 
@@ -640,16 +640,16 @@ func TestNestedPath(t *testing.T) {
 
 	/* Read */
 	v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/ctrn-00/")
-	if !reflect.DeepEqual(v.(*commutative.Meta).PeekKeys(), []string{"elem-00", "elem-01"}) {
+	if !reflect.DeepEqual(v.(*commutative.Meta).KeyView(), []string{"elem-00", "elem-01"}) {
 		t.Error("Error: keys don't match")
 	}
 
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	if !reflect.DeepEqual(v.(*commutative.Meta).PeekKeys(), []string{"ctrn-00/", "elem-00", "elem-01"}) {
+	if !reflect.DeepEqual(v.(*commutative.Meta).KeyView(), []string{"ctrn-00/", "elem-00", "elem-01"}) {
 		t.Error("Error: keys don't match")
 	}
 
-	if !reflect.DeepEqual(v.(*commutative.Meta).PeekRemoved(), []string{}) {
+	if !reflect.DeepEqual(v.(*commutative.Meta).Removed(), []string{}) {
 		t.Error("Error: keys don't match")
 	}
 

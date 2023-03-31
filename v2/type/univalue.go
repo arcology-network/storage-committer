@@ -84,7 +84,7 @@ func (*Univalue) GetTypeID(value interface{}) uint8 {
 			return ccurlcommon.NoncommutativeBytes
 		case *commutative.Meta:
 			return ccurlcommon.CommutativeMeta
-		case *commutative.Balance: /* Commutatives */
+		case *commutative.U256: /* Commutatives */
 			return ccurlcommon.CommutativeUint256
 		case *commutative.Int64:
 			return ccurlcommon.CommutativeInt64
@@ -98,7 +98,7 @@ func (this *Univalue) IsCommutative() bool {
 		switch this.value.(type) {
 		case *commutative.Meta:
 			return true
-		case *commutative.Balance: /* Commutatives */
+		case *commutative.U256: /* Commutatives */
 			return true
 		case *commutative.Int64:
 			return true

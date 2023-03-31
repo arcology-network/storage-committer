@@ -95,7 +95,7 @@ func (this *ConcurrentUrl) CreateAccount(tx uint32, platform string, acct string
 			v = noncommutative.NewString(path.Default.(string))
 
 		case uint8(reflect.Kind(ccurlcommon.CommutativeUint256)): // delta big int
-			v = commutative.NewBalance(path.Default.(*uint256.Int), big.NewInt(0))
+			v = commutative.NewU256(path.Default.(*uint256.Int), big.NewInt(0))
 
 		case uint8(reflect.Kind(ccurlcommon.CommutativeInt64)): // big int pointer
 			v = commutative.NewInt64(path.Default.(int64), path.Default.(int64))
@@ -155,6 +155,44 @@ func (this *ConcurrentUrl) write(tx uint32, path string, value interface{}, rese
 	return this.indexer.Write(tx, path, value, reset)
 }
 
+// Read by index
+func (this *ConcurrentUrl) ReadAt(tx uint32, path string, idx uint64) (interface{}, error) {
+	key, err := this.At(tx, path, idx)
+	if err == nil {
+		return this.Read(tx, *key)
+	}
+	return nil, err
+}
+
+// Write by index
+func (this *ConcurrentUrl) WriteAt(tx uint32, path string, idx uint64, value interface{}) error {
+	key, err := this.At(tx, path, idx)
+	if err == nil {
+		return this.Write(tx, *key, value)
+	}
+	return err
+}
+
+// Get the key by index
+func (this *ConcurrentUrl) At(tx uint32, path string, idx uint64) (*string, error) {
+	meta, err := this.Read(tx, path) // read the container meta
+	if err != nil {
+		return nil, err
+	}
+
+	if reflect.TypeOf(meta).String() != "*commutative.Meta" {
+		return nil, errors.New("Error: Wrong path")
+	}
+
+	keys := meta.(*commutative.Meta).KeyView()
+	if idx >= uint64(len(keys)) {
+		return nil, errors.New("Error: Out of range")
+	}
+
+	path += keys[idx]
+	return &path, nil
+}
+
 // It the access is permitted
 func (this *ConcurrentUrl) Permit(tx uint32, path string, operation uint8) bool {
 	if tx == ccurlcommon.SYSTEM || !this.Platform.OnControlList(path) { // Either by the system or no need to control
@@ -181,7 +219,7 @@ func (this *ConcurrentUrl) Import(transitions []ccurlcommon.UnivalueInterface, a
 			transitions[i] = nil
 		}
 	}
-	ccurlcommon.RemoveNils(&transitions)
+	common.RemoveIf(&transitions, func(v ccurlcommon.UnivalueInterface) bool { return v == nil })
 
 	common.ParallelExecute(
 		func() { this.invIndexer.Import(invtransitions, args...) },
@@ -328,8 +366,8 @@ func (this *ConcurrentUrl) convert(records []ccurlcommon.UnivalueInterface, acce
 	}
 	common.ParallelWorker(len(records), numThreads, worker)
 
-	ccurlcommon.RemoveNils(accesseBuf)
-	ccurlcommon.RemoveNils(transitBuf)
+	common.RemoveIf(accesseBuf, func(v ccurlcommon.UnivalueInterface) bool { return v == nil })
+	common.RemoveIf(transitBuf, func(v ccurlcommon.UnivalueInterface) bool { return v == nil })
 }
 
 func (this *ConcurrentUrl) Export(needToSort bool) ([]ccurlcommon.UnivalueInterface, []ccurlcommon.UnivalueInterface) {

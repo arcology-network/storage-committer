@@ -1,9 +1,6 @@
 package noncommutative
 
 import (
-	"fmt"
-
-	"github.com/arcology-network/common-lib/codec"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 )
 
@@ -20,10 +17,6 @@ func (this *Int64) TypeID() uint8 { return ccurlcommon.NoncommutativeInt64 }
 func (this *Int64) Deepcopy() interface{} {
 	value := *this
 	return (*Int64)(&value)
-}
-
-func (this *Int64) Size() uint32 {
-	return 8 // 8 bytes
 }
 
 func (this *Int64) Value() interface{} {
@@ -85,35 +78,3 @@ func (this *Int64) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 }
 
 func (this *Int64) Composite() bool { return false }
-
-func (this *Int64) Encode() []byte {
-	return codec.Int64(int64(*this)).Encode()
-}
-
-func (this *Int64) EncodeToBuffer(buffer []byte) int {
-	return codec.Int64(*this).EncodeToBuffer(buffer)
-}
-
-func (*Int64) Decode(bytes []byte) interface{} {
-	this := Int64(codec.Int64(0).Decode(bytes).(codec.Int64))
-	return &this
-}
-
-func (this *Int64) EncodeCompact() []byte {
-	return this.Encode()
-}
-
-func (this *Int64) DecodeCompact(bytes []byte) interface{} {
-	return this.Decode(bytes)
-}
-
-func (this *Int64) Purge() {}
-
-func (this *Int64) Hash(hasher func([]byte) []byte) []byte {
-	return hasher(this.EncodeCompact())
-}
-
-func (this *Int64) Print() {
-	fmt.Println(*this)
-	fmt.Println()
-}

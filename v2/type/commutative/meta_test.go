@@ -29,7 +29,7 @@ func TestMeta(t *testing.T) {
 	// reflect.DeepEqual(inPath, out)
 
 	// fmt.Println("Path Encoded size :", len(inPath.(*Meta).Encode()))
-	// fmt.Println("Balance Encoded Compact size :", len(inPath.(*Meta).Encode()))
+	// fmt.Println("U256 Encoded Compact size :", len(inPath.(*Meta).Encode()))
 }
 func TestCodecPathMeta(t *testing.T) {
 	/* Commutative Int64 Test */
@@ -37,9 +37,9 @@ func TestCodecPathMeta(t *testing.T) {
 	buffer := in.(*Meta).Encode()
 	out := (&Meta{}).Decode(buffer).(*Meta)
 
-	if !reflect.DeepEqual(in.(*Meta).PeekKeys(), out.PeekKeys()) ||
-		!reflect.DeepEqual(in.(*Meta).PeekAdded(), out.PeekAdded()) ||
-		!reflect.DeepEqual(in.(*Meta).PeekRemoved(), out.PeekRemoved()) ||
+	if !reflect.DeepEqual(in.(*Meta).KeyView(), out.KeyView()) ||
+		!reflect.DeepEqual(in.(*Meta).Added(), out.Added()) ||
+		!reflect.DeepEqual(in.(*Meta).Removed(), out.Removed()) ||
 		!reflect.DeepEqual(in.(*Meta).Composite(), out.Composite()) {
 		t.Error()
 	}

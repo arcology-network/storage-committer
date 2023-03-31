@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/big"
 
-	codec "github.com/arcology-network/common-lib/codec"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 	uint256 "github.com/holiman/uint256"
 )
@@ -15,7 +14,7 @@ var (
 	uint256max = uint256.NewInt(0).SetAllOne()
 )
 
-type Balance struct {
+type U256 struct {
 	finalized bool
 	value     *uint256.Int
 	min       *uint256.Int
@@ -23,8 +22,8 @@ type Balance struct {
 	delta     *big.Int
 }
 
-func NewBalance(value *uint256.Int, delta *big.Int) interface{} {
-	return &Balance{
+func NewU256(value *uint256.Int, delta *big.Int) interface{} {
+	return &U256{
 		value: value,
 		delta: delta,
 		min:   uint256min.Clone(),
@@ -32,22 +31,22 @@ func NewBalance(value *uint256.Int, delta *big.Int) interface{} {
 	}
 }
 
-func NewBalanceWithLimit(min, max *uint256.Int) interface{} {
-	return &Balance{
+func NewU256WithLimit(min, max *uint256.Int) interface{} {
+	return &U256{
 		min: min,
 		max: max,
 	}
 }
 
-func (this *Balance) HasCustomizedLimit() bool {
+func (this *U256) HasCustomizedLimit() bool {
 	return this.min.Cmp(uint256min) != 0 || this.max.Cmp(uint256max) != 0
 }
 
-func (this *Balance) Deepcopy() interface{} {
+func (this *U256) Deepcopy() interface{} {
 	if this.value == nil {
 		this.value = uint256.NewInt(0)
 	}
-	return &Balance{
+	return &U256{
 		this.finalized,
 		this.value.Clone(),
 		this.min.Clone(),
@@ -56,19 +55,19 @@ func (this *Balance) Deepcopy() interface{} {
 	}
 }
 
-func (this *Balance) Value() interface{} {
+func (this *U256) Value() interface{} {
 	return this.value
 }
 
-func (this *Balance) ToAccess() interface{} {
+func (this *U256) ToAccess() interface{} {
 	return this
 }
 
-func (this *Balance) TypeID() uint8 {
+func (this *U256) TypeID() uint8 {
 	return ccurlcommon.CommutativeUint256
 }
 
-func (*Balance) check(value *uint256.Int, deltaBigInt *big.Int, min, max *uint256.Int) (bool, *uint256.Int, error) {
+func (*U256) check(value *uint256.Int, deltaBigInt *big.Int, min, max *uint256.Int) (bool, *uint256.Int, error) {
 	b := new(big.Int).Set(deltaBigInt)
 	delta, failed := uint256.FromBig(b.Abs(b))
 	if failed {
@@ -97,13 +96,13 @@ func (*Balance) check(value *uint256.Int, deltaBigInt *big.Int, min, max *uint25
 	return isNegative, delta, nil
 }
 
-func (this *Balance) Get(path string, source interface{}) (interface{}, uint32, uint32) {
+func (this *U256) Get(path string, source interface{}) (interface{}, uint32, uint32) {
 	if this.delta == nil || this.delta.Cmp(big.NewInt(0)) == 0 {
 		return this, 1, 0
 	}
 
 	this.finalized = true
-	temp := &Balance{
+	temp := &U256{
 		finalized: this.finalized,
 		value:     this.value.Clone(),
 		min:       this.min,
@@ -124,13 +123,13 @@ func (this *Balance) Get(path string, source interface{}) (interface{}, uint32, 
 	return temp, 1, 1
 }
 
-func (this *Balance) Delta(source interface{}) interface{} {
+func (this *U256) Delta(source interface{}) interface{} {
 	return this
 }
 
 // Set delta
-func (this *Balance) Set(path string, v interface{}, source interface{}) (uint32, uint32, error) {
-	b := v.(*Balance)
+func (this *U256) Set(path string, v interface{}, source interface{}) (uint32, uint32, error) {
+	b := v.(*U256)
 	if _, _, err := this.check(this.value, new(big.Int).Add(this.delta, b.delta), this.min, this.max); err != nil {
 		return 0, 1, err
 	}
@@ -139,9 +138,9 @@ func (this *Balance) Set(path string, v interface{}, source interface{}) (uint32
 	return 0, 1, nil
 }
 
-func (this *Balance) Reset(path string, v interface{}, source interface{}) (uint32, uint32, error) {
+func (this *U256) Reset(path string, v interface{}, source interface{}) (uint32, uint32, error) {
 	this.finalized = true
-	b := v.(*Balance)
+	b := v.(*U256)
 	if b.value != nil {
 		this.value = b.value
 	}
@@ -166,17 +165,17 @@ func (this *Balance) Reset(path string, v interface{}, source interface{}) (uint
 	return 0, 1, nil
 }
 
-func (this *Balance) This(source interface{}) interface{} {
-	v, _, _ := this.Deepcopy().(*Balance).Get("", source)
+func (this *U256) This(source interface{}) interface{} {
+	v, _, _ := this.Deepcopy().(*U256).Get("", source)
 	return v
 }
 
-func (this *Balance) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
+func (this *U256) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 	vec := v.([]ccurlcommon.UnivalueInterface)
 	for i := 0; i < len(vec); i++ {
 		v := vec[i].Value()
 		if this == nil && v != nil { // New value
-			this = v.(*Balance)
+			this = v.(*U256)
 		}
 
 		if this == nil && v == nil { // Delete a non-existent
@@ -184,12 +183,12 @@ func (this *Balance) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 		}
 
 		if this != nil && v != nil { // Update an existent
-			if v.(*Balance).Composite() {
-				if _, _, err := this.Set("", v.(*Balance), nil); err != nil {
+			if v.(*U256).Composite() {
+				if _, _, err := this.Set("", v.(*U256), nil); err != nil {
 					panic(err)
 				}
 			} else {
-				if _, _, err := this.Reset("", v.(*Balance), nil); err != nil {
+				if _, _, err := this.Reset("", v.(*U256), nil); err != nil {
 					panic(err)
 				}
 			}
@@ -201,122 +200,27 @@ func (this *Balance) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 	}
 
 	newValue, _, _ := this.Get("", nil)
-	*this = (*newValue.(*Balance))
+	*this = (*newValue.(*U256))
 	return this
 }
 
-func (this *Balance) Composite() bool { return !this.finalized }
+func (this *U256) Composite() bool { return !this.finalized }
 
-func (this *Balance) Purge() {
+func (this *U256) Purge() {
 	this.finalized = false
 	this.delta = big.NewInt(0)
 }
 
-func (this *Balance) Hash(hasher func([]byte) []byte) []byte {
+func (this *U256) Hash(hasher func([]byte) []byte) []byte {
 	return hasher(this.EncodeCompact())
 }
 
-func (this *Balance) HeaderSize() uint32 {
-	return (1 + 5) * codec.UINT32_LEN // Total number of fields + offsets of these fields
-}
-
-func (this *Balance) Size() uint32 {
-	delta := codec.Bigint(*this.delta)
-	return codec.Bool(this.finalized).Size() +
-		32 + // Values
-		32 + // Min
-		32 + // Max
-		delta.Size()
-}
-
-func (this *Balance) Encode() []byte {
-	buffer := make([]byte, this.Size())
-	this.EncodeToBuffer(buffer)
-	return buffer
-}
-
-func (this *Balance) EncodeToBuffer(buffer []byte) int {
-	offset := codec.Bool(this.finalized).EncodeToBuffer(buffer)
-	offset += codec.Uint64s(this.value[:]).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64s(this.min[:]).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64s(this.max[:]).EncodeToBuffer(buffer[offset:])
-
-	delta := codec.Bigint(*this.delta)
-	return offset + (&delta).EncodeToBuffer(buffer[offset:])
-}
-
-func (*Balance) Decode(buffer []byte) interface{} {
-	balance := &Balance{
-		finalized: bool(codec.Bool(true).Decode(buffer).(codec.Bool)),
-		value:     uint256.NewInt(0),
-		min:       uint256.NewInt(0),
-		max:       uint256.NewInt(0),
-	}
-
-	copy(balance.value[:], codec.Uint64s{}.Decode(buffer[1+32*0:1+32*1]).(codec.Uint64s))
-	copy(balance.min[:], codec.Uint64s{}.Decode(buffer[1+32*1:1+32*2]).(codec.Uint64s))
-	copy(balance.max[:], codec.Uint64s{}.Decode(buffer[1+32*2:1+32*3]).(codec.Uint64s))
-	balance.delta = (*big.Int)((&codec.Bigint{}).Decode(buffer[1+32*3:]).(*codec.Bigint))
-	return balance
-}
-
-func (this *Balance) EncodeCompact() []byte {
-	totalLen := 32
-	if this.min != nil {
-		totalLen += 32
-	}
-
-	if this.max != nil {
-		totalLen += 32
-	}
-
-	buffer := make([]byte, 2+totalLen) // labels + actual length
-
-	offset := codec.Uint64s(this.value[:]).EncodeToBuffer(buffer[2:])
-	if this.min != nil {
-		buffer[0] = 1
-		offset += codec.Uint64s(this.min[:]).EncodeToBuffer(buffer[offset+2:])
-	}
-
-	if this.max != nil {
-		buffer[1] = 1
-		codec.Uint64s(this.max[:]).EncodeToBuffer(buffer[offset+2:])
-	}
-	return buffer
-}
-
-func (this *Balance) DecodeCompact(buffer []byte) interface{} {
-	v := uint256.NewInt(0)
-	offset := 2
-	copy((*v)[:], codec.Uint64s{}.Decode(buffer[offset:offset+32]).(codec.Uint64s))
-
-	var min, max *uint256.Int
-	offset += 32
-	if buffer[0] == 1 {
-		min = uint256.NewInt(0)
-		copy(min[:], codec.Uint64s{}.Decode(buffer[offset:offset+32]).(codec.Uint64s))
-		offset += 32
-	}
-
-	if buffer[1] == 1 {
-		max = uint256.NewInt(0)
-		copy(max[:], codec.Uint64s{}.Decode(buffer[offset:offset+32]).(codec.Uint64s))
-	}
-
-	return &Balance{
-		value: v,
-		delta: big.NewInt(0),
-		min:   min,
-		max:   max,
-	}
-}
-
-func (this *Balance) Print() {
+func (this *U256) Print() {
 	fmt.Println("Value: ", this.value)
 	fmt.Println("Delta: ", this.delta)
 	fmt.Println()
 }
 
-func (this *Balance) GetDelta() interface{} {
+func (this *U256) GetDelta() interface{} {
 	return this.delta
 }

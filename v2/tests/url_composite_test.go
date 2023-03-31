@@ -78,13 +78,13 @@ func TestAuxTrans(t *testing.T) {
 	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/"); value == nil {
 		t.Error(value)
 	} else {
-		if !reflect.DeepEqual(value.(*commutative.Meta).PeekKeys(), []string{"elem-000"}) {
+		if !reflect.DeepEqual(value.(*commutative.Meta).KeyView(), []string{"elem-000"}) {
 			t.Error("Wrong value ")
 		}
 	}
 
 	_, transitions := url.Export(true)
-	if !reflect.DeepEqual(transitions[0].Value().(*commutative.Meta).PeekAdded(), []string{"elem-000"}) {
+	if !reflect.DeepEqual(transitions[0].Value().(*commutative.Meta).Added(), []string{"elem-000"}) {
 		t.Error("keys don't match")
 	}
 
@@ -169,7 +169,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	}
 
 	v1, _ := url1.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	keys := v1.(*commutative.Meta).PeekKeys()
+	keys := v1.(*commutative.Meta).KeyView()
 	if len(keys) != 3 {
 		t.Error("Error: There should be 3 elements only !!") // create a path
 	}

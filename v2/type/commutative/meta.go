@@ -2,11 +2,9 @@ package commutative
 
 import (
 	"errors"
-	"fmt"
 	"reflect"
 	"strings"
 
-	codec "github.com/arcology-network/common-lib/codec"
 	common "github.com/arcology-network/common-lib/common"
 
 	// performance "github.com/arcology-network/common-lib/mhasher"
@@ -15,7 +13,8 @@ import (
 )
 
 type Meta struct {
-	keyView         *orderedmap.OrderedMap //The latest view of all the keys. keyView == keys + added - removed
+	keys            []string               // committed keys
+	keyView         *orderedmap.OrderedMap // committed keys + added - removed
 	addedBuffer     *orderedmap.OrderedMap
 	removedBuffer   map[string]ccurlcommon.UnivalueInterface
 	finalized       bool
@@ -24,9 +23,10 @@ type Meta struct {
 	cacheDirty      bool
 
 	// Export only
-	keys    []string
-	added   []string // added keys
-	removed []string // removed keys
+	added   []string // added keys in the current block
+	removed []string // removed keys in the current block
+
+	snapshot *Meta // keyView in an array
 }
 
 func NewMeta(path string) (interface{}, error) {
@@ -49,7 +49,9 @@ func NewMeta(path string) (interface{}, error) {
 		iterator:        nil,
 		reverseIterator: nil,
 		cacheDirty:      false,
+		snapshot:        nil,
 	}
+
 	return this, nil
 }
 
@@ -61,8 +63,8 @@ func (this *Meta) Deepcopy() interface{} {
 
 	return &Meta{
 		keys:          this.keys,
-		added:         ccurlcommon.Deepcopy(this.added),
-		removed:       ccurlcommon.Deepcopy(this.removed),
+		added:         common.DeepCopy(this.added),
+		removed:       common.DeepCopy(this.removed),
 		keyView:       keyView,
 		addedBuffer:   orderedmap.NewOrderedMap(),
 		removedBuffer: make(map[string]ccurlcommon.UnivalueInterface),
@@ -93,9 +95,9 @@ func (this *Meta) Get(path string, source interface{}) (interface{}, uint32, uin
 
 func (this *Meta) Delta(source interface{}) interface{} {
 	return &Meta{
-		keys:            []string{},
-		added:           this.PeekAdded(),
-		removed:         this.PeekRemoved(),
+		keys:            []string{}, // committed keys
+		added:           this.Added(),
+		removed:         this.Removed(),
 		finalized:       this.finalized,
 		keyView:         this.keyView,
 		addedBuffer:     this.addedBuffer,
@@ -164,7 +166,7 @@ func (this *Meta) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 }
 
 // Check new keys
-func (this *Meta) PeekAdded() []string {
+func (this *Meta) Added() []string {
 	added := []string{}
 	for iter := this.addedBuffer.Front(); iter != nil; iter = iter.Next() {
 		added = append(added, iter.Key.(string))
@@ -173,7 +175,7 @@ func (this *Meta) PeekAdded() []string {
 }
 
 // Check removed keys
-func (this *Meta) PeekRemoved() []string {
+func (this *Meta) Removed() []string {
 	removed := []string{}
 	for k := range this.removedBuffer {
 		removed = append(removed, k)
@@ -182,24 +184,28 @@ func (this *Meta) PeekRemoved() []string {
 }
 
 // committed keys + added - removed
-func (this *Meta) PeekKeys() []string {
+func (this *Meta) KeyView() []string {
 	this.LoadKeys()
-	newKeys := make([]string, 0, this.keyView.Len())
+	return this.Snapshot().keys
+}
+
+func (this *Meta) VectorizeView() []string {
+	array := make([]string, 0, this.keyView.Len())
 	for iter := this.keyView.Front(); iter != nil; iter = iter.Next() {
 		if iter.Value != nil {
-			newKeys = append(newKeys, (iter.Key.(string)))
+			array = append(array, (iter.Key.(string)))
 		}
 	}
-	return newKeys
+	return array
 }
 
 func (this *Meta) Value() interface{} {
-	return this.PeekKeys()
+	return this.KeyView()
 }
 
 // Load keys into an orderedmap for quick access, only happens at once
 func (this *Meta) LoadKeys() {
-	if this.keyView != nil { // Keys have been loaded.
+	if this.keyView != nil { // Keys have been loaded already.
 		return
 	}
 
@@ -217,10 +223,16 @@ func (this *Meta) LoadKeys() {
 	this.reverseIterator = this.addedBuffer.Back()
 }
 
-// func (this *Meta) Length() uint32 {
-// 	return uint32(this.keyView.Len())
-// }
+func (this *Meta) Snapshot() *Meta {
+	if this.cacheDirty || this.snapshot == nil { // Remake the cache is dirty of snapshot is empty
+		this.snapshot = &Meta{
+			keys: this.VectorizeView(),
+		}
+	}
+	return this.snapshot
+}
 
+// For linear access
 func (this *Meta) ResetIterator()        { this.iterator = this.keyView.Front() }
 func (this *Meta) ResetReverseIterator() { this.reverseIterator = this.keyView.Back() }
 
@@ -246,6 +258,7 @@ func (this *Meta) Previous() string {
 	return key
 }
 
+// Just return the object, won't do anything
 func (this *Meta) This(source interface{}) interface{} {
 	return this
 }
@@ -256,7 +269,7 @@ func (this *Meta) Set(path string, value interface{}, source interface{}) (uint3
 
 		tx := source.([2]interface{})[0].(uint32)
 		value := indexer.Read(tx, path)
-		for _, subpath := range value.(*Meta).PeekKeys() {
+		for _, subpath := range value.(*Meta).KeyView() {
 			indexer.Write(tx, path+subpath, nil, false) // Remove all the sub paths.
 		}
 		return 0, 1, nil
@@ -309,6 +322,7 @@ func (this *Meta) toAddedBuffer(child ccurlcommon.UnivalueInterface) bool {
 			this.addedBuffer.Delete(subkey)
 		}
 	}
+
 	return dirty
 }
 
@@ -329,6 +343,7 @@ func (this *Meta) toRemovedBuffer(child ccurlcommon.UnivalueInterface) bool {
 			delete(this.removedBuffer, subkey)
 		}
 	}
+
 	return dirtyFlag
 }
 
@@ -344,99 +359,4 @@ func (this *Meta) Purge() {
 
 func (this *Meta) Hash(hasher func([]byte) []byte) []byte {
 	return hasher(this.EncodeCompact())
-}
-
-func (this *Meta) Encode() []byte {
-	this.keys = this.keys[:0] // Clear keys, no need to send
-
-	buffer := make([]byte, this.Size())
-	this.EncodeToBuffer(buffer)
-	return buffer
-}
-
-func (this *Meta) HeaderSize() uint32 {
-	return 5 * codec.UINT32_LEN
-}
-
-func (this *Meta) Size() uint32 {
-	if this == nil {
-		return 0
-	}
-
-	total := this.HeaderSize() +
-		codec.Strings(this.keys).Size() +
-		codec.Strings(this.added).Size() +
-		codec.Strings(this.removed).Size() +
-		uint32(codec.Bool(this.finalized).Size())
-	return total
-}
-
-func (this *Meta) FillHeader(buffer []byte) {
-	total := uint32(0)
-	codec.Uint32(4).EncodeToBuffer(buffer[codec.UINT32_LEN*0:])
-
-	codec.Uint32(total).EncodeToBuffer(buffer[codec.UINT32_LEN*1:])
-	total += codec.Strings(this.keys).Size()
-
-	codec.Uint32(total).EncodeToBuffer(buffer[codec.UINT32_LEN*2:])
-	total += codec.Strings(this.added).Size()
-
-	codec.Uint32(total).EncodeToBuffer(buffer[codec.UINT32_LEN*3:])
-	total += codec.Strings(this.removed).Size()
-
-	codec.Uint32(total).EncodeToBuffer(buffer[codec.UINT32_LEN*4:])
-}
-
-func (this *Meta) EncodeToBuffer(buffer []byte) int {
-	this.FillHeader(buffer)
-	offset := int(this.HeaderSize())
-
-	offset += codec.Strings(this.keys).EncodeToBuffer(buffer[offset:])
-	offset += codec.Strings(this.added).EncodeToBuffer(buffer[offset:])
-	offset += codec.Strings(this.removed).EncodeToBuffer(buffer[offset:])
-
-	return int(offset) + codec.Bool(this.finalized).EncodeToBuffer(buffer[offset:])
-}
-
-func (this *Meta) Decode(bytes []byte) interface{} {
-	buffers := codec.Byteset{}.Decode(bytes).(codec.Byteset)
-	this = &Meta{
-		keys:          codec.Strings([]string{}).Decode(common.ArrayCopy(buffers[0])).(codec.Strings),
-		added:         codec.Strings([]string{}).Decode(common.ArrayCopy(buffers[1])).(codec.Strings),
-		removed:       codec.Strings([]string{}).Decode(buffers[2]).(codec.Strings),
-		finalized:     bool(codec.Bool(true).Decode(buffers[3]).(codec.Bool)),
-		keyView:       nil,
-		addedBuffer:   orderedmap.NewOrderedMap(),
-		removedBuffer: make(map[string]ccurlcommon.UnivalueInterface),
-		cacheDirty:    false,
-	}
-	return this
-}
-
-func (this *Meta) EncodeCompact() []byte {
-	byteset := [][]byte{
-		codec.Strings(this.keys).Encode(),
-	}
-	return codec.Byteset(byteset).Encode()
-}
-
-func (this *Meta) DecodeCompact(bytes []byte) interface{} {
-	buffers := codec.Byteset{}.Decode(bytes).(codec.Byteset)
-	return &Meta{
-		keys:          codec.Strings([]string{}).Decode(buffers[0]).(codec.Strings),
-		added:         []string{},
-		removed:       []string{},
-		finalized:     false,
-		keyView:       nil,
-		addedBuffer:   orderedmap.NewOrderedMap(),
-		removedBuffer: make(map[string]ccurlcommon.UnivalueInterface),
-		cacheDirty:    false,
-	}
-}
-
-func (this *Meta) Print() {
-	fmt.Println("Keys: ", this.keys)
-	fmt.Println("Added: ", this.added)
-	fmt.Println("Removed: ", this.removed)
-	fmt.Println()
 }

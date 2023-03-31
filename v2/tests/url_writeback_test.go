@@ -164,7 +164,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/2", noncommutative.NewString("4"))
 
 	path, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	if reflect.DeepEqual(path.(*commutative.Meta).PeekKeys(), []string{"1", "2", "3", "4"}) {
+	if reflect.DeepEqual(path.(*commutative.Meta).KeyView(), []string{"1", "2", "3", "4"}) {
 		t.Error("Error: Not match")
 	}
 
@@ -407,29 +407,29 @@ func TestAccessControl(t *testing.T) {
 		t.Error("Error: Users shouldn't be updated blcc://eth1.0/account/alice/code")
 	}
 
-	/* Balance */
+	/* U256 */
 	v, err = url.Read(1, "blcc://eth1.0/account/"+alice+"/balance")
 	if err != nil {
 		t.Error(err)
 	}
 
-	err = url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewBalance(uint256.NewInt(100), big.NewInt(100)))
+	err = url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256(uint256.NewInt(100), big.NewInt(100)))
 	if err != nil {
 		t.Error("Error: Failed to write the balance")
 	}
 
-	err = url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewBalance(uint256.NewInt(100), big.NewInt(0)))
+	err = url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256(uint256.NewInt(100), big.NewInt(0)))
 	if err != nil {
 		t.Error("Error: Failed to initialize balance")
 	}
 
-	err = url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewBalance(uint256.NewInt(100), big.NewInt(100)))
+	err = url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256(uint256.NewInt(100), big.NewInt(100)))
 	if err != nil {
 		t.Error("Error: Failed to initialize balance")
 	}
 
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/balance")
-	if v.(*commutative.Balance).Value().(*uint256.Int).Cmp(uint256.NewInt(200)) != 0 {
+	if v.(*commutative.U256).Value().(*uint256.Int).Cmp(uint256.NewInt(200)) != 0 {
 		t.Error("Error: blcc://eth1.0/account/alice/balance, should be 300")
 	}
 
