@@ -21,7 +21,7 @@ func (this Univalues) Sort() {
 
 func (this Univalues) IfContains(condition ccurlcommon.UnivalueInterface) bool {
 	for _, v := range this {
-		if (v).(*Univalue).EqualTransition(condition.(*Univalue)) {
+		if (v).(*Univalue).Equal(condition.(*Univalue)) {
 			return true
 		}
 	}

@@ -41,7 +41,7 @@ func TestSimpleBalance(t *testing.T) {
 	buffer := ccurltype.Univalues(transitions).Encode()
 	out := ccurltype.Univalues{}.Decode(buffer).(ccurltype.Univalues)
 	for i := range transitions {
-		if !transitions[i].(*ccurltype.Univalue).EqualTransition(out[i].(*ccurltype.Univalue)) {
+		if !transitions[i].(*ccurltype.Univalue).Equal(out[i].(*ccurltype.Univalue)) {
 			t.Error("Accesses don't match")
 		}
 	}
@@ -154,7 +154,7 @@ func TestBalance(t *testing.T) {
 	_10 := trans.Encode()
 	_10tran := (&ccurltype.Univalue{}).Decode(_10).(*ccurltype.Univalue)
 
-	if !trans.(*ccurltype.Univalue).EqualTransition(_10tran) {
+	if !trans.(*ccurltype.Univalue).Equal(_10tran) {
 		t.Error("Accesses don't match", trans, _10tran)
 	}
 }

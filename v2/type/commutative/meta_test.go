@@ -11,7 +11,7 @@ import (
 func TestMeta(t *testing.T) {
 	/* Noncommutative Path Test*/
 	alice := datacompression.RandomAccount()
-	meta, _ := NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
+	meta, _ := NewMeta("blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil)
 	inPath := meta.(*Meta)
 
 	inPath.keys = ([]string{"0", "1", "2", "3"})
@@ -33,7 +33,7 @@ func TestMeta(t *testing.T) {
 }
 func TestCodecPathMeta(t *testing.T) {
 	/* Commutative Int64 Test */
-	in, _ := NewMeta("blcc://eth1.0/account/0x12345456/")
+	in, _ := NewMeta("blcc://eth1.0/account/0x12345456/", nil)
 	buffer := in.(*Meta).Encode()
 	out := (&Meta{}).Decode(buffer).(*Meta)
 

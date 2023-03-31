@@ -59,7 +59,7 @@ func TestUnivalueEncodeDecode(t *testing.T) {
 func BenchmarkUnivalueEncodeDecode(t *testing.B) {
 	/* Commutative Int64 Test */
 	alice := datacompression.RandomAccount()
-	v, _ := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
+	v, _ := commutative.NewMeta("blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil)
 	univalue := NewUnivalue(ccurlcommon.VARIATE_TRANSITIONS, 1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, v)
 	bytes := univalue.Encode()
 	fmt.Println("Encoded length of one entry:", len(bytes)*4)

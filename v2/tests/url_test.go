@@ -285,11 +285,6 @@ func TestUrl2(t *testing.T) {
 		t.Error(err, "Error:  Failed to MakePath: "+"/ctrn-0/")
 	}
 
-	// storageV, _ := url.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/" + alice + "/storage/")
-	// if !reflect.DeepEqual(storageV.(*commutative.Meta).KeyView(), []string{"ctrn-0/"}) {
-	// 	t.Error("Error: Wrong sub path list")
-	// }
-
 	// Add a vaiable directly
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/elem-0", noncommutative.NewString("0000")); err != nil {
 		t.Error(err, "Error:  Failed to Write: "+"/elem-0")
@@ -355,6 +350,11 @@ func TestUrl2(t *testing.T) {
 		t.Error("Error: The element wasn't successfully deleted")
 	}
 
+	// Check elem-00's value
+	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001"); (*value.(*noncommutative.Int64)) != 2222 {
+		t.Error("Error: The element wasn't found")
+	}
+
 	// The elem-00 has been deleted, only "elem-001", "elem-002" left
 	meta, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
 	if !reflect.DeepEqual(meta.(*commutative.Meta).KeyView(), []string{"elem-001", "elem-002"}) {
@@ -382,11 +382,6 @@ func TestUrl2(t *testing.T) {
 		t.Error("Error: keys don't match")
 	}
 
-	// storageV, _ = url.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/" + alice + "/storage/")
-	// if !reflect.DeepEqual(storageV.(*commutative.Meta).KeyView(), []string{"ctrn-0/", "elem-0"}) {
-	// 	t.Error("Error: Wrong sub path list")
-	// }
-
 	/* Remove the path and all the elements underneath */
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil); err != nil {
 		t.Error(err, "Failed to remove path: "+"/ctrn-0/")
@@ -396,36 +391,36 @@ func TestUrl2(t *testing.T) {
 		t.Error("Error: keys don't match")
 	}
 
-	if v, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/elem-0"); v == nil { /* So does all the sub paths */
+	if v, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0"); v != nil { /* all the sub paths should be gone as well*/
 		t.Error("Error: keys don't match")
 	}
 
 	/*  Read the storage path to see what is left*/
-	// v, _ = url.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/" + alice + "/storage/")
-	// if !reflect.DeepEqual(v.(*commutative.Meta).KeyView(), []string{"elem-0"}) {
-	// 	t.Error("Error: keys don't match")
-	// }
+	v, _ = url.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/")
+	if !reflect.DeepEqual(v.(*commutative.Meta).KeyView(), []string{}) {
+		t.Error("Error: Should be empty!!")
+	}
 
 	/*  Export all */
 	accessRecords, transitions := url.Export(true)
 
-	condition := ccurltype.NewUnivalue(ccurlcommon.VARIATE_TRANSITIONS, 1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, nil)
-	if !ccurltype.Univalues(accessRecords).IfContains(condition) {
+	value := ccurltype.NewUnivalue(ccurlcommon.VARIATE_TRANSITIONS, 1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, nil)
+	if !ccurltype.Univalues(accessRecords).IfContains(value) {
 		t.Error("Error: Error: ")
 	}
 
-	condition = ccurltype.NewUnivalue(ccurlcommon.VARIATE_TRANSITIONS, 1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", 0, 2, nil)
-	if !ccurltype.Univalues(accessRecords).IfContains(condition) {
+	value = ccurltype.NewUnivalue(ccurlcommon.VARIATE_TRANSITIONS, 1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", 1, 2, nil)
+	if !ccurltype.Univalues(accessRecords).IfContains(value) {
 		t.Error("Error: Error: ")
 	}
 
-	condition = ccurltype.NewUnivalue(ccurlcommon.VARIATE_TRANSITIONS, 1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-002", 0, 2, nil)
-	if !ccurltype.Univalues(accessRecords).IfContains(condition) {
+	value = ccurltype.NewUnivalue(ccurlcommon.VARIATE_TRANSITIONS, 1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-002", 0, 2, nil)
+	if !ccurltype.Univalues(accessRecords).IfContains(value) {
 		t.Error("Error: Error: ")
 	}
 
-	condition = ccurltype.NewUnivalue(ccurlcommon.VARIATE_TRANSITIONS, 1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-005", 1, 0, nil)
-	if !ccurltype.Univalues(accessRecords).IfContains(condition) {
+	value = ccurltype.NewUnivalue(ccurlcommon.VARIATE_TRANSITIONS, 1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-005", 1, 0, nil)
+	if !ccurltype.Univalues(accessRecords).IfContains(value) {
 		t.Error("Error: Error: ")
 	}
 
@@ -434,7 +429,7 @@ func TestUrl2(t *testing.T) {
 
 	out := ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
 	for i := range transitions {
-		if !transitions[i].(*ccurltype.Univalue).EqualTransition(out[i].(*ccurltype.Univalue)) {
+		if !transitions[i].(*ccurltype.Univalue).Equal(out[i].(*ccurltype.Univalue)) {
 			t.Error("Error: transitions don't match")
 		}
 	}
@@ -491,7 +486,7 @@ func TestUrl3(t *testing.T) {
 	fmt.Println(len(in))
 	out := ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
 	for i := range accessRecords {
-		if !accessRecords[i].(*ccurltype.Univalue).EqualTransition(out[i].(*ccurltype.Univalue)) {
+		if !accessRecords[i].(*ccurltype.Univalue).Equal(out[i].(*ccurltype.Univalue)) {
 			t.Error("Error: Accesses don't match")
 		}
 	}
@@ -573,7 +568,7 @@ func TestCommutative(t *testing.T) {
 	in := ccurltype.Univalues(accessRecords).Encode()
 	out := ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
 	for i := range accessRecords {
-		if !accessRecords[i].(*ccurltype.Univalue).EqualTransition(out[i].(*ccurltype.Univalue)) {
+		if !accessRecords[i].(*ccurltype.Univalue).Equal(out[i].(*ccurltype.Univalue)) {
 			t.Error("Error: Accesses don't match")
 		}
 	}
@@ -581,7 +576,7 @@ func TestCommutative(t *testing.T) {
 	in = ccurltype.Univalues(transitions).Encode()
 	out = ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
 	for i := range transitions {
-		if !transitions[i].(*ccurltype.Univalue).EqualTransition(out[i].(*ccurltype.Univalue)) {
+		if !transitions[i].(*ccurltype.Univalue).Equal(out[i].(*ccurltype.Univalue)) {
 			t.Error("Error: Transitions don't match !!!")
 			fmt.Println(transitions[i])
 			fmt.Println(out[i])
@@ -668,7 +663,7 @@ func TestNestedPath(t *testing.T) {
 	in := ccurltype.Univalues(accessRecords).Encode()
 	out := ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
 	for i := range accessRecords {
-		if !accessRecords[i].(*ccurltype.Univalue).EqualTransition(out[i].(*ccurltype.Univalue)) {
+		if !accessRecords[i].(*ccurltype.Univalue).Equal(out[i].(*ccurltype.Univalue)) {
 			t.Error("Error: Accesses don't match  before and after encoding")
 		}
 	}
@@ -676,7 +671,7 @@ func TestNestedPath(t *testing.T) {
 	in = ccurltype.Univalues(transitions).Encode()
 	out = ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
 	for i := range transitions {
-		if !transitions[i].(*ccurltype.Univalue).EqualTransition(out[i].(*ccurltype.Univalue)) {
+		if !transitions[i].(*ccurltype.Univalue).Equal(out[i].(*ccurltype.Univalue)) {
 			t.Error("Error: Transitions don't match before and after encoding")
 		}
 	}

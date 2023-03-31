@@ -68,7 +68,7 @@ func (this *Indexer) NewUnivalue() *Univalue {
 }
 
 // If the access has been recorded
-func (this *Indexer) CheckHistory(tx uint32, path string, ifAddToBuffer bool) ccurlcommon.UnivalueInterface {
+func (this *Indexer) checkHistory(tx uint32, path string, ifAddToBuffer bool) ccurlcommon.UnivalueInterface {
 	univalue := this.buffer[path]
 	if univalue == nil { // Not in the buffer, check the datastore
 		univalue = this.NewUnivalue()
@@ -82,7 +82,7 @@ func (this *Indexer) CheckHistory(tx uint32, path string, ifAddToBuffer bool) cc
 }
 
 func (this *Indexer) Read(tx uint32, path string) interface{} {
-	univalue := this.CheckHistory(tx, path, true)
+	univalue := this.checkHistory(tx, path, true)
 	return univalue.Get(tx, path, this.Buffer())
 }
 
@@ -97,7 +97,7 @@ func (this *Indexer) TryRead(tx uint32, path string) (interface{}, bool) {
 func (this *Indexer) Write(tx uint32, path string, value interface{}, reset bool) error {
 	parentPath := ccurlcommon.GetParentPath(path)
 	if this.IfExists(parentPath) || tx == ccurlcommon.SYSTEM { // The parent path exists or to inject the path directly
-		univalue := this.CheckHistory(tx, path, true)
+		univalue := this.checkHistory(tx, path, true)
 		if univalue.Value() == nil && value == nil { // Try to delete something nonexistent
 			return nil
 		} else {
@@ -108,7 +108,7 @@ func (this *Indexer) Write(tx uint32, path string, value interface{}, reset bool
 				err = univalue.Set(tx, path, value, this)
 			}
 			if !this.platform.OnControlList(parentPath) && tx != ccurlcommon.SYSTEM && err == nil { // System paths don't keep track of child paths
-				if parentValue := this.CheckHistory(tx, parentPath, false); parentValue != nil && parentValue.Value() != nil {
+				if parentValue := this.checkHistory(tx, parentPath, false); parentValue != nil && parentValue.Value() != nil {
 					if parentValue.UpdateParentMeta(tx, univalue, this) {
 						this.buffer[parentPath] = parentValue
 					}

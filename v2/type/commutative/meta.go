@@ -189,6 +189,42 @@ func (this *Meta) KeyView() []string {
 	return this.Snapshot().keys
 }
 
+func (this *Meta) Erase() []string {
+	return this.Snapshot().keys
+}
+
+// // This happens when a key is delete from the middle
+// func (this *Meta) DecrementIdx() []string {
+// 	this.LoadKeys()
+// 	return this.Snapshot().keys
+
+// 	this.iterator = this.iterator.Next()
+// }
+
+// Load keys into an orderedmap for quick access, only happens at once
+func (this *Meta) LoadKeys() {
+	if this.keyView != nil { // Keys have been loaded already.
+		return
+	}
+
+	this.keyView = orderedmap.NewOrderedMap()
+
+	counter := 0
+	for _, k := range this.keys { // Committed keys first
+		if _, ok := this.removedBuffer[k]; !ok {
+			this.keyView.Set(k, counter) // Not in the removed set
+			counter++
+		}
+	}
+
+	for iter := this.addedBuffer.Front(); iter != nil; iter = iter.Next() {
+		this.keyView.Set(iter.Key, counter) // Newly added keys
+		counter++
+	}
+	this.iterator = this.addedBuffer.Front()
+	this.reverseIterator = this.addedBuffer.Back()
+}
+
 func (this *Meta) VectorizeView() []string {
 	array := make([]string, 0, this.keyView.Len())
 	for iter := this.keyView.Front(); iter != nil; iter = iter.Next() {
@@ -201,26 +237,6 @@ func (this *Meta) VectorizeView() []string {
 
 func (this *Meta) Value() interface{} {
 	return this.KeyView()
-}
-
-// Load keys into an orderedmap for quick access, only happens at once
-func (this *Meta) LoadKeys() {
-	if this.keyView != nil { // Keys have been loaded already.
-		return
-	}
-
-	this.keyView = orderedmap.NewOrderedMap()
-	for _, k := range this.keys {
-		if _, ok := this.removedBuffer[k]; !ok {
-			this.keyView.Set(k, true) // Not in the removed set
-		}
-	}
-
-	for iter := this.addedBuffer.Front(); iter != nil; iter = iter.Next() {
-		this.keyView.Set(iter.Key, true)
-	}
-	this.iterator = this.addedBuffer.Front()
-	this.reverseIterator = this.addedBuffer.Back()
 }
 
 func (this *Meta) Snapshot() *Meta {
@@ -263,13 +279,13 @@ func (this *Meta) This(source interface{}) interface{} {
 	return this
 }
 
+// Write and afflicated operations
 func (this *Meta) Set(path string, value interface{}, source interface{}) (uint32, uint32, error) {
 	if value == nil { // Remove the path completely
 		indexer := source.([2]interface{})[1].(ccurlcommon.IndexerInterface)
-
 		tx := source.([2]interface{})[0].(uint32)
-		value := indexer.Read(tx, path)
-		for _, subpath := range value.(*Meta).KeyView() {
+
+		for _, subpath := range this.KeyView() {
 			indexer.Write(tx, path+subpath, nil, false) // Remove all the sub paths.
 		}
 		return 0, 1, nil
@@ -320,6 +336,7 @@ func (this *Meta) toAddedBuffer(child ccurlcommon.UnivalueInterface) bool {
 	if child.Value() == nil { // Delete an Element, it is possible the element is in the added cache
 		if _, ok := this.addedBuffer.Get(subkey); ok {
 			this.addedBuffer.Delete(subkey)
+			dirty = true
 		}
 	}
 

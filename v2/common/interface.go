@@ -58,7 +58,6 @@ type IndexerInterface interface {
 	Insert(string, interface{})
 
 	RetriveShallow(string) interface{}
-	CheckHistory(uint32, string, bool) UnivalueInterface
 	Buffer() *map[string]UnivalueInterface
 	Store() *DatastoreInterface
 

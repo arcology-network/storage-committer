@@ -339,21 +339,21 @@ func (this *Univalue) Print() {
 	fmt.Println("--------------------------------------------------------")
 }
 
-func (this *Univalue) Equal(other *Univalue) bool {
-	if this.transitType == other.transitType &&
-		this.vType == other.vType &&
-		this.tx == other.tx &&
-		this.path == other.path &&
-		this.reads == other.reads &&
-		this.writes == other.writes &&
-		this.value == other.value &&
-		this.preexists == other.preexists {
-		return true
-	}
-	return false
-}
+// func (this *Univalue) Equal(other *Univalue) bool {
+// 	if this.transitType == other.transitType &&
+// 		this.vType == other.vType &&
+// 		this.tx == other.tx &&
+// 		this.path == other.path &&
+// 		this.reads == other.reads &&
+// 		this.writes == other.writes &&
+// 		this.value == other.value &&
+// 		this.preexists == other.preexists {
+// 		return true
+// 	}
+// 	return false
+// }
 
-func (this *Univalue) EqualTransition(other *Univalue) bool {
+func (this *Univalue) Equal(other *Univalue) bool {
 	var vFlag bool
 	if this.value != nil && this.value.(ccurlcommon.TypeInterface).TypeID() == ccurlcommon.CommutativeMeta {
 		vFlag = this.value.(*commutative.Meta).Equal(other.value.(*commutative.Meta))
