@@ -184,7 +184,7 @@ func (this *ConcurrentUrl) At(tx uint32, path string, idx uint64) (*string, erro
 		return nil, errors.New("Error: Wrong path")
 	}
 
-	keys := meta.(*commutative.Meta).KeyView()
+	keys := meta.(*commutative.Meta).Value().([]string)
 	if idx >= uint64(len(keys)) {
 		return nil, errors.New("Error: Out of range")
 	}

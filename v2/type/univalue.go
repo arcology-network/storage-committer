@@ -152,7 +152,7 @@ func (this *Univalue) UpdateParentMeta(tx uint32, value interface{}, source inte
 
 	child := value.(*Univalue)
 	meta := this.Value().(*commutative.Meta)
-	if meta.UpdateCaches(child, source) {
+	if meta.Refresh(child, source) {
 		this.IncrementWrites()
 		return true
 	}

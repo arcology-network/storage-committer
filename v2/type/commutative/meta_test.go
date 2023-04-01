@@ -37,7 +37,7 @@ func TestCodecPathMeta(t *testing.T) {
 	buffer := in.(*Meta).Encode()
 	out := (&Meta{}).Decode(buffer).(*Meta)
 
-	if !reflect.DeepEqual(in.(*Meta).KeyView(), out.KeyView()) ||
+	if !reflect.DeepEqual(in.(*Meta).Value().([]string), out.KeyView()) ||
 		!reflect.DeepEqual(in.(*Meta).Added(), out.Added()) ||
 		!reflect.DeepEqual(in.(*Meta).Removed(), out.Removed()) ||
 		!reflect.DeepEqual(in.(*Meta).Composite(), out.Composite()) {

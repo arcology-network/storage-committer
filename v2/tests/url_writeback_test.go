@@ -164,7 +164,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/2", noncommutative.NewString("4"))
 
 	path, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	if reflect.DeepEqual(path.(*commutative.Meta).KeyView(), []string{"1", "2", "3", "4"}) {
+	if reflect.DeepEqual(path.(*commutative.Meta).Value().([]string), []string{"1", "2", "3", "4"}) {
 		t.Error("Error: Not match")
 	}
 
