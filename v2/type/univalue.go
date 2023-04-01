@@ -144,21 +144,6 @@ func (this *Univalue) IfComposite() bool { // Call this before setting the value
 	return false
 }
 
-// Update the parent meta if necessary
-func (this *Univalue) UpdateParentMeta(tx uint32, value interface{}, source interface{}) bool {
-	if this.Writes() == 0 {
-		this.value = this.Value().(ccurlcommon.TypeInterface).Deepcopy()
-	}
-
-	child := value.(*Univalue)
-	meta := this.Value().(*commutative.Meta)
-	if meta.Refresh(child, source) {
-		this.IncrementWrites()
-		return true
-	}
-	return false
-}
-
 func (this *Univalue) Export(source interface{}) (interface{}, interface{}) {
 	if this.Value() != nil {
 		this.value = this.value.(ccurlcommon.TypeInterface).Delta(source.(ccurlcommon.IndexerInterface).Buffer())
@@ -213,46 +198,61 @@ func (this *Univalue) This(source interface{}) interface{} {
 	return this.value
 }
 
-func (this *Univalue) Reset(tx uint32, path string, value interface{}, source interface{}) error { // update the value
-	return this.set(tx, path, value, source, ccurlcommon.REWRITE)
+// Update the parent meta if necessary
+func (this *Univalue) UpdateMeta(tx uint32, path string, newValue interface{}, source interface{}) error {
+	if this.writes == 0 { // Only a shallow copy for now
+		this.value = this.Value().(ccurlcommon.TypeInterface).Deepcopy() // Make a deep copy
+	}
+
+	child := newValue.(*Univalue)
+	meta := this.Value().(*commutative.Meta)
+
+	r, w, err := meta.Refresh(path, child.Value(), source)
+	this.writes += w
+	this.reads += r
+	return err
 }
 
-func (this *Univalue) Set(tx uint32, path string, value interface{}, source interface{}) error { // update the value
-	return this.set(tx, path, value, source, ccurlcommon.WRITE)
+func (this *Univalue) Reset(tx uint32, path string, newValue interface{}, source interface{}) error { // update the value
+	return this.set(tx, path, newValue, source, ccurlcommon.REWRITE)
 }
 
-func (this *Univalue) set(tx uint32, path string, value interface{}, source interface{}, op uint8) error { // update the value
+func (this *Univalue) Set(tx uint32, path string, newValue interface{}, source interface{}) error { // update the value
+	return this.set(tx, path, newValue, source, ccurlcommon.WRITE)
+}
+
+func (this *Univalue) set(tx uint32, path string, newValue interface{}, source interface{}, op uint8) error { // update the value
 	this.tx = tx
 	this.writes++
-	if this.Value() != nil && value != nil && this.vType != value.(ccurlcommon.TypeInterface).TypeID() {
+	if this.Value() != nil && newValue != nil && this.vType != newValue.(ccurlcommon.TypeInterface).TypeID() {
 		return errors.New("Error: Types don't match !")
 	}
 
-	if this.Value() == nil && value != nil { // A New value
-		this.vType = value.(ccurlcommon.TypeInterface).TypeID()
-		this.value = value
+	if this.Value() == nil && newValue != nil { // A New value
+		this.vType = newValue.(ccurlcommon.TypeInterface).TypeID()
+		this.value = newValue
 		return nil
 	}
 	this.writes-- // Reset writes
 
-	if this.writes == 0 && this.value != nil && value != nil { // Make a deep copy if haven't done so
+	if this.writes == 0 && this.value != nil && newValue != nil { // Make a deep copy if haven't done so
 		this.value = this.value.(ccurlcommon.TypeInterface).Deepcopy()
 	}
 
 	r, w := uint32(0), uint32(0)
 	var err error
 	if op == ccurlcommon.WRITE {
-		r, w, err = this.value.(ccurlcommon.TypeInterface).Set(path, value, [2]interface{}{tx, source}) // Update the current value
+		r, w, err = this.value.(ccurlcommon.TypeInterface).Set(path, newValue, [2]interface{}{tx, source}) // Update one the current value
 	} else {
-		r, w, err = this.value.(ccurlcommon.TypeInterface).Reset(path, value, source) // Rewrite
+		r, w, err = this.value.(ccurlcommon.TypeInterface).Reset(path, newValue, source) // Rewrite the concurrent value
 	}
 
 	this.writes += w
 	this.reads += r
 
-	if value == nil { // Delete an entry but keep the access records.
+	if newValue == nil { // Delete an entry but keep the access records.
 		this.vType = uint8(reflect.Invalid)
-		this.value = value
+		this.value = newValue
 	}
 	return err
 }

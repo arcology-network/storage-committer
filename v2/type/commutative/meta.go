@@ -16,7 +16,7 @@ type Meta struct {
 	committedKeys   []string               // committed keys
 	keyView         *orderedmap.OrderedMap // committed keys + added - removed
 	addedBuffer     *orderedmap.OrderedMap
-	removedBuffer   map[string]ccurlcommon.UnivalueInterface
+	removedBuffer   map[string]interface{}
 	finalized       bool
 	iterator        *orderedmap.Element
 	reverseIterator *orderedmap.Element
@@ -45,7 +45,7 @@ func NewMeta(path string) (interface{}, error) {
 		finalized:       false,
 		keyView:         nil,
 		addedBuffer:     orderedmap.NewOrderedMap(),
-		removedBuffer:   make(map[string]ccurlcommon.UnivalueInterface),
+		removedBuffer:   make(map[string]interface{}),
 		iterator:        nil,
 		reverseIterator: nil,
 		snapshotDirty:   false,
@@ -71,7 +71,7 @@ func (this *Meta) Deepcopy() interface{} {
 		removed:       common.DeepCopy(this.removed),
 		keyView:       keyView,
 		addedBuffer:   orderedmap.NewOrderedMap(),
-		removedBuffer: make(map[string]ccurlcommon.UnivalueInterface),
+		removedBuffer: make(map[string]interface{}),
 		finalized:     this.finalized,
 		snapshotDirty: false,
 	}
@@ -276,10 +276,10 @@ func (this *Meta) InitKeyView() {
 
 // Write and afflicated operations
 func (this *Meta) Set(path string, value interface{}, source interface{}) (uint32, uint32, error) {
-	if value == nil { // Remove the path completely
-		indexer := source.([2]interface{})[1].(ccurlcommon.IndexerInterface)
-		tx := source.([2]interface{})[0].(uint32)
+	tx := source.([2]interface{})[0].(uint32)
+	indexer := source.([2]interface{})[1].(ccurlcommon.IndexerInterface)
 
+	if value == nil { // Remove all the elements in the path completely
 		for _, subpath := range this.Value().([]string) {
 			indexer.Write(tx, path+subpath, nil, false) // Remove all the sub paths.
 		}
@@ -289,52 +289,53 @@ func (this *Meta) Set(path string, value interface{}, source interface{}) (uint3
 }
 
 // Preexist => Delete => Readd ==
-func (this *Meta) Refresh(child ccurlcommon.UnivalueInterface, source interface{}) bool {
-	key := *child.GetPath()
-	subkey := key[strings.LastIndex(key[:len(key)-1], "/")+1:] // Extract the sub key
+func (this *Meta) Refresh(path string, value interface{}, source interface{}) (uint32, uint32, error) {
+	subkey := path[strings.LastIndex(path[:len(path)-1], "/")+1:] // Extract the element key
 
 	if this.keyView != nil {
-		if child.Value() == nil {
+		if value == nil {
 			this.keyView.Delete(subkey) // Delete a key
 		} else {
-			this.keyView.Set(subkey, child)                          // Add a new one if not exists
+			this.keyView.Set(subkey, 0)                              // Add a new one if not exists
 			if _, preexists := this.keyView.Get(subkey); preexists { // Check if the entry exists already
-				return this.snapshotDirty // Updated a pre existing element
+				return 0, 0, nil // Updated a pre existing element
 			}
 		}
 	}
+	indexer := source.([2]interface{})[1].(ccurlcommon.IndexerInterface)
+	univ, _ := (*indexer.Buffer())[path]
 
-	addFlag := this.toAddedBuffer(subkey, child)
-	removedFlag := this.toRemovedBuffer(subkey, child)
-	if removedFlag == addFlag && removedFlag {
-		panic("Error: Impossible to be in both sets!!")
-	}
-
+	addFlag := this.toAddedBuffer(subkey, value, univ.Preexist())
+	removedFlag := this.toRemovedBuffer(subkey, value, univ.Preexist())
 	this.snapshotDirty = addFlag || removedFlag // Either is dirty
-	return this.snapshotDirty
+
+	if removedFlag == addFlag && removedFlag {
+		return 0, 0, errors.New("Error: Impossible to be in both sets!!")
+	}
+	return 0, 1, nil
 }
 
-func (this *Meta) toAddedBuffer(subkey string, child ccurlcommon.UnivalueInterface) bool {
+func (this *Meta) toAddedBuffer(subkey string, value interface{}, preexists bool) bool {
 	if _, ok := this.removedBuffer[subkey]; ok { // Adding back a preexisting entry
 		delete(this.removedBuffer, subkey) // Cancel out each other
 		return true
 	}
 
-	if !child.Preexist() && child.Value() != nil {
-		this.addedBuffer.Set(subkey, child) //  duplicate is ok
+	if !preexists && value != nil {
+		this.addedBuffer.Set(subkey, true) //  duplicate is ok
 		return true
 	}
 	return false
 }
 
 // Only the preexisting keys are in this buffer, or they will be cancel each other
-func (this *Meta) toRemovedBuffer(subkey string, child ccurlcommon.UnivalueInterface) bool {
-	if child.Value() != nil {
+func (this *Meta) toRemovedBuffer(subkey string, value interface{}, preexists bool) bool {
+	if value != nil {
 		return false
 	}
 
-	if child.Preexist() { // Preexists and value == nil
-		this.removedBuffer[subkey] = child // Add to the deleteion list, duplicate is ok
+	if preexists { // Preexists and value == nil
+		this.removedBuffer[subkey] = 1 // Add to the deleteion list, duplicate is ok
 		return true
 	}
 	return this.addedBuffer.Delete(subkey) // Leave out the entry if it is in the added buffer
@@ -347,7 +348,7 @@ func (this *Meta) Purge() {
 	this.finalized = false
 	this.keyView = nil
 	this.addedBuffer = orderedmap.NewOrderedMap()
-	this.removedBuffer = make(map[string]ccurlcommon.UnivalueInterface)
+	this.removedBuffer = make(map[string]interface{})
 }
 
 func (this *Meta) Hash(hasher func([]byte) []byte) []byte {

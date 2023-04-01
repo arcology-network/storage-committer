@@ -118,12 +118,12 @@ func (this *ConcurrentUrl) IfExists(path string) bool {
 	return this.indexer.IfExists(path)
 }
 
-func (this *ConcurrentUrl) TryRead(tx uint32, path string) (interface{}, error) {
+func (this *ConcurrentUrl) Peek(tx uint32, path string) (interface{}, error) {
 	if !this.Permit(tx, path, ccurlcommon.USER_READABLE) {
 		return nil, errors.New("Error: No permission to read " + path)
 	}
 
-	value, _ := this.indexer.TryRead(tx, path)
+	value, _ := this.indexer.Peek(path)
 	return value, nil
 }
 

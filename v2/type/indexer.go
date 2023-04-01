@@ -68,26 +68,23 @@ func (this *Indexer) NewUnivalue() *Univalue {
 }
 
 // If the access has been recorded
-func (this *Indexer) checkHistory(tx uint32, path string, ifAddToBuffer bool) ccurlcommon.UnivalueInterface {
+func (this *Indexer) GetOrInit(tx uint32, path string) ccurlcommon.UnivalueInterface {
 	univalue := this.buffer[path]
 	if univalue == nil { // Not in the buffer, check the datastore
 		univalue = this.NewUnivalue()
 		univalue.(*Univalue).Init(ccurlcommon.VARIATE_TRANSITIONS, tx, path, 0, 0, this.RetriveShallow(path), this)
-
-		if ifAddToBuffer {
-			this.buffer[path] = univalue
-		}
+		this.buffer[path] = univalue // Adding to buffer
 	}
 	return univalue
 }
 
 func (this *Indexer) Read(tx uint32, path string) interface{} {
-	univalue := this.checkHistory(tx, path, true)
+	univalue := this.GetOrInit(tx, path)
 	return univalue.Get(tx, path, this.Buffer())
 }
 
 // Get the value directly, skip the access counting at the univalue level
-func (this *Indexer) TryRead(tx uint32, path string) (interface{}, bool) {
+func (this *Indexer) Peek(path string) (interface{}, bool) {
 	if v, ok := this.buffer[path]; ok {
 		return v.This(this.Buffer()), true
 	}
@@ -97,7 +94,7 @@ func (this *Indexer) TryRead(tx uint32, path string) (interface{}, bool) {
 func (this *Indexer) Write(tx uint32, path string, value interface{}, reset bool) error {
 	parentPath := ccurlcommon.GetParentPath(path)
 	if this.IfExists(parentPath) || tx == ccurlcommon.SYSTEM { // The parent path exists or to inject the path directly
-		univalue := this.checkHistory(tx, path, true)
+		univalue := this.GetOrInit(tx, path)         // Get a univalue wrapper
 		if univalue.Value() == nil && value == nil { // Try to delete something nonexistent
 			return nil
 		} else {
@@ -107,11 +104,10 @@ func (this *Indexer) Write(tx uint32, path string, value interface{}, reset bool
 			} else {
 				err = univalue.Set(tx, path, value, this)
 			}
+
 			if !this.platform.OnControlList(parentPath) && tx != ccurlcommon.SYSTEM && err == nil { // System paths don't keep track of child paths
-				if parentValue := this.checkHistory(tx, parentPath, false); parentValue != nil && parentValue.Value() != nil {
-					if parentValue.UpdateParentMeta(tx, univalue, this) {
-						this.buffer[parentPath] = parentValue
-					}
+				if parentMeta := this.GetOrInit(tx, parentPath); parentMeta != nil && parentMeta.Value() != nil {
+					err = parentMeta.UpdateMeta(tx, path, univalue, [2]interface{}{tx, this})
 				}
 			}
 			return err

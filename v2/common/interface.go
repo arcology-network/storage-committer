@@ -28,7 +28,7 @@ type UnivalueInterface interface { // value type
 	Set(uint32, string, interface{}, interface{}) error
 	Reset(uint32, string, interface{}, interface{}) error
 	Get(uint32, string, interface{}) interface{}
-	UpdateParentMeta(uint32, interface{}, interface{}) bool
+	UpdateMeta(uint32, string, interface{}, interface{}) error
 	This(interface{}) interface{}
 	GetTx() uint32
 	GetPath() *string
@@ -53,7 +53,7 @@ type UnivalueInterface interface { // value type
 
 type IndexerInterface interface {
 	Read(uint32, string) interface{}
-	TryRead(tx uint32, path string) (interface{}, bool)
+	Peek(path string) (interface{}, bool)
 	Write(uint32, string, interface{}, bool) error
 	Insert(string, interface{})
 

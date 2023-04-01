@@ -7,7 +7,7 @@ import (
 	common "github.com/arcology-network/common-lib/common"
 
 	// performance "github.com/arcology-network/common-lib/mhasher"
-	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
+
 	orderedmap "github.com/elliotchance/orderedmap"
 )
 
@@ -72,7 +72,7 @@ func (this *Meta) Decode(bytes []byte) interface{} {
 		finalized:     bool(codec.Bool(true).Decode(buffers[3]).(codec.Bool)),
 		keyView:       nil,
 		addedBuffer:   orderedmap.NewOrderedMap(),
-		removedBuffer: make(map[string]ccurlcommon.UnivalueInterface),
+		removedBuffer: make(map[string]interface{}),
 		snapshotDirty: false,
 	}
 	return this
@@ -94,7 +94,7 @@ func (this *Meta) DecodeCompact(bytes []byte) interface{} {
 		finalized:     false,
 		keyView:       nil,
 		addedBuffer:   orderedmap.NewOrderedMap(),
-		removedBuffer: make(map[string]ccurlcommon.UnivalueInterface),
+		removedBuffer: make(map[string]interface{}),
 		snapshotDirty: false,
 	}
 }
