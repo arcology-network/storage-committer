@@ -72,7 +72,7 @@ func (this *Meta) Decode(bytes []byte) interface{} {
 		finalized:     bool(codec.Bool(true).Decode(buffers[3]).(codec.Bool)),
 		keyView:       nil,
 		addedBuffer:   orderedmap.NewOrderedMap(),
-		removedBuffer: make(map[string]interface{}),
+		removedBuffer: orderedmap.NewOrderedMap(),
 		snapshotDirty: false,
 	}
 	return this
@@ -94,7 +94,7 @@ func (this *Meta) DecodeCompact(bytes []byte) interface{} {
 		finalized:     false,
 		keyView:       nil,
 		addedBuffer:   orderedmap.NewOrderedMap(),
-		removedBuffer: make(map[string]interface{}),
+		removedBuffer: orderedmap.NewOrderedMap(),
 		snapshotDirty: false,
 	}
 }

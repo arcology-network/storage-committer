@@ -178,13 +178,13 @@ func BenchmarkUrlAddThenPop(b *testing.B) {
 	}
 	fmt.Println("Write "+fmt.Sprint(50000), "noncommutative bytes in", time.Since(t0))
 
-	t0 = time.Now()
-	v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	for i := 0; i < 50000; i++ {
-		key := v.(*commutative.Meta).Next()
-		url.Write(1, key, nil)
-	}
-	fmt.Println("Pop 50000 noncommutative bytes in", fmt.Sprint(50000), time.Since(t0))
+	// t0 = time.Now()
+	// v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
+	// for i := 0; i < 50000; i++ {
+	// 	key := v.(*commutative.Meta).Next()
+	// 	url.Write(1, key, nil)
+	// }
+	// fmt.Println("Pop 50000 noncommutative bytes in", fmt.Sprint(50000), time.Since(t0))
 }
 
 func BenchmarkOrderedMap(b *testing.B) {
@@ -290,26 +290,26 @@ func BenchmarkMetaIterator(b *testing.B) {
 	fmt.Println("Write "+fmt.Sprint(10000), time.Since(t0))
 
 	/* Forward Iter */
-	t0 = time.Now()
-	v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	for i := 0; i < 100000; i++ {
-		v.(*commutative.Meta).Next()
-	}
-	fmt.Println("Next "+fmt.Sprint(100000), time.Since(t0))
+	// t0 = time.Now()
+	// v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
+	// for i := 0; i < 100000; i++ {
+	// 	v.(*commutative.Meta).Next()
+	// }
+	// fmt.Println("Next "+fmt.Sprint(100000), time.Since(t0))
 
-	v.(*commutative.Meta).ResetIterator()
-	for i := 0; i < 100000; i++ {
-		v.(*commutative.Meta).Next()
-	}
+	// v.(*commutative.Meta).ResetIterator()
+	// for i := 0; i < 100000; i++ {
+	// 	v.(*commutative.Meta).Next()
+	// }
 
-	for i := 0; i < 100000; i++ {
-		v.(*commutative.Meta).Previous()
-	}
+	// for i := 0; i < 100000; i++ {
+	// 	v.(*commutative.Meta).Previous()
+	// }
 
-	v.(*commutative.Meta).ResetReverseIterator()
-	for i := 0; i < 100000; i++ {
-		v.(*commutative.Meta).Previous()
-	}
+	// v.(*commutative.Meta).ResetReverseIterator()
+	// for i := 0; i < 100000; i++ {
+	// 	v.(*commutative.Meta).Previous()
+	// }
 }
 
 func BenchmarkMapKeyLengthComparison(b *testing.B) {

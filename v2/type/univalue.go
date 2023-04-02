@@ -207,7 +207,7 @@ func (this *Univalue) UpdateMeta(tx uint32, path string, newValue interface{}, s
 	child := newValue.(*Univalue)
 	meta := this.Value().(*commutative.Meta)
 
-	r, w, err := meta.Refresh(path, child.Value(), source)
+	r, w, err := meta.Set(path, child.Value(), source)
 	this.writes += w
 	this.reads += r
 	return err
@@ -250,9 +250,10 @@ func (this *Univalue) set(tx uint32, path string, newValue interface{}, source i
 	this.writes += w
 	this.reads += r
 
-	if newValue == nil { // Delete an entry but keep the access records.
+	if newValue == nil { // Delete the entry but keep the access record.
 		this.vType = uint8(reflect.Invalid)
 		this.value = newValue
+		this.writes++ // Delete the value
 	}
 	return err
 }

@@ -78,7 +78,7 @@ func TestAuxTrans(t *testing.T) {
 	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/"); value == nil {
 		t.Error(value)
 	} else {
-		if !reflect.DeepEqual(value.(*commutative.Meta).Value().([]string), []string{"elem-000"}) {
+		if !reflect.DeepEqual(value.(*commutative.Meta).Value(), []interface{}{"elem-000"}) {
 			t.Error("Wrong value ")
 		}
 	}
@@ -169,7 +169,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	}
 
 	v1, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	keys := v1.(*commutative.Meta).Value().([]string)
+	keys := v1.(*commutative.Meta).Value().([]interface{})
 	if len(keys) != 3 {
 		t.Error("Error: There should be 3 elements only!!! actual = ", len(keys)) // create a path
 	}

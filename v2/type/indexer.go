@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	common "github.com/arcology-network/common-lib/common"
-	cccontainermap "github.com/arcology-network/common-lib/concurrentcontainer/map"
+	ccmap "github.com/arcology-network/common-lib/container/map"
 	"github.com/arcology-network/common-lib/mempool"
 
 	// performance "github.com/arcology-network/common-lib/mhasher"
@@ -21,7 +21,7 @@ type Indexer struct {
 	store      ccurlcommon.DatastoreInterface
 	buffer     map[string]ccurlcommon.UnivalueInterface // KV lookup
 	byTx       map[uint32][]ccurlcommon.UnivalueInterface
-	byPath     *cccontainermap.ConcurrentMap
+	byPath     *ccmap.ConcurrentMap
 
 	platform      *ccurlcommon.Platform
 	updatedKeys   []string      // Keys updated in the circle
@@ -37,7 +37,7 @@ func NewIndexer(store ccurlcommon.DatastoreInterface, platform *ccurlcommon.Plat
 	indexer.buffer = make(map[string]ccurlcommon.UnivalueInterface)
 	indexer.byTx = make(map[uint32][]ccurlcommon.UnivalueInterface)
 	indexer.platform = platform
-	indexer.byPath = cccontainermap.NewConcurrentMap()
+	indexer.byPath = ccmap.NewConcurrentMap()
 
 	indexer.seqPool = mempool.NewMempool("seq", func() interface{} {
 		return NewDeltaSequence()
@@ -272,7 +272,7 @@ func (this *Indexer) Clear() {
 		this.byTx[k] = v[:0]
 	}
 
-	this.byPath = cccontainermap.NewConcurrentMap()
+	this.byPath = ccmap.NewConcurrentMap()
 	this.updatedKeys = this.updatedKeys[:0]
 	this.updatedValues = this.updatedValues[:0]
 

@@ -7,22 +7,18 @@ import (
 
 	common "github.com/arcology-network/common-lib/common"
 
-	// performance "github.com/arcology-network/common-lib/mhasher"
+	orderedset "github.com/arcology-network/common-lib/container/set"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 	orderedmap "github.com/elliotchance/orderedmap"
 )
 
 type Meta struct {
-	committedKeys   []string               // committed keys
-	keyView         *orderedmap.OrderedMap // committed keys + added - removed
-	addedBuffer     *orderedmap.OrderedMap
-	removedBuffer   map[string]interface{}
-	finalized       bool
-	iterator        *orderedmap.Element
-	reverseIterator *orderedmap.Element
-	snapshotDirty   bool
-
-	snapshot *Meta // keyView in an array
+	committedKeys []string               // committed keys
+	keyView       *orderedset.OrderedSet // committed keys + added - removed
+	addedBuffer   *orderedmap.OrderedMap
+	removedBuffer *orderedmap.OrderedMap
+	finalized     bool
+	snapshotDirty bool
 
 	// Export only
 	added   []string // added keys in the current block
@@ -39,41 +35,33 @@ func NewMeta(path string) (interface{}, error) {
 	}
 
 	this := &Meta{
-		committedKeys:   []string{},
-		added:           []string{},
-		removed:         []string{},
-		finalized:       false,
-		keyView:         nil,
-		addedBuffer:     orderedmap.NewOrderedMap(),
-		removedBuffer:   make(map[string]interface{}),
-		iterator:        nil,
-		reverseIterator: nil,
-		snapshotDirty:   false,
-		snapshot:        nil,
+		committedKeys: []string{},
+		added:         []string{},
+		removed:       []string{},
+		finalized:     false,
+		keyView:       nil,
+		addedBuffer:   orderedmap.NewOrderedMap(),
+		removedBuffer: orderedmap.NewOrderedMap(),
+		snapshotDirty: false,
 	}
 
 	return this, nil
 }
 
+func (this *Meta) CommittedLength() int { return len(this.committedKeys) }
+
 // For linear access
-func (this *Meta) ResetIterator()        { this.iterator = this.keyView.Front() }
-func (this *Meta) ResetReverseIterator() { this.reverseIterator = this.keyView.Back() }
+func (this *Meta) At(idx uint64) {}
 
 func (this *Meta) Deepcopy() interface{} {
-	var keyView *orderedmap.OrderedMap
-	if this.keyView != nil {
-		keyView = this.keyView.Copy()
-	}
-
 	return &Meta{
 		committedKeys: this.committedKeys,
 		added:         common.DeepCopy(this.added),
 		removed:       common.DeepCopy(this.removed),
-		keyView:       keyView,
+		keyView:       this.keyView.Deepcopy(),
 		addedBuffer:   orderedmap.NewOrderedMap(),
-		removedBuffer: make(map[string]interface{}),
+		removedBuffer: orderedmap.NewOrderedMap(),
 		finalized:     this.finalized,
-		snapshotDirty: false,
 	}
 }
 
@@ -99,16 +87,14 @@ func (this *Meta) Get(path string, source interface{}) (interface{}, uint32, uin
 
 func (this *Meta) Delta(source interface{}) interface{} {
 	return &Meta{
-		committedKeys:   []string{}, // committed keys
-		added:           this.Added(),
-		removed:         this.Removed(),
-		finalized:       this.finalized,
-		keyView:         this.keyView,
-		addedBuffer:     this.addedBuffer,
-		removedBuffer:   this.removedBuffer,
-		iterator:        this.iterator,
-		reverseIterator: this.reverseIterator,
-		snapshotDirty:   this.snapshotDirty,
+		committedKeys: []string{}, // committed keys
+		added:         this.Added(),
+		removed:       this.Removed(),
+		finalized:     this.finalized,
+		keyView:       this.keyView,
+		addedBuffer:   this.addedBuffer,
+		removedBuffer: this.removedBuffer,
+		snapshotDirty: this.snapshotDirty,
 	}
 }
 
@@ -171,71 +157,23 @@ func (this *Meta) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 
 // Check new keys
 func (this *Meta) Added() []string {
-	added := []string{}
-	for iter := this.addedBuffer.Front(); iter != nil; iter = iter.Next() {
-		added = append(added, iter.Key.(string))
-	}
-	return added
+	return common.To(this.addedBuffer.Keys(), "")
 }
 
-// Check removed keys
+// Peek the removed keys
 func (this *Meta) Removed() []string {
-	removed := []string{}
-	for k := range this.removedBuffer {
-		removed = append(removed, k)
-	}
-	return removed
+	return common.To(this.removedBuffer.Keys(), "")
 }
 
-func (this *Meta) Erase() []string {
-	return this.Snapshot().committedKeys
-}
-
-func (this *Meta) VectorizeView() []string {
-	array := make([]string, 0, this.keyView.Len())
-	for iter := this.keyView.Front(); iter != nil; iter = iter.Next() {
-		if iter.Value != nil {
-			array = append(array, (iter.Key.(string)))
-		}
-	}
-	return array
+// committed + added - removed
+func (this *Meta) Keys() []interface{} {
+	return this.keyView.Keys()
 }
 
 // committed keys + added - removed
 func (this *Meta) Value() interface{} {
 	this.InitKeyView()
-	return this.Snapshot().committedKeys
-}
-
-func (this *Meta) Snapshot() *Meta {
-	if this.snapshotDirty || this.snapshot == nil { // Remake the cache is dirty of snapshot is empty
-		this.snapshot = &Meta{
-			committedKeys: this.VectorizeView(),
-		}
-	}
-	return this.snapshot
-}
-
-func (this *Meta) Next() string {
-	this.InitKeyView()
-	if this.iterator == nil {
-		return ""
-	}
-
-	key := this.iterator.Key.(string)
-	this.iterator = this.iterator.Next()
-	return key
-}
-
-func (this *Meta) Previous() string {
-	this.InitKeyView()
-	if this.reverseIterator == nil {
-		return ""
-	}
-
-	key := this.reverseIterator.Key.(string)
-	this.reverseIterator = this.reverseIterator.Prev()
-	return key
+	return this.Keys()
 }
 
 // Just return the object, won't do anything
@@ -256,57 +194,44 @@ func (this *Meta) InitKeyView() {
 	if this.keyView != nil { // Keys have been loaded already.
 		return
 	}
-	this.keyView = orderedmap.NewOrderedMap()
+	this.keyView = orderedset.NewOrderedSet(this.committedKeys)
 
-	counter := 0
-	for _, k := range this.committedKeys { // Committed keys first
-		if _, ok := this.removedBuffer[k]; !ok {
-			this.keyView.Set(k, counter) // Not in the removed set
-			counter++
-		}
-	}
-
-	for iter := this.addedBuffer.Front(); iter != nil; iter = iter.Next() {
-		this.keyView.Set(iter.Key, counter) // Newly added keys
-		counter++
-	}
-	this.iterator = this.addedBuffer.Front()
-	this.reverseIterator = this.addedBuffer.Back()
+	this.keyView.Difference(this.removedBuffer)
+	this.keyView.Union(this.addedBuffer)
 }
 
 // Write and afflicated operations
 func (this *Meta) Set(path string, value interface{}, source interface{}) (uint32, uint32, error) {
 	tx := source.([2]interface{})[0].(uint32)
 	indexer := source.([2]interface{})[1].(ccurlcommon.IndexerInterface)
+	subkey := path[strings.LastIndex(path[:len(path)-1], "/")+1:] // Extract the element key
 
-	if value == nil { // Remove all the elements in the path completely
-		for _, subpath := range this.Value().([]string) {
+	this.InitKeyView()                // Initialize the key view if has been done yet.
+	ok := this.keyView.Exists(subkey) // If exists
+	if ok && value != nil {
+		return 0, 0, nil // No meta changes, value update only
+	}
+
+	if !ok && value == nil {
+		return 0, 0, nil // Delete an non existent entry
+	}
+
+	if value == nil && ccurlcommon.IsPath(path) { // Delete the whole path
+		for _, subpath := range this.Value().([]string) { // Get all the sub paths
 			indexer.Write(tx, path+subpath, nil, false) // Remove all the sub paths.
 		}
 		return 0, 1, nil
 	}
-	return 0, 1, errors.New("Error: A path can only be created or deleted, it cannot be rewritten!")
-}
 
-// Preexist => Delete => Readd ==
-func (this *Meta) Refresh(path string, value interface{}, source interface{}) (uint32, uint32, error) {
-	subkey := path[strings.LastIndex(path[:len(path)-1], "/")+1:] // Extract the element key
-
-	if this.keyView != nil {
-		if value == nil {
-			this.keyView.Delete(subkey) // Delete a key
-		} else {
-			this.keyView.Set(subkey, 0)                              // Add a new one if not exists
-			if _, preexists := this.keyView.Get(subkey); preexists { // Check if the entry exists already
-				return 0, 0, nil // Updated a pre existing element
-			}
-		}
+	if value == nil {
+		this.keyView.DeleteByKey(subkey) // Delete a key
+	} else {
+		this.keyView.Insert(subkey)
 	}
-	indexer := source.([2]interface{})[1].(ccurlcommon.IndexerInterface)
-	univ, _ := (*indexer.Buffer())[path]
 
-	addFlag := this.toAddedBuffer(subkey, value, univ.Preexist())
-	removedFlag := this.toRemovedBuffer(subkey, value, univ.Preexist())
+	univ, _ := (*indexer.Buffer())[path]
+	addFlag := this.includeBuffer(subkey, value, univ.Preexist())
+	removedFlag := this.excludeBuffer(subkey, value, univ.Preexist())
 	this.snapshotDirty = addFlag || removedFlag // Either is dirty
 
 	if removedFlag == addFlag && removedFlag {
@@ -315,9 +240,14 @@ func (this *Meta) Refresh(path string, value interface{}, source interface{}) (u
 	return 0, 1, nil
 }
 
-func (this *Meta) toAddedBuffer(subkey string, value interface{}, preexists bool) bool {
-	if _, ok := this.removedBuffer[subkey]; ok { // Adding back a preexisting entry
-		delete(this.removedBuffer, subkey) // Cancel out each other
+func (this *Meta) includeBuffer(subkey string, value interface{}, preexists bool) bool {
+	// if _, ok := this.removedBuffer[subkey]; ok { // Adding back a preexisting entry
+	// 	delete(this.removedBuffer, subkey) // Cancel out each other
+	// 	return true
+	// }
+
+	if _, ok := this.removedBuffer.Get(subkey); ok { // Adding back a preexisting entry
+		this.removedBuffer.Delete(subkey) // Cancel out each other
 		return true
 	}
 
@@ -329,13 +259,13 @@ func (this *Meta) toAddedBuffer(subkey string, value interface{}, preexists bool
 }
 
 // Only the preexisting keys are in this buffer, or they will be cancel each other
-func (this *Meta) toRemovedBuffer(subkey string, value interface{}, preexists bool) bool {
+func (this *Meta) excludeBuffer(subkey string, value interface{}, preexists bool) bool {
 	if value != nil {
 		return false
 	}
 
 	if preexists { // Preexists and value == nil
-		this.removedBuffer[subkey] = 1 // Add to the deleteion list, duplicate is ok
+		this.removedBuffer.Set(subkey, true)
 		return true
 	}
 	return this.addedBuffer.Delete(subkey) // Leave out the entry if it is in the added buffer
@@ -348,7 +278,7 @@ func (this *Meta) Purge() {
 	this.finalized = false
 	this.keyView = nil
 	this.addedBuffer = orderedmap.NewOrderedMap()
-	this.removedBuffer = make(map[string]interface{})
+	this.removedBuffer = orderedmap.NewOrderedMap()
 }
 
 func (this *Meta) Hash(hasher func([]byte) []byte) []byte {

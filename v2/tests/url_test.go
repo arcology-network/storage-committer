@@ -69,8 +69,13 @@ func TestAddThenDeletePath(t *testing.T) {
 	url.PostImport()
 	url.Commit([]uint32{1})
 
+	v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
+	if v == nil {
+		t.Error("Error: The path should have exists")
+	}
+
 	url.Init(store)
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil); err != nil {
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil); err != nil { // Delete the path
 		t.Error(err)
 	}
 
@@ -149,7 +154,7 @@ func TestBasic(t *testing.T) {
 	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/"); value == nil {
 		t.Error(value)
 	} else {
-		if !reflect.DeepEqual(value.(*commutative.Meta).Value().([]string), []string{"elem-000", "elem-111"}) {
+		if !reflect.DeepEqual(value.(*commutative.Meta).Value().([]interface{}), []interface{}{"elem-000", "elem-111"}) {
 			t.Error("Error: Wrong value !!!!")
 		}
 	}
@@ -174,6 +179,7 @@ func TestBasic(t *testing.T) {
 	// url.Import(url.Decode(ccurltype.Univalues(transitions).Encode()))
 	url.PostImport()
 	url.Commit([]uint32{1})
+
 	/* =========== The second cycle ==============*/
 	//try reading an element written in the previous cycle
 	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"); value == nil {
@@ -306,12 +312,12 @@ func TestUrl2(t *testing.T) {
 
 	// Write to an nonexistent path, will fail, but leave a couple of access records
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-1/elem-002", noncommutative.NewInt64(3333)); err == nil {
-		t.Error(err, "Error:  Failed to Write: "+"/ctrn-1/elem-002")
+		t.Error(err, "Error:    /ctrn-1/ does not exist, the Write should fail!!")
 	}
 
 	// Read an nonexistent path, shouldn't succeed
-	if err, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-1/elem-002"); err != nil {
-		t.Error(err, "Error:  Failed to Write: "+"/ctrn-1/elem-002")
+	if err, v := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-1/elem-002"); v != nil {
+		t.Error(err, "Error:  /ctrn-1/ does not exist, the read should fail!!")
 	}
 
 	// Add the first element
@@ -326,13 +332,13 @@ func TestUrl2(t *testing.T) {
 
 	// Update then return path meta info
 	meta0, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	if !reflect.DeepEqual(meta0.(*commutative.Meta).Value().([]string), []string{"elem-000", "elem-001", "elem-002"}) {
+	if !reflect.DeepEqual(meta0.(*commutative.Meta).Value().([]interface{}), []interface{}{"elem-000", "elem-001", "elem-002"}) {
 		t.Error("Error: Keys don't match")
 	}
 
 	// Do again
 	meta1, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	if !reflect.DeepEqual(meta1.(*commutative.Meta).Value().([]string), []string{"elem-000", "elem-001", "elem-002"}) {
+	if !reflect.DeepEqual(meta1.(*commutative.Meta).Value().([]interface{}), []interface{}{"elem-000", "elem-001", "elem-002"}) {
 		t.Error("Error: Keys don't match")
 	}
 
@@ -357,7 +363,7 @@ func TestUrl2(t *testing.T) {
 
 	// The elem-00 has been deleted, only "elem-001", "elem-002" left
 	meta, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	if !reflect.DeepEqual(meta.(*commutative.Meta).Value().([]string), []string{"elem-001", "elem-002"}) {
+	if !reflect.DeepEqual(meta.(*commutative.Meta).Value().([]interface{}), []interface{}{"elem-001", "elem-002"}) {
 		t.Error("Error: keys don't match")
 	}
 
@@ -373,7 +379,7 @@ func TestUrl2(t *testing.T) {
 
 	// Update then read the path info again
 	meta, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	if !reflect.DeepEqual(meta.(*commutative.Meta).Value().([]string), []string{"elem-001", "elem-002", "elem-000"}) {
+	if !reflect.DeepEqual(meta.(*commutative.Meta).Value().([]interface{}), []interface{}{"elem-001", "elem-002", "elem-000"}) {
 		t.Error("Error: keys don't match")
 	}
 
@@ -397,24 +403,25 @@ func TestUrl2(t *testing.T) {
 
 	/*  Read the storage path to see what is left*/
 	v, _ = url.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/")
-	if !reflect.DeepEqual(v.(*commutative.Meta).Value().([]string), []string{}) {
+	if !reflect.DeepEqual(v.(*commutative.Meta).Value().([]interface{}), []interface{}{}) {
 		t.Error("Error: Should be empty!!")
 	}
 
 	/*  Export all */
 	accessRecords, transitions := url.Export(true)
 
+	// 3 writes + 1 affiliated write
 	value := ccurltype.NewUnivalue(ccurlcommon.VARIATE_TRANSITIONS, 1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, nil)
 	if !ccurltype.Univalues(accessRecords).IfContains(value) {
 		t.Error("Error: Error: ")
 	}
 
-	value = ccurltype.NewUnivalue(ccurlcommon.VARIATE_TRANSITIONS, 1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", 1, 2, nil)
+	value = ccurltype.NewUnivalue(ccurlcommon.VARIATE_TRANSITIONS, 1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", 1, 1, nil)
 	if !ccurltype.Univalues(accessRecords).IfContains(value) {
 		t.Error("Error: Error: ")
 	}
 
-	value = ccurltype.NewUnivalue(ccurlcommon.VARIATE_TRANSITIONS, 1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-002", 0, 2, nil)
+	value = ccurltype.NewUnivalue(ccurlcommon.VARIATE_TRANSITIONS, 1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-002", 0, 1, nil)
 	if !ccurltype.Univalues(accessRecords).IfContains(value) {
 		t.Error("Error: Error: ")
 	}
@@ -446,9 +453,9 @@ func TestUrl2(t *testing.T) {
 	// 	t.Error("Error: Transitions don't match after decoding")
 	// }
 
-	if *out[0].GetPath() != "blcc://eth1.0/account/"+alice+"/storage/elem-0" ||
-		*(out[0].Value()).(*noncommutative.String) != "0000" {
-		t.Error("Error: Transitions don't match after decoding")
+	if *out[3].GetPath() != "blcc://eth1.0/account/"+alice+"/storage/elem-0" ||
+		*(out[3].Value()).(*noncommutative.String) != "0000" {
+		t.Error("Error: Wrong value!!!")
 	}
 }
 
@@ -635,12 +642,12 @@ func TestNestedPath(t *testing.T) {
 
 	/* Read */
 	v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/ctrn-00/")
-	if !reflect.DeepEqual(v.(*commutative.Meta).Value().([]string), []string{"elem-00", "elem-01"}) {
+	if !reflect.DeepEqual(v.(*commutative.Meta).Value().([]interface{}), []interface{}{"elem-00", "elem-01"}) {
 		t.Error("Error: keys don't match")
 	}
 
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	if !reflect.DeepEqual(v.(*commutative.Meta).Value().([]string), []string{"ctrn-00/", "elem-00", "elem-01"}) {
+	if !reflect.DeepEqual(v.(*commutative.Meta).Value().([]interface{}), []interface{}{"ctrn-00/", "elem-00", "elem-01"}) {
 		t.Error("Error: keys don't match")
 	}
 
