@@ -18,7 +18,8 @@ func NewInt64(value int64, delta int64) interface{} {
 	}
 }
 
-func (this *Int64) TypeID() uint8 { return ccurlcommon.CommutativeInt64 }
+func (this *Int64) TypeID() uint8               { return ccurlcommon.CommutativeInt64 }
+func (this *Int64) IsSelf(key interface{}) bool { return true }
 
 func (this *Int64) Deepcopy() interface{} {
 	return &Int64{

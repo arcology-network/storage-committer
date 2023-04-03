@@ -2,7 +2,6 @@ package ccurltype
 
 import (
 	"crypto/sha256"
-	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -198,18 +197,38 @@ func (this *Univalue) This(source interface{}) interface{} {
 	return this.value
 }
 
-// Update the parent meta if necessary
-func (this *Univalue) UpdateMeta(tx uint32, path string, newValue interface{}, source interface{}) error {
-	if this.writes == 0 { // Only a shallow copy for now
-		this.value = this.Value().(ccurlcommon.TypeInterface).Deepcopy() // Make a deep copy
+func (this *Univalue) set(tx uint32, path string, typedV interface{}, source interface{}, op uint8) error { // update the value
+	this.tx = tx
+	this.writes++
+	if this.Value() == nil { // Added a new value or try to delete an non-existent value
+		if typedV != nil {
+			this.vType = typedV.(ccurlcommon.TypeInterface).TypeID()
+			this.value = typedV
+		}
+		return nil
+	}
+	this.writes-- // Reset writes
+
+	if this.writes == 0 && this.value != nil && typedV != nil { // Make a deep copy if haven't done so
+		this.value = this.value.(ccurlcommon.TypeInterface).Deepcopy()
 	}
 
-	child := newValue.(*Univalue)
-	meta := this.Value().(*commutative.Meta)
+	r, w := uint32(0), uint32(0)
+	var err error
+	if op == ccurlcommon.WRITE {
+		r, w, err = this.value.(ccurlcommon.TypeInterface).Set(path, typedV, [2]interface{}{tx, source}) // Update one the current value
+	} else {
+		r, w, err = this.value.(ccurlcommon.TypeInterface).Reset(path, typedV, source) // Rewrite the concurrent value
+	}
 
-	r, w, err := meta.Set(path, child.Value(), source)
 	this.writes += w
 	this.reads += r
+
+	if typedV == nil && this.Value().(ccurlcommon.TypeInterface).IsSelf(path) { // Delete the entry but keep the access record.
+		this.vType = uint8(reflect.Invalid)
+		this.value = typedV // Delete the value
+		this.writes++
+	}
 	return err
 }
 
@@ -219,43 +238,6 @@ func (this *Univalue) Reset(tx uint32, path string, newValue interface{}, source
 
 func (this *Univalue) Set(tx uint32, path string, newValue interface{}, source interface{}) error { // update the value
 	return this.set(tx, path, newValue, source, ccurlcommon.WRITE)
-}
-
-func (this *Univalue) set(tx uint32, path string, newValue interface{}, source interface{}, op uint8) error { // update the value
-	this.tx = tx
-	this.writes++
-	if this.Value() != nil && newValue != nil && this.vType != newValue.(ccurlcommon.TypeInterface).TypeID() {
-		return errors.New("Error: Types don't match !")
-	}
-
-	if this.Value() == nil && newValue != nil { // A New value
-		this.vType = newValue.(ccurlcommon.TypeInterface).TypeID()
-		this.value = newValue
-		return nil
-	}
-	this.writes-- // Reset writes
-
-	if this.writes == 0 && this.value != nil && newValue != nil { // Make a deep copy if haven't done so
-		this.value = this.value.(ccurlcommon.TypeInterface).Deepcopy()
-	}
-
-	r, w := uint32(0), uint32(0)
-	var err error
-	if op == ccurlcommon.WRITE {
-		r, w, err = this.value.(ccurlcommon.TypeInterface).Set(path, newValue, [2]interface{}{tx, source}) // Update one the current value
-	} else {
-		r, w, err = this.value.(ccurlcommon.TypeInterface).Reset(path, newValue, source) // Rewrite the concurrent value
-	}
-
-	this.writes += w
-	this.reads += r
-
-	if newValue == nil { // Delete the entry but keep the access record.
-		this.vType = uint8(reflect.Invalid)
-		this.value = newValue
-		this.writes++ // Delete the value
-	}
-	return err
 }
 
 // Check & Merge attributes

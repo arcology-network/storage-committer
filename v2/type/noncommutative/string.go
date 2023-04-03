@@ -11,31 +11,22 @@ func NewString(v string) interface{} {
 	return &this
 }
 
-func (this *String) TypeID() uint8 { return uint8(ccurlcommon.NoncommutativeString) }
+func (this *String) IsSelf(key interface{}) bool          { return true }
+func (this *String) TypeID() uint8                        { return uint8(ccurlcommon.NoncommutativeString) }
+func (this *String) This(source interface{}) interface{}  { return this }
+func (this *String) Delta(source interface{}) interface{} { return this }
+func (this *String) Composite() bool                      { return false }
 
 func (this *String) Deepcopy() interface{} {
 	value := *this
 	return (*String)(&value)
 }
 
-func (this *String) Value() interface{} {
-	return this
-}
-
-func (this *String) ToAccess() interface{} {
-	return nil
-}
+func (this *String) Value() interface{}    { return this }
+func (this *String) ToAccess() interface{} { return nil }
 
 func (this *String) Get(path string, source interface{}) (interface{}, uint32, uint32) {
 	return this, 1, 0
-}
-
-func (this *String) This(source interface{}) interface{} {
-	return this
-}
-
-func (this *String) Delta(source interface{}) interface{} {
-	return this
 }
 
 func (this *String) Set(path string, value interface{}, source interface{}) (uint32, uint32, error) {
@@ -75,5 +66,3 @@ func (this *String) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 	}
 	return this
 }
-
-func (this *String) Composite() bool { return false }

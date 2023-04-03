@@ -107,7 +107,7 @@ func (this *Indexer) Write(tx uint32, path string, value interface{}, reset bool
 
 			if !this.platform.OnControlList(parentPath) && tx != ccurlcommon.SYSTEM && err == nil { // System paths don't keep track of child paths
 				if parentMeta := this.GetOrInit(tx, parentPath); parentMeta != nil && parentMeta.Value() != nil {
-					err = parentMeta.UpdateMeta(tx, path, univalue, [2]interface{}{tx, this})
+					err = parentMeta.Set(tx, path, univalue.Value(), this)
 				}
 			}
 			return err

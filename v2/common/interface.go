@@ -12,6 +12,7 @@ type TypeInterface interface { // value type
 	This(interface{}) interface{}
 	ApplyDelta(interface{}) TypeInterface
 	Composite() bool
+	IsSelf(interface{}) bool
 	Hash(func([]byte) []byte) []byte
 	Encode() []byte
 	EncodeToBuffer([]byte) int
@@ -28,7 +29,6 @@ type UnivalueInterface interface { // value type
 	Set(uint32, string, interface{}, interface{}) error
 	Reset(uint32, string, interface{}, interface{}) error
 	Get(uint32, string, interface{}) interface{}
-	UpdateMeta(uint32, string, interface{}, interface{}) error
 	This(interface{}) interface{}
 	GetTx() uint32
 	GetPath() *string

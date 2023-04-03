@@ -11,7 +11,11 @@ func NewInt64(v int64) interface{} {
 	return &this
 }
 
-func (this *Int64) TypeID() uint8 { return ccurlcommon.NoncommutativeInt64 }
+func (this *Int64) IsSelf(key interface{}) bool          { return true }
+func (this *Int64) TypeID() uint8                        { return ccurlcommon.NoncommutativeInt64 }
+func (this *Int64) Composite() bool                      { return false }
+func (this *Int64) This(source interface{}) interface{}  { return this }
+func (this *Int64) Delta(source interface{}) interface{} { return this }
 
 // create a new path
 func (this *Int64) Deepcopy() interface{} {
@@ -29,14 +33,6 @@ func (this *Int64) ToAccess() interface{} {
 
 func (this *Int64) Get(path string, source interface{}) (interface{}, uint32, uint32) {
 	return this, 1, 0
-}
-
-func (this *Int64) This(source interface{}) interface{} {
-	return this
-}
-
-func (this *Int64) Delta(source interface{}) interface{} {
-	return this
 }
 
 func (this *Int64) Set(path string, value interface{}, source interface{}) (uint32, uint32, error) {
@@ -76,5 +72,3 @@ func (this *Int64) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 	}
 	return this
 }
-
-func (this *Int64) Composite() bool { return false }

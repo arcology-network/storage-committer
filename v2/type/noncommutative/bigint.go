@@ -16,7 +16,12 @@ func NewBigint(v int64) interface{} {
 	return &this
 }
 
-func (this *Bigint) TypeID() uint8 { return uint8(ccurlcommon.NoncommutativeBigint) }
+func (this *Bigint) IsSelf(key interface{}) bool         { return true }
+func (this *Bigint) TypeID() uint8                       { return uint8(ccurlcommon.NoncommutativeBigint) }
+func (this *Bigint) This(source interface{}) interface{} { return this }
+func (this *Bigint) Composite() bool                     { return false }
+func (this *Bigint) Value() interface{}                  { return this }
+func (this *Bigint) ToAccess() interface{}               { return nil }
 
 func (this *Bigint) Deepcopy() interface{} {
 	value := *this
@@ -26,14 +31,6 @@ func (this *Bigint) Deepcopy() interface{} {
 func (this *Bigint) Size() uint32 {
 	v := codec.Bigint(*this)
 	return v.Size()
-}
-
-func (this *Bigint) Value() interface{} {
-	return this
-}
-
-func (this *Bigint) ToAccess() interface{} {
-	return nil
 }
 
 // create a new path
@@ -50,10 +47,6 @@ func (this *Bigint) Get(path string, source interface{}) (interface{}, uint32, u
 }
 
 func (this *Bigint) Delta(source interface{}) interface{} {
-	return this
-}
-
-func (this *Bigint) This(source interface{}) interface{} {
 	return this
 }
 
@@ -94,5 +87,3 @@ func (this *Bigint) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 	}
 	return this
 }
-
-func (this *Bigint) Composite() bool { return false }

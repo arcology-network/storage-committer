@@ -31,6 +31,10 @@ func NewU256(value *uint256.Int, delta *big.Int) interface{} {
 	}
 }
 
+func (this *U256) IsSelf(key interface{}) bool { return true }
+func (this *U256) Composite() bool             { return !this.finalized }
+func (this *U256) TypeID() uint8               { return ccurlcommon.CommutativeUint256 }
+
 func NewU256WithLimit(min, max *uint256.Int) interface{} {
 	return &U256{
 		min: min,
@@ -61,10 +65,6 @@ func (this *U256) Value() interface{} {
 
 func (this *U256) ToAccess() interface{} {
 	return this
-}
-
-func (this *U256) TypeID() uint8 {
-	return ccurlcommon.CommutativeUint256
 }
 
 func (*U256) check(value *uint256.Int, deltaBigInt *big.Int, min, max *uint256.Int) (bool, *uint256.Int, error) {
@@ -123,9 +123,7 @@ func (this *U256) Get(path string, source interface{}) (interface{}, uint32, uin
 	return temp, 1, 1
 }
 
-func (this *U256) Delta(source interface{}) interface{} {
-	return this
-}
+func (this *U256) Delta(source interface{}) interface{} { return this }
 
 // Set delta
 func (this *U256) Set(path string, v interface{}, source interface{}) (uint32, uint32, error) {
@@ -203,8 +201,6 @@ func (this *U256) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 	*this = (*newValue.(*U256))
 	return this
 }
-
-func (this *U256) Composite() bool { return !this.finalized }
 
 func (this *U256) Purge() {
 	this.finalized = false

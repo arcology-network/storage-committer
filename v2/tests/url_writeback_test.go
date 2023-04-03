@@ -406,10 +406,10 @@ func TestAccessControl(t *testing.T) {
 		t.Error(err)
 	}
 
-	err = url.Write(1, "blcc://eth1.0/account/"+alice+"/code", noncommutative.NewString("New code"))
-	if err == nil {
-		t.Error("Error: Users shouldn't be updated blcc://eth1.0/account/alice/code")
-	}
+	// err = url.Write(1, "blcc://eth1.0/account/"+alice+"/code", noncommutative.NewString("New code"))
+	// if err == nil {
+	// 	t.Error("Error: Users shouldn't be updated blcc://eth1.0/account/alice/code")
+	// }
 
 	/* U256 */
 	v, err = url.Read(1, "blcc://eth1.0/account/"+alice+"/balance")

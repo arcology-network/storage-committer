@@ -14,7 +14,7 @@ import (
 
 type Meta struct {
 	committedKeys []string               // committed keys
-	keyView       *orderedset.OrderedSet // committed keys + added - removed
+	view          *orderedset.OrderedSet // committed keys + added - removed
 	addedBuffer   *orderedmap.OrderedMap
 	removedBuffer *orderedmap.OrderedMap
 	finalized     bool
@@ -39,7 +39,7 @@ func NewMeta(path string) (interface{}, error) {
 		added:         []string{},
 		removed:       []string{},
 		finalized:     false,
-		keyView:       nil,
+		view:          nil,
 		addedBuffer:   orderedmap.NewOrderedMap(),
 		removedBuffer: orderedmap.NewOrderedMap(),
 		snapshotDirty: false,
@@ -48,7 +48,10 @@ func NewMeta(path string) (interface{}, error) {
 	return this, nil
 }
 
-func (this *Meta) CommittedLength() int { return len(this.committedKeys) }
+func (this *Meta) IsSelf(key interface{}) bool { return ccurlcommon.IsPath(key.(string)) }
+func (this *Meta) Composite() bool             { return !this.finalized }
+func (this *Meta) TypeID() uint8               { return ccurlcommon.CommutativeMeta }
+func (this *Meta) CommittedLength() int        { return len(this.committedKeys) }
 
 // For linear access
 func (this *Meta) At(idx uint64) {}
@@ -58,7 +61,7 @@ func (this *Meta) Deepcopy() interface{} {
 		committedKeys: this.committedKeys,
 		added:         common.DeepCopy(this.added),
 		removed:       common.DeepCopy(this.removed),
-		keyView:       this.keyView.Deepcopy(),
+		view:          this.view.Deepcopy(),
 		addedBuffer:   orderedmap.NewOrderedMap(),
 		removedBuffer: orderedmap.NewOrderedMap(),
 		finalized:     this.finalized,
@@ -91,7 +94,7 @@ func (this *Meta) Delta(source interface{}) interface{} {
 		added:         this.Added(),
 		removed:       this.Removed(),
 		finalized:     this.finalized,
-		keyView:       this.keyView,
+		view:          this.view,
 		addedBuffer:   this.addedBuffer,
 		removedBuffer: this.removedBuffer,
 		snapshotDirty: this.snapshotDirty,
@@ -167,12 +170,13 @@ func (this *Meta) Removed() []string {
 
 // committed + added - removed
 func (this *Meta) Keys() []interface{} {
-	return this.keyView.Keys()
+	this.InitView()
+	return this.view.Keys()
 }
 
 // committed keys + added - removed
 func (this *Meta) Value() interface{} {
-	this.InitKeyView()
+	this.InitView()
 	return this.Keys()
 }
 
@@ -186,18 +190,15 @@ func (this *Meta) Reset(path string, value interface{}, source interface{}) (uin
 	// return 0, 1, nil
 }
 
-func (this *Meta) Composite() bool { return !this.finalized }
-func (this *Meta) TypeID() uint8   { return ccurlcommon.CommutativeMeta }
-
 // Load keys into an orderedmap for quick access, only happens at once
-func (this *Meta) InitKeyView() {
-	if this.keyView != nil { // Keys have been loaded already.
+func (this *Meta) InitView() {
+	if this.view != nil { // Keys have been loaded already.
 		return
 	}
-	this.keyView = orderedset.NewOrderedSet(this.committedKeys)
+	this.view = orderedset.NewOrderedSet(this.committedKeys)
 
-	this.keyView.Difference(this.removedBuffer)
-	this.keyView.Union(this.addedBuffer)
+	this.view.Difference(this.removedBuffer)
+	this.view.Union(this.addedBuffer)
 }
 
 // Write and afflicated operations
@@ -206,8 +207,8 @@ func (this *Meta) Set(path string, value interface{}, source interface{}) (uint3
 	indexer := source.([2]interface{})[1].(ccurlcommon.IndexerInterface)
 	subkey := path[strings.LastIndex(path[:len(path)-1], "/")+1:] // Extract the element key
 
-	this.InitKeyView()                // Initialize the key view if has been done yet.
-	ok := this.keyView.Exists(subkey) // If exists
+	this.InitView()                // Initialize the key view if has been done yet.
+	ok := this.view.Exists(subkey) // If exists
 	if ok && value != nil {
 		return 0, 0, nil // No meta changes, value update only
 	}
@@ -224,9 +225,9 @@ func (this *Meta) Set(path string, value interface{}, source interface{}) (uint3
 	}
 
 	if value == nil {
-		this.keyView.DeleteByKey(subkey) // Delete a key
+		this.view.DeleteByKey(subkey) // Delete a key
 	} else {
-		this.keyView.Insert(subkey)
+		this.view.Insert(subkey)
 	}
 
 	univ, _ := (*indexer.Buffer())[path]
@@ -276,7 +277,7 @@ func (this *Meta) Purge() {
 	this.added = []string{}
 	this.removed = []string{}
 	this.finalized = false
-	this.keyView = nil
+	this.view = nil
 	this.addedBuffer = orderedmap.NewOrderedMap()
 	this.removedBuffer = orderedmap.NewOrderedMap()
 }
