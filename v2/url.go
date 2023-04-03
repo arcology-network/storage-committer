@@ -118,11 +118,7 @@ func (this *ConcurrentUrl) IfExists(path string) bool {
 	return this.indexer.IfExists(path)
 }
 
-func (this *ConcurrentUrl) Peek(tx uint32, path string) (interface{}, error) {
-	if !this.Permit(tx, path, ccurlcommon.USER_READABLE) {
-		return nil, errors.New("Error: No permission to read " + path)
-	}
-
+func (this *ConcurrentUrl) Peek(path string) (interface{}, error) {
 	value, _ := this.indexer.Peek(path)
 	return value, nil
 }
@@ -155,42 +151,68 @@ func (this *ConcurrentUrl) write(tx uint32, path string, value interface{}, rese
 	return this.indexer.Write(tx, path, value, reset)
 }
 
-// Read by index
-func (this *ConcurrentUrl) ReadAt(tx uint32, path string, idx uint64) (interface{}, error) {
-	key, err := this.At(tx, path, idx)
-	if err == nil {
-		return this.Read(tx, *key)
+// Read th Nth element under a path
+func (this *ConcurrentUrl) at(tx uint32, path string, idx uint64) (interface{}, error) {
+	if !ccurlcommon.IsPath(path) {
+		return nil, errors.New("Error: Not a path!!!")
 	}
-	return nil, err
-}
 
-// Write by index
-func (this *ConcurrentUrl) WriteAt(tx uint32, path string, idx uint64, value interface{}) error {
-	key, err := this.At(tx, path, idx)
-	if err == nil {
-		return this.Write(tx, *key, value)
-	}
-	return err
-}
-
-// Get the key by index
-func (this *ConcurrentUrl) At(tx uint32, path string, idx uint64) (*string, error) {
 	meta, err := this.Read(tx, path) // read the container meta
 	if err != nil {
 		return nil, err
 	}
 
-	if reflect.TypeOf(meta).String() != "*commutative.Meta" {
-		return nil, errors.New("Error: Wrong path")
+	key, ok := meta.(*commutative.Meta).View().KeyOf(idx)
+	if key == nil || !ok {
+		return nil, errors.New("Error: The element wasn't found!!!")
 	}
 
-	keys := meta.(*commutative.Meta).Value().([]string)
-	if idx >= uint64(len(keys)) {
-		return nil, errors.New("Error: Out of range")
+	return path + key.(string), nil
+}
+
+// Read th Nth element under a path
+func (this *ConcurrentUrl) ReadAt(tx uint32, path string, idx uint64) (interface{}, error) {
+	if key, err := this.at(tx, path, idx); err == nil {
+		return this.Read(tx, key.(string))
+	} else {
+		return key, err
+	}
+}
+
+// Read th Nth element under a path
+func (this *ConcurrentUrl) PopBack(tx uint32, path string) (interface{}, error) {
+	if !ccurlcommon.IsPath(path) {
+		return nil, errors.New("Error: Not a path!!!")
 	}
 
-	path += keys[idx]
-	return &path, nil
+	meta, err := this.Read(tx, path) // read the container meta
+	if err != nil {
+		return nil, err
+	}
+
+	if length := meta.(*commutative.Meta).View().Len(); length > 0 {
+		if key, ok := meta.(*commutative.Meta).View().KeyOf(length - 1); ok {
+			value, err := this.Read(tx, path+key.(string))
+			if value == nil || err != nil {
+				return value, err
+			}
+			return value, this.Write(tx, path+key.(string), nil)
+		}
+	}
+	return nil, errors.New("Error: Empty container!")
+}
+
+// Read th Nth element under a path
+func (this *ConcurrentUrl) WriteAt(tx uint32, path string, idx uint64, value interface{}) error {
+	if !ccurlcommon.IsPath(path) {
+		return errors.New("Error: Not a path!!!")
+	}
+
+	if key, err := this.at(tx, path, idx); err == nil {
+		return this.Write(tx, key.(string), value)
+	} else {
+		return err
+	}
 }
 
 // It the access is permitted

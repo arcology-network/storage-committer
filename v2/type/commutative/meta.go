@@ -48,10 +48,15 @@ func NewMeta(path string) (interface{}, error) {
 	return this, nil
 }
 
-func (this *Meta) IsSelf(key interface{}) bool { return ccurlcommon.IsPath(key.(string)) }
-func (this *Meta) Composite() bool             { return !this.finalized }
-func (this *Meta) TypeID() uint8               { return ccurlcommon.CommutativeMeta }
-func (this *Meta) CommittedLength() int        { return len(this.committedKeys) }
+func (this *Meta) View() *orderedset.OrderedSet { return this.view }
+func (this *Meta) IsSelf(key interface{}) bool  { return ccurlcommon.IsPath(key.(string)) }
+func (this *Meta) Composite() bool              { return !this.finalized }
+func (this *Meta) TypeID() uint8                { return ccurlcommon.CommutativeMeta }
+func (this *Meta) CommittedLength() int         { return len(this.committedKeys) }
+func (this *Meta) Length() int {
+	this.InitView()
+	return int(this.view.Len())
+}
 
 // For linear access
 func (this *Meta) At(idx uint64) {}
