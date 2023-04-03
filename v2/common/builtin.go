@@ -77,16 +77,8 @@ func (this *Platform) Builtin(platform string, acct string) ([]string, map[strin
 	return paths, this.syspaths, nil
 }
 
-// If users are allowed to access the path
-func (this *Platform) IsPermitted(path string, operation uint8) bool {
-	if syspath, ok := this.syspaths[path]; ok {
-		return syspath.Permissions[operation]
-	}
-	return false
-}
-
-// THe path on the control list
-func (this *Platform) OnControlList(path string) bool {
+// The path on the control list
+func (this *Platform) IsSysPath(path string) bool {
 	_, ok := this.syspaths[path]
 	return ok || path == this.Eth10() || path == this.Eth10Account()
 }

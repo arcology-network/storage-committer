@@ -124,9 +124,6 @@ func (this *ConcurrentUrl) Peek(path string) (interface{}, error) {
 }
 
 func (this *ConcurrentUrl) Read(tx uint32, path string) (interface{}, error) {
-	if !this.Permit(tx, path, ccurlcommon.USER_READABLE) {
-		return nil, errors.New("Error: No permission to read " + path)
-	}
 	return this.indexer.Read(tx, path), nil // Read an element
 }
 
@@ -139,10 +136,6 @@ func (this *ConcurrentUrl) Rewrite(tx uint32, path string, value interface{}) er
 }
 
 func (this *ConcurrentUrl) write(tx uint32, path string, value interface{}, reset bool) error {
-	if !this.Permit(tx, path, ccurlcommon.USER_CREATABLE) {
-		return errors.New("Error: No permission to write " + path)
-	}
-
 	if value != nil {
 		if id := (&ccurltype.Univalue{}).GetTypeID(value); id == uint8(reflect.Invalid) {
 			return errors.New("Error: Unknown data type !")
@@ -213,24 +206,6 @@ func (this *ConcurrentUrl) WriteAt(tx uint32, path string, idx uint64, value int
 	} else {
 		return err
 	}
-}
-
-// It the access is permitted
-func (this *ConcurrentUrl) Permit(tx uint32, path string, operation uint8) bool {
-	if tx == ccurlcommon.SYSTEM || !this.Platform.OnControlList(path) { // Either by the system or no need to control
-		return true
-	}
-
-	switch operation {
-	case ccurlcommon.USER_READABLE:
-		return this.Platform.IsPermitted(path, ccurlcommon.USER_READABLE)
-
-	case ccurlcommon.USER_CREATABLE:
-		return (this.Platform.IsPermitted(path, ccurlcommon.USER_CREATABLE) && !this.indexer.IfExists(path)) || // Initialization
-			(this.Platform.IsPermitted(path, ccurlcommon.USER_UPDATABLE) && this.indexer.IfExists(path)) // Update
-
-	}
-	return false
 }
 
 func (this *ConcurrentUrl) Import(transitions []ccurlcommon.UnivalueInterface, args ...interface{}) {
