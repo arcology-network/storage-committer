@@ -145,7 +145,7 @@ func (this *Univalue) IfComposite() bool { // Call this before setting the value
 
 func (this *Univalue) Export(source interface{}) (interface{}, interface{}) {
 	if this.Value() != nil {
-		this.value = this.value.(ccurlcommon.TypeInterface).Delta(source.(ccurlcommon.IndexerInterface).Buffer())
+		this.value = this.value.(ccurlcommon.TypeInterface).Delta()
 	}
 
 	accessRecord := &Univalue{ // For the arbitrator, just make a deep copy and clear the value field

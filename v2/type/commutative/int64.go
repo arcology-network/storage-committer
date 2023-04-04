@@ -58,7 +58,7 @@ func (this *Int64) This(source interface{}) interface{} {
 	}
 }
 
-func (this *Int64) Delta(source interface{}) interface{} {
+func (this *Int64) Delta() interface{} {
 	return &Int64{
 		this.finalized,
 		0,

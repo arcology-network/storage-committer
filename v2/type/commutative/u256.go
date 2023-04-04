@@ -67,7 +67,7 @@ func (this *U256) ToAccess() interface{} {
 	return this
 }
 
-func (*U256) check(value *uint256.Int, deltaBigInt *big.Int, min, max *uint256.Int) (bool, *uint256.Int, error) {
+func (*U256) checkLimits(value *uint256.Int, deltaBigInt *big.Int, min, max *uint256.Int) (bool, *uint256.Int, error) {
 	b := new(big.Int).Set(deltaBigInt)
 	delta, failed := uint256.FromBig(b.Abs(b))
 	if failed {
@@ -110,12 +110,9 @@ func (this *U256) Get(path string, source interface{}) (interface{}, uint32, uin
 		delta:     big.NewInt(0),
 	}
 
-	isNegative, delta, err := this.check(temp.value, this.delta, this.min, this.max)
-	if err != nil {
-		return nil, 1, 1
-	}
-
-	if isNegative {
+	delta := uint256.NewInt(0)
+	delta.SetFromBig(this.delta)
+	if this.delta.Cmp(big.NewInt(0)) < 0 {
 		temp.value.Sub(temp.value, delta)
 	} else {
 		temp.value.Add(temp.value, delta)
@@ -123,12 +120,14 @@ func (this *U256) Get(path string, source interface{}) (interface{}, uint32, uin
 	return temp, 1, 1
 }
 
-func (this *U256) Delta(source interface{}) interface{} { return this }
+func (this *U256) Delta() interface{} {
+	return this
+}
 
 // Set delta
 func (this *U256) Set(path string, v interface{}, source interface{}) (uint32, uint32, error) {
 	b := v.(*U256)
-	if _, _, err := this.check(this.value, new(big.Int).Add(this.delta, b.delta), this.min, this.max); err != nil {
+	if _, _, err := this.checkLimits(this.value, new(big.Int).Add(this.delta, b.delta), this.min, this.max); err != nil {
 		return 0, 1, err
 	}
 

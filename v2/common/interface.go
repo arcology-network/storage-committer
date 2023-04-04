@@ -4,7 +4,7 @@ type TypeInterface interface { // value type
 	TypeID() uint8
 	Deepcopy() interface{}
 	Value() interface{}
-	Delta(source interface{}) interface{}
+	Delta() interface{}
 	ToAccess() interface{}
 	Get(string, interface{}) (interface{}, uint32, uint32)
 	Set(string, interface{}, interface{}) (uint32, uint32, error)

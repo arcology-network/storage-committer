@@ -93,7 +93,7 @@ func (this *Meta) Get(path string, source interface{}) (interface{}, uint32, uin
 	return this, 1, 1
 }
 
-func (this *Meta) Delta(source interface{}) interface{} {
+func (this *Meta) Delta() interface{} {
 	return &Meta{
 		committedKeys: []string{}, // committed keys
 		added:         this.Added(),

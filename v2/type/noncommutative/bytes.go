@@ -57,7 +57,7 @@ func (this *Bytes) This(source interface{}) interface{} {
 	return this
 }
 
-func (this *Bytes) Delta(source interface{}) interface{} {
+func (this *Bytes) Delta() interface{} {
 	return this
 }
 

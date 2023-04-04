@@ -46,7 +46,7 @@ func (this *Bigint) Get(path string, source interface{}) (interface{}, uint32, u
 	return this, 1, 0
 }
 
-func (this *Bigint) Delta(source interface{}) interface{} {
+func (this *Bigint) Delta() interface{} {
 	return this
 }
 
