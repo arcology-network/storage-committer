@@ -530,17 +530,19 @@ func TestCommutative(t *testing.T) {
 		t.Error("Error: Failed to read: blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-0")
 	}
 
-	// -------------------Create a commutative bigint ------------------------------
-	comtVInit := commutative.NewU256(uint256.NewInt(300), big.NewInt(0))
+	// -------------------Create a commutative UINT256 ------------------------------
+	comtVInit := commutative.NewU256(uint256.NewInt(300), uint256.NewInt(0), commutative.U256MIN, commutative.U256MAX, commutative.ADDITION)
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", comtVInit); err != nil {
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256(uint256.NewInt(300), big.NewInt(1))); err != nil {
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0",
+		commutative.NewU256(uint256.NewInt(300), uint256.NewInt(1), commutative.U256MIN, commutative.U256MAX, commutative.ADDITION)); err != nil {
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256(uint256.NewInt(300), big.NewInt(2))); err != nil {
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0",
+		commutative.NewU256(uint256.NewInt(300), uint256.NewInt(2), commutative.U256MIN, commutative.U256MAX, commutative.ADDITION)); err != nil {
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
@@ -550,17 +552,20 @@ func TestCommutative(t *testing.T) {
 	}
 
 	// ----------------------------U256 ---------------------------------------------------
-	if err := url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256(uint256.NewInt(0), big.NewInt(0))); err != nil { //initialization
+	if err := url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/balance",
+		commutative.NewU256(uint256.NewInt(0), uint256.NewInt(0), commutative.U256MIN, commutative.U256MAX, commutative.ADDITION)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
 	// Add the first delta
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256(uint256.NewInt(0), big.NewInt(22))); err != nil {
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance",
+		commutative.NewU256(uint256.NewInt(0), uint256.NewInt(22), commutative.U256MIN, commutative.U256MAX, commutative.ADDITION)); err != nil {
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
 	// Add the second delta
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256(uint256.NewInt(0), big.NewInt(11))); err != nil {
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance",
+		commutative.NewU256(uint256.NewInt(0), uint256.NewInt(11), commutative.U256MIN, commutative.U256MAX, commutative.ADDITION)); err != nil {
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 

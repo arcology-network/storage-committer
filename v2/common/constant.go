@@ -16,12 +16,13 @@ const (
 
 	CommutativeMeta    uint8 = 100
 	CommutativeInt64   uint8 = 101
-	CommutativeUint256 uint8 = 102
+	CommutativeUint64  uint8 = 102
+	CommutativeUint256 uint8 = 103
 
-	NoncommutativeInt64  uint8 = 103
-	NoncommutativeString uint8 = 104
-	NoncommutativeBigint uint8 = 105
-	NoncommutativeBytes  uint8 = 106
+	NoncommutativeInt64  uint8 = 104
+	NoncommutativeString uint8 = 105
+	NoncommutativeBigint uint8 = 106
+	NoncommutativeBytes  uint8 = 107
 
 	VARIATE_TRANSITIONS   uint8 = 0
 	INVARIATE_TRANSITIONS uint8 = 1

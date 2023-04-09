@@ -10,10 +10,18 @@ type Int64 struct {
 	delta     int64
 }
 
-func NewInt64(value int64, delta int64) interface{} {
+func NewInt64(value, delta int64) interface{} {
 	return &Int64{
 		false,
 		value,
+		delta,
+	}
+}
+
+func NewInt64Delta(delta int64) interface{} {
+	return &Int64{
+		false,
+		0,
 		delta,
 	}
 }
