@@ -94,7 +94,7 @@ func (this *ConcurrentUrl) CreateAccount(tx uint32, platform string, acct string
 			v = noncommutative.NewString(path.Default.(string))
 
 		case uint8(reflect.Kind(ccurlcommon.CommutativeUint256)): // delta big int
-			v = commutative.NewU256(path.Default.(*uint256.Int), uint256.NewInt(0), commutative.U256MIN, commutative.U256MAX, commutative.ADDITION)
+			v = commutative.NewU256(path.Default.(*uint256.Int), commutative.U256MIN, commutative.U256MAX)
 
 		case uint8(reflect.Kind(ccurlcommon.CommutativeInt64)): // big int pointer
 			v = commutative.NewInt64(path.Default.(int64), path.Default.(int64))

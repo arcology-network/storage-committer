@@ -417,19 +417,19 @@ func TestAccessControl(t *testing.T) {
 	}
 
 	err = url.Write(1, "blcc://eth1.0/account/"+alice+"/balance",
-		commutative.NewU256(uint256.NewInt(100), uint256.NewInt(100), commutative.U256MIN, commutative.U256MAX, commutative.ADDITION))
+		commutative.NewU256(uint256.NewInt(200), commutative.U256MIN, commutative.U256MAX))
 	if err != nil {
 		t.Error("Error: Failed to write the balance")
 	}
 
 	err = url.Write(1, "blcc://eth1.0/account/"+alice+"/balance",
-		commutative.NewU256(uint256.NewInt(100), uint256.NewInt(0), commutative.U256MIN, commutative.U256MAX, commutative.ADDITION))
+		commutative.NewU256(uint256.NewInt(100), commutative.U256MIN, commutative.U256MAX))
 	if err != nil {
 		t.Error("Error: Failed to initialize balance")
 	}
 
 	err = url.Write(1, "blcc://eth1.0/account/"+alice+"/balance",
-		commutative.NewU256(uint256.NewInt(100), uint256.NewInt(100), commutative.U256MIN, commutative.U256MAX, commutative.ADDITION))
+		commutative.NewU256(uint256.NewInt(200), commutative.U256MIN, commutative.U256MAX))
 	if err != nil {
 		t.Error("Error: Failed to initialize balance")
 	}
