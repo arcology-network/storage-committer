@@ -123,7 +123,7 @@ func (this *ConcurrentUrl) Peek(path string) (interface{}, error) {
 }
 
 func (this *ConcurrentUrl) Read(tx uint32, path string) (interface{}, error) {
-	return this.indexer.Read(tx, path), nil // Read an element
+	return this.indexer.Read(tx, path), nil
 }
 
 func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}) error {

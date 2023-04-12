@@ -55,6 +55,12 @@ func NewU256(value, min, max *uint256.Int) interface{} {
 	}
 }
 
+func NewU256FromBytes(value, min, max []byte) interface{} {
+	this := &U256{} // positive delta by default
+	this.FromBytes(value, min, max)
+	return this
+}
+
 func NewU256Delta(delta *uint256.Int, deltaSign bool) interface{} {
 	return &U256{
 		value:     nil,
@@ -66,21 +72,23 @@ func NewU256Delta(delta *uint256.Int, deltaSign bool) interface{} {
 }
 
 func NewU256DeltaFromBigInt(delta *big.Int) (interface{}, bool) {
-	deltaV, overflowed := uint256.FromBig(delta)
+	sign := delta.Sign()
+	deltaV, overflowed := uint256.FromBig(delta.Abs(delta))
 	if overflowed {
 		return nil, false
 	}
 
 	return &U256{
 		delta:     deltaV,
-		deltaSign: delta.Sign() > -1,
+		deltaSign: sign != -1, // >= 0
 	}, true
 }
 
 func (this *U256) FromBytes(value, min, max []byte) {
-	this.min.SetBytes(value)
+	this.value.SetBytes(value)
 	this.min.SetBytes(min)
 	this.max.SetBytes(max)
+	this.deltaSign = true
 }
 
 func (this *U256) HasCustomizedLimit() bool {
