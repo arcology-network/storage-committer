@@ -119,7 +119,7 @@ func TestCodec(t *testing.T) {
 	out := (&(U256{})).Decode(buffer).(*U256)
 	fmt.Println("U256 Encoded size :", out)
 
-	if out.value.Uint64() != 4 || (*out.min).Uint64() != 0 || (*out.max).Uint64() != 4 || (*out.min).Uint64() != (*in.min).Uint64() || (*out.max).Uint64() != (*in.max).Uint64() || out.deltaSign != in.deltaSign {
+	if out.value.Uint64() != 4 || (*out.min).Uint64() != 0 || (*out.max).Uint64() != 4 || (*out.min).Uint64() != (*in.min).Uint64() || (*out.max).Uint64() != (*in.max).Uint64() || out.deltaPossitive != in.deltaPossitive {
 		t.Error("Error: Out of range, should have failed")
 	}
 }

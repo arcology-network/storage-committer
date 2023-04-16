@@ -417,26 +417,26 @@ func TestAccessControl(t *testing.T) {
 	}
 
 	err = url.Write(1, "blcc://eth1.0/account/"+alice+"/balance",
-		commutative.NewU256(uint256.NewInt(200), commutative.U256MIN, commutative.U256MAX))
+		commutative.NewU256Delta(uint256.NewInt(200), true))
 	if err != nil {
 		t.Error("Error: Failed to write the balance")
 	}
 
 	err = url.Write(1, "blcc://eth1.0/account/"+alice+"/balance",
-		commutative.NewU256(uint256.NewInt(100), commutative.U256MIN, commutative.U256MAX))
+		commutative.NewU256Delta(uint256.NewInt(100), true))
 	if err != nil {
 		t.Error("Error: Failed to initialize balance")
 	}
 
 	err = url.Write(1, "blcc://eth1.0/account/"+alice+"/balance",
-		commutative.NewU256(uint256.NewInt(200), commutative.U256MIN, commutative.U256MAX))
+		commutative.NewU256Delta(uint256.NewInt(100), false))
 	if err != nil {
 		t.Error("Error: Failed to initialize balance")
 	}
 
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/balance")
 	if v.(*commutative.U256).Value().(*uint256.Int).Cmp(uint256.NewInt(200)) != 0 {
-		t.Error("Error: blcc://eth1.0/account/alice/balance, should be 300")
+		t.Error("Error: blcc://eth1.0/account/alice/balance, should be 200 not ", v.(*commutative.U256).Value().(*uint256.Int).ToBig().Uint64())
 	}
 
 	/* Nonce */

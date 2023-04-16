@@ -29,12 +29,12 @@ var (
 )
 
 type U256 struct {
-	finalized bool // For commutative values only
-	value     *uint256.Int
-	delta     *uint256.Int
-	min       *uint256.Int
-	max       *uint256.Int
-	deltaSign bool
+	finalized      bool // For commutative values only
+	value          *uint256.Int
+	delta          *uint256.Int
+	min            *uint256.Int
+	max            *uint256.Int
+	deltaPossitive bool
 }
 
 func (this *U256) IsSelf(key interface{}) bool { return true }
@@ -47,27 +47,27 @@ func NewU256(value, min, max *uint256.Int) interface{} {
 	}
 
 	return &U256{
-		value:     value,
-		delta:     uint256.NewInt(0),
-		min:       min,
-		max:       max,
-		deltaSign: true, // positive delta by default
+		value:          value,
+		delta:          uint256.NewInt(0),
+		min:            min,
+		max:            max,
+		deltaPossitive: true, // positive delta by default
 	}
 }
 
-func NewU256FromBytes(value, min, max []byte) interface{} {
+func NewU256FromBytes(value []byte, min, max []byte) interface{} {
 	this := &U256{} // positive delta by default
 	this.FromBytes(value, min, max)
 	return this
 }
 
-func NewU256Delta(delta *uint256.Int, deltaSign bool) interface{} {
+func NewU256Delta(delta *uint256.Int, deltaPossitive bool) interface{} {
 	return &U256{
-		value:     nil,
-		min:       nil,
-		max:       nil,
-		delta:     delta,
-		deltaSign: deltaSign,
+		value:          nil,
+		min:            nil,
+		max:            nil,
+		delta:          delta,
+		deltaPossitive: deltaPossitive,
 	}
 }
 
@@ -79,16 +79,16 @@ func NewU256DeltaFromBigInt(delta *big.Int) (interface{}, bool) {
 	}
 
 	return &U256{
-		delta:     deltaV,
-		deltaSign: sign != -1, // >= 0
+		delta:          deltaV,
+		deltaPossitive: sign != -1, // >= 0
 	}, true
 }
 
-func (this *U256) FromBytes(value, min, max []byte) {
+func (this *U256) FromBytes(value []byte, min, max []byte) {
 	this.value.SetBytes(value)
 	this.min.SetBytes(min)
 	this.max.SetBytes(max)
-	this.deltaSign = true
+	this.deltaPossitive = true
 }
 
 func (this *U256) HasCustomizedLimit() bool {
@@ -97,12 +97,12 @@ func (this *U256) HasCustomizedLimit() bool {
 
 func (this *U256) Deepcopy() interface{} {
 	return &U256{
-		finalized: this.finalized,
-		value:     this.value.Clone(),
-		delta:     this.delta.Clone(),
-		min:       this.min.Clone(),
-		max:       this.max.Clone(),
-		deltaSign: this.deltaSign,
+		finalized:      this.finalized,
+		value:          this.value.Clone(),
+		delta:          this.delta.Clone(),
+		min:            this.min.Clone(),
+		max:            this.max.Clone(),
+		deltaPossitive: this.deltaPossitive,
 	}
 }
 
@@ -132,12 +132,12 @@ func (this *U256) isOverflowed(v0 *uint256.Int, signV0 bool, v1 *uint256.Int, si
 func (this *U256) Get(path string, source interface{}) (interface{}, uint32, uint32) {
 	this.finalized = true
 	temp := &U256{
-		finalized: this.finalized,
-		value:     this.value.Clone(),
-		delta:     this.delta.Clone(),
-		min:       this.min,
-		max:       this.max,
-		deltaSign: this.deltaSign,
+		finalized:      this.finalized,
+		value:          this.value.Clone(),
+		delta:          this.delta.Clone(),
+		min:            this.min,
+		max:            this.max,
+		deltaPossitive: this.deltaPossitive,
 	}
 
 	if this.delta.Eq(UINT256ZERO) {
@@ -145,7 +145,7 @@ func (this *U256) Get(path string, source interface{}) (interface{}, uint32, uin
 	}
 
 	temp.value.Add(temp.value, temp.delta)
-	temp.deltaSign = false
+	temp.deltaPossitive = false
 	temp.delta.Clear()
 
 	return temp, 1, 1
@@ -156,24 +156,24 @@ func (this *U256) Delta() interface{} {
 }
 
 // Set delta
-func (this *U256) Set(path string, newVal interface{}, source interface{}) (uint32, uint32, error) {
-	if newVal.(*U256).delta.Eq(UINT256ZERO) {
+func (this *U256) Set(path string, newDelta interface{}, source interface{}) (uint32, uint32, error) {
+	if newDelta.(*U256).delta.Eq(UINT256ZERO) {
 		return 1, 0, nil
 	}
 
-	accumDelta, accumSign := this.isOverflowed(this.delta, this.deltaSign, newVal.(*U256).delta, newVal.(*U256).deltaSign)
+	accumDelta, accumSign := this.isOverflowed(this.delta.Clone(), this.deltaPossitive, newDelta.(*U256).delta, newDelta.(*U256).deltaPossitive)
 	if accumDelta == nil {
 		return 0, 1, errors.New("Error: Value out of range")
 	}
 
-	tempV, deltaSign := this.isOverflowed(this.value, true, accumDelta, accumSign)
-	if tempV == nil || !deltaSign {
+	tempV, deltaPossitive := this.isOverflowed(this.value.Clone(), true, accumDelta.Clone(), accumSign)
+	if tempV == nil || !deltaPossitive {
 		return 0, 1, errors.New("Error: Value out of range")
 	}
 
 	if this.min.Cmp(tempV) < 1 && tempV.Cmp(this.max) < 1 {
 		this.delta = accumDelta
-		this.deltaSign = deltaSign
+		this.deltaPossitive = deltaPossitive
 		return 0, 1, nil
 	}
 	return 0, 1, errors.New("Error: Value out of range")
