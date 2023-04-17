@@ -28,6 +28,14 @@ func (this Univalues) IfContains(condition ccurlcommon.UnivalueInterface) bool {
 	return false
 }
 
+func (this Univalues) Keys() []string {
+	keys := make([]string, len(this))
+	for i, v := range this {
+		keys[i] = *v.GetPath()
+	}
+	return keys
+}
+
 // For debug only
 func (this Univalues) Checksum() [32]byte {
 	return sha256.Sum256(this.Encode())

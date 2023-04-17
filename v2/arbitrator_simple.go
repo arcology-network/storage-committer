@@ -7,6 +7,7 @@ import (
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
+
 	orderedmap "github.com/elliotchance/orderedmap"
 	murmur "github.com/spaolacci/murmur3"
 )
@@ -30,8 +31,15 @@ func (this *ArbitratorSlow) Detect(newTrans []ccurlcommon.UnivalueInterface) (ma
 		}
 	}
 
+	// ccmap := concurrentmap.NewConcurrentMap()
+	// ccmap.BatchSet(ccurltype.Univalues(newTrans).Keys(), common.From(newTrans))
+
 	for _, value := range this.transitions {
 		v := *value
+		if len(v) == 1 {
+			continue
+		}
+
 		sort.SliceStable(v, func(i, j int) bool {
 			if len(*v[i].GetPath()) != len(*v[j].GetPath()) {
 				return len(*v[i].GetPath()) < len(*v[j].GetPath())
