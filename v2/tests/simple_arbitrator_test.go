@@ -41,7 +41,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 
 	concurrenturl.HashPaths(accesses1)
 	concurrenturl.HashPaths(accesses2)
-	_, conflictTx := arib.Detect(append(accesses1, accesses2...), []uint32{1, 2})
+	_, conflictTx := arib.Detect(append(accesses1, accesses2...))
 
 	// in := ccurltype.Univalues(append(transitions1, transitions2...)).Encode()
 	// out := ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
@@ -86,7 +86,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	accesses2, _ := url2.Export(true)
 
 	arib := ccurl.NewArbitratorSlow()
-	_, conflictTx := arib.Detect(append(accesses1, accesses2...), []uint32{1, 2})
+	_, conflictTx := arib.Detect(append(accesses1, accesses2...))
 
 	if len(conflictTx) != 1 {
 		t.Error("Error: There shouldn 1 conflict")
@@ -123,7 +123,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	arib := ccurl.NewArbitratorSlow()
 	concurrenturl.HashPaths(accesses1)
 	concurrenturl.HashPaths(accesses2)
-	_, conflictTx := arib.Detect(append(accesses1, accesses2...), []uint32{1, 2})
+	_, conflictTx := arib.Detect(append(accesses1, accesses2...))
 	if len(conflictTx) != 1 {
 		t.Error("Error: There shouldn 1 conflict")
 	}
@@ -147,7 +147,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	url4.Write(4, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("url4-1-by-tx-3"))
 	accesses4, transitions4 := url4.Export(true)
 
-	_, conflictTx = arib.Detect(append(accesses3, accesses4...), []uint32{3, 4})
+	_, conflictTx = arib.Detect(append(accesses3, accesses4...))
 	if len(conflictTx) != 1 || conflictTx[0] != 4 {
 		t.Error("Error: There shouldn 1 conflict")
 	}
@@ -188,6 +188,6 @@ func BenchmarkSimpleArbitrator(b *testing.B) {
 
 	t0 = time.Now()
 	arib := ccurl.NewArbitratorSlow()
-	arib.Detect(univalues, tx)
+	arib.Detect(univalues)
 	fmt.Println("Detect "+fmt.Sprint(len(univalues)), "path in ", time.Since(t0))
 }

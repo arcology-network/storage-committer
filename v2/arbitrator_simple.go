@@ -12,29 +12,26 @@ import (
 )
 
 type ArbitratorSlow struct {
-	transitions map[string][]ccurlcommon.UnivalueInterface
+	transitions map[string]*[]ccurlcommon.UnivalueInterface
 }
 
 func NewArbitratorSlow() *ArbitratorSlow {
 	return &ArbitratorSlow{
-		transitions: make(map[string][]ccurlcommon.UnivalueInterface),
+		transitions: make(map[string]*[]ccurlcommon.UnivalueInterface),
 	}
 }
 
-func (this *ArbitratorSlow) Detect(newTrans []ccurlcommon.UnivalueInterface, whitelist []uint32) (map[string][]ccurlcommon.UnivalueInterface, []uint32) {
-	whitelistDict := make(map[uint32]bool)
-	for _, v := range whitelist {
-		whitelistDict[v] = true
-	}
-
+func (this *ArbitratorSlow) Detect(newTrans []ccurlcommon.UnivalueInterface) (map[string][]ccurlcommon.UnivalueInterface, []uint32) {
 	for _, trans := range newTrans {
-		if _, ok := whitelistDict[trans.GetTx()]; !ok {
-			this.transitions[*trans.GetPath()] = []ccurlcommon.UnivalueInterface{}
+		if arr, ok := this.transitions[*trans.GetPath()]; !ok {
+			this.transitions[*trans.GetPath()] = &[]ccurlcommon.UnivalueInterface{trans}
+		} else {
+			(*arr) = append((*arr), trans)
 		}
-		this.transitions[*trans.GetPath()] = append(this.transitions[*trans.GetPath()], trans)
 	}
 
-	for _, v := range this.transitions {
+	for _, value := range this.transitions {
+		v := *value
 		sort.SliceStable(v, func(i, j int) bool {
 			if len(*v[i].GetPath()) != len(*v[j].GetPath()) {
 				return len(*v[i].GetPath()) < len(*v[j].GetPath())
@@ -61,7 +58,8 @@ func (this *ArbitratorSlow) Detect(newTrans []ccurlcommon.UnivalueInterface, whi
 
 	txToRemove := orderedmap.NewOrderedMap()
 	conflictDict := make(map[string][]ccurlcommon.UnivalueInterface)
-	for _, v := range this.transitions {
+	for _, value := range this.transitions {
+		v := *value
 		for i := 1; i < len(v); i++ {
 			if v[0].GetTx() == v[i].GetTx() {
 				continue
@@ -83,7 +81,7 @@ func (this *ArbitratorSlow) Detect(newTrans []ccurlcommon.UnivalueInterface, whi
 		txs[i] = v.(uint32)
 	}
 
-	this.transitions = make(map[string][]ccurlcommon.UnivalueInterface)
+	this.transitions = make(map[string]*[]ccurlcommon.UnivalueInterface)
 	return conflictDict, txs
 }
 
