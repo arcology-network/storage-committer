@@ -16,7 +16,7 @@ func TestUnivalueEncodeDecode(t *testing.T) {
 	alice := datacompression.RandomAccount()
 	// v, _ := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
 	balance := commutative.NewU256(uint256.NewInt(100), uint256.NewInt(0), uint256.NewInt(100))
-	univalue := NewUnivalue(ccurlcommon.VARIATE_TRANSITIONS, 1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, balance)
+	univalue := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, balance)
 	bytes := univalue.Encode()
 	out := (&Univalue{}).Decode(bytes).(*Univalue).Value()
 
@@ -29,7 +29,7 @@ func TestUnivalueEncodeDecode(t *testing.T) {
 
 	// in := make([]ccurlcommon.UnivalueInterface, 10)
 	// for i := 0; i < len(in); i++ {
-	// 	in[i] = NewUnivalue(ccurlcommon.VARIATE_TRANSITIONS, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, v)
+	// 	in[i] = NewUnivalue( "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, v)
 	// }
 
 	// t0 := time.Now()
@@ -59,13 +59,13 @@ func BenchmarkUnivalueEncodeDecode(t *testing.B) {
 	/* Commutative Int64 Test */
 	alice := datacompression.RandomAccount()
 	v, _ := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
-	univalue := NewUnivalue(ccurlcommon.VARIATE_TRANSITIONS, 1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, v)
+	univalue := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, v)
 	bytes := univalue.Encode()
 	fmt.Println("Encoded length of one entry:", len(bytes)*4)
 
 	in := make([]ccurlcommon.UnivalueInterface, 1000000)
 	for i := 0; i < len(in); i++ {
-		in[i] = NewUnivalue(ccurlcommon.VARIATE_TRANSITIONS, 1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, v)
+		in[i] = NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, v)
 	}
 
 	t0 := time.Now()

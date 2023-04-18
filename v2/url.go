@@ -23,11 +23,11 @@ type ConcurrentUrl struct {
 
 	Platform *ccurlcommon.Platform
 	// Buf for Export.
-	records    []ccurlcommon.UnivalueInterface // Transition + access record buffer
-	accesseBuf []ccurlcommon.UnivalueInterface // Access records
-	transitBuf []ccurlcommon.UnivalueInterface // Transitions
-
-	numThreads int
+	records       []ccurlcommon.UnivalueInterface // Transition + access record buffer
+	accesseBuf    []ccurlcommon.UnivalueInterface // Access records
+	transitBuf    []ccurlcommon.UnivalueInterface // Transitions
+	ImportFilters []ccurlcommon.TransitionFilterInterface
+	numThreads    int
 }
 
 func NewConcurrentUrl(store ccurlcommon.DatastoreInterface, args ...interface{}) *ConcurrentUrl {
@@ -41,7 +41,8 @@ func NewConcurrentUrl(store ccurlcommon.DatastoreInterface, args ...interface{})
 		accesseBuf: make([]ccurlcommon.UnivalueInterface, 0, 64),
 		transitBuf: make([]ccurlcommon.UnivalueInterface, 0, 64),
 
-		numThreads: 8,
+		ImportFilters: []ccurlcommon.TransitionFilterInterface{&ccurltype.NonceFilter{}, &ccurltype.BalanceFilter{}},
+		numThreads:    8,
 	}
 }
 
@@ -135,19 +136,6 @@ func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}) erro
 	return this.indexer.Write(tx, path, value)
 }
 
-// func (this *ConcurrentUrl) Rewrite(tx uint32, path string, value interface{}) error {
-// 	return this.write(tx, path, value, true)
-// }
-
-// func (this *ConcurrentUrl) write(tx uint32, path string, value interface{}, reset bool) error {
-// 	if value != nil {
-// 		if id := (&ccurltype.Univalue{}).GetTypeID(value); id == uint8(reflect.Invalid) {
-// 			return errors.New("Error: Unknown data type !")
-// 		}
-// 	}
-// 	return this.indexer.Write(tx, path, value, reset)
-// }
-
 // Read th Nth element under a path
 func (this *ConcurrentUrl) at(tx uint32, path string, idx uint64) (interface{}, error) {
 	if !ccurlcommon.IsPath(path) {
@@ -212,18 +200,27 @@ func (this *ConcurrentUrl) WriteAt(tx uint32, path string, idx uint64, value int
 	}
 }
 
+func (this *ConcurrentUrl) Exempted(transition ccurlcommon.UnivalueInterface) bool {
+	for i := 0; i < len(this.ImportFilters); i++ {
+		if this.ImportFilters[i].Is(this.Platform.RootLength(), *transition.GetPath()) {
+			return true
+		}
+	}
+	return false
+}
+
 func (this *ConcurrentUrl) Import(transitions []ccurlcommon.UnivalueInterface, args ...interface{}) {
-	invtransitions := make([]ccurlcommon.UnivalueInterface, 0, len(transitions))
+	invTransitions := make([]ccurlcommon.UnivalueInterface, 0, len(transitions))
 	for i := 0; i < len(transitions); i++ {
-		if transitions[i].GetTransitionType() == ccurlcommon.INVARIATE_TRANSITIONS { // Filter out the invariant transitions first
-			invtransitions = append(invtransitions, transitions[i])
+		if this.Exempted(transitions[i]) {
+			invTransitions = append(invTransitions, transitions[i])
 			transitions[i] = nil
 		}
 	}
 	common.RemoveIf(&transitions, func(v ccurlcommon.UnivalueInterface) bool { return v == nil })
 
 	common.ParallelExecute(
-		func() { this.invIndexer.Import(invtransitions, args...) },
+		func() { this.invIndexer.Import(invTransitions, args...) },
 		func() { this.indexer.Import(transitions, args...) })
 
 }

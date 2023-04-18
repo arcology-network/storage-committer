@@ -456,7 +456,7 @@ func BenchmarkStringSort(b *testing.B) {
 	for i := 0; i < 100000; i++ {
 		acct := datacompression.RandomAccount()
 		for j := 9; j >= 1; j-- {
-			paths[i] = append(paths[i], ccurltype.NewUnivalue(ccurlcommon.VARIATE_TRANSITIONS, uint32(j), acct, 0, 0, fmt.Sprint(rand.Float64())))
+			paths[i] = append(paths[i], ccurltype.NewUnivalue(uint32(j), acct, 0, 0, fmt.Sprint(rand.Float64())))
 		}
 	}
 

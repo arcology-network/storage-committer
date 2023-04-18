@@ -5,7 +5,7 @@ import (
 	"sort"
 
 	"github.com/arcology-network/common-lib/codec"
-	common "github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 
 	orderedmap "github.com/elliotchance/orderedmap"
@@ -64,7 +64,7 @@ func (this *ArbitratorSlow) Detect(newTrans []ccurlcommon.UnivalueInterface) (ma
 		})
 	}
 
-	txToRemove := map[]
+	txToRemove := orderedmap.NewOrderedMap()
 	conflictDict := make(map[string][]ccurlcommon.UnivalueInterface)
 	for _, value := range this.transitions {
 		v := *value
@@ -83,7 +83,6 @@ func (this *ArbitratorSlow) Detect(newTrans []ccurlcommon.UnivalueInterface) (ma
 			}
 		}
 	}
-	common.MapKeys()
 	keys := txToRemove.Keys()
 	txs := make([]uint32, len(keys))
 	for i, v := range keys {
@@ -93,17 +92,6 @@ func (this *ArbitratorSlow) Detect(newTrans []ccurlcommon.UnivalueInterface) (ma
 	this.transitions = make(map[string]*[]ccurlcommon.UnivalueInterface)
 	return conflictDict, txs
 }
-
-func IsConflict(lhv, rhv ccurlcommon.UnivalueInterface) {
-	if (lhv.Writes() > 0 || rhv.Writes() > 0) || 
-	
-	
-	{
-
-}
-
-
-
 
 func HashPaths(records []ccurlcommon.UnivalueInterface) {
 	numThreads := 1

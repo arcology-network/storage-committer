@@ -35,6 +35,8 @@ func Eth10AccountShard(numOfShard int, key string) int {
 	return (hex2int(key[22])*16 + hex2int(key[23])) % numOfShard
 }
 
+func (this *Platform) RootLength() int { return len(this.Eth10Account()) + 20 }
+
 func hex2int(c byte) int {
 	if c >= 'a' {
 		return int(c-'a') + 10

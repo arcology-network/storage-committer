@@ -17,12 +17,12 @@ func TestCachePolicyLowScore(t *testing.T) {
 		nVals := make([]interface{}, len(keys))
 		for i := 0; i < len(keys); i++ {
 			keys[i] = fmt.Sprint(i)
-			nVals[i] = ccurltype.NewUnivalue(0, uint32(i), keys[i], 1, 1, noncommutative.NewInt64(int64(i)))
+			nVals[i] = ccurltype.NewUnivalue( uint32(i), keys[i], 1, 1, noncommutative.NewInt64(int64(i)))
 		}
 
 		for i := 2; i < len(keys); i++ {
 			keys[i] = fmt.Sprint(i)
-			nVals[i] = ccurltype.NewUnivalue(0, uint32(i), keys[i], 2, 2, noncommutative.NewInt64(int64(i)))
+			nVals[i] = ccurltype.NewUnivalue( uint32(i), keys[i], 2, 2, noncommutative.NewInt64(int64(i)))
 		}
 
 		persistentDB := cachedstorage.NewMemDB()
@@ -43,7 +43,7 @@ func TestCachePolicyLowScore(t *testing.T) {
 		// --------------Second data batch with higher scores---------------------
 		for i := 0; i < len(keys); i++ {
 			keys[i] = fmt.Sprint(i + 10)
-			nVals[i] = ccurltype.NewUnivalue(0, uint32(i), keys[i], 129, 129, noncommutative.NewInt64(int64(i+10)))
+			nVals[i] = ccurltype.NewUnivalue( uint32(i), keys[i], 129, 129, noncommutative.NewInt64(int64(i+10)))
 		}
 
 		// cachePolicy = cachedstorage.NewCachePolicy(1, 1.0) // 1 byte only
@@ -68,7 +68,7 @@ func TestCachePolicyAndPersistentDB(t *testing.T) {
 		nVals := make([]interface{}, len(keys))
 		for i := 0; i < len(keys); i++ {
 			keys[i] = fmt.Sprint(i)
-			nVals[i] = ccurltype.NewUnivalue(0, uint32(i), keys[i], 1, 1, noncommutative.NewInt64(int64(i)))
+			nVals[i] = ccurltype.NewUnivalue( uint32(i), keys[i], 1, 1, noncommutative.NewInt64(int64(i)))
 		}
 
 		persistentDB := cachedstorage.NewMemDB()
@@ -107,7 +107,7 @@ func TestCacheWithPersistentStorage(t *testing.T) {
 	nVals := make([]interface{}, len(keys))
 	for i := 0; i < len(keys); i++ {
 		keys[i] = fmt.Sprint(i)
-		nVals[i] = ccurltype.NewUnivalue(0, uint32(i), keys[i], 1, 1, noncommutative.NewInt64(int64(i)))
+		nVals[i] = ccurltype.NewUnivalue(uint32(i), keys[i], 1, 1, noncommutative.NewInt64(int64(i)))
 		encoded[i] = ccurltype.ToBytes(nVals[i].(ccurlcommon.UnivalueInterface).Value())
 	}
 	persistentDB := cachedstorage.NewMemDB()
@@ -141,7 +141,7 @@ func BenchmarkCachePolicy(b *testing.B) {
 	nVals := make([]interface{}, len(keys))
 	for i := 0; i < len(keys); i++ {
 		keys[i] = fmt.Sprint(i)
-		nVals[i] = ccurltype.NewUnivalue(0, uint32(i), keys[i], 1, 1, noncommutative.NewInt64(int64(i)))
+		nVals[i] = ccurltype.NewUnivalue(uint32(i), keys[i], 1, 1, noncommutative.NewInt64(int64(i)))
 	}
 
 	cachePolicy := cachedstorage.NewCachePolicy(10, 0.8)

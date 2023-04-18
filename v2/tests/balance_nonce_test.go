@@ -218,7 +218,7 @@ func TestMultipleNonces(t *testing.T) {
 	}
 
 	_, trans0 := url0.Export(false)
-	ccurltype.SetInvariate(trans0, "nonce")
+	// ccurltype.SetInvariate(trans0, "nonce")
 
 	url1 := ccurl.NewConcurrentUrl(store)
 	bob := ccurltype.RandomAccount()
@@ -235,7 +235,7 @@ func TestMultipleNonces(t *testing.T) {
 	}
 
 	_, trans1 := url1.Export(false)
-	ccurltype.SetInvariate(trans1, "nonce")
+	// ccurltype.SetInvariate(trans1, "nonce")
 
 	url0.Import(trans0)
 	url0.Import(trans1)

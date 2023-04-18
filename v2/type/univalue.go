@@ -13,7 +13,6 @@ import (
 )
 
 type Univalue struct {
-	transitType uint8 // Transition type
 	vType       uint8
 	tx          uint32
 	path        *string
@@ -27,17 +26,16 @@ type Univalue struct {
 	reclaimFunc func(interface{})
 }
 
-func NewUnivalue(transitType uint8, tx uint32, key string, reads, writes uint32, args ...interface{}) *Univalue {
+func NewUnivalue(tx uint32, key string, reads, writes uint32, args ...interface{}) *Univalue {
 	v := &Univalue{
-		transitType: transitType,
-		vType:       (&Univalue{}).GetTypeID(args[0]),
-		tx:          tx,
-		path:        &key,
-		reads:       reads,
-		writes:      writes,
-		value:       args[0],
-		preexists:   false,
-		composite:   false,
+		vType:     (&Univalue{}).GetTypeID(args[0]),
+		tx:        tx,
+		path:      &key,
+		reads:     reads,
+		writes:    writes,
+		value:     args[0],
+		preexists: false,
+		composite: false,
 	}
 
 	if len(args) > 1 {
@@ -48,8 +46,7 @@ func NewUnivalue(transitType uint8, tx uint32, key string, reads, writes uint32,
 	return v
 }
 
-func (value *Univalue) Init(transitType uint8, tx uint32, key string, reads, writes uint32, v interface{}, args ...interface{}) {
-	value.transitType = transitType
+func (value *Univalue) Init(tx uint32, key string, reads, writes uint32, v interface{}, args ...interface{}) {
 	value.vType = (&Univalue{}).GetTypeID(v)
 	value.tx = tx
 	value.path = &key
@@ -114,9 +111,6 @@ func (this *Univalue) ClearPath()                    { *this.path = (*this.path)
 func (this *Univalue) Value() interface{}            { return this.value }
 func (this *Univalue) SetValue(newValue interface{}) { this.value = newValue }
 func (this *Univalue) ClearReserve()                 { this.reserved = nil }
-
-func (this *Univalue) GetTransitionType() uint8       { return this.transitType }
-func (this *Univalue) SetTransitionType(typeID uint8) { this.transitType = typeID }
 
 func (this *Univalue) Reads() uint32       { return this.reads }
 func (this *Univalue) Writes() uint32      { return this.writes } // Exist in cache as a failed read
@@ -334,8 +328,7 @@ func (this *Univalue) Equal(other *Univalue) bool {
 		vFlag = reflect.DeepEqual(this.value, other.value)
 	}
 
-	return this.transitType == other.transitType &&
-		this.tx == other.tx &&
+	return this.tx == other.tx &&
 		*this.path == *other.path &&
 		this.reads == other.reads &&
 		this.writes == other.writes &&

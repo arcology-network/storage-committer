@@ -11,9 +11,8 @@ import (
 	common "github.com/arcology-network/common-lib/common"
 	ccmap "github.com/arcology-network/common-lib/container/map"
 	"github.com/arcology-network/common-lib/mempool"
-
-	// performance "github.com/arcology-network/common-lib/mhasher"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
+	// performance "github.com/arcology-network/common-lib/mhasher"
 )
 
 type Indexer struct {
@@ -83,7 +82,7 @@ func (this *Indexer) GetOrInit(tx uint32, path string) ccurlcommon.UnivalueInter
 	univalue := this.buffer[path]
 	if univalue == nil { // Not in the buffer, check the datastore
 		univalue = this.NewUnivalue()
-		univalue.(*Univalue).Init(ccurlcommon.VARIATE_TRANSITIONS, tx, path, 0, 0, this.RetriveShallow(path), this)
+		univalue.(*Univalue).Init(tx, path, 0, 0, this.RetriveShallow(path), this)
 		this.buffer[path] = univalue // Adding to buffer
 	}
 	return univalue
@@ -227,7 +226,7 @@ func (this *Indexer) SortTransitions() {
 	// if err != nil {
 	// 	panic(err)
 	// }
-	sort.Strings(this.updatedKeys)
+	sort.Strings(this.updatedKeys) // For the later merkle tree calculation
 
 	sorter := func(start, end, index int, args ...interface{}) {
 		for i := start; i < end; i++ {
@@ -238,10 +237,9 @@ func (this *Indexer) SortTransitions() {
 				typeValue = deltaSeq.(*DeltaSequence).values[0]
 			}
 
-			if typeValue.GetTransitionType() == ccurlcommon.CommutativeMeta {
-				deltaSeq.(*DeltaSequence).Sort()
-			}
-
+			// if typeValue.Value().(ccurlcommon.TypeInterface).TypeID() == ccurlcommon.CommutativeMeta {
+			deltaSeq.(*DeltaSequence).Sort()
+			// }
 		}
 	}
 	common.ParallelWorker(len(this.updatedKeys), this.numThreads, sorter)

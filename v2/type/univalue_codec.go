@@ -25,7 +25,6 @@ func (this *Univalue) Size() uint32 {
 	}
 
 	return this.HeaderSize() + // uint32(9*codec.UINT32_LEN) +
-		uint32(1) + // transition type id
 		uint32(1) + // codec.Uint8(this.vType).Size() +
 		uint32(4) + // codec.Uint32(uint32(this.tx)).Size() +
 		uint32(len(*this.path)) + // codec.String(*this.path).Size() +
@@ -48,7 +47,6 @@ func (this *Univalue) FillHeader(buffer []byte) int {
 	return codec.Encoder{}.FillHeader(
 		buffer,
 		[]uint32{
-			uint32(codec.Uint8(this.transitType).Size()),
 			uint32(codec.Uint8(this.vType).Size()),
 			codec.Uint32(this.tx).Size(),
 			codec.String(*this.path).Size(),
@@ -63,7 +61,6 @@ func (this *Univalue) FillHeader(buffer []byte) int {
 
 func (this *Univalue) EncodeToBuffer(buffer []byte) int {
 	offset := this.FillHeader(buffer)
-	offset += codec.Uint8(this.transitType).EncodeToBuffer(buffer[offset:])
 	offset += codec.Uint8(this.vType).EncodeToBuffer(buffer[offset:])
 	offset += codec.Uint32(this.tx).EncodeToBuffer(buffer[offset:])
 	offset += codec.String(*this.path).EncodeToBuffer(buffer[offset:])
@@ -84,17 +81,16 @@ func (this *Univalue) Decode(buffer []byte) interface{} {
 		return this
 	}
 
-	this.transitType = uint8(reflect.Kind(codec.Uint8(0).Decode(fields[0]).(codec.Uint8)))
-	this.vType = uint8(reflect.Kind(codec.Uint8(1).Decode(fields[1]).(codec.Uint8)))
-	this.tx = uint32(codec.Uint32(1).Decode(fields[2]).(codec.Uint32))
-	key := string(codec.String("").Decode(common.ArrayCopy(fields[3])).(codec.String))
+	this.vType = uint8(reflect.Kind(codec.Uint8(1).Decode(fields[0]).(codec.Uint8)))
+	this.tx = uint32(codec.Uint32(1).Decode(fields[1]).(codec.Uint32))
+	key := string(codec.String("").Decode(common.ArrayCopy(fields[2])).(codec.String))
 	this.path = &key
-	this.reads = uint32(codec.Uint32(1).Decode(fields[4]).(codec.Uint32))
-	this.writes = uint32(codec.Uint32(1).Decode(fields[5]).(codec.Uint32))
-	this.value = (&Decoder{}).Decode(fields[6], this.vType)
-	this.preexists = bool(codec.Bool(true).Decode(fields[7]).(codec.Bool))
-	this.composite = bool(codec.Bool(true).Decode(fields[8]).(codec.Bool))
-	this.reserved = fields[6] // For merkle root calculation
+	this.reads = uint32(codec.Uint32(1).Decode(fields[3]).(codec.Uint32))
+	this.writes = uint32(codec.Uint32(1).Decode(fields[4]).(codec.Uint32))
+	this.value = (&Decoder{}).Decode(fields[5], this.vType)
+	this.preexists = bool(codec.Bool(true).Decode(fields[6]).(codec.Bool))
+	this.composite = bool(codec.Bool(true).Decode(fields[7]).(codec.Bool))
+	this.reserved = fields[5] // For merkle root calculation
 
 	if this.value == nil || this.IsCommutative() {
 		this.reserved = nil
@@ -124,7 +120,6 @@ func (this *Univalue) GetEncodedSize() []int {
 	}
 
 	return []int{
-		int(codec.Uint8(this.transitType).Size()),
 		int(codec.Uint8(this.vType).Size()),
 		int(codec.Uint32(this.tx).Size()),
 		int(codec.String(*this.path).Size()),

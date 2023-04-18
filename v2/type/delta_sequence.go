@@ -30,7 +30,7 @@ func (this *DeltaSequence) Reset(key string, indexer *Indexer, mempool *mempool.
 func (this *DeltaSequence) Init(key string, indexer *Indexer, mempool *mempool.Mempool) {
 	if initialState := indexer.RetriveShallow(key); initialState != nil {
 		nVal := mempool.Get().(*Univalue)
-		nVal.Init(ccurlcommon.VARIATE_TRANSITIONS, ccurlcommon.SYSTEM, key, 0, 0, initialState.(ccurlcommon.TypeInterface).Deepcopy(), indexer)
+		nVal.Init(ccurlcommon.SYSTEM, key, 0, 0, initialState.(ccurlcommon.TypeInterface).Deepcopy(), indexer)
 		this.values = append(this.values, nVal) //Transitions are ordered by Tx, -1 will guarantee the initial state is always the first one
 	}
 }

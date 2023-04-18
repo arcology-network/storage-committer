@@ -42,8 +42,6 @@ type UnivalueInterface interface { // value type
 	Writes() uint32
 	DeltaWrites() uint32
 
-	GetTransitionType() uint8
-	SetTransitionType(uint8)
 	ApplyDelta(uint32, interface{}) error
 	Preexist() bool
 	ConcurrentWritable() bool // Delta writable
@@ -67,6 +65,10 @@ type IndexerInterface interface {
 	Store() *DatastoreInterface
 
 	SkipExportTransitions(univalue interface{}) bool
+}
+
+type TransitionFilterInterface interface {
+	Is(int, string) bool
 }
 
 type DatastoreInterface interface {
