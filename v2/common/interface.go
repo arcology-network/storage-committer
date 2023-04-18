@@ -11,7 +11,7 @@ type TypeInterface interface { // value type
 	Reset(string, interface{}, interface{}) (uint32, uint32, error)
 	This(interface{}) interface{}
 	ApplyDelta(interface{}) TypeInterface
-	Composite() bool
+	DeltaWritable() bool
 	IsSelf(interface{}) bool
 	Hash(func([]byte) []byte) []byte
 	Encode() []byte
@@ -46,7 +46,7 @@ type UnivalueInterface interface { // value type
 	SetTransitionType(uint8)
 	ApplyDelta(uint32, interface{}) error
 	Preexist() bool
-	Composite() bool // Delta writable
+	DeltaWritable() bool // Delta writable
 	Deepcopy() interface{}
 	Export(interface{}) (interface{}, interface{})
 	GetEncoded() []byte

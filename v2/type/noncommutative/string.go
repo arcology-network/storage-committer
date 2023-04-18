@@ -15,7 +15,7 @@ func (this *String) IsSelf(key interface{}) bool         { return true }
 func (this *String) TypeID() uint8                       { return uint8(ccurlcommon.NoncommutativeString) }
 func (this *String) This(source interface{}) interface{} { return this }
 func (this *String) Delta() interface{}                  { return this }
-func (this *String) Composite() bool                     { return false }
+func (this *String) DeltaWritable() bool                 { return false }
 
 func (this *String) Deepcopy() interface{} {
 	value := *this

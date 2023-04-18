@@ -38,7 +38,7 @@ type U256 struct {
 }
 
 func (this *U256) IsSelf(key interface{}) bool { return true }
-func (this *U256) Composite() bool             { return !this.finalized }
+func (this *U256) DeltaWritable() bool         { return !this.finalized }
 func (this *U256) TypeID() uint8               { return ccurlcommon.CommutativeUint256 }
 
 func NewU256(value, min, max *uint256.Int) interface{} {
@@ -224,7 +224,7 @@ func (this *U256) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 		}
 
 		if this != nil && v != nil { // Update an existent
-			if v.(*U256).Composite() {
+			if v.(*U256).DeltaWritable() {
 				if _, _, err := this.Set("", v.(*U256), nil); err != nil {
 					panic(err)
 				}

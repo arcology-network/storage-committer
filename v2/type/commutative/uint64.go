@@ -108,7 +108,7 @@ func (this *Uint64) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 	return this
 }
 
-func (this *Uint64) Composite() bool { return !this.finalized }
+func (this *Uint64) DeltaWritable() bool { return !this.finalized }
 
 func (this *Uint64) Purge() {
 	this.finalized = false

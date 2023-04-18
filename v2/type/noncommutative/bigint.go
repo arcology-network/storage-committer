@@ -19,7 +19,7 @@ func NewBigint(v int64) interface{} {
 func (this *Bigint) IsSelf(key interface{}) bool         { return true }
 func (this *Bigint) TypeID() uint8                       { return uint8(ccurlcommon.NoncommutativeBigint) }
 func (this *Bigint) This(source interface{}) interface{} { return this }
-func (this *Bigint) Composite() bool                     { return false }
+func (this *Bigint) DeltaWritable() bool                 { return false }
 func (this *Bigint) Value() interface{}                  { return this }
 func (this *Bigint) ToAccess() interface{}               { return nil }
 

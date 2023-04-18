@@ -27,7 +27,7 @@ func (this *Bytes) Assign(v []byte) {
 
 func (this *Bytes) IsSelf(key interface{}) bool { return true }
 func (this *Bytes) TypeID() uint8               { return ccurlcommon.NoncommutativeBytes }
-func (this *Bytes) Composite() bool             { return false }
+func (this *Bytes) DeltaWritable() bool         { return false }
 
 // create a new path
 func (this *Bytes) Deepcopy() interface{} {

@@ -42,7 +42,7 @@ func NewUnivalue(transitType uint8, tx uint32, key string, reads, writes uint32,
 
 	if len(args) > 1 {
 		v.SetPreexist(key, args[1])
-		v.composite = v.IfComposite()
+		v.composite = v.IfDeltaWritable()
 	}
 
 	return v
@@ -61,7 +61,7 @@ func (value *Univalue) Init(transitType uint8, tx uint32, key string, reads, wri
 	value.reserved = nil
 	if len(args) > 0 {
 		value.SetPreexist(key, args[0]) // Check if the key  exists in indexer already
-		value.composite = value.IfComposite()
+		value.composite = value.IfDeltaWritable()
 	}
 }
 
@@ -122,8 +122,8 @@ func (this *Univalue) Reads() uint32       { return this.reads }
 func (this *Univalue) Writes() uint32      { return this.writes } // Exist in cache as a failed read
 func (this *Univalue) DeltaWrites() uint32 { return this.deltaWrites }
 
-func (this *Univalue) Preexist() bool  { return this.preexists } // Exist in cache as a failed read
-func (this *Univalue) Composite() bool { return this.composite }
+func (this *Univalue) Preexist() bool      { return this.preexists } // Exist in cache as a failed read
+func (this *Univalue) DeltaWritable() bool { return this.composite }
 
 func (this *Univalue) IncrementReads(reads uint32)   { this.reads += reads }
 func (this *Univalue) IncrementWrites(writes uint32) { this.writes += writes }
@@ -140,9 +140,9 @@ func (this *Univalue) SetPreexist(key string, source interface{}) {
 	this.preexists = source.(ccurlcommon.IndexerInterface).RetriveShallow(key) != nil
 }
 
-func (this *Univalue) IfComposite() bool { // Call this before setting the value attribute to nil
+func (this *Univalue) IfDeltaWritable() bool { // Call this before setting the value attribute to nil
 	if this.value != nil && this.Preexist() {
-		return this.value.(ccurlcommon.TypeInterface).Composite() && this.reads == 0
+		return this.value.(ccurlcommon.TypeInterface).DeltaWritable() && this.reads == 0
 	}
 	return false
 }
@@ -160,7 +160,7 @@ func (this *Univalue) Export(source interface{}) (interface{}, interface{}) {
 		writes:    this.Writes(),
 		value:     this.Value(),
 		preexists: this.Preexist(),
-		composite: this.IfComposite(),
+		composite: this.IfDeltaWritable(),
 	}
 
 	if accessRecord.Value() != nil {
@@ -187,7 +187,7 @@ func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{
 		tempV, r, w := this.value.(ccurlcommon.TypeInterface).Get(path, source) //RW: Affiliated reads and writes
 		this.reads += r
 		this.writes += w
-		this.composite = tempV.(ccurlcommon.TypeInterface).Composite()
+		this.composite = tempV.(ccurlcommon.TypeInterface).DeltaWritable()
 		return tempV
 	}
 	this.IncrementReads(1)
@@ -253,7 +253,7 @@ func (this *Univalue) ApplyDelta(tx uint32, v interface{}) error {
 		this.PrecheckAttributes(vec[i].(*Univalue))
 		this.writes += vec[i].Writes()
 		this.reads += vec[i].Reads()
-		this.composite = this.composite && vec[i].Composite()
+		this.composite = this.composite && vec[i].DeltaWritable()
 	}
 
 	// Apply transitions

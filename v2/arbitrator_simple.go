@@ -73,7 +73,7 @@ func (this *ArbitratorSlow) Detect(newTrans []ccurlcommon.UnivalueInterface) (ma
 				continue
 			}
 
-			if v[0].Composite() && v[i].Composite() {
+			if v[0].DeltaWritable() && v[i].DeltaWritable() {
 				continue
 			}
 
