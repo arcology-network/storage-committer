@@ -2,7 +2,6 @@ package ccurltype
 
 import (
 	"fmt"
-	"math/big"
 	"testing"
 	"time"
 
@@ -16,13 +15,13 @@ func TestUnivalueEncodeDecode(t *testing.T) {
 	/* Commutative Int64 Test */
 	alice := datacompression.RandomAccount()
 	// v, _ := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
-	balance := commutative.NewU256(uint256.NewInt(100), big.NewInt(0))
+	balance := commutative.NewU256(uint256.NewInt(100), uint256.NewInt(0), uint256.NewInt(100))
 	univalue := NewUnivalue(ccurlcommon.VARIATE_TRANSITIONS, 1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, balance)
 	bytes := univalue.Encode()
 	out := (&Univalue{}).Decode(bytes).(*Univalue).Value()
 
 	if univalue.Value().(*commutative.U256).Value().(*uint256.Int).Cmp(out.(*commutative.U256).Value().(*uint256.Int)) != 0 ||
-		univalue.Value().(*commutative.U256).GetDelta().(*big.Int).Cmp(out.(*commutative.U256).GetDelta().(*big.Int)) != 0 {
+		univalue.Value().(*commutative.U256).GetDelta().(*uint256.Int).Cmp(out.(*commutative.U256).GetDelta().(*uint256.Int)) != 0 {
 		t.Error("Error")
 	}
 

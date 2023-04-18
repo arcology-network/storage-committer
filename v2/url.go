@@ -261,9 +261,10 @@ func (this *ConcurrentUrl) PostImport() {
 }
 
 func (this *ConcurrentUrl) Precommit(txs []uint32) []error {
-	if len(txs) == 0 {
+	if txs != nil && len(txs) == 0 { // Commit all the transactions when txs == nil
 		return []error{}
 	}
+
 	common.ParallelExecute(
 		func() { this.invIndexer.FinalizeStates() },
 		func() {

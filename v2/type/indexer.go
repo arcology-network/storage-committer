@@ -49,9 +49,20 @@ func NewIndexer(store ccurlcommon.DatastoreInterface, platform *ccurlcommon.Plat
 	return &indexer
 }
 
-func (indexer *Indexer) Init(store ccurlcommon.DatastoreInterface) {
-	indexer.store = store
-	indexer.Clear()
+func (this *Indexer) MergeFrom(other *Indexer) {
+	for k, from := range other.buffer {
+		if to, ok := this.buffer[k]; ok { // already exists
+			to.IncrementReads(from.Reads())
+			to.IncrementWrites(from.Writes())
+			to.IncrementDelta(from.DeltaWrites())
+			to.SetValue(from.Value())
+		}
+	}
+}
+
+func (this *Indexer) Init(store ccurlcommon.DatastoreInterface) {
+	this.store = store
+	this.Clear()
 }
 
 func (this *Indexer) Store() *ccurlcommon.DatastoreInterface            { return &this.store }
@@ -192,6 +203,10 @@ func (this *Indexer) Import(txTrans []ccurlcommon.UnivalueInterface, args ...int
 
 // Only keep transation within the whitelist
 func (this *Indexer) WhilteList(whitelist []uint32) []error {
+	if whitelist == nil { // Whiltelist all
+		return []error{}
+	}
+
 	dict := make(map[uint32]bool)
 	for _, txID := range whitelist {
 		dict[txID] = true

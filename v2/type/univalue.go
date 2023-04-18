@@ -19,6 +19,7 @@ type Univalue struct {
 	path        *string
 	reads       uint32
 	writes      uint32
+	deltaWrites uint32
 	value       interface{}
 	preexists   bool
 	composite   bool
@@ -117,13 +118,16 @@ func (this *Univalue) ClearReserve()                 { this.reserved = nil }
 func (this *Univalue) GetTransitionType() uint8       { return this.transitType }
 func (this *Univalue) SetTransitionType(typeID uint8) { this.transitType = typeID }
 
-func (this *Univalue) Reads() uint32   { return this.reads }
-func (this *Univalue) Writes() uint32  { return this.writes }    // Exist in cache as a failed read
+func (this *Univalue) Reads() uint32       { return this.reads }
+func (this *Univalue) Writes() uint32      { return this.writes } // Exist in cache as a failed read
+func (this *Univalue) DeltaWrites() uint32 { return this.deltaWrites }
+
 func (this *Univalue) Preexist() bool  { return this.preexists } // Exist in cache as a failed read
 func (this *Univalue) Composite() bool { return this.composite }
 
-func (this *Univalue) IncrementReads()  { this.reads++ }
-func (this *Univalue) IncrementWrites() { this.writes++ }
+func (this *Univalue) IncrementReads(reads uint32)   { this.reads += reads }
+func (this *Univalue) IncrementWrites(writes uint32) { this.writes += writes }
+func (this *Univalue) IncrementDelta(writes uint32)  { this.deltaWrites += writes }
 
 func (this *Univalue) DecrementReads() {
 	if this.reads <= uint32(0) {
@@ -186,7 +190,7 @@ func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{
 		this.composite = tempV.(ccurlcommon.TypeInterface).Composite()
 		return tempV
 	}
-	this.IncrementReads()
+	this.IncrementReads(1)
 	return this.value
 }
 

@@ -25,7 +25,11 @@ type TypeInterface interface { // value type
 }
 
 type UnivalueInterface interface { // value type
+	IncrementReads(uint32)
+	IncrementWrites(uint32)
+	IncrementDelta(uint32)
 	DecrementReads()
+
 	Set(uint32, string, interface{}, interface{}) error
 	Reset(uint32, string, interface{}, interface{}) error
 	Get(uint32, string, interface{}) interface{}
@@ -37,11 +41,12 @@ type UnivalueInterface interface { // value type
 	SetValue(interface{})
 	Reads() uint32
 	Writes() uint32
+	DeltaWrites() uint32
 	GetTransitionType() uint8
 	SetTransitionType(uint8)
 	ApplyDelta(uint32, interface{}) error
 	Preexist() bool
-	Composite() bool
+	Composite() bool // Delta writable
 	Deepcopy() interface{}
 	Export(interface{}) (interface{}, interface{})
 	GetEncoded() []byte

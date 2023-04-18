@@ -210,7 +210,7 @@ func (this *Meta) InitView() {
 func (this *Meta) Set(path string, value interface{}, source interface{}) (uint32, uint32, error) {
 	tx := source.([2]interface{})[0].(uint32)
 	indexer := source.([2]interface{})[1].(ccurlcommon.IndexerInterface)
-	subkey := path[strings.LastIndex(path[:len(path)-1], "/")+1:] // Extract the element key
+	subkey := path[strings.LastIndex(path[:len(path)-1], "/")+1:] // Extract the  key
 
 	this.InitView()                // Initialize the key view if has been done yet.
 	ok := this.view.Exists(subkey) // If exists
