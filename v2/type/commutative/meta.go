@@ -84,7 +84,7 @@ func (this *Meta) ToAccess() interface{} {
 	return nil
 }
 
-func (this *Meta) Get(path string, source interface{}) (interface{}, uint32, uint32) {
+func (this *Meta) Get(source interface{}) (interface{}, uint32, uint32) {
 	this.finalized = true
 	if !this.snapshotDirty { // cache clean
 		return this, 1, 0
@@ -202,9 +202,10 @@ func (this *Meta) InitView() {
 }
 
 // Write and afflicated operations
-func (this *Meta) Set(path string, value interface{}, source interface{}) (uint32, uint32, error) {
-	tx := source.([2]interface{})[0].(uint32)
-	indexer := source.([2]interface{})[1].(ccurlcommon.IndexerInterface)
+func (this *Meta) Set(value interface{}, source interface{}) (uint32, uint32, error) {
+	path := source.([3]interface{})[0].(string)
+	tx := source.([3]interface{})[1].(uint32)
+	indexer := source.([3]interface{})[2].(ccurlcommon.IndexerInterface)
 	subkey := path[strings.LastIndex(path[:len(path)-1], "/")+1:] // Extract the  key
 
 	this.InitView()                // Initialize the key view if has been done yet.

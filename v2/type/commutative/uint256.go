@@ -129,7 +129,7 @@ func (this *U256) isOverflowed(v0 *uint256.Int, signV0 bool, v1 *uint256.Int, si
 	return v1.Sub(v0, v1), signV0
 }
 
-func (this *U256) Get(path string, source interface{}) (interface{}, uint32, uint32) {
+func (this *U256) Get(source interface{}) (interface{}, uint32, uint32) {
 	this.finalized = true
 	temp := &U256{
 		finalized:      this.finalized,
@@ -156,7 +156,7 @@ func (this *U256) Delta() interface{} {
 }
 
 // Set delta
-func (this *U256) Set(path string, newDelta interface{}, source interface{}) (uint32, uint32, error) {
+func (this *U256) Set(newDelta interface{}, source interface{}) (uint32, uint32, error) {
 	if newDelta.(*U256).delta.Eq(UINT256ZERO) {
 		return 1, 0, nil
 	}
@@ -207,7 +207,7 @@ func (this *U256) Set(path string, newDelta interface{}, source interface{}) (ui
 // }
 
 func (this *U256) This(source interface{}) interface{} {
-	v, _, _ := this.Deepcopy().(*U256).Get("", source)
+	v, _, _ := this.Deepcopy().(*U256).Get(source)
 	return v
 }
 
@@ -224,7 +224,7 @@ func (this *U256) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 		}
 
 		if this != nil && v != nil { // Update an existent
-			if _, _, err := this.Set("", v.(*U256), nil); err != nil {
+			if _, _, err := this.Set(v.(*U256), nil); err != nil {
 				panic(err)
 			}
 		}
@@ -234,7 +234,7 @@ func (this *U256) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 		}
 	}
 
-	newValue, _, _ := this.Get("", nil)
+	newValue, _, _ := this.Get(nil)
 	*this = (*newValue.(*U256))
 	return this
 }

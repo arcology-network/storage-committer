@@ -6,9 +6,8 @@ type TypeInterface interface { // value type
 	Value() interface{}
 	Delta() interface{}
 	ToAccess() interface{}
-	Get(string, interface{}) (interface{}, uint32, uint32)
-	Set(string, interface{}, interface{}) (uint32, uint32, error)
-	// Reset(string, interface{}, interface{}) (uint32, uint32, error)
+	Get(interface{}) (interface{}, uint32, uint32)
+	Set(interface{}, interface{}) (uint32, uint32, error)
 	This(interface{}) interface{}
 	ApplyDelta(interface{}) TypeInterface
 	ConcurrentWritable() bool
@@ -31,7 +30,6 @@ type UnivalueInterface interface { // value type
 	DecrementReads()
 
 	Set(uint32, string, interface{}, interface{}) error
-	// Reset(uint32, string, interface{}, interface{}) error
 	Get(uint32, string, interface{}) interface{}
 	This(interface{}) interface{}
 	GetTx() uint32
@@ -39,9 +37,11 @@ type UnivalueInterface interface { // value type
 	SetPath(string)
 	Value() interface{}
 	SetValue(interface{})
+
 	Reads() uint32
 	Writes() uint32
 	DeltaWrites() uint32
+
 	GetTransitionType() uint8
 	SetTransitionType(uint8)
 	ApplyDelta(uint32, interface{}) error
@@ -85,9 +85,5 @@ type DatastoreInterface interface {
 	Query(string, func(string, string) bool) ([]string, [][]byte, error)
 	CacheRetrive(key string, valueTransformer func(interface{}) interface{}) (interface{}, error)
 }
-
-// type DecoderInterface interface { // value type
-// 	Decode(bytes []byte, dtype uint8) interface{}
-// }
 
 type Hasher func(TypeInterface) []byte

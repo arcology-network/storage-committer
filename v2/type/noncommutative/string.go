@@ -25,11 +25,11 @@ func (this *String) Deepcopy() interface{} {
 func (this *String) Value() interface{}    { return this }
 func (this *String) ToAccess() interface{} { return nil }
 
-func (this *String) Get(path string, source interface{}) (interface{}, uint32, uint32) {
+func (this *String) Get(source interface{}) (interface{}, uint32, uint32) {
 	return this, 1, 0
 }
 
-func (this *String) Set(path string, value interface{}, source interface{}) (uint32, uint32, error) {
+func (this *String) Set(value interface{}, source interface{}) (uint32, uint32, error) {
 	if value != nil {
 		*this = String(*(value.(*String)))
 	}
@@ -49,7 +49,7 @@ func (this *String) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 		}
 
 		if this != nil && v != nil {
-			this.Set("", v.(*String), nil)
+			this.Set(v.(*String), nil)
 		}
 
 		if this != nil && v == nil {

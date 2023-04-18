@@ -109,13 +109,7 @@ func (this *Indexer) Write(tx uint32, path string, value interface{}) error {
 		if univalue.Value() == nil && value == nil { // Try to delete something nonexistent
 			return nil
 		} else {
-			var err error
-			// if reset {
-			// 	err = univalue.Reset(tx, path, value, this)
-			// } else {
-			err = univalue.Set(tx, path, value, this)
-			// }
-
+			err := univalue.Set(tx, path, value, this)
 			if !this.platform.IsSysPath(parentPath) && tx != ccurlcommon.SYSTEM && err == nil { // System paths don't keep track of child paths
 				if parentMeta := this.GetOrInit(tx, parentPath); parentMeta != nil && parentMeta.Value() != nil {
 					err = parentMeta.Set(tx, path, univalue.Value(), this)

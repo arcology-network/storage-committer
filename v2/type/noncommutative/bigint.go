@@ -42,7 +42,7 @@ func (this *Bigint) New(value interface{}) (interface{}, error) {
 	return this, nil
 }
 
-func (this *Bigint) Get(path string, source interface{}) (interface{}, uint32, uint32) {
+func (this *Bigint) Get(source interface{}) (interface{}, uint32, uint32) {
 	return this, 1, 0
 }
 
@@ -50,7 +50,7 @@ func (this *Bigint) Delta() interface{} {
 	return this
 }
 
-func (this *Bigint) Set(path string, value interface{}, source interface{}) (uint32, uint32, error) {
+func (this *Bigint) Set(value interface{}, source interface{}) (uint32, uint32, error) {
 	if value != nil {
 		*this = Bigint(*(value.(*big.Int)))
 	}
@@ -70,7 +70,7 @@ func (this *Bigint) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 		}
 
 		if this != nil && v != nil {
-			this.Set("", v.(*Bigint), nil)
+			this.Set(v.(*Bigint), nil)
 		}
 
 		if this != nil && v == nil {

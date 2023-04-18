@@ -37,7 +37,7 @@ func (this *Uint64) ToAccess() interface{} {
 	return this
 }
 
-func (this *Uint64) Get(path string, source interface{}) (interface{}, uint32, uint32) {
+func (this *Uint64) Get(source interface{}) (interface{}, uint32, uint32) {
 	if this.delta == 0 {
 		return this, 1, 0
 	}
@@ -66,7 +66,7 @@ func (this *Uint64) Delta() interface{} {
 	}
 }
 
-func (this *Uint64) Set(path string, v interface{}, source interface{}) (uint32, uint32, error) {
+func (this *Uint64) Set(v interface{}, source interface{}) (uint32, uint32, error) {
 	this.delta += v.(*Uint64).delta
 	return 0, 1, nil
 }
@@ -84,7 +84,7 @@ func (this *Uint64) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 		}
 
 		if this != nil && v != nil {
-			this.Set("", v.(*Uint64), nil)
+			this.Set(v.(*Uint64), nil)
 		}
 
 		if this != nil && v == nil {

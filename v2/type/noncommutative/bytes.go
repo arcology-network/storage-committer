@@ -49,7 +49,7 @@ func (this *Bytes) ToAccess() interface{} {
 	return nil
 }
 
-func (this *Bytes) Get(path string, source interface{}) (interface{}, uint32, uint32) {
+func (this *Bytes) Get(source interface{}) (interface{}, uint32, uint32) {
 	return this, 1, 0
 }
 
@@ -61,7 +61,7 @@ func (this *Bytes) Delta() interface{} {
 	return this
 }
 
-func (this *Bytes) Set(path string, value interface{}, source interface{}) (uint32, uint32, error) {
+func (this *Bytes) Set(value interface{}, source interface{}) (uint32, uint32, error) {
 	if value != nil && this != value { // Avoid self copy.
 		this.data = make([]byte, len(value.(*Bytes).data))
 		copy(this.data, value.(*Bytes).data)
@@ -82,7 +82,7 @@ func (this *Bytes) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 		}
 
 		if this != nil && v != nil {
-			this.Set("", v.(*Bytes), nil)
+			this.Set(v.(*Bytes), nil)
 		}
 
 		if this != nil && v == nil {

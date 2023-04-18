@@ -184,7 +184,7 @@ func (this *Univalue) Export(source interface{}) (interface{}, interface{}) {
 
 func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{} {
 	if this.value != nil {
-		tempV, r, w := this.value.(ccurlcommon.TypeInterface).Get(path, source) //RW: Affiliated reads and writes
+		tempV, r, w := this.value.(ccurlcommon.TypeInterface).Get(source) //RW: Affiliated reads and writes
 		this.reads += r
 		this.writes += w
 		this.composite = tempV.(ccurlcommon.TypeInterface).ConcurrentWritable()
@@ -217,13 +217,7 @@ func (this *Univalue) Set(tx uint32, path string, typedV interface{}, source int
 		this.value = this.value.(ccurlcommon.TypeInterface).Deepcopy()
 	}
 
-	r, w := uint32(0), uint32(0)
-	var err error
-	// if op == ccurlcommon.WRITE {
-	r, w, err = this.value.(ccurlcommon.TypeInterface).Set(path, typedV, [2]interface{}{tx, source}) // Update one the current value
-	// } else {
-	// 	r, w, err = this.value.(ccurlcommon.TypeInterface).Reset(path, typedV, source) // Rewrite the concurrent value
-	// }
+	r, w, err := this.value.(ccurlcommon.TypeInterface).Set(typedV, [3]interface{}{path, tx, source}) // Update one the current value
 
 	this.writes += w
 	this.reads += r
@@ -235,14 +229,6 @@ func (this *Univalue) Set(tx uint32, path string, typedV interface{}, source int
 	}
 	return err
 }
-
-// func (this *Univalue) Reset(tx uint32, path string, newValue interface{}, source interface{}) error { // update the value
-// 	return this.set(tx, path, newValue, source, ccurlcommon.REWRITE)
-// }
-
-// func (this *Univalue) Set(tx uint32, path string, newValue interface{}, source interface{}) error { // update the value
-// 	return this.set(tx, path, newValue, source)
-// }
 
 // Check & Merge attributes
 func (this *Univalue) ApplyDelta(tx uint32, v interface{}) error {

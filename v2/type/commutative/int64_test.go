@@ -13,9 +13,9 @@ func TestNewInt64(t *testing.T) {
 		t.Error("Wrong value")
 	}
 
-	v.Set("", NewInt64((0), -1), nil)
-	v.Set("", NewInt64((0), 1), nil)
-	v.Set("", NewInt64((0), 1), nil)
+	v.Set(NewInt64((0), -1), nil)
+	v.Set(NewInt64((0), 1), nil)
+	v.Set(NewInt64((0), 1), nil)
 
 	if v.value == 8 {
 		t.Error("Wrong value")
