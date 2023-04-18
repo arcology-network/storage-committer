@@ -27,7 +27,7 @@ func (this *Bytes) Assign(v []byte) {
 
 func (this *Bytes) IsSelf(key interface{}) bool { return true }
 func (this *Bytes) TypeID() uint8               { return ccurlcommon.NoncommutativeBytes }
-func (this *Bytes) DeltaWritable() bool         { return false }
+func (this *Bytes) ConcurrentWritable() bool    { return false }
 
 // create a new path
 func (this *Bytes) Deepcopy() interface{} {
@@ -67,10 +67,6 @@ func (this *Bytes) Set(path string, value interface{}, source interface{}) (uint
 		copy(this.data, value.(*Bytes).data)
 	}
 	return 0, 1, nil
-}
-
-func (this *Bytes) Reset(path string, value interface{}, source interface{}) (uint32, uint32, error) {
-	return this.Set(path, value, source)
 }
 
 func (this *Bytes) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {

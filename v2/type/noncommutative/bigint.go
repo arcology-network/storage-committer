@@ -19,7 +19,7 @@ func NewBigint(v int64) interface{} {
 func (this *Bigint) IsSelf(key interface{}) bool         { return true }
 func (this *Bigint) TypeID() uint8                       { return uint8(ccurlcommon.NoncommutativeBigint) }
 func (this *Bigint) This(source interface{}) interface{} { return this }
-func (this *Bigint) DeltaWritable() bool                 { return false }
+func (this *Bigint) ConcurrentWritable() bool            { return false }
 func (this *Bigint) Value() interface{}                  { return this }
 func (this *Bigint) ToAccess() interface{}               { return nil }
 
@@ -55,10 +55,6 @@ func (this *Bigint) Set(path string, value interface{}, source interface{}) (uin
 		*this = Bigint(*(value.(*big.Int)))
 	}
 	return 0, 1, nil
-}
-
-func (this *Bigint) Reset(path string, value interface{}, source interface{}) (uint32, uint32, error) {
-	return this.Set(path, value, source)
 }
 
 func (this *Bigint) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {

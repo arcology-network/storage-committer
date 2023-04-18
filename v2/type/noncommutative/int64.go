@@ -13,7 +13,7 @@ func NewInt64(v int64) interface{} {
 
 func (this *Int64) IsSelf(key interface{}) bool         { return true }
 func (this *Int64) TypeID() uint8                       { return ccurlcommon.NoncommutativeInt64 }
-func (this *Int64) DeltaWritable() bool                 { return false }
+func (this *Int64) ConcurrentWritable() bool            { return false }
 func (this *Int64) This(source interface{}) interface{} { return this }
 func (this *Int64) Delta() interface{}                  { return this }
 
@@ -40,10 +40,6 @@ func (this *Int64) Set(path string, value interface{}, source interface{}) (uint
 		*this = Int64(*(value.(*Int64)))
 	}
 	return 0, 1, nil
-}
-
-func (this *Int64) Reset(path string, value interface{}, source interface{}) (uint32, uint32, error) {
-	return this.Set(path, value, source)
 }
 
 func (this *Int64) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {

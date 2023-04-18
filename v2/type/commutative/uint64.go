@@ -71,13 +71,6 @@ func (this *Uint64) Set(path string, v interface{}, source interface{}) (uint32,
 	return 0, 1, nil
 }
 
-func (this *Uint64) Reset(path string, v interface{}, source interface{}) (uint32, uint32, error) {
-	this.value = 0
-	this.delta = v.(uint64) // This is by design
-	this.finalized = true
-	return 0, 1, nil
-}
-
 func (this *Uint64) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 	vec := v.([]ccurlcommon.UnivalueInterface)
 	for i := 0; i < len(vec); i++ {
@@ -108,7 +101,7 @@ func (this *Uint64) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 	return this
 }
 
-func (this *Uint64) DeltaWritable() bool { return !this.finalized }
+func (this *Uint64) ConcurrentWritable() bool { return !this.finalized }
 
 func (this *Uint64) Purge() {
 	this.finalized = false

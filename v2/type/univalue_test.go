@@ -46,7 +46,7 @@ func TestUnivalueEncodeDecode(t *testing.T) {
 	// 		in[i].Writes() != out[i].Writes() ||
 	// 		!reflect.DeepEqual(in[i].Value(), out[i].Value()) ||
 	// 		in[i].Preexist() != out[i].Preexist() ||
-	// 		in[i].DeltaWritable() != out[i].DeltaWritable() {
+	// 		in[i].ConcurrentWritable() != out[i].ConcurrentWritable() {
 	// 		fmt.Println(in[i])
 	// 		fmt.Println(out[i])
 	// 		t.Error("Error")

@@ -8,10 +8,10 @@ type TypeInterface interface { // value type
 	ToAccess() interface{}
 	Get(string, interface{}) (interface{}, uint32, uint32)
 	Set(string, interface{}, interface{}) (uint32, uint32, error)
-	Reset(string, interface{}, interface{}) (uint32, uint32, error)
+	// Reset(string, interface{}, interface{}) (uint32, uint32, error)
 	This(interface{}) interface{}
 	ApplyDelta(interface{}) TypeInterface
-	DeltaWritable() bool
+	ConcurrentWritable() bool
 	IsSelf(interface{}) bool
 	Hash(func([]byte) []byte) []byte
 	Encode() []byte
@@ -31,7 +31,7 @@ type UnivalueInterface interface { // value type
 	DecrementReads()
 
 	Set(uint32, string, interface{}, interface{}) error
-	Reset(uint32, string, interface{}, interface{}) error
+	// Reset(uint32, string, interface{}, interface{}) error
 	Get(uint32, string, interface{}) interface{}
 	This(interface{}) interface{}
 	GetTx() uint32
@@ -46,7 +46,7 @@ type UnivalueInterface interface { // value type
 	SetTransitionType(uint8)
 	ApplyDelta(uint32, interface{}) error
 	Preexist() bool
-	DeltaWritable() bool // Delta writable
+	ConcurrentWritable() bool // Delta writable
 	Deepcopy() interface{}
 	Export(interface{}) (interface{}, interface{})
 	GetEncoded() []byte
@@ -59,7 +59,7 @@ type UnivalueInterface interface { // value type
 type IndexerInterface interface {
 	Read(uint32, string) interface{}
 	Peek(path string) (interface{}, bool)
-	Write(uint32, string, interface{}, bool) error
+	Write(uint32, string, interface{}) error
 	Insert(string, interface{})
 
 	RetriveShallow(string) interface{}

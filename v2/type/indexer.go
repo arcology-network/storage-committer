@@ -102,7 +102,7 @@ func (this *Indexer) Peek(path string) (interface{}, bool) {
 	return this.RetriveShallow(path), false
 }
 
-func (this *Indexer) Write(tx uint32, path string, value interface{}, reset bool) error {
+func (this *Indexer) Write(tx uint32, path string, value interface{}) error {
 	parentPath := ccurlcommon.GetParentPath(path)
 	if this.IfExists(parentPath) || tx == ccurlcommon.SYSTEM { // The parent path exists or to inject the path directly
 		univalue := this.GetOrInit(tx, path)         // Get a univalue wrapper
@@ -110,11 +110,11 @@ func (this *Indexer) Write(tx uint32, path string, value interface{}, reset bool
 			return nil
 		} else {
 			var err error
-			if reset {
-				err = univalue.Reset(tx, path, value, this)
-			} else {
-				err = univalue.Set(tx, path, value, this)
-			}
+			// if reset {
+			// 	err = univalue.Reset(tx, path, value, this)
+			// } else {
+			err = univalue.Set(tx, path, value, this)
+			// }
 
 			if !this.platform.IsSysPath(parentPath) && tx != ccurlcommon.SYSTEM && err == nil { // System paths don't keep track of child paths
 				if parentMeta := this.GetOrInit(tx, parentPath); parentMeta != nil && parentMeta.Value() != nil {

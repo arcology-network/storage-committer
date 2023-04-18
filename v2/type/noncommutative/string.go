@@ -15,7 +15,7 @@ func (this *String) IsSelf(key interface{}) bool         { return true }
 func (this *String) TypeID() uint8                       { return uint8(ccurlcommon.NoncommutativeString) }
 func (this *String) This(source interface{}) interface{} { return this }
 func (this *String) Delta() interface{}                  { return this }
-func (this *String) DeltaWritable() bool                 { return false }
+func (this *String) ConcurrentWritable() bool            { return false }
 
 func (this *String) Deepcopy() interface{} {
 	value := *this
@@ -34,10 +34,6 @@ func (this *String) Set(path string, value interface{}, source interface{}) (uin
 		*this = String(*(value.(*String)))
 	}
 	return 0, 1, nil
-}
-
-func (this *String) Reset(path string, value interface{}, source interface{}) (uint32, uint32, error) {
-	return this.Set(path, value, source)
 }
 
 func (this *String) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {

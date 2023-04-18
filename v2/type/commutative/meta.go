@@ -50,7 +50,7 @@ func NewMeta(path string) (interface{}, error) {
 
 func (this *Meta) View() *orderedset.OrderedSet { return this.view }
 func (this *Meta) IsSelf(key interface{}) bool  { return ccurlcommon.IsPath(key.(string)) }
-func (this *Meta) DeltaWritable() bool          { return !this.finalized }
+func (this *Meta) ConcurrentWritable() bool     { return !this.finalized }
 func (this *Meta) TypeID() uint8                { return ccurlcommon.CommutativeMeta }
 func (this *Meta) CommittedLength() int         { return len(this.committedKeys) }
 func (this *Meta) Length() int {
@@ -190,11 +190,6 @@ func (this *Meta) This(source interface{}) interface{} {
 	return this
 }
 
-func (this *Meta) Reset(path string, value interface{}, source interface{}) (uint32, uint32, error) {
-	panic("Error: This function should never be called!!")
-	// return 0, 1, nil
-}
-
 // Load keys into an orderedmap for quick access, only happens at once
 func (this *Meta) InitView() {
 	if this.view != nil { // Keys have been loaded already.
@@ -224,7 +219,7 @@ func (this *Meta) Set(path string, value interface{}, source interface{}) (uint3
 
 	if value == nil && ccurlcommon.IsPath(path) { // Delete the whole path
 		for _, subpath := range this.Value().([]string) { // Get all the sub paths
-			indexer.Write(tx, path+subpath, nil, false) // Remove all the sub paths.
+			indexer.Write(tx, path+subpath, nil) // Remove all the sub paths.
 		}
 		return 0, 1, nil
 	}

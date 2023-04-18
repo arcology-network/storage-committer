@@ -38,7 +38,7 @@ type U256 struct {
 }
 
 func (this *U256) IsSelf(key interface{}) bool { return true }
-func (this *U256) DeltaWritable() bool         { return !this.finalized }
+func (this *U256) ConcurrentWritable() bool    { return !this.finalized }
 func (this *U256) TypeID() uint8               { return ccurlcommon.CommutativeUint256 }
 
 func NewU256(value, min, max *uint256.Int) interface{} {
@@ -179,32 +179,32 @@ func (this *U256) Set(path string, newDelta interface{}, source interface{}) (ui
 	return 0, 1, errors.New("Error: Value out of range")
 }
 
-func (this *U256) Reset(path string, v interface{}, source interface{}) (uint32, uint32, error) {
-	this.finalized = true
-	b := v.(*U256)
-	if b.value != nil {
-		this.value = b.value
-	}
+// func (this *U256) Reset(path string, v interface{}, source interface{}) (uint32, uint32, error) {
+// 	this.finalized = true
+// 	b := v.(*U256)
+// 	if b.value != nil {
+// 		this.value = b.value
+// 	}
 
-	if this.value == nil {
-		this.value = uint256.NewInt(0)
-	}
+// 	if this.value == nil {
+// 		this.value = uint256.NewInt(0)
+// 	}
 
-	if b.delta != nil {
-		this.delta = b.delta
-	} else {
-		this.delta = uint256.NewInt(0)
-	}
+// 	if b.delta != nil {
+// 		this.delta = b.delta
+// 	} else {
+// 		this.delta = uint256.NewInt(0)
+// 	}
 
-	if b.min != nil {
-		this.min = b.min
-	}
-	if b.max != nil {
-		this.max = b.max
-	}
+// 	if b.min != nil {
+// 		this.min = b.min
+// 	}
+// 	if b.max != nil {
+// 		this.max = b.max
+// 	}
 
-	return 0, 1, nil
-}
+// 	return 0, 1, nil
+// }
 
 func (this *U256) This(source interface{}) interface{} {
 	v, _, _ := this.Deepcopy().(*U256).Get("", source)
@@ -224,14 +224,8 @@ func (this *U256) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 		}
 
 		if this != nil && v != nil { // Update an existent
-			if v.(*U256).DeltaWritable() {
-				if _, _, err := this.Set("", v.(*U256), nil); err != nil {
-					panic(err)
-				}
-			} else {
-				if _, _, err := this.Reset("", v.(*U256), nil); err != nil {
-					panic(err)
-				}
+			if _, _, err := this.Set("", v.(*U256), nil); err != nil {
+				panic(err)
 			}
 		}
 

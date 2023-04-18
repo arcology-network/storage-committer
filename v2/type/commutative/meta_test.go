@@ -31,7 +31,7 @@ func TestCodecPathMeta(t *testing.T) {
 	if !reflect.DeepEqual(in.(*Meta).Value().([]interface{}), out.Keys()) ||
 		!reflect.DeepEqual(in.(*Meta).Added(), out.Added()) ||
 		!reflect.DeepEqual(in.(*Meta).Removed(), out.Removed()) ||
-		!reflect.DeepEqual(in.(*Meta).DeltaWritable(), out.DeltaWritable()) {
+		!reflect.DeepEqual(in.(*Meta).ConcurrentWritable(), out.ConcurrentWritable()) {
 		t.Error()
 	}
 }

@@ -107,7 +107,7 @@ func (this *ConcurrentUrl) CreateAccount(tx uint32, platform string, acct string
 		}
 
 		if !this.indexer.IfExists(p) {
-			err = this.indexer.Write(tx, p, v, true) // root path
+			err = this.indexer.Write(tx, p, v) // root path
 		}
 	}
 	return err
@@ -127,21 +127,26 @@ func (this *ConcurrentUrl) Read(tx uint32, path string) (interface{}, error) {
 }
 
 func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}) error {
-	return this.write(tx, path, value, false)
-}
-
-func (this *ConcurrentUrl) Rewrite(tx uint32, path string, value interface{}) error {
-	return this.write(tx, path, value, true)
-}
-
-func (this *ConcurrentUrl) write(tx uint32, path string, value interface{}, reset bool) error {
 	if value != nil {
 		if id := (&ccurltype.Univalue{}).GetTypeID(value); id == uint8(reflect.Invalid) {
 			return errors.New("Error: Unknown data type !")
 		}
 	}
-	return this.indexer.Write(tx, path, value, reset)
+	return this.indexer.Write(tx, path, value)
 }
+
+// func (this *ConcurrentUrl) Rewrite(tx uint32, path string, value interface{}) error {
+// 	return this.write(tx, path, value, true)
+// }
+
+// func (this *ConcurrentUrl) write(tx uint32, path string, value interface{}, reset bool) error {
+// 	if value != nil {
+// 		if id := (&ccurltype.Univalue{}).GetTypeID(value); id == uint8(reflect.Invalid) {
+// 			return errors.New("Error: Unknown data type !")
+// 		}
+// 	}
+// 	return this.indexer.Write(tx, path, value, reset)
+// }
 
 // Read th Nth element under a path
 func (this *ConcurrentUrl) at(tx uint32, path string, idx uint64) (interface{}, error) {
