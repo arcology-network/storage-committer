@@ -26,16 +26,17 @@ type Univalue struct {
 	reclaimFunc func(interface{})
 }
 
-func NewUnivalue(tx uint32, key string, reads, writes uint32, args ...interface{}) *Univalue {
+func NewUnivalue(tx uint32, key string, reads, writes uint32, deltaWrites uint32, args ...interface{}) *Univalue {
 	v := &Univalue{
-		vType:     (&Univalue{}).GetTypeID(args[0]),
-		tx:        tx,
-		path:      &key,
-		reads:     reads,
-		writes:    writes,
-		value:     args[0],
-		preexists: false,
-		composite: false,
+		vType:       (&Univalue{}).GetTypeID(args[0]),
+		tx:          tx,
+		path:        &key,
+		reads:       reads,
+		writes:      writes,
+		deltaWrites: deltaWrites,
+		value:       args[0],
+		preexists:   false,
+		composite:   false,
 	}
 
 	if len(args) > 1 {
@@ -190,31 +191,35 @@ func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{
 
 func (this *Univalue) This(source interface{}) interface{} {
 	if this.value != nil {
-		return this.value.(ccurlcommon.TypeInterface).This(source)
+		return this.value.(ccurlcommon.TypeInterface).Latest(source)
 	}
 	return this.value
 }
 
 func (this *Univalue) Set(tx uint32, path string, typedV interface{}, source interface{}) error { // update the value
 	this.tx = tx
-	this.writes++
 	if this.Value() == nil { // Added a new value or try to delete an non-existent value
 		if typedV != nil {
 			this.vType = typedV.(ccurlcommon.TypeInterface).TypeID()
-			this.value = typedV
+			v, r, w, dw := typedV.(ccurlcommon.TypeInterface).CopyTo(typedV)
+			this.value = v
+			this.writes += w
+			this.reads += r
+			this.deltaWrites += dw
 		}
 		return nil
 	}
-	this.writes-- // Reset writes
 
 	if this.writes == 0 && this.value != nil && typedV != nil { // Make a deep copy if haven't done so
 		this.value = this.value.(ccurlcommon.TypeInterface).Deepcopy()
 	}
 
-	r, w, err := this.value.(ccurlcommon.TypeInterface).Set(typedV, [3]interface{}{path, tx, source}) // Update one the current value
+	v, r, w, dw, err := this.value.(ccurlcommon.TypeInterface).Set(typedV, [3]interface{}{path, tx, source}) // Update one the current value
 
+	this.value = v
 	this.writes += w
 	this.reads += r
+	this.deltaWrites += dw
 
 	if typedV == nil && this.Value().(ccurlcommon.TypeInterface).IsSelf(path) { // Delete the entry but keep the access record.
 		this.vType = uint8(reflect.Invalid)

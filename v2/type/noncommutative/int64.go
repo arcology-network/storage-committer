@@ -11,11 +11,15 @@ func NewInt64(v int64) interface{} {
 	return &this
 }
 
-func (this *Int64) IsSelf(key interface{}) bool         { return true }
-func (this *Int64) TypeID() uint8                       { return ccurlcommon.NoncommutativeInt64 }
-func (this *Int64) ConcurrentWritable() bool            { return false }
-func (this *Int64) This(source interface{}) interface{} { return this }
-func (this *Int64) Delta() interface{}                  { return this }
+func (this *Int64) IsSelf(key interface{}) bool           { return true }
+func (this *Int64) TypeID() uint8                         { return ccurlcommon.NoncommutativeInt64 }
+func (this *Int64) ConcurrentWritable() bool              { return false }
+func (this *Int64) Latest(source interface{}) interface{} { return this }
+func (this *Int64) Delta() interface{}                    { return this }
+
+func (this *Int64) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
+	return v, 0, 1, 0
+}
 
 // create a new path
 func (this *Int64) Deepcopy() interface{} {
@@ -35,11 +39,11 @@ func (this *Int64) Get(source interface{}) (interface{}, uint32, uint32) {
 	return this, 1, 0
 }
 
-func (this *Int64) Set(value interface{}, source interface{}) (uint32, uint32, error) {
+func (this *Int64) Set(value interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
 	if value != nil {
 		*this = Int64(*(value.(*Int64)))
 	}
-	return 0, 1, nil
+	return this, 0, 1, 0, nil
 }
 
 func (this *Int64) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {

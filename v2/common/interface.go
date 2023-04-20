@@ -1,14 +1,16 @@
 package common
 
 type TypeInterface interface { // value type
+
 	TypeID() uint8
 	Deepcopy() interface{}
 	Value() interface{}
 	Delta() interface{}
 	ToAccess() interface{}
 	Get(interface{}) (interface{}, uint32, uint32)
-	Set(interface{}, interface{}) (uint32, uint32, error)
-	This(interface{}) interface{}
+	Set(interface{}, interface{}) (interface{}, uint32, uint32, uint32, error)
+	CopyTo(interface{}) (interface{}, uint32, uint32, uint32)
+	Latest(interface{}) interface{}
 	ApplyDelta(interface{}) TypeInterface
 	ConcurrentWritable() bool
 	IsSelf(interface{}) bool

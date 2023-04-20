@@ -30,6 +30,7 @@ func (this *Univalue) Size() uint32 {
 		uint32(len(*this.path)) + // codec.String(*this.path).Size() +
 		uint32(4) + // codec.Uint32(this.reads).Size() +
 		uint32(4) + // codec.Uint32(this.writes).Size() +
+		uint32(4) + // codec.Uint32(this.deltaWrites).Size() +
 		(vLen) +
 		uint32(1) + // codec.Bool(this.preexists).Size() +
 		uint32(1) // codec.Bool(this.composite).Size()
@@ -52,6 +53,7 @@ func (this *Univalue) FillHeader(buffer []byte) int {
 			codec.String(*this.path).Size(),
 			codec.Uint32(this.reads).Size(),
 			codec.Uint32(this.writes).Size(),
+			codec.Uint32(this.deltaWrites).Size(),
 			vLen,
 			codec.Bool(this.preexists).Size(),
 			codec.Bool(this.composite).Size(),
@@ -66,6 +68,7 @@ func (this *Univalue) EncodeToBuffer(buffer []byte) int {
 	offset += codec.String(*this.path).EncodeToBuffer(buffer[offset:])
 	offset += codec.Uint32(this.reads).EncodeToBuffer(buffer[offset:])
 	offset += codec.Uint32(this.writes).EncodeToBuffer(buffer[offset:])
+	offset += codec.Uint32(this.deltaWrites).EncodeToBuffer(buffer[offset:])
 	if this.value != nil {
 		offset += codec.Bytes(this.value.(ccurlcommon.TypeInterface).Encode()).EncodeToBuffer(buffer[offset:])
 	}
@@ -87,10 +90,12 @@ func (this *Univalue) Decode(buffer []byte) interface{} {
 	this.path = &key
 	this.reads = uint32(codec.Uint32(1).Decode(fields[3]).(codec.Uint32))
 	this.writes = uint32(codec.Uint32(1).Decode(fields[4]).(codec.Uint32))
-	this.value = (&Decoder{}).Decode(fields[5], this.vType)
-	this.preexists = bool(codec.Bool(true).Decode(fields[6]).(codec.Bool))
-	this.composite = bool(codec.Bool(true).Decode(fields[7]).(codec.Bool))
-	this.reserved = fields[5] // For merkle root calculation
+	this.deltaWrites = uint32(codec.Uint32(1).Decode(fields[5]).(codec.Uint32))
+
+	this.value = (&Decoder{}).Decode(fields[6], this.vType)
+	this.preexists = bool(codec.Bool(true).Decode(fields[7]).(codec.Bool))
+	this.composite = bool(codec.Bool(true).Decode(fields[8]).(codec.Bool))
+	this.reserved = fields[6] // For merkle root calculation
 
 	if this.value == nil || this.IsCommutative() {
 		this.reserved = nil
@@ -125,6 +130,7 @@ func (this *Univalue) GetEncodedSize() []int {
 		int(codec.String(*this.path).Size()),
 		int(codec.Uint32(this.reads).Size()),
 		int(codec.Uint32(this.writes).Size()),
+		int(codec.Uint32(this.deltaWrites).Size()),
 		len(vBytes),
 		int(codec.Bool(this.preexists).Size()),
 		int(codec.Bool(this.composite).Size()),
@@ -141,9 +147,10 @@ func (this *Univalue) GobDecode(data []byte) error {
 	this.composite = v.composite
 	this.path = v.path
 	this.preexists = v.preexists
-	this.reads = v.reads
 	this.tx = v.tx
 	this.value = v.value
+	this.reads = v.reads
 	this.writes = v.writes
+	this.deltaWrites = v.deltaWrites
 	return nil
 }

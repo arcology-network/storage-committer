@@ -46,35 +46,35 @@ func TestNewU256(t *testing.T) {
 func TestU256(t *testing.T) {
 	v := NewU256(uint256.NewInt(5), uint256.NewInt(4), uint256.NewInt(6))
 	delta := NewU256Delta(uint256.NewInt(0), true)
-	if _, _, err := v.(*U256).Set(delta, nil); err != nil {
+	if _, _, _, _, err := v.(*U256).Set(delta, nil); err != nil {
 		t.Error(err)
 	}
 
 	delta = NewU256Delta(uint256.NewInt(1), true)
-	if _, _, err := v.(*U256).Set(delta, nil); err != nil {
+	if _, _, _, _, err := v.(*U256).Set(delta, nil); err != nil {
 		t.Error(err)
 	}
 
 	delta = NewU256Delta(uint256.NewInt(0), true)
-	if _, _, err := v.(*U256).Set(delta, nil); err != nil {
+	if _, _, _, _, err := v.(*U256).Set(delta, nil); err != nil {
 		t.Error(err)
 	}
 
 	delta = NewU256Delta(uint256.NewInt(1), true)
-	if _, _, err := v.(*U256).Set(delta, nil); err == nil {
+	if _, _, _, _, err := v.(*U256).Set(delta, nil); err == nil {
 		t.Error("Error: Should have failed")
 	}
 
 	delta = NewU256Delta(uint256.NewInt(1), true)
-	if _, _, err := v.(*U256).Set(delta, nil); err == nil {
+	if _, _, _, _, err := v.(*U256).Set(delta, nil); err == nil {
 		t.Error(err)
 	}
 
-	if _, _, err := v.(*U256).Set(delta, nil); err == nil {
+	if _, _, _, _, err := v.(*U256).Set(delta, nil); err == nil {
 		t.Error("Error: Should have failed")
 	}
 
-	finalized, _, _ := v.(*U256).Get("", nil)
+	finalized, _, _ := v.(*U256).Get(nil)
 	if finalized.(*U256).value.ToBig().Uint64() != 6 {
 		t.Error("Error: Should have failed")
 	}
@@ -83,27 +83,27 @@ func TestU256(t *testing.T) {
 func TestU256DeltaOutRange(t *testing.T) {
 	v := NewU256(uint256.NewInt(50), uint256.NewInt(40), uint256.NewInt(60))
 	delta := NewU256Delta(uint256.NewInt(0), true)
-	if _, _, err := v.(*U256).Set(delta, nil); err != nil {
+	if _, _, _, _, err := v.(*U256).Set(delta, nil); err != nil {
 		t.Error(err)
 	}
 
 	delta = NewU256Delta(uint256.NewInt(10), false)
-	if _, _, err := v.(*U256).Set(delta, nil); err != nil {
+	if _, _, _, _, err := v.(*U256).Set(delta, nil); err != nil {
 		t.Error(err)
 	}
 
 	delta = NewU256Delta(uint256.NewInt(40), false)
-	if _, _, err := v.(*U256).Set(delta, nil); err != nil {
+	if _, _, _, _, err := v.(*U256).Set(delta, nil); err != nil {
 		t.Error(err)
 	}
 
 	delta = NewU256Delta(uint256.NewInt(0), false)
-	if _, _, err := v.(*U256).Set(delta, nil); err != nil {
+	if _, _, _, _, err := v.(*U256).Set(delta, nil); err != nil {
 		t.Error("Error: Should have failed")
 	}
 
 	delta = NewU256Delta(uint256.NewInt(1), false)
-	if _, _, err := v.(*U256).Set(delta, nil); err == nil {
+	if _, _, _, _, err := v.(*U256).Set(delta, nil); err == nil {
 		t.Error("Error: Should have failed")
 	}
 
@@ -144,15 +144,15 @@ func TestCodec(t *testing.T) {
 // func TestGet(t *testing.T) {
 // 	balance := NewU256(uint256.NewInt(5), big.NewInt(0)).(*U256)
 
-// 	if _, _, err := balance.Set( NewU256(nil, big.NewInt(-2)), nil); err != nil {
+// 	if _, _, _, _, err := balance.Set( NewU256(nil, big.NewInt(-2)), nil); err != nil {
 // 		t.Error(err)
 // 	}
 
-// 	if _, _, err := balance.Set( NewU256(nil, big.NewInt(-1)), nil); err != nil {
+// 	if _, _, _, _, err := balance.Set( NewU256(nil, big.NewInt(-1)), nil); err != nil {
 // 		t.Error(err)
 // 	}
 
-// 	if _, _, err := balance.Set( NewU256(nil, big.NewInt(3)), nil); err != nil {
+// 	if _, _, _, _, err := balance.Set( NewU256(nil, big.NewInt(3)), nil); err != nil {
 // 		t.Error(err)
 // 	}
 

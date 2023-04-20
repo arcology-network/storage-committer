@@ -7,7 +7,7 @@ import (
 func TestNewUint64(t *testing.T) {
 	v := NewUint64((5), (0)).(*Uint64)
 
-	final, _, _ := v.Get("", nil)
+	final, _, _ := v.Get(nil)
 	if final.(*Uint64).value != 5 || final.(*Uint64).finalized == true {
 		t.Error("Wrong value")
 	}
@@ -20,7 +20,7 @@ func TestNewUint64(t *testing.T) {
 		t.Error("Wrong value")
 	}
 
-	final, _, _ = v.Get("", nil)
+	final, _, _ = v.Get(nil)
 	if final.(*Uint64).value != 8 || final.(*Uint64).delta != 0 {
 		t.Error("Wrong value")
 	}

@@ -11,11 +11,15 @@ func NewString(v string) interface{} {
 	return &this
 }
 
-func (this *String) IsSelf(key interface{}) bool         { return true }
-func (this *String) TypeID() uint8                       { return uint8(ccurlcommon.NoncommutativeString) }
-func (this *String) This(source interface{}) interface{} { return this }
-func (this *String) Delta() interface{}                  { return this }
-func (this *String) ConcurrentWritable() bool            { return false }
+func (this *String) IsSelf(key interface{}) bool           { return true }
+func (this *String) TypeID() uint8                         { return uint8(ccurlcommon.NoncommutativeString) }
+func (this *String) Latest(source interface{}) interface{} { return this }
+func (this *String) Delta() interface{}                    { return this }
+func (this *String) ConcurrentWritable() bool              { return false }
+
+func (this *String) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
+	return v, 0, 1, 0
+}
 
 func (this *String) Deepcopy() interface{} {
 	value := *this
@@ -29,11 +33,11 @@ func (this *String) Get(source interface{}) (interface{}, uint32, uint32) {
 	return this, 1, 0
 }
 
-func (this *String) Set(value interface{}, source interface{}) (uint32, uint32, error) {
+func (this *String) Set(value interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
 	if value != nil {
 		*this = String(*(value.(*String)))
 	}
-	return 0, 1, nil
+	return this, 0, 1, 0, nil
 }
 
 func (this *String) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {

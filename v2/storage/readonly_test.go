@@ -21,7 +21,7 @@ func TestReadonlyStorageLocal(t *testing.T) {
 	values := []interface{}{}
 	for i := 0; i < 8; i++ { // 8 in the server db
 		keys = append(keys, fmt.Sprint(i))
-		v := ccurltype.NewUnivalue(uint32(i), fmt.Sprint(i), 1, 1, noncommutative.NewInt64(int64(i)))
+		v := ccurltype.NewUnivalue(uint32(i), fmt.Sprint(i), 1, 1, 2, noncommutative.NewInt64(int64(i)))
 		values = append(values, v)
 
 		persistentDB.Set(fmt.Sprint(i), ccurltype.ToBytes(noncommutative.NewInt64(int64(i)))) // save to the DB directly
@@ -34,7 +34,7 @@ func TestReadonlyStorageLocal(t *testing.T) {
 	values1 := []interface{}{}
 	for i := 0; i < 8; i++ { // 8 in the server db
 		keys1 = append(keys1, fmt.Sprint(i))
-		values1 = append(values1, ccurltype.NewUnivalue(uint32(i), fmt.Sprint(i), 1, 1, noncommutative.NewInt64(int64(i))))
+		values1 = append(values1, ccurltype.NewUnivalue(uint32(i), fmt.Sprint(i), 1, 1, 2, noncommutative.NewInt64(int64(i))))
 	}
 
 	placeholderEncoder := func(v interface{}) []byte { return ccurltype.ToBytes(v) }
@@ -82,7 +82,7 @@ func TestReadonlyStorageRemote(t *testing.T) {
 	values := []interface{}{}
 	for i := 0; i < 8; i++ { // 8 in the server db
 		keys = append(keys, fmt.Sprint(i))
-		v := ccurltype.NewUnivalue(uint32(i), fmt.Sprint(i), 1, 1, noncommutative.NewInt64(int64(i)))
+		v := ccurltype.NewUnivalue(uint32(i), fmt.Sprint(i), 1, 1, 2, noncommutative.NewInt64(int64(i)))
 		values = append(values, v)
 		persistentDB.Set(fmt.Sprint(i), ccurltype.ToBytes(noncommutative.NewInt64(int64(i)))) // save to the DB directly
 	}
@@ -100,7 +100,7 @@ func TestReadonlyStorageRemote(t *testing.T) {
 	values1 := []interface{}{}
 	for i := 0; i < 8; i++ { // 8 in the server db
 		keys1 = append(keys1, fmt.Sprint(i))
-		values1 = append(values1, ccurltype.NewUnivalue(uint32(i), fmt.Sprint(i), 1, 1, noncommutative.NewInt64(int64(i))))
+		values1 = append(values1, ccurltype.NewUnivalue(uint32(i), fmt.Sprint(i), 1, 1, 2, noncommutative.NewInt64(int64(i))))
 	}
 
 	proxyEncoder := func(v interface{}) []byte { return ccurltype.ToBytes(v) }

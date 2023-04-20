@@ -29,6 +29,10 @@ func NewInt64Delta(delta int64) interface{} {
 func (this *Int64) TypeID() uint8               { return ccurlcommon.CommutativeInt64 }
 func (this *Int64) IsSelf(key interface{}) bool { return true }
 
+func (this *Int64) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
+	return v, 0, 1, 0
+}
+
 func (this *Int64) Deepcopy() interface{} {
 	return &Int64{
 		this.finalized,
@@ -58,7 +62,7 @@ func (this *Int64) Get(source interface{}) (interface{}, uint32, uint32) {
 	}, 1, 1
 }
 
-func (this *Int64) This(source interface{}) interface{} {
+func (this *Int64) Latest(source interface{}) interface{} {
 	return &Int64{
 		this.finalized,
 		this.value + this.delta,
@@ -74,9 +78,9 @@ func (this *Int64) Delta() interface{} {
 	}
 }
 
-func (this *Int64) Set(v interface{}, source interface{}) (uint32, uint32, error) {
+func (this *Int64) Set(v interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
 	this.delta += v.(*Int64).delta
-	return 0, 1, nil
+	return this, 0, 1, 0, nil
 }
 
 func (this *Int64) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {

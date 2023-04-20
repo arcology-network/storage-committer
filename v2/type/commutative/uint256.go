@@ -37,10 +37,6 @@ type U256 struct {
 	deltaPossitive bool
 }
 
-func (this *U256) IsSelf(key interface{}) bool { return true }
-func (this *U256) ConcurrentWritable() bool    { return !this.finalized }
-func (this *U256) TypeID() uint8               { return ccurlcommon.CommutativeUint256 }
-
 func NewU256(value, min, max *uint256.Int) interface{} {
 	if value.Cmp(min) == -1 || value.Cmp(max) == 1 || max.Cmp(min) == -1 {
 		return nil
@@ -53,6 +49,13 @@ func NewU256(value, min, max *uint256.Int) interface{} {
 		max:            max,
 		deltaPossitive: true, // positive delta by default
 	}
+}
+
+func (this *U256) IsSelf(key interface{}) bool { return true }
+func (this *U256) ConcurrentWritable() bool    { return !this.finalized }
+func (this *U256) TypeID() uint8               { return ccurlcommon.CommutativeUint256 }
+func (this *U256) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
+	return v, 0, 1, 0
 }
 
 func NewU256FromBytes(value []byte, min, max []byte) interface{} {
@@ -151,62 +154,33 @@ func (this *U256) Get(source interface{}) (interface{}, uint32, uint32) {
 	return temp, 1, 1
 }
 
-func (this *U256) Delta() interface{} {
-	return this
-}
+func (this *U256) Delta() interface{} { return this }
 
 // Set delta
-func (this *U256) Set(newDelta interface{}, source interface{}) (uint32, uint32, error) {
+func (this *U256) Set(newDelta interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
 	if newDelta.(*U256).delta.Eq(UINT256ZERO) {
-		return 1, 0, nil
+		return this, 0, 1, 0, nil
 	}
 
 	accumDelta, accumSign := this.isOverflowed(this.delta.Clone(), this.deltaPossitive, newDelta.(*U256).delta, newDelta.(*U256).deltaPossitive)
 	if accumDelta == nil {
-		return 0, 1, errors.New("Error: Value out of range")
+		return this, 0, 0, 1, errors.New("Error: Value out of range")
 	}
 
 	tempV, deltaPossitive := this.isOverflowed(this.value.Clone(), true, accumDelta.Clone(), accumSign)
 	if tempV == nil || !deltaPossitive {
-		return 0, 1, errors.New("Error: Value out of range")
+		return this, 0, 0, 1, errors.New("Error: Value out of range")
 	}
 
 	if this.min.Cmp(tempV) < 1 && tempV.Cmp(this.max) < 1 {
 		this.delta = accumDelta
 		this.deltaPossitive = deltaPossitive
-		return 0, 1, nil
+		return this, 0, 0, 1, nil
 	}
-	return 0, 1, errors.New("Error: Value out of range")
+	return this, 0, 0, 1, errors.New("Error: Value out of range")
 }
 
-// func (this *U256) Reset(path string, v interface{}, source interface{}) (uint32, uint32, error) {
-// 	this.finalized = true
-// 	b := v.(*U256)
-// 	if b.value != nil {
-// 		this.value = b.value
-// 	}
-
-// 	if this.value == nil {
-// 		this.value = uint256.NewInt(0)
-// 	}
-
-// 	if b.delta != nil {
-// 		this.delta = b.delta
-// 	} else {
-// 		this.delta = uint256.NewInt(0)
-// 	}
-
-// 	if b.min != nil {
-// 		this.min = b.min
-// 	}
-// 	if b.max != nil {
-// 		this.max = b.max
-// 	}
-
-// 	return 0, 1, nil
-// }
-
-func (this *U256) This(source interface{}) interface{} {
+func (this *U256) Latest(source interface{}) interface{} {
 	v, _, _ := this.Deepcopy().(*U256).Get(source)
 	return v
 }
@@ -224,7 +198,7 @@ func (this *U256) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 		}
 
 		if this != nil && v != nil { // Update an existent
-			if _, _, err := this.Set(v.(*U256), nil); err != nil {
+			if _, _, _, _, err := this.Set(v.(*U256), nil); err != nil {
 				panic(err)
 			}
 		}

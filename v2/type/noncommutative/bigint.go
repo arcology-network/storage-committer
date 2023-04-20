@@ -16,30 +16,25 @@ func NewBigint(v int64) interface{} {
 	return &this
 }
 
-func (this *Bigint) IsSelf(key interface{}) bool         { return true }
-func (this *Bigint) TypeID() uint8                       { return uint8(ccurlcommon.NoncommutativeBigint) }
-func (this *Bigint) This(source interface{}) interface{} { return this }
-func (this *Bigint) ConcurrentWritable() bool            { return false }
-func (this *Bigint) Value() interface{}                  { return this }
-func (this *Bigint) ToAccess() interface{}               { return nil }
+func (this *Bigint) IsSelf(key interface{}) bool           { return true }
+func (this *Bigint) TypeID() uint8                         { return uint8(ccurlcommon.NoncommutativeBigint) }
+func (this *Bigint) Latest(source interface{}) interface{} { return this }
+func (this *Bigint) ConcurrentWritable() bool              { return false }
+func (this *Bigint) Value() interface{}                    { return this }
+func (this *Bigint) ToAccess() interface{}                 { return nil }
+
+func (this *Bigint) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
+	return v, 0, 1, 0
+}
 
 func (this *Bigint) Deepcopy() interface{} {
-	value := *this
-	return (*Bigint)(&value)
+	v := big.Int(*this)
+	return Bigint(*new(big.Int).Set(&v))
 }
 
 func (this *Bigint) Size() uint32 {
 	v := codec.Bigint(*this)
 	return v.Size()
-}
-
-// create a new path
-func (this *Bigint) New(value interface{}) (interface{}, error) {
-	switch v := value.(type) {
-	case big.Int:
-		*this = Bigint(v)
-	}
-	return this, nil
 }
 
 func (this *Bigint) Get(source interface{}) (interface{}, uint32, uint32) {
@@ -50,11 +45,11 @@ func (this *Bigint) Delta() interface{} {
 	return this
 }
 
-func (this *Bigint) Set(value interface{}, source interface{}) (uint32, uint32, error) {
+func (this *Bigint) Set(value interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
 	if value != nil {
 		*this = Bigint(*(value.(*big.Int)))
 	}
-	return 0, 1, nil
+	return this, 0, 1, 0, nil
 }
 
 func (this *Bigint) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {

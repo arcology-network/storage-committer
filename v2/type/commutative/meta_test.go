@@ -18,7 +18,7 @@ func TestMeta(t *testing.T) {
 	inPath.added = ([]string{"5", "6"})
 	inPath.removed = []string{"2", "3"}
 
-	meta, _, _ = inPath.Get("blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil)
+	meta, _, _ = inPath.Get(nil)
 	fmt.Println(meta)
 }
 

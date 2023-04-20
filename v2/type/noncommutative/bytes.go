@@ -29,6 +29,10 @@ func (this *Bytes) IsSelf(key interface{}) bool { return true }
 func (this *Bytes) TypeID() uint8               { return ccurlcommon.NoncommutativeBytes }
 func (this *Bytes) ConcurrentWritable() bool    { return false }
 
+func (this *Bytes) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
+	return v, 0, 1, 0
+}
+
 // create a new path
 func (this *Bytes) Deepcopy() interface{} {
 	return &Bytes{
@@ -53,7 +57,7 @@ func (this *Bytes) Get(source interface{}) (interface{}, uint32, uint32) {
 	return this, 1, 0
 }
 
-func (this *Bytes) This(source interface{}) interface{} {
+func (this *Bytes) Latest(source interface{}) interface{} {
 	return this
 }
 
@@ -61,12 +65,12 @@ func (this *Bytes) Delta() interface{} {
 	return this
 }
 
-func (this *Bytes) Set(value interface{}, source interface{}) (uint32, uint32, error) {
+func (this *Bytes) Set(value interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
 	if value != nil && this != value { // Avoid self copy.
 		this.data = make([]byte, len(value.(*Bytes).data))
 		copy(this.data, value.(*Bytes).data)
 	}
-	return 0, 1, nil
+	return this, 0, 1, 0, nil
 }
 
 func (this *Bytes) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {

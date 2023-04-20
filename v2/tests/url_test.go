@@ -411,22 +411,22 @@ func TestUrl2(t *testing.T) {
 	accessRecords, transitions := url.Export(true)
 
 	// 3 writes + 1 affiliated write
-	value := ccurltype.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, nil)
+	value := ccurltype.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, nil)
 	if !ccurltype.Univalues(accessRecords).IfContains(value) {
 		t.Error("Error: Error: ")
 	}
 
-	value = ccurltype.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", 1, 1, nil)
+	value = ccurltype.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", 1, 1, 0, nil)
 	if !ccurltype.Univalues(accessRecords).IfContains(value) {
 		t.Error("Error: Error: ")
 	}
 
-	value = ccurltype.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-002", 0, 1, nil)
+	value = ccurltype.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-002", 0, 1, 0, nil)
 	if !ccurltype.Univalues(accessRecords).IfContains(value) {
 		t.Error("Error: Error: ")
 	}
 
-	value = ccurltype.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-005", 1, 0, nil)
+	value = ccurltype.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-005", 1, 0, 0, nil)
 	if !ccurltype.Univalues(accessRecords).IfContains(value) {
 		t.Error("Error: Error: ")
 	}

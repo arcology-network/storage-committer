@@ -48,6 +48,10 @@ func NewMeta(path string) (interface{}, error) {
 	return this, nil
 }
 
+func (this *Meta) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
+	return v, 0, 1, 0
+}
+
 func (this *Meta) View() *orderedset.OrderedSet { return this.view }
 func (this *Meta) IsSelf(key interface{}) bool  { return ccurlcommon.IsPath(key.(string)) }
 func (this *Meta) ConcurrentWritable() bool     { return !this.finalized }
@@ -186,7 +190,7 @@ func (this *Meta) Value() interface{} {
 }
 
 // Just return the object, won't do anything
-func (this *Meta) This(source interface{}) interface{} {
+func (this *Meta) Latest(source interface{}) interface{} {
 	return this
 }
 
@@ -202,7 +206,7 @@ func (this *Meta) InitView() {
 }
 
 // Write and afflicated operations
-func (this *Meta) Set(value interface{}, source interface{}) (uint32, uint32, error) {
+func (this *Meta) Set(value interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
 	path := source.([3]interface{})[0].(string)
 	tx := source.([3]interface{})[1].(uint32)
 	indexer := source.([3]interface{})[2].(ccurlcommon.IndexerInterface)
@@ -211,18 +215,18 @@ func (this *Meta) Set(value interface{}, source interface{}) (uint32, uint32, er
 	this.InitView()                // Initialize the key view if has been done yet.
 	ok := this.view.Exists(subkey) // If exists
 	if ok && value != nil {
-		return 0, 0, nil // No meta changes, value update only
+		return this, 1, 0, 0, nil // No meta changes, value update only
 	}
 
 	if !ok && value == nil {
-		return 0, 0, nil // Delete an non existent entry
+		return this, 1, 0, 0, nil // Delete an non existent entry
 	}
 
 	if value == nil && ccurlcommon.IsPath(path) { // Delete the whole path
 		for _, subpath := range this.Value().([]string) { // Get all the sub paths
 			indexer.Write(tx, path+subpath, nil) // Remove all the sub paths.
 		}
-		return 0, 1, nil
+		return this, 0, 1, 0, nil
 	}
 
 	if value == nil {
@@ -237,9 +241,9 @@ func (this *Meta) Set(value interface{}, source interface{}) (uint32, uint32, er
 	this.snapshotDirty = addFlag || removedFlag // Either is dirty
 
 	if removedFlag == addFlag && removedFlag {
-		return 0, 0, errors.New("Error: Impossible to be in both sets!!")
+		return this, 0, 1, 0, errors.New("Error: Impossible to be in both sets!!")
 	}
-	return 0, 1, nil
+	return this, 0, 1, 0, nil
 }
 
 func (this *Meta) includeBuffer(subkey string, value interface{}, preexists bool) bool {
