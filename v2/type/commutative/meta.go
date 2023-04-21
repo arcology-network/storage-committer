@@ -272,10 +272,12 @@ func (this *Meta) Hash(hasher func([]byte) []byte) []byte {
 }
 
 // Debugging interfaces
+func (this *Meta) CommittedKeys() []string { return this.committedKeys } // Check new keys
+func (this *Meta) AddedArray() []string    { return this.added }         // Check new keys
+func (this *Meta) RemovedArray() []string  { return this.removed }       // Peek the removed keys
 
-func (this *Meta) Added() []string                         { return this.added }   // Check new keys
-func (this *Meta) Removed() []string                       { return this.removed } // Peek the removed keys
-func (this *Meta) CommittedKeys() []string                 { return this.committedKeys }
+func (this *Meta) Added() []string                         { return common.To(this.addedBuffer.Keys(), "") }   // Check new keys
+func (this *Meta) Removed() []string                       { return common.To(this.removedBuffer.Keys(), "") } // Peek the removed keys
 func (this *Meta) SetCommittedKeys(committedKeys []string) { this.committedKeys = committedKeys }
 func (this *Meta) SetAdded(keys []string)                  { this.added = keys }
 func (this *Meta) SetRemoved(keys []string)                { this.removed = keys }

@@ -24,11 +24,11 @@ func TestMeta(t *testing.T) {
 		t.Error("Error: Don't match!!")
 	}
 
-	if !common.EqualArray(inPath.Added(), []string{"+01", "+001", "+002", "+002"}) {
+	if !common.EqualArray(inPath.AddedArray(), []string{"+01", "+001", "+002", "+002"}) {
 		t.Error("Error: Don't match!!")
 	}
 
-	if !common.EqualArray(inPath.Removed(), []string{"-091", "-0092", "-092", "-092", "-097"}) {
+	if !common.EqualArray(inPath.RemovedArray(), []string{"-091", "-0092", "-092", "-092", "-097"}) {
 		t.Error("Error: Don't match!!")
 	}
 
