@@ -1,4 +1,4 @@
-package ccurltype
+package univalue
 
 import (
 	"crypto/sha256"
@@ -109,7 +109,7 @@ func (this *Univalue) IsCommutative() bool {
 
 func (this *Univalue) GetTx() uint32                 { return this.tx }
 func (this *Univalue) GetPath() *string              { return this.path }
-func (this *Univalue) SetPath(path string)           { this.path = &path }
+func (this *Univalue) SetPath(path *string)          { this.path = path }
 func (this *Univalue) ClearPath()                    { *this.path = (*this.path)[:0] }
 func (this *Univalue) Value() interface{}            { return this.value }
 func (this *Univalue) SetValue(newValue interface{}) { this.value = newValue }
@@ -160,7 +160,7 @@ func (this *Univalue) Export(source interface{}) (interface{}, interface{}) {
 		accessRecord.value = accessRecord.Value().(ccurlcommon.TypeInterface).ToAccess()
 	}
 
-	if source.(ccurlcommon.IndexerInterface).SkipExportTransitions(this) {
+	if source.(ccurlcommon.IndexerInterface).SkipExport(this) {
 		return accessRecord, nil
 	}
 

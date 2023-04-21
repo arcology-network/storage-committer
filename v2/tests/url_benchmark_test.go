@@ -15,9 +15,10 @@ import (
 	"github.com/arcology-network/common-lib/merkle"
 	ccurl "github.com/arcology-network/concurrenturl/v2"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
-	ccurltype "github.com/arcology-network/concurrenturl/v2/type"
+	indexer "github.com/arcology-network/concurrenturl/v2/indexer"
 	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
 	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
+	univalue "github.com/arcology-network/concurrenturl/v2/univalue"
 	orderedmap "github.com/elliotchance/orderedmap"
 	"github.com/google/btree"
 	"github.com/petar/GoLLRB/llrb"
@@ -46,8 +47,8 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 
 	//t0 = time.Now()
 	_, transitions := url.Export(false)
-	// in := ccurltype.Univalues(transitions).Encode()
-	//out := ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
+	// in := univalue.Univalues(transitions).Encode()
+	//out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
 
 	//fmt.Println("Export:", time.Since(t0))
 
@@ -155,7 +156,7 @@ func BenchmarkUrlAddThenPop(b *testing.B) {
 	url.Write(ccurlcommon.SYSTEM, ccurlcommon.NewPlatform().Eth10Account(), meta)
 
 	_, trans := url.Export(false)
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(trans).Encode()).(ccurltype.Univalues))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -275,7 +276,7 @@ func BenchmarkMetaIterator(b *testing.B) {
 	alice := datacompression.RandomAccount()
 	url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice)
 	_, acctTrans := url.Export(false)
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(acctTrans).Encode()).(ccurltype.Univalues))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -367,7 +368,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 
 	t0 = time.Now()
 
-	transitions := ccurltype.Univalues{}.Decode(ccurltype.Univalues(acctTrans).Encode()).(ccurltype.Univalues)
+	transitions := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues)
 	url.Import(transitions)
 	//	errs := url.AllInOneCommit(acctTrans, []uint32{0})
 
@@ -393,7 +394,7 @@ func TestAccountMerkleImportPerf(t *testing.T) {
 	_, acctTrans := url.Export(false)
 
 	for n := 0; n < 10; n++ {
-		accountMerkle := ccurltype.NewAccountMerkle(ccurlcommon.NewPlatform())
+		accountMerkle := indexer.NewAccountMerkle(ccurlcommon.NewPlatform())
 		t0 := time.Now()
 		for i := 0; i < 100; i++ {
 			accountMerkle.Import(acctTrans[i*len(acctTrans)/100 : (i+1)*len(acctTrans)/100])
@@ -452,11 +453,11 @@ func TestPathRepeats(t *testing.T) {
 }
 
 func BenchmarkStringSort(b *testing.B) {
-	paths := make([][]*ccurltype.Univalue, 100000)
+	paths := make([][]*univalue.Univalue, 100000)
 	for i := 0; i < 100000; i++ {
 		acct := datacompression.RandomAccount()
 		for j := 9; j >= 1; j-- {
-			paths[i] = append(paths[i], ccurltype.NewUnivalue(uint32(j), acct, 0, 0, 0, fmt.Sprint(rand.Float64())))
+			paths[i] = append(paths[i], univalue.NewUnivalue(uint32(j), acct, 0, 0, 0, fmt.Sprint(rand.Float64())))
 		}
 	}
 
@@ -607,7 +608,7 @@ func BenchmarkTransitionImport(b *testing.B) {
 	_, acctTrans := url.Export(false)
 	fmt.Println("Export "+fmt.Sprint(150000*9), time.Since(t0))
 
-	accountMerkle := ccurltype.NewAccountMerkle(ccurlcommon.NewPlatform())
+	accountMerkle := indexer.NewAccountMerkle(ccurlcommon.NewPlatform())
 
 	fmt.Println("-------------")
 	t0 = time.Now()
@@ -635,7 +636,7 @@ func BenchmarkConcurrentTransitionImport(b *testing.B) {
 	_, acctTrans := url.Export(false)
 	fmt.Println("Export "+fmt.Sprint(150000*9), time.Since(t0))
 
-	accountMerkle := ccurltype.NewAccountMerkle(ccurlcommon.NewPlatform())
+	accountMerkle := indexer.NewAccountMerkle(ccurlcommon.NewPlatform())
 
 	t0 = time.Now()
 	common.ParallelExecute(

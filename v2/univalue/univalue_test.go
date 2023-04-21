@@ -1,4 +1,4 @@
-package ccurltype
+package univalue
 
 import (
 	"fmt"
@@ -59,15 +59,18 @@ func TestUnivalueCodeMeta(t *testing.T) {
 	bytes := in.Encode()
 	out := (&Univalue{}).Decode(bytes).(*Univalue)
 
-	fmt.Println(in.Value().(*commutative.Meta).Keys())
-	fmt.Println(in.Value().(*commutative.Meta).Added())
-	fmt.Println(in.Value().(*commutative.Meta).Removed())
+	committedKeys := (in.Value().(*commutative.Meta).Keys())
+	added := (in.Value().(*commutative.Meta).Added())
+	removed := (in.Value().(*commutative.Meta).Removed())
 
-	fmt.Println("=========== ")
+	fmt.Println(committedKeys)
+	fmt.Println(added)
+	fmt.Println(removed)
+	// fmt.Println("=========== ")
 
-	fmt.Println(out.Value().(*commutative.Meta).Keys())
-	fmt.Println(out.Value().(*commutative.Meta).Added())
-	fmt.Println(out.Value().(*commutative.Meta).Removed())
+	// // fmt.Println(out.Value().(*commutative.Meta).Keys())
+	// fmt.Println(out.Value().(*commutative.Meta).Added())
+	// fmt.Println(out.Value().(*commutative.Meta).Removed())
 
 	if in.Value().(*commutative.Meta).Equal(out.Value().(*commutative.Meta)) {
 		t.Error("Error")
@@ -88,6 +91,8 @@ func TestCodecMetaUnivalues(t *testing.T) {
 
 	bytes := in.Encode()
 	out := (&Univalues{}).Decode(bytes).(Univalues)
+
+	// in.
 
 	for i := 0; i < len(out); i++ {
 		fmt.Print(in[i].Value().(*commutative.Meta).Keys())

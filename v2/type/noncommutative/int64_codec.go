@@ -9,11 +9,11 @@ import (
 func (this *Int64) Size() uint32 {
 	return 8 // 8 bytes
 }
-func (this *Int64) Encode() []byte {
+func (this *Int64) Encode(processors ...func(interface{}) interface{}) []byte {
 	return codec.Int64(int64(*this)).Encode()
 }
 
-func (this *Int64) EncodeToBuffer(buffer []byte) int {
+func (this *Int64) EncodeToBuffer(buffer []byte, processors ...func(interface{}) interface{}) int {
 	return codec.Int64(*this).EncodeToBuffer(buffer)
 }
 

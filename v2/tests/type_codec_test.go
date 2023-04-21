@@ -10,9 +10,9 @@ import (
 	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl/v2"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
-	ccurltype "github.com/arcology-network/concurrenturl/v2/type"
 	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
 	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
+	univalue "github.com/arcology-network/concurrenturl/v2/univalue"
 )
 
 func TestNoncommutativeCodec(t *testing.T) {
@@ -79,8 +79,8 @@ func TestUnivalueCodec(t *testing.T) {
 	for i := 0; i < len(transitions); i++ {
 		buffer := transitions[i].Encode()
 		in := transitions[i]
-		out := (&ccurltype.Univalue{}).Decode(buffer).(ccurlcommon.UnivalueInterface)
-		out.(*ccurltype.Univalue).ClearReserve()
+		out := (&univalue.Univalue{}).Decode(buffer).(ccurlcommon.UnivalueInterface)
+		out.(*univalue.Univalue).ClearReserve()
 		if !reflect.DeepEqual(in, out) {
 			fmt.Println("Error: Missmatched")
 		}
@@ -98,16 +98,16 @@ func TestUnivaluesCodec(t *testing.T) {
 		transitions = append(transitions, transVec...)
 	}
 	t0 := time.Now()
-	buffer := ccurltype.Univalues(transitions).Encode()
+	buffer := univalue.Univalues(transitions).Encode()
 	fmt.Println("Encode() ", len(transitions), " univalue in :", time.Since(t0))
 
 	t0 = time.Now()
-	out := (ccurltype.Univalues([]ccurlcommon.UnivalueInterface{})).Decode(buffer).(ccurltype.Univalues)
+	out := (univalue.Univalues([]ccurlcommon.UnivalueInterface{})).Decode(buffer).(univalue.Univalues)
 	fmt.Println("Decode() ", len(transitions), " univalue in :", time.Since(t0))
 
 	for i := 0; i < len(transitions); i++ {
 		tran := transitions[i]
-		univ := out[i].(*ccurltype.Univalue)
+		univ := out[i].(*univalue.Univalue)
 		univ.ClearReserve()
 		if !reflect.DeepEqual(tran, univ) {
 			//fmt.Println("Error: Missmatched")

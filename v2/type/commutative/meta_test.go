@@ -14,15 +14,24 @@ func TestMeta(t *testing.T) {
 	meta, _ := NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
 	inPath := meta.(*Meta)
 
-	inPath.committedKeys = ([]string{"0", "1", "2", "3"})
-	inPath.added = ([]string{"5", "6"})
-	inPath.removed = []string{"2", "3"}
-
 	inPath.SetCommittedKeys([]string{"e-01", "e-001", "e-002", "e-002"})
 	inPath.SetAdded([]string{"+01", "+001", "+002", "+002"})
 	inPath.SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
 
 	meta, _, _ = inPath.Get(nil)
+
+	if !common.EqualArray(inPath.CommittedKeys(), []string{"e-01", "e-001", "e-002", "e-002"}) {
+		t.Error("Error: Don't match!!")
+	}
+
+	if !common.EqualArray(inPath.Added(), []string{"+01", "+001", "+002", "+002"}) {
+		t.Error("Error: Don't match!!")
+	}
+
+	if !common.EqualArray(inPath.Removed(), []string{"-091", "-0092", "-092", "-092", "-097"}) {
+		t.Error("Error: Don't match!!")
+	}
+
 	fmt.Println(meta)
 }
 
@@ -37,8 +46,16 @@ func TestCodecPathMeta(t *testing.T) {
 	buffer := in.(*Meta).Encode()
 	out := (&Meta{}).Decode(buffer).(*Meta)
 
-	if !common.EqualArray(in.(*Meta).Added(), out.Added()) ||
-		!common.EqualArray(in.(*Meta).Removed(), out.Removed()) {
+	if common.EqualArray(out.CommittedKeys(), []string{"e-01", "e-001", "e-002", "e-002"}) {
+		t.Error("Error: Should have gone!")
+	}
+
+	if !common.EqualArray(out.Added(), []string{"+01", "+001", "+002", "+002"}) {
 		t.Error("Error: Don't match!!")
 	}
+
+	if !common.EqualArray(out.Removed(), []string{"-091", "-0092", "-092", "-092", "-097"}) {
+		t.Error("Error: Don't match!!")
+	}
+
 }

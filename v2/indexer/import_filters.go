@@ -1,4 +1,4 @@
-package ccurltype
+package indexer
 
 import (
 	"strings"

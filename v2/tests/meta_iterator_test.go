@@ -13,7 +13,7 @@ func TestMetaIterator(t *testing.T) {
 	// }
 
 	// _, acctTrans := url.Export(false)
-	// url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(acctTrans).Encode()).(ccurltype.Univalues))
+	// url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	// url.PostImport()
 	// url.Commit([]uint32{ccurlcommon.SYSTEM})

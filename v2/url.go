@@ -11,15 +11,16 @@ import (
 	"github.com/arcology-network/common-lib/common"
 	// performance "github.com/arcology-network/common-lib/mhasher"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
-	ccurltype "github.com/arcology-network/concurrenturl/v2/type"
+	indexer "github.com/arcology-network/concurrenturl/v2/indexer"
 	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
 	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
+	univalue "github.com/arcology-network/concurrenturl/v2/univalue"
 	"github.com/holiman/uint256"
 )
 
 type ConcurrentUrl struct {
-	indexer    *ccurltype.Indexer
-	invIndexer *ccurltype.Indexer
+	indexer    *indexer.Indexer
+	invIndexer *indexer.Indexer
 
 	Platform *ccurlcommon.Platform
 	// Buf for Export.
@@ -33,15 +34,15 @@ type ConcurrentUrl struct {
 func NewConcurrentUrl(store ccurlcommon.DatastoreInterface, args ...interface{}) *ConcurrentUrl {
 	platform := ccurlcommon.NewPlatform()
 	return &ConcurrentUrl{
-		indexer:    ccurltype.NewIndexer(store, platform),
-		invIndexer: ccurltype.NewIndexer(store, platform),
+		indexer:    indexer.NewIndexer(store, platform),
+		invIndexer: indexer.NewIndexer(store, platform),
 		Platform:   platform,
 
 		records:    make([]ccurlcommon.UnivalueInterface, 0, 64),
 		accesseBuf: make([]ccurlcommon.UnivalueInterface, 0, 64),
 		transitBuf: make([]ccurlcommon.UnivalueInterface, 0, 64),
 
-		ImportFilters: []ccurlcommon.TransitionFilterInterface{&ccurltype.NonceFilter{}, &ccurltype.BalanceFilter{}},
+		ImportFilters: []ccurlcommon.TransitionFilterInterface{&indexer.NonceFilter{}, &indexer.BalanceFilter{}},
 		numThreads:    8,
 	}
 }
@@ -54,7 +55,7 @@ func (this *ConcurrentUrl) ReadCommitted(tx uint32, key string) (interface{}, er
 	return (*this.Store()).Retrive(key)
 }
 
-func (this *ConcurrentUrl) Indexer() *ccurltype.Indexer {
+func (this *ConcurrentUrl) Indexer() *indexer.Indexer {
 	return this.indexer
 }
 
@@ -129,7 +130,7 @@ func (this *ConcurrentUrl) Read(tx uint32, path string) (interface{}, error) {
 
 func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}) error {
 	if value != nil {
-		if id := (&ccurltype.Univalue{}).GetTypeID(value); id == uint8(reflect.Invalid) {
+		if id := (&univalue.Univalue{}).GetTypeID(value); id == uint8(reflect.Invalid) {
 			return errors.New("Error: Unknown data type !")
 		}
 	}
@@ -302,7 +303,7 @@ func (this *ConcurrentUrl) Commit(txs []uint32) []error {
 func (this *ConcurrentUrl) AllInOneCommit(transitions []ccurlcommon.UnivalueInterface, txs []uint32) []error {
 	t0 := time.Now()
 
-	accountMerkle := ccurltype.NewAccountMerkle(this.Platform)
+	accountMerkle := indexer.NewAccountMerkle(this.Platform)
 	common.ParallelExecute(
 		func() { this.indexer.Import(transitions) },
 		func() { accountMerkle.Import(transitions) })
@@ -374,8 +375,8 @@ func (this *ConcurrentUrl) Export(needToSort bool) ([]ccurlcommon.UnivalueInterf
 	this.convert(this.records, &this.accesseBuf, &this.transitBuf)      // Convert records to accesses and transitions
 
 	if needToSort { // Sort by path, debug only
-		ccurltype.Univalues(this.accesseBuf).Sort()
-		ccurltype.Univalues(this.transitBuf).Sort()
+		univalue.Univalues(this.accesseBuf).Sort()
+		univalue.Univalues(this.transitBuf).Sort()
 	}
 
 	// Not in use yet.

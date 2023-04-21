@@ -1,4 +1,4 @@
-package ccurltype
+package indexer
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ import (
 	ccmap "github.com/arcology-network/common-lib/container/map"
 	"github.com/arcology-network/common-lib/mempool"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
-	// performance "github.com/arcology-network/common-lib/mhasher"
+	univalue "github.com/arcology-network/concurrenturl/v2/univalue"
 )
 
 type Indexer struct {
@@ -43,7 +43,7 @@ func NewIndexer(store ccurlcommon.DatastoreInterface, platform *ccurlcommon.Plat
 	})
 
 	indexer.uniPool = mempool.NewMempool("univalue", func() interface{} {
-		return new(Univalue)
+		return new(univalue.Univalue)
 	})
 	return &indexer
 }
@@ -72,20 +72,20 @@ func (this *Indexer) IfExists(path string) bool {
 	return this.buffer[path] != nil || this.RetriveShallow(path) != nil
 }
 
-func (this *Indexer) NewUnivalue() *Univalue {
-	v := this.uniPool.Get().(*Univalue)
+func (this *Indexer) NewUnivalue() *univalue.Univalue {
+	v := this.uniPool.Get().(*univalue.Univalue)
 	return v
 }
 
 // If the access has been recorded
 func (this *Indexer) GetOrInit(tx uint32, path string) ccurlcommon.UnivalueInterface {
-	univalue := this.buffer[path]
-	if univalue == nil { // Not in the buffer, check the datastore
-		univalue = this.NewUnivalue()
-		univalue.(*Univalue).Init(tx, path, 0, 0, this.RetriveShallow(path), this)
-		this.buffer[path] = univalue // Adding to buffer
+	unival := this.buffer[path]
+	if unival == nil { // Not in the buffer, check the datastore
+		unival = this.NewUnivalue()
+		unival.(*univalue.Univalue).Init(tx, path, 0, 0, this.RetriveShallow(path), this)
+		this.buffer[path] = unival // Adding to buffer
 	}
-	return univalue
+	return unival
 }
 
 func (this *Indexer) Read(tx uint32, path string) interface{} {
@@ -212,7 +212,7 @@ func (this *Indexer) WhilteList(whitelist []uint32) []error {
 
 		if _, ok := dict[k]; !ok {
 			for _, v := range vec {
-				v.(*Univalue).path = nil
+				v.(*univalue.Univalue).SetPath(nil)
 			}
 		}
 	}
@@ -288,7 +288,7 @@ func (this *Indexer) Clear() {
 	})
 
 	this.uniPool.ForEachAllocated(func(obj interface{}) {
-		obj.(*Univalue).Reclaim()
+		obj.(*univalue.Univalue).Reclaim()
 	})
 
 	this.seqPool.ReclaimRecursive()
@@ -329,7 +329,7 @@ func (this *Indexer) Print() {
 	}
 }
 
-func (this *Indexer) SkipExportTransitions(univalue interface{}) bool {
+func (this *Indexer) SkipExport(univalue interface{}) bool {
 	uv := univalue.(ccurlcommon.UnivalueInterface)
 	return uv.Preexist() && strings.HasSuffix(*uv.GetPath(), "/storage/native/")
 

@@ -11,9 +11,11 @@ import (
 	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl/v2"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
-	ccurltype "github.com/arcology-network/concurrenturl/v2/type"
+
+	// univalue "github.com/arcology-network/concurrenturl/v2/type"
 	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
 	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
+	univalue "github.com/arcology-network/concurrenturl/v2/univalue"
 	"github.com/holiman/uint256"
 )
 
@@ -27,10 +29,10 @@ func TestSize(t *testing.T) {
 	}
 
 	_, acctTrans := url.Export(true)
-	buf := ccurltype.Univalues(acctTrans).Encode()
-	url.Import(ccurltype.Univalues{}.Decode(buf).(ccurltype.Univalues))
+	buf := univalue.Univalues(acctTrans).Encode()
+	url.Import(univalue.Univalues{}.Decode(buf).(univalue.Univalues))
 
-	fmt.Println(ccurltype.Univalues(acctTrans).GetEncodedSize())
+	fmt.Println(univalue.Univalues(acctTrans).GetEncodedSize())
 	fmt.Println(unsafe.Sizeof(map[string]int{}))
 
 	original := []int{1, 2, 3, 4}
@@ -52,8 +54,8 @@ func TestAddThenDeletePath(t *testing.T) {
 
 	_, acctTrans := url.Export(true)
 
-	//values := ccurltype.Univalues{}.Decode(ccurltype.Univalues(acctTrans).Encode()).([]ccurlcommon.UnivalueInterface)
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(acctTrans).Encode()).(ccurltype.Univalues))
+	//values := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).([]ccurlcommon.UnivalueInterface)
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
@@ -65,7 +67,7 @@ func TestAddThenDeletePath(t *testing.T) {
 	}
 
 	_, transitions := url.Export(true)
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(transitions).Encode()).(ccurltype.Univalues))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{1})
 
@@ -80,7 +82,7 @@ func TestAddThenDeletePath(t *testing.T) {
 	}
 
 	_, acctTrans = url.Export(true)
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(acctTrans).Encode()).(ccurltype.Univalues))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{1})
 
@@ -98,7 +100,7 @@ func TestBasic(t *testing.T) {
 	}
 
 	_, acctTrans := url.Export(true)
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(acctTrans).Encode()).(ccurltype.Univalues))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -175,8 +177,8 @@ func TestBasic(t *testing.T) {
 		t.Error("Error: The variable has been cleared !")
 	}
 
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(transitions).Encode()).(ccurltype.Univalues))
-	// url.Import(url.Decode(ccurltype.Univalues(transitions).Encode()))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues))
+	// url.Import(url.Decode(univalue.Univalues(transitions).Encode()))
 	url.PostImport()
 	url.Commit([]uint32{1})
 
@@ -196,7 +198,7 @@ func TestUrl1(t *testing.T) {
 	}
 
 	_, acctTrans := url.Export(true)
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(acctTrans).Encode()).(ccurltype.Univalues))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -280,7 +282,7 @@ func TestUrl2(t *testing.T) {
 	}
 
 	_, acctTrans := url.Export(true)
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(acctTrans).Encode()).(ccurltype.Univalues))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
@@ -411,39 +413,39 @@ func TestUrl2(t *testing.T) {
 	accessRecords, transitions := url.Export(true)
 
 	// 3 writes + 1 affiliated write
-	value := ccurltype.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, nil)
-	if !ccurltype.Univalues(accessRecords).IfContains(value) {
+	value := univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, nil)
+	if !univalue.Univalues(accessRecords).IfContains(value) {
 		t.Error("Error: Error: ")
 	}
 
-	value = ccurltype.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", 1, 1, 0, nil)
-	if !ccurltype.Univalues(accessRecords).IfContains(value) {
+	value = univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", 1, 1, 0, nil)
+	if !univalue.Univalues(accessRecords).IfContains(value) {
 		t.Error("Error: Error: ")
 	}
 
-	value = ccurltype.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-002", 0, 1, 0, nil)
-	if !ccurltype.Univalues(accessRecords).IfContains(value) {
+	value = univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-002", 0, 1, 0, nil)
+	if !univalue.Univalues(accessRecords).IfContains(value) {
 		t.Error("Error: Error: ")
 	}
 
-	value = ccurltype.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-005", 1, 0, 0, nil)
-	if !ccurltype.Univalues(accessRecords).IfContains(value) {
+	value = univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-005", 1, 0, 0, nil)
+	if !univalue.Univalues(accessRecords).IfContains(value) {
 		t.Error("Error: Error: ")
 	}
 
 	// Encode then Decode access records
-	in := ccurltype.Univalues(transitions).Encode()
+	in := univalue.Univalues(transitions).Encode()
 
-	out := ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
+	out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
 	for i := range transitions {
-		if !transitions[i].(*ccurltype.Univalue).Equal(out[i].(*ccurltype.Univalue)) {
+		if !transitions[i].(*univalue.Univalue).Equal(out[i].(*univalue.Univalue)) {
 			t.Error("Error: transitions don't match")
 		}
 	}
 
 	// Encode then Decode state transitions
-	in = ccurltype.Univalues(transitions).Encode()
-	out = ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
+	in = univalue.Univalues(transitions).Encode()
+	out = univalue.Univalues{}.Decode(in).(univalue.Univalues)
 	// if len(out) != 2 {
 	// 	t.Error("Error: Wrong transition count")
 	// }
@@ -488,12 +490,12 @@ func TestUrl3(t *testing.T) {
 	// }
 
 	accessRecords, _ := url.Export(true)
-	in := ccurltype.Univalues(accessRecords).Encode()
+	in := univalue.Univalues(accessRecords).Encode()
 
 	fmt.Println(len(in))
-	out := ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
+	out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
 	for i := range accessRecords {
-		if !accessRecords[i].(*ccurltype.Univalue).Equal(out[i].(*ccurltype.Univalue)) {
+		if !accessRecords[i].(*univalue.Univalue).Equal(out[i].(*univalue.Univalue)) {
 			t.Error("Error: Accesses don't match")
 		}
 	}
@@ -575,18 +577,18 @@ func TestCommutative(t *testing.T) {
 
 	// Export variables
 	accessRecords, transitions := url.Export(true)
-	in := ccurltype.Univalues(accessRecords).Encode()
-	out := ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
+	in := univalue.Univalues(accessRecords).Encode()
+	out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
 	for i := range accessRecords {
-		if !accessRecords[i].(*ccurltype.Univalue).Equal(out[i].(*ccurltype.Univalue)) {
+		if !accessRecords[i].(*univalue.Univalue).Equal(out[i].(*univalue.Univalue)) {
 			t.Error("Error: Accesses don't match")
 		}
 	}
 
-	in = ccurltype.Univalues(transitions).Encode()
-	out = ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
+	in = univalue.Univalues(transitions).Encode()
+	out = univalue.Univalues{}.Decode(in).(univalue.Univalues)
 	for i := range transitions {
-		if !transitions[i].(*ccurltype.Univalue).Equal(out[i].(*ccurltype.Univalue)) {
+		if !transitions[i].(*univalue.Univalue).Equal(out[i].(*univalue.Univalue)) {
 			t.Error("Error: Transitions don't match !!!")
 			fmt.Println(transitions[i])
 			fmt.Println(out[i])
@@ -670,18 +672,18 @@ func TestNestedPath(t *testing.T) {
 	}
 
 	accessRecords, transitions := url.Export(true)
-	in := ccurltype.Univalues(accessRecords).Encode()
-	out := ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
+	in := univalue.Univalues(accessRecords).Encode()
+	out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
 	for i := range accessRecords {
-		if !accessRecords[i].(*ccurltype.Univalue).Equal(out[i].(*ccurltype.Univalue)) {
+		if !accessRecords[i].(*univalue.Univalue).Equal(out[i].(*univalue.Univalue)) {
 			t.Error("Error: Accesses don't match  before and after encoding")
 		}
 	}
 
-	in = ccurltype.Univalues(transitions).Encode()
-	out = ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
+	in = univalue.Univalues(transitions).Encode()
+	out = univalue.Univalues{}.Decode(in).(univalue.Univalues)
 	for i := range transitions {
-		if !transitions[i].(*ccurltype.Univalue).Equal(out[i].(*ccurltype.Univalue)) {
+		if !transitions[i].(*univalue.Univalue).Equal(out[i].(*univalue.Univalue)) {
 			t.Error("Error: Transitions don't match before and after encoding")
 		}
 	}

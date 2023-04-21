@@ -8,12 +8,12 @@ import (
 
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
 	datacompression "github.com/arcology-network/common-lib/datacompression"
-	"github.com/arcology-network/concurrenturl/v2"
 	ccurl "github.com/arcology-network/concurrenturl/v2"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
-	ccurltype "github.com/arcology-network/concurrenturl/v2/type"
+	indexer "github.com/arcology-network/concurrenturl/v2/indexer"
 	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
 	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
+	univalue "github.com/arcology-network/concurrenturl/v2/univalue"
 )
 
 func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
@@ -23,7 +23,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	meta, _ := commutative.NewMeta(ccurlcommon.NewPlatform().Eth10Account())
 	url.Write(ccurlcommon.SYSTEM, ccurlcommon.NewPlatform().Eth10Account(), meta)
 	_, trans := url.Export(false)
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(trans).Encode()).(ccurltype.Univalues))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -37,17 +37,17 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	url2.CreateAccount(2, url.Platform.Eth10(), "bob") // CreateAccount account structure {
 	accesses2, transitions2 := url2.Export(true)
 
-	arib := ccurl.NewArbitratorSlow()
+	arib := indexer.NewArbitratorSlow()
 
-	concurrenturl.HashPaths(accesses1)
-	concurrenturl.HashPaths(accesses2)
+	indexer.HashPaths(accesses1)
+	indexer.HashPaths(accesses2)
 	_, conflictTx := arib.Detect(append(accesses1, accesses2...))
 
-	// in := ccurltype.Univalues(append(transitions1, transitions2...)).Encode()
-	// out := ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
-	// url.Import(url.Decode(ccurltype.Univalues(out).Encode()))
+	// in := univalue.Univalues(append(transitions1, transitions2...)).Encode()
+	// out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
+	// url.Import(url.Decode(univalue.Univalues(out).Encode()))
 
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(append(transitions1, transitions2...)).Encode()).(ccurltype.Univalues))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(append(transitions1, transitions2...)).Encode()).(univalue.Univalues))
 
 	url.PostImport()
 	url.Commit(conflictTx)
@@ -64,7 +64,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	meta, _ := commutative.NewMeta(ccurlcommon.NewPlatform().Eth10Account())
 	url.Write(ccurlcommon.SYSTEM, ccurlcommon.NewPlatform().Eth10Account(), meta)
 	_, trans := url.Export(false)
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(trans).Encode()).(ccurltype.Univalues))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
@@ -85,7 +85,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-2"))
 	accesses2, _ := url2.Export(true)
 
-	arib := ccurl.NewArbitratorSlow()
+	arib := indexer.NewArbitratorSlow()
 	_, conflictTx := arib.Detect(append(accesses1, accesses2...))
 
 	if len(conflictTx) != 1 {
@@ -99,7 +99,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	meta, _ := commutative.NewMeta(ccurlcommon.NewPlatform().Eth10Account())
 	url.Write(ccurlcommon.SYSTEM, ccurlcommon.NewPlatform().Eth10Account(), meta)
 	_, trans := url.Export(false)
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(trans).Encode()).(ccurltype.Univalues))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
@@ -120,9 +120,9 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-2"))
 	accesses2, transitions2 := url2.Export(true)
 
-	arib := ccurl.NewArbitratorSlow()
-	concurrenturl.HashPaths(accesses1)
-	concurrenturl.HashPaths(accesses2)
+	arib := indexer.NewArbitratorSlow()
+	indexer.HashPaths(accesses1)
+	indexer.HashPaths(accesses2)
 	_, conflictTx := arib.Detect(append(accesses1, accesses2...))
 	if len(conflictTx) != 1 {
 		t.Error("Error: There shouldn 1 conflict")
@@ -130,11 +130,11 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 
 	toCommit := ccurlcommon.Exclude([]uint32{1, 2}, conflictTx)
 
-	in := ccurltype.Univalues(append(transitions1, transitions2...)).Encode()
-	out := ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
-	// url.Import(url.Decode(ccurltype.Univalues(out).Encode()))
+	in := univalue.Univalues(append(transitions1, transitions2...)).Encode()
+	out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
+	// url.Import(url.Decode(univalue.Univalues(out).Encode()))
 
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(out).Encode()).(ccurltype.Univalues))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(out).Encode()).(univalue.Univalues))
 
 	url.PostImport()
 	url.Commit(toCommit)
@@ -154,13 +154,13 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 
 	toCommit = ccurlcommon.Exclude([]uint32{3, 4}, conflictTx)
 
-	in = ccurltype.Univalues(append(transitions3, transitions4...)).Encode()
-	out = ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
+	in = univalue.Univalues(append(transitions3, transitions4...)).Encode()
+	out = univalue.Univalues{}.Decode(in).(univalue.Univalues)
 
 	trans = append(transitions3, transitions4...)
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(trans).Encode()).(ccurltype.Univalues))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 
-	// url.Import(url.Decode(ccurltype.Univalues(append(transitions3, transitions4...)).Encode()))
+	// url.Import(url.Decode(univalue.Univalues(append(transitions3, transitions4...)).Encode()))
 	url.PostImport()
 	url.Commit(toCommit)
 
@@ -177,17 +177,17 @@ func BenchmarkSimpleArbitrator(b *testing.B) {
 	v, _ := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
 	tx := make([]uint32, len(univalues)/5)
 	for i := 0; i < len(univalues)/5; i++ {
-		univalues[i*5] = ccurltype.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
-		univalues[i*5+1] = ccurltype.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
-		univalues[i*5+2] = ccurltype.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
-		univalues[i*5+3] = ccurltype.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
-		univalues[i*5+4] = ccurltype.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
+		univalues[i*5] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
+		univalues[i*5+1] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
+		univalues[i*5+2] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
+		univalues[i*5+3] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
+		univalues[i*5+4] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
 		tx[i] = uint32(i)
 	}
 	fmt.Println("Create "+fmt.Sprint(len(univalues)), "path in ", time.Since(t0))
 
 	t0 = time.Now()
-	arib := ccurl.NewArbitratorSlow()
+	arib := indexer.NewArbitratorSlow()
 	arib.Detect(univalues)
 	fmt.Println("Detect "+fmt.Sprint(len(univalues)), "path in ", time.Since(t0))
 }

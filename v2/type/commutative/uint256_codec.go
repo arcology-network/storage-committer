@@ -18,13 +18,13 @@ func (this *U256) Size() uint32 {
 		1 // operation
 }
 
-func (this *U256) Encode() []byte {
+func (this *U256) Encode(processors ...func(interface{}) interface{}) []byte {
 	buffer := make([]byte, this.Size())
 	this.EncodeToBuffer(buffer)
 	return buffer
 }
 
-func (this *U256) EncodeToBuffer(buffer []byte) int {
+func (this *U256) EncodeToBuffer(buffer []byte, processors ...func(interface{}) interface{}) int {
 	offset := codec.Bool(this.finalized).EncodeToBuffer(buffer)
 	offset += codec.Uint64s(this.value[:]).EncodeToBuffer(buffer[offset:])
 	offset += codec.Uint64s(this.min[:]).EncodeToBuffer(buffer[offset:])

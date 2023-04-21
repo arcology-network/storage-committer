@@ -9,9 +9,9 @@ import (
 	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl/v2"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
-	ccurltype "github.com/arcology-network/concurrenturl/v2/type"
 	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
 	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
+	univalue "github.com/arcology-network/concurrenturl/v2/univalue"
 	"github.com/holiman/uint256"
 )
 
@@ -24,7 +24,7 @@ func TestAddAndDelete(t *testing.T) {
 	}
 
 	_, acctTrans := url.Export(true)
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(acctTrans).Encode()).(ccurltype.Univalues))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
@@ -33,7 +33,7 @@ func TestAddAndDelete(t *testing.T) {
 	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
 
 	_, acctTrans = url.Export(true)
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(acctTrans).Encode()).(ccurltype.Univalues))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{1})
 
@@ -55,7 +55,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 
 	_, acctTrans := url.Export(true)
 
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(acctTrans).Encode()).(ccurltype.Univalues))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
@@ -64,16 +64,16 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 	path, _ := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
 	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
 	_, addPath := url.Export(true)
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(addPath).Encode()).(ccurltype.Univalues))
-	// url.Import(url.Decode(ccurltype.Univalues(addPath).Encode()))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(addPath).Encode()).(univalue.Univalues))
+	// url.Import(url.Decode(univalue.Univalues(addPath).Encode()))
 	url.PostImport()
 	url.Commit([]uint32{1})
 
 	url.Init(store)
 	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewInt64(1))
 	_, addTrans := url.Export(true)
-	// url.Import(url.Decode(ccurltype.Univalues(addTrans).Encode()))
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(addTrans).Encode()).(ccurltype.Univalues))
+	// url.Import(url.Decode(univalue.Univalues(addTrans).Encode()))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(addTrans).Encode()).(univalue.Univalues))
 
 	url.PostImport()
 	url.Commit([]uint32{1})
@@ -113,7 +113,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 	}
 
 	_, acctTrans = url.Export(true)
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(acctTrans).Encode()).(ccurltype.Univalues))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{1})
 
@@ -135,10 +135,10 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 
 	_, acctTrans := url.Export(true)
 
-	in := ccurltype.Univalues(acctTrans).Encode()
-	out := ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
-	// url.Import(url.Decode(ccurltype.Univalues(out).Encode()))
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(out).Encode()).(ccurltype.Univalues))
+	in := univalue.Univalues(acctTrans).Encode()
+	out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
+	// url.Import(url.Decode(univalue.Univalues(out).Encode()))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(out).Encode()).(univalue.Univalues))
 
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -151,10 +151,10 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/2", noncommutative.NewString("2"))
 
 	_, acctTrans = url.Export(true)
-	in = ccurltype.Univalues(acctTrans).Encode()
-	out = ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
-	// url.Import(url.Decode(ccurltype.Univalues(out).Encode()))
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(out).Encode()).(ccurltype.Univalues))
+	in = univalue.Univalues(acctTrans).Encode()
+	out = univalue.Univalues{}.Decode(in).(univalue.Univalues)
+	// url.Import(url.Decode(univalue.Univalues(out).Encode()))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(out).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{1})
 
@@ -181,7 +181,7 @@ func SimulatedTx0(account string, store *cachedstorage.DataStore) []byte {
 	url.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-01", noncommutative.NewString("tx0-elem-01")) /* The second Element */
 
 	_, transitions := url.Export(true)
-	return ccurltype.Univalues(transitions).Encode()
+	return univalue.Univalues(transitions).Encode()
 }
 
 func SimulatedTx1(account string, store *cachedstorage.DataStore) []byte {
@@ -192,7 +192,7 @@ func SimulatedTx1(account string, store *cachedstorage.DataStore) []byte {
 	url.Write(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/elem-01", noncommutative.NewString("tx1-elem-00")) /* The second Element */
 
 	_, transitions := url.Export(true)
-	return ccurltype.Univalues(transitions).Encode()
+	return univalue.Univalues(transitions).Encode()
 }
 
 func CheckPaths(account string, url *ccurl.ConcurrentUrl) error {
@@ -243,20 +243,20 @@ func TestStateUpdate(t *testing.T) {
 		t.Error(err)
 	}
 	_, initTrans := url.Export(true)
-	// url.Import(url.Decode(ccurltype.Univalues(initTrans).Encode()))
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(initTrans).Encode()).(ccurltype.Univalues))
+	// url.Import(url.Decode(univalue.Univalues(initTrans).Encode()))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(initTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Init(store)
 	tx0bytes := SimulatedTx0(alice, store)
-	tx0Out := ccurltype.Univalues{}.Decode(tx0bytes).(ccurltype.Univalues)
+	tx0Out := univalue.Univalues{}.Decode(tx0bytes).(univalue.Univalues)
 
 	tx1bytes := SimulatedTx1(alice, store)
-	tx1Out := ccurltype.Univalues{}.Decode(tx1bytes).(ccurltype.Univalues)
+	tx1Out := univalue.Univalues{}.Decode(tx1bytes).(univalue.Univalues)
 
-	// url.Import(url.Decode(ccurltype.Univalues(append(tx0Out, tx1Out...)).Encode()))
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(append(tx0Out, tx1Out...)).Encode()).(ccurltype.Univalues))
+	// url.Import(url.Decode(univalue.Univalues(append(tx0Out, tx1Out...)).Encode()))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(append(tx0Out, tx1Out...)).Encode()).(univalue.Univalues))
 
 	url.PostImport()
 	errs := url.Commit([]uint32{0, 1})
@@ -288,9 +288,9 @@ func TestStateUpdate(t *testing.T) {
 	// }
 
 	_, transitions := url.Export(true)
-	// out := ccurltype.Univalues{}.Decode(ccurltype.Univalues(transitions).Encode()).(ccurltype.Univalues)
-	// url.Import(url.Decode(ccurltype.Univalues(out).Encode()))
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(transitions).Encode()).(ccurltype.Univalues))
+	// out := univalue.Univalues{}.Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues)
+	// url.Import(url.Decode(univalue.Univalues(out).Encode()))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues))
 	url.PostImport()
 
 	errs = url.Commit([]uint32{1})
@@ -312,19 +312,19 @@ func TestMultipleTxStateUpdate(t *testing.T) {
 	}
 
 	_, initTrans := url.Export(true)
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(initTrans).Encode()).(ccurltype.Univalues))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(initTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Init(store)
 	tx0bytes := SimulatedTx0(alice, store)
-	tx0Out := ccurltype.Univalues{}.Decode(tx0bytes).(ccurltype.Univalues)
+	tx0Out := univalue.Univalues{}.Decode(tx0bytes).(univalue.Univalues)
 
 	tx1bytes := SimulatedTx1(alice, store)
-	tx1Out := ccurltype.Univalues{}.Decode(tx1bytes).(ccurltype.Univalues)
+	tx1Out := univalue.Univalues{}.Decode(tx1bytes).(univalue.Univalues)
 
-	// url.Import(url.Decode(ccurltype.Univalues(append(tx0Out, tx1Out...)).Encode()))
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(append(tx0Out, tx1Out...)).Encode()).(ccurltype.Univalues))
+	// url.Import(url.Decode(univalue.Univalues(append(tx0Out, tx1Out...)).Encode()))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(append(tx0Out, tx1Out...)).Encode()).(univalue.Univalues))
 	url.PostImport()
 
 	errs := url.Commit([]uint32{1})
@@ -345,7 +345,7 @@ func TestMultipleTxStateUpdate(t *testing.T) {
 	// }
 
 	// _, transitions := url.Export(true)
-	// url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(transitions).Encode()).(ccurltype.Univalues))
+	// url.Import(univalue.Univalues{}.Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues))
 
 	// url.PostImport()
 	// url.Commit([]uint32{1})
@@ -368,21 +368,21 @@ func TestAccessControl(t *testing.T) {
 	}
 
 	_, initTrans := url.Export(true)
-	// url.Import(url.Decode(ccurltype.Univalues(initTrans).Encode()))
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(initTrans).Encode()).(ccurltype.Univalues))
+	// url.Import(url.Decode(univalue.Univalues(initTrans).Encode()))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(initTrans).Encode()).(univalue.Univalues))
 
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Init(store)
 	tx0bytes := SimulatedTx0(alice, store)
-	tx0Out := ccurltype.Univalues{}.Decode(tx0bytes).(ccurltype.Univalues)
+	tx0Out := univalue.Univalues{}.Decode(tx0bytes).(univalue.Univalues)
 
 	tx1bytes := SimulatedTx1(alice, store)
-	tx1Out := ccurltype.Univalues{}.Decode(tx1bytes).(ccurltype.Univalues)
+	tx1Out := univalue.Univalues{}.Decode(tx1bytes).(univalue.Univalues)
 
-	// url.Import(url.Decode(ccurltype.Univalues(append(tx0Out, tx1Out...)).Encode()))
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(append(tx0Out, tx1Out...)).Encode()).(ccurltype.Univalues))
+	// url.Import(url.Decode(univalue.Univalues(append(tx0Out, tx1Out...)).Encode()))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(append(tx0Out, tx1Out...)).Encode()).(univalue.Univalues))
 
 	url.PostImport()
 	url.Commit([]uint32{0, 1})

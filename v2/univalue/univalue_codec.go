@@ -1,4 +1,4 @@
-package ccurltype
+package univalue
 
 import (
 	"bytes"
@@ -6,9 +6,10 @@ import (
 
 	codec "github.com/arcology-network/common-lib/codec"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
+	ccurltype "github.com/arcology-network/concurrenturl/v2/type"
 )
 
-func (this *Univalue) Encode() []byte {
+func (this *Univalue) Encode(processors ...func(interface{}) interface{}) []byte {
 	buffer := make([]byte, this.Size())
 	this.EncodeToBuffer(buffer)
 	return buffer
@@ -61,7 +62,7 @@ func (this *Univalue) FillHeader(buffer []byte) int {
 	)
 }
 
-func (this *Univalue) EncodeToBuffer(buffer []byte) int {
+func (this *Univalue) EncodeToBuffer(buffer []byte, processors ...func(interface{}) interface{}) int {
 	offset := this.FillHeader(buffer)
 	offset += codec.Uint8(this.vType).EncodeToBuffer(buffer[offset:])
 	offset += codec.Uint32(this.tx).EncodeToBuffer(buffer[offset:])
@@ -92,7 +93,7 @@ func (this *Univalue) Decode(buffer []byte) interface{} {
 	this.writes = uint32(codec.Uint32(1).Decode(fields[4]).(codec.Uint32))
 	this.deltaWrites = uint32(codec.Uint32(1).Decode(fields[5]).(codec.Uint32))
 
-	this.value = (&Decoder{}).Decode(fields[6], this.vType)
+	this.value = (&ccurltype.Decoder{}).Decode(fields[6], this.vType)
 	this.preexists = bool(codec.Bool(true).Decode(fields[7]).(codec.Bool))
 	// this.composite = bool(codec.Bool(true).Decode(fields[8]).(codec.Bool))
 	this.reserved = fields[6] // For merkle root calculation

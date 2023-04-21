@@ -8,9 +8,9 @@ import (
 	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl/v2"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
-	ccurltype "github.com/arcology-network/concurrenturl/v2/type"
 	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
 	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
+	univalue "github.com/arcology-network/concurrenturl/v2/univalue"
 	"github.com/holiman/uint256"
 )
 
@@ -41,10 +41,10 @@ func TestSimpleBalance(t *testing.T) {
 
 	// Export variables
 	_, transitions := url.Export(true)
-	buffer := ccurltype.Univalues(transitions).Encode()
-	out := ccurltype.Univalues{}.Decode(buffer).(ccurltype.Univalues)
+	buffer := univalue.Univalues(transitions).Encode()
+	out := univalue.Univalues{}.Decode(buffer).(univalue.Univalues)
 	for i := range transitions {
-		if !transitions[i].(*ccurltype.Univalue).Equal(out[i].(*ccurltype.Univalue)) {
+		if !transitions[i].(*univalue.Univalue).Equal(out[i].(*univalue.Univalue)) {
 			t.Error("Accesses don't match")
 		}
 	}
@@ -68,7 +68,7 @@ func TestSimpleBalance(t *testing.T) {
 	}
 
 	records, trans := url2.Export(true)
-	ccurltype.Univalues(trans).Encode()
+	univalue.Univalues(trans).Encode()
 	for _, v := range records {
 		if v.Writes() == v.Reads() && v.Writes() == 0 {
 			t.Error("Error: Write == Reads == 0")
@@ -155,9 +155,9 @@ func TestBalance(t *testing.T) {
 	trans := transitions[10]
 
 	_10 := trans.Encode()
-	_10tran := (&ccurltype.Univalue{}).Decode(_10).(*ccurltype.Univalue)
+	_10tran := (&univalue.Univalue{}).Decode(_10).(*univalue.Univalue)
 
-	if !trans.(*ccurltype.Univalue).Equal(_10tran) {
+	if !trans.(*univalue.Univalue).Equal(_10tran) {
 		t.Error("Accesses don't match", trans, _10tran)
 	}
 }
@@ -204,7 +204,7 @@ func TestMultipleNonces(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 
 	url0 := ccurl.NewConcurrentUrl(store)
-	alice := ccurltype.RandomAccount()
+	alice := RandomAccount()
 	if err := url0.CreateAccount(ccurlcommon.SYSTEM, url0.Platform.Eth10(), alice); err != nil { // CreateAccount account structure {
 		t.Error(err)
 	}
@@ -221,7 +221,7 @@ func TestMultipleNonces(t *testing.T) {
 	// ccurltype.SetInvariate(trans0, "nonce")
 
 	url1 := ccurl.NewConcurrentUrl(store)
-	bob := ccurltype.RandomAccount()
+	bob := RandomAccount()
 	if err := url1.CreateAccount(ccurlcommon.SYSTEM, url1.Platform.Eth10(), bob); err != nil { // CreateAccount account structure {
 		t.Error(err)
 	}

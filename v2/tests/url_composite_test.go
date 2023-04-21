@@ -8,9 +8,9 @@ import (
 	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl/v2"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
-	ccurltype "github.com/arcology-network/concurrenturl/v2/type"
 	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
 	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
+	univalue "github.com/arcology-network/concurrenturl/v2/univalue"
 )
 
 func TestAuxTrans(t *testing.T) {
@@ -23,7 +23,7 @@ func TestAuxTrans(t *testing.T) {
 	}
 
 	_, trans00 := url.Export(true)
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(trans00).Encode()).(ccurltype.Univalues))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans00).Encode()).(univalue.Univalues))
 
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM}) // Commit
@@ -98,8 +98,8 @@ func TestAuxTrans(t *testing.T) {
 		t.Error("The variable has been cleared")
 	}
 
-	in := ccurltype.Univalues(transitions).Encode()
-	out := ccurltype.Univalues{}.Decode(in).(ccurltype.Univalues)
+	in := univalue.Univalues(transitions).Encode()
+	out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
 
 	url.Import(out)
 	url.PostImport()
@@ -115,7 +115,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	}
 
 	_, trans00 := url.Export(true)
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(trans00).Encode()).(ccurltype.Univalues))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans00).Encode()).(univalue.Univalues))
 
 	url.PostImport()
 	url.Commit([]uint32{1}) // Commit
@@ -127,7 +127,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	}
 
 	_, trans10 := url.Export(true)
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(trans10).Encode()).(ccurltype.Univalues))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans10).Encode()).(univalue.Univalues))
 
 	url.PostImport()
 	url.Commit([]uint32{1}) // Commit
@@ -142,7 +142,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	}
 
 	accesses10, trans11 := url.Export(true)
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(trans11).Encode()).(ccurltype.Univalues))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans11).Encode()).(univalue.Univalues))
 
 	url.PostImport()
 	url.Commit([]uint32{1}) // Commit

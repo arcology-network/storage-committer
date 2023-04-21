@@ -1,4 +1,4 @@
-package concurrenturl
+package indexer
 
 import (
 	"bytes"
@@ -31,7 +31,7 @@ func (this *ArbitratorSlow) Detect(newTrans []ccurlcommon.UnivalueInterface) (ma
 	}
 
 	// ccmap := concurrentmap.NewConcurrentMap()
-	// ccmap.BatchSet(ccurltype.Univalues(newTrans).Keys(), common.From(newTrans))
+	// ccmap.BatchSet(univalue.Univalues(newTrans).Keys(), common.From(newTrans))
 
 	for _, value := range this.transitions {
 		v := *value
@@ -109,7 +109,8 @@ func HashPaths(records []ccurlcommon.UnivalueInterface) {
 	hasher := func(start, end, index int, args ...interface{}) {
 		for i := start; i < end; i++ {
 			h0, h1 := murmur.Sum128(codec.String(*records[i].GetPath()).Encode())
-			records[i].SetPath(codec.Bytes(codec.Uint64(h0).Encode()).ToString() + codec.Bytes(codec.Uint64(h1).Encode()).ToString())
+			path := codec.Bytes(codec.Uint64(h0).Encode()).ToString() + codec.Bytes(codec.Uint64(h1).Encode()).ToString()
+			records[i].SetPath(&path)
 		}
 	}
 	common.ParallelWorker(len(records), numThreads, hasher)

@@ -10,6 +10,7 @@ import (
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 	ccurltype "github.com/arcology-network/concurrenturl/v2/type"
 	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
+	univalue "github.com/arcology-network/concurrenturl/v2/univalue"
 )
 
 func TestPartialCache(t *testing.T) {
@@ -24,7 +25,7 @@ func TestPartialCache(t *testing.T) {
 
 	url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
 	_, acctTrans := url.Export(true)
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(acctTrans).Encode()).(ccurltype.Univalues))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
@@ -37,7 +38,7 @@ func TestPartialCache(t *testing.T) {
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999"))
 	_, acctTrans = url.Export(true)
 	(*url.Store()).(*cachedstorage.DataStore).LocalCache().Clear()
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(acctTrans).Encode()).(ccurltype.Univalues), true, excludeMemDB) // The changes will be discarded.
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues), true, excludeMemDB) // The changes will be discarded.
 	url.PostImport()
 	url.Commit([]uint32{1})
 
@@ -51,8 +52,8 @@ func TestPartialCache(t *testing.T) {
 
 	/* Don't filter persistent data source	*/
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999"))
-	(*url.Store()).(*cachedstorage.DataStore).LocalCache().Clear()                                          // Make sure only the persistent storage has the data.
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(acctTrans).Encode()).(ccurltype.Univalues)) // This should take effect
+	(*url.Store()).(*cachedstorage.DataStore).LocalCache().Clear()                                       // Make sure only the persistent storage has the data.
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues)) // This should take effect
 	url.PostImport()
 	url.Commit([]uint32{1})
 
@@ -83,14 +84,14 @@ func TestPartialCacheWithFilter(t *testing.T) {
 
 	url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
 	_, acctTrans := url.Export(true)
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(acctTrans).Encode()).(ccurltype.Univalues))
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999"))
 	_, acctTrans = url.Export(true)
 	(*url.Store()).(*cachedstorage.DataStore).LocalCache().Clear()
-	url.Import(ccurltype.Univalues{}.Decode(ccurltype.Univalues(acctTrans).Encode()).(ccurltype.Univalues), true, excludeMemDB) // The changes will be discarded.
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues), true, excludeMemDB) // The changes will be discarded.
 	url.PostImport()
 	url.Commit([]uint32{1})
 

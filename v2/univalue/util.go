@@ -1,9 +1,4 @@
-package ccurltype
-
-import (
-	"math/rand"
-	"time"
-)
+package univalue
 
 func CreateUnivalueForTest(transitType uint8, vType uint8, tx uint32, path string, reads, writes uint32, value interface{}, preexists, composite bool) *Univalue {
 	return &Univalue{
@@ -17,17 +12,6 @@ func CreateUnivalueForTest(transitType uint8, vType uint8, tx uint32, path strin
 		// composite: composite,
 		reserved: nil,
 	}
-}
-
-// Generate a random account, testing only
-func RandomAccount() string {
-	var letters = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
-	rand.Seed(time.Now().UnixNano())
-	b := make([]rune, 40)
-	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))]
-	}
-	return string(b)
 }
 
 // Only work when

@@ -1,4 +1,4 @@
-package ccurltype
+package indexer
 
 import (
 	"sort"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/arcology-network/common-lib/mempool"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
+	univalue "github.com/arcology-network/concurrenturl/v2/univalue"
 )
 
 type DeltaSequence struct {
@@ -29,7 +30,7 @@ func (this *DeltaSequence) Reset(key string, indexer *Indexer, mempool *mempool.
 
 func (this *DeltaSequence) Init(key string, indexer *Indexer, mempool *mempool.Mempool) {
 	if initialState := indexer.RetriveShallow(key); initialState != nil {
-		nVal := mempool.Get().(*Univalue)
+		nVal := mempool.Get().(*univalue.Univalue)
 		nVal.Init(ccurlcommon.SYSTEM, key, 0, 0, initialState.(ccurlcommon.TypeInterface).Deepcopy(), indexer)
 		this.values = append(this.values, nVal) //Transitions are ordered by Tx, -1 will guarantee the initial state is always the first one
 	}
@@ -41,7 +42,7 @@ func (this *DeltaSequence) Value() interface{} {
 
 func (this *DeltaSequence) Insert(v ccurlcommon.UnivalueInterface) {
 	this.lock.Lock()
-	this.values = append(this.values, v.(*Univalue))
+	this.values = append(this.values, v.(*univalue.Univalue))
 	this.lock.Unlock()
 }
 

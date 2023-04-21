@@ -1,4 +1,4 @@
-package ccurltype
+package univalue
 
 import (
 	"fmt"

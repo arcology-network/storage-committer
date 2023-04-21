@@ -11,7 +11,7 @@ import (
 	orderedmap "github.com/elliotchance/orderedmap"
 )
 
-func (this *Meta) Encode() []byte {
+func (this *Meta) Encode(processors ...func(interface{}) interface{}) []byte {
 	buffer := make([]byte, this.Size()) //  no need to send the committed keys
 	this.EncodeToBuffer(buffer)
 	return buffer
@@ -43,7 +43,7 @@ func (this *Meta) FillHeader(buffer []byte) {
 	//offset += codec.Strings(this.removed).Size()
 }
 
-func (this *Meta) EncodeToBuffer(buffer []byte) int {
+func (this *Meta) EncodeToBuffer(buffer []byte, processors ...func(interface{}) interface{}) int {
 	this.FillHeader(buffer)
 	offset := int(this.HeaderSize())
 
