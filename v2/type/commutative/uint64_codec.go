@@ -12,7 +12,6 @@ func (this *Uint64) HeaderSize() uint32 {
 
 func (this *Uint64) Size() uint32 {
 	return this.HeaderSize() + // No need to encode this.finalized
-		codec.Bool(this.finalized).Size() +
 		codec.Uint64(this.value).Size() +
 		codec.Uint64(this.delta).Size()
 }
@@ -24,7 +23,7 @@ func (this *Uint64) Encode() []byte {
 }
 
 func (this *Uint64) EncodeToBuffer(buffer []byte) int {
-	offset := codec.Bool(this.finalized).EncodeToBuffer(buffer)
+	offset := 0
 	offset += codec.Uint64(this.value).EncodeToBuffer(buffer[offset:])
 	offset += codec.Uint64(this.delta).EncodeToBuffer(buffer[offset:])
 	return offset
@@ -32,9 +31,8 @@ func (this *Uint64) EncodeToBuffer(buffer []byte) int {
 
 func (this *Uint64) Decode(buffer []byte) interface{} {
 	this = &Uint64{
-		bool(codec.Bool(this.finalized).Decode(buffer).(codec.Bool)),
-		uint64(codec.Uint64(0).Decode(buffer[1:]).(codec.Uint64)),                    // value
-		uint64(codec.Uint64(0).Decode(buffer[codec.UINT64_LEN*1+1:]).(codec.Uint64)), // delta
+		uint64(codec.Uint64(0).Decode(buffer).(codec.Uint64)),                      // value
+		uint64(codec.Uint64(0).Decode(buffer[codec.UINT64_LEN*1:]).(codec.Uint64)), // delta
 	}
 	return this
 }

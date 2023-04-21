@@ -52,7 +52,6 @@ func NewU256(value, min, max *uint256.Int) interface{} {
 }
 
 func (this *U256) IsSelf(key interface{}) bool { return true }
-func (this *U256) ConcurrentWritable() bool    { return !this.finalized }
 func (this *U256) TypeID() uint8               { return ccurlcommon.CommutativeUint256 }
 func (this *U256) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
 	return v, 0, 1, 0
@@ -100,7 +99,6 @@ func (this *U256) HasCustomizedLimit() bool {
 
 func (this *U256) Deepcopy() interface{} {
 	return &U256{
-		finalized:      this.finalized,
 		value:          this.value.Clone(),
 		delta:          this.delta.Clone(),
 		min:            this.min.Clone(),
@@ -117,25 +115,9 @@ func (this *U256) ToAccess() interface{} {
 	return this
 }
 
-func (this *U256) isOverflowed(v0 *uint256.Int, signV0 bool, v1 *uint256.Int, signV1 bool) (*uint256.Int, bool) {
-	if signV0 == signV1 { // Possitive
-		v, overflowed := v0.Clone().AddOverflow(v0, v1)
-		if overflowed {
-			return nil, signV0
-		}
-		return v, signV0
-	}
-
-	if v0.Cmp(v1) < 1 { // v0 <= v1
-		return v1.Sub(v1, v0), signV1
-	}
-	return v1.Sub(v0, v1), signV0
-}
-
 func (this *U256) Get(source interface{}) (interface{}, uint32, uint32) {
 	this.finalized = true
 	temp := &U256{
-		finalized:      this.finalized,
 		value:          this.value.Clone(),
 		delta:          this.delta.Clone(),
 		min:            this.min,
@@ -156,25 +138,40 @@ func (this *U256) Get(source interface{}) (interface{}, uint32, uint32) {
 
 func (this *U256) Delta() interface{} { return this }
 
+func (this *U256) isOverflowed(v0 *uint256.Int, signV0 bool, v1 *uint256.Int, signV1 bool) (*uint256.Int, bool) {
+	if signV0 == signV1 { // Both positive or negative
+		summed, overflowed := v0.Clone().AddOverflow(v0, v1)
+		if overflowed {
+			return nil, true
+		}
+		return summed, signV0
+	}
+
+	if v0.Cmp(v1) < 1 { // v0 <= v1
+		return v1.Sub(v1, v0), signV1
+	}
+	return v1.Sub(v0, v1), signV0
+}
+
 // Set delta
 func (this *U256) Set(newDelta interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
 	if newDelta.(*U256).delta.Eq(UINT256ZERO) {
-		return this, 0, 1, 0, nil
+		return this, 1, 0, 0, nil
 	}
 
-	accumDelta, accumSign := this.isOverflowed(this.delta.Clone(), this.deltaPossitive, newDelta.(*U256).delta, newDelta.(*U256).deltaPossitive)
+	accumDelta, deltaSign := this.isOverflowed(this.delta.Clone(), this.deltaPossitive, newDelta.(*U256).delta, newDelta.(*U256).deltaPossitive)
 	if accumDelta == nil {
 		return this, 0, 0, 1, errors.New("Error: Value out of range")
 	}
 
-	tempV, deltaPossitive := this.isOverflowed(this.value.Clone(), true, accumDelta.Clone(), accumSign)
-	if tempV == nil || !deltaPossitive {
+	tempV, possitive := this.isOverflowed(this.value.Clone(), true, accumDelta.Clone(), deltaSign)
+	if tempV == nil || !possitive { // Result must be possitive
 		return this, 0, 0, 1, errors.New("Error: Value out of range")
 	}
 
 	if this.min.Cmp(tempV) < 1 && tempV.Cmp(this.max) < 1 {
 		this.delta = accumDelta
-		this.deltaPossitive = deltaPossitive
+		this.deltaPossitive = deltaSign
 		return this, 0, 0, 1, nil
 	}
 	return this, 0, 0, 1, errors.New("Error: Value out of range")

@@ -8,7 +8,7 @@ func TestNewUint64(t *testing.T) {
 	v := NewUint64((5), (0)).(*Uint64)
 
 	final, _, _ := v.Get(nil)
-	if final.(*Uint64).value != 5 || final.(*Uint64).finalized == true {
+	if final.(*Uint64).value != 5 {
 		t.Error("Wrong value")
 	}
 
@@ -44,24 +44,24 @@ func TestUint64Codec(t *testing.T) {
 }
 
 // func TestSetU64(t *testing.T) {
-// 	v := NewUint64((5), (0), (4), (6), ADDITION)
+// 	v := NewUint64(uint64(5), uint64(4), uint64(6))
 // 	delta := NewU256Delta((0))
-// 	if _, _, err := v.(*U256).Set( delta, nil); err != nil {
+// 	if _, _, err := v.(*U256).Set(delta, nil); err != nil {
 // 		t.Error(err)
 // 	}
 
 // 	delta = NewU256Delta((1))
-// 	if _, _, err := v.(*U256).Set( delta, nil); err != nil {
+// 	if _, _, err := v.(*U256).Set(delta, nil); err != nil {
 // 		t.Error(err)
 // 	}
 
 // 	delta = NewU256Delta((0))
-// 	if _, _, err := v.(*U256).Set( delta, nil); err != nil {
+// 	if _, _, err := v.(*U256).Set(delta, nil); err != nil {
 // 		t.Error(err)
 // 	}
 
 // 	delta = NewU256Delta((1))
-// 	if _, _, err := v.(*U256).Set( delta, nil); err == nil {
+// 	if _, _, err := v.(*U256).Set(delta, nil); err == nil {
 // 		t.Error("Error: Should have failed")
 // 	}
 

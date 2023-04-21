@@ -11,9 +11,9 @@ func NewInt64(v int64) interface{} {
 	return &this
 }
 
-func (this *Int64) IsSelf(key interface{}) bool           { return true }
-func (this *Int64) TypeID() uint8                         { return ccurlcommon.NoncommutativeInt64 }
-func (this *Int64) ConcurrentWritable() bool              { return false }
+func (this *Int64) IsSelf(key interface{}) bool { return true }
+func (this *Int64) TypeID() uint8               { return ccurlcommon.NoncommutativeInt64 }
+
 func (this *Int64) Latest(source interface{}) interface{} { return this }
 func (this *Int64) Delta() interface{}                    { return this }
 

@@ -1,10 +1,10 @@
 package noncommutative
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/arcology-network/common-lib/codec"
-	"github.com/arcology-network/common-lib/common"
 )
 
 func (this *String) Size() uint32 {
@@ -19,8 +19,8 @@ func (this *String) EncodeToBuffer(buffer []byte) int {
 	return codec.String(*this).EncodeToBuffer(buffer)
 }
 
-func (this *String) Decode(bytes []byte) interface{} {
-	*this = String(codec.String("").Decode(common.ArrayCopy(bytes)).(codec.String))
+func (this *String) Decode(buffer []byte) interface{} {
+	*this = String(codec.String("").Decode(bytes.Clone(buffer)).(codec.String))
 	return this
 }
 

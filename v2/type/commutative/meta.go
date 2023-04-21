@@ -17,7 +17,6 @@ type Meta struct {
 	view          *orderedset.OrderedSet // committed keys + added - removed
 	addedBuffer   *orderedmap.OrderedMap
 	removedBuffer *orderedmap.OrderedMap
-	finalized     bool
 	snapshotDirty bool
 
 	// Export only
@@ -38,7 +37,6 @@ func NewMeta(path string) (interface{}, error) {
 		committedKeys: []string{},
 		added:         []string{},
 		removed:       []string{},
-		finalized:     false,
 		view:          nil,
 		addedBuffer:   orderedmap.NewOrderedMap(),
 		removedBuffer: orderedmap.NewOrderedMap(),
@@ -54,7 +52,6 @@ func (this *Meta) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
 
 func (this *Meta) View() *orderedset.OrderedSet { return this.view }
 func (this *Meta) IsSelf(key interface{}) bool  { return ccurlcommon.IsPath(key.(string)) }
-func (this *Meta) ConcurrentWritable() bool     { return !this.finalized }
 func (this *Meta) TypeID() uint8                { return ccurlcommon.CommutativeMeta }
 func (this *Meta) CommittedLength() int         { return len(this.committedKeys) }
 func (this *Meta) Length() int {
@@ -72,16 +69,12 @@ func (this *Meta) Deepcopy() interface{} {
 		removed:       common.DeepCopy(this.removed),
 		view:          this.view.Deepcopy(),
 		addedBuffer:   orderedmap.NewOrderedMap(),
-		removedBuffer: orderedmap.NewOrderedMap(),
-		finalized:     this.finalized,
-	}
+		removedBuffer: orderedmap.NewOrderedMap()}
 }
 
 func (this *Meta) Equal(other *Meta) bool {
-	return reflect.DeepEqual(this.committedKeys, other.committedKeys) &&
-		reflect.DeepEqual(this.added, other.added) &&
-		reflect.DeepEqual(this.removed, other.removed) &&
-		this.finalized == other.finalized
+	return reflect.DeepEqual(this.added, other.added) &&
+		reflect.DeepEqual(this.removed, other.removed)
 }
 
 func (this *Meta) ToAccess() interface{} {
@@ -89,7 +82,6 @@ func (this *Meta) ToAccess() interface{} {
 }
 
 func (this *Meta) Get(source interface{}) (interface{}, uint32, uint32) {
-	this.finalized = true
 	if !this.snapshotDirty { // cache clean
 		return this, 1, 0
 	}
@@ -102,7 +94,6 @@ func (this *Meta) Delta() interface{} {
 		committedKeys: []string{}, // committed keys
 		added:         this.Added(),
 		removed:       this.Removed(),
-		finalized:     this.finalized,
 		view:          this.view,
 		addedBuffer:   this.addedBuffer,
 		removedBuffer: this.removedBuffer,
@@ -165,16 +156,6 @@ func (this *Meta) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 		return nil
 	}
 	return this
-}
-
-// Check new keys
-func (this *Meta) Added() []string {
-	return common.To(this.addedBuffer.Keys(), "")
-}
-
-// Peek the removed keys
-func (this *Meta) Removed() []string {
-	return common.To(this.removedBuffer.Keys(), "")
 }
 
 // committed + added - removed
@@ -281,7 +262,6 @@ func (this *Meta) excludeBuffer(subkey string, value interface{}, preexists bool
 func (this *Meta) Purge() {
 	this.added = []string{}
 	this.removed = []string{}
-	this.finalized = false
 	this.view = nil
 	this.addedBuffer = orderedmap.NewOrderedMap()
 	this.removedBuffer = orderedmap.NewOrderedMap()
@@ -292,6 +272,9 @@ func (this *Meta) Hash(hasher func([]byte) []byte) []byte {
 }
 
 // Debugging interfaces
-// func (this *Meta) SetKeys(keys []string)    { this.keys = keys }
-// func (this *Meta) SetAdded(keys []string)   { this.added = keys }
-// func (this *Meta) SetRemoved(keys []string) { this.removed = keys }
+
+func (this *Meta) Added() []string                         { return common.To(this.addedBuffer.Keys(), "") }   // Check new keys
+func (this *Meta) Removed() []string                       { return common.To(this.removedBuffer.Keys(), "") } // Peek the removed keys
+func (this *Meta) SetCommittedKeys(committedKeys []string) { this.committedKeys = committedKeys }
+func (this *Meta) SetAdded(keys []string)                  { this.added = keys }
+func (this *Meta) SetRemoved(keys []string)                { this.removed = keys }

@@ -21,7 +21,7 @@ type Univalue struct {
 	deltaWrites uint32
 	value       interface{}
 	preexists   bool
-	composite   bool
+	// composite   bool
 	reserved    interface{}
 	reclaimFunc func(interface{})
 }
@@ -36,12 +36,12 @@ func NewUnivalue(tx uint32, key string, reads, writes uint32, deltaWrites uint32
 		deltaWrites: deltaWrites,
 		value:       args[0],
 		preexists:   false,
-		composite:   false,
+		// composite:   false,
 	}
 
 	if len(args) > 1 {
 		v.SetPreexist(key, args[1])
-		v.composite = v.IfConcurrentWritable()
+		// v.composite = v.IfConcurrentWritable()
 	}
 
 	return v
@@ -55,11 +55,11 @@ func (value *Univalue) Init(tx uint32, key string, reads, writes uint32, v inter
 	value.writes = writes
 	value.value = v
 	value.preexists = false
-	value.composite = false
+	// value.composite = false // Non by default
 	value.reserved = nil
 	if len(args) > 0 {
 		value.SetPreexist(key, args[0]) // Check if the key  exists in indexer already
-		value.composite = value.IfConcurrentWritable()
+		// value.composite = value.IfConcurrentWritable()
 	}
 }
 
@@ -100,6 +100,8 @@ func (this *Univalue) IsCommutative() bool {
 			return true
 		case *commutative.Int64:
 			return true
+		case *commutative.Uint64:
+			return true
 		}
 	}
 	return false
@@ -117,8 +119,7 @@ func (this *Univalue) Reads() uint32       { return this.reads }
 func (this *Univalue) Writes() uint32      { return this.writes } // Exist in cache as a failed read
 func (this *Univalue) DeltaWrites() uint32 { return this.deltaWrites }
 
-func (this *Univalue) Preexist() bool           { return this.preexists } // Exist in cache as a failed read
-func (this *Univalue) ConcurrentWritable() bool { return this.composite }
+func (this *Univalue) Preexist() bool { return this.preexists } // Exist in cache as a failed read
 
 func (this *Univalue) IncrementReads(reads uint32)   { this.reads += reads }
 func (this *Univalue) IncrementWrites(writes uint32) { this.writes += writes }
@@ -136,10 +137,7 @@ func (this *Univalue) SetPreexist(key string, source interface{}) {
 }
 
 func (this *Univalue) IfConcurrentWritable() bool { // Call this before setting the value attribute to nil
-	if this.value != nil && this.Preexist() {
-		return this.value.(ccurlcommon.TypeInterface).ConcurrentWritable() && this.reads == 0
-	}
-	return false
+	return (this.value != nil && this.reads == 0 && this.writes == 0)
 }
 
 func (this *Univalue) Export(source interface{}) (interface{}, interface{}) {
@@ -155,7 +153,7 @@ func (this *Univalue) Export(source interface{}) (interface{}, interface{}) {
 		writes:    this.Writes(),
 		value:     this.Value(),
 		preexists: this.Preexist(),
-		composite: this.IfConcurrentWritable(),
+		// composite: this.IfConcurrentWritable(),
 	}
 
 	if accessRecord.Value() != nil {
@@ -182,7 +180,6 @@ func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{
 		tempV, r, w := this.value.(ccurlcommon.TypeInterface).Get(source) //RW: Affiliated reads and writes
 		this.reads += r
 		this.writes += w
-		this.composite = tempV.(ccurlcommon.TypeInterface).ConcurrentWritable()
 		return tempV
 	}
 	this.IncrementReads(1)
@@ -238,7 +235,6 @@ func (this *Univalue) ApplyDelta(tx uint32, v interface{}) error {
 		this.PrecheckAttributes(vec[i].(*Univalue))
 		this.writes += vec[i].Writes()
 		this.reads += vec[i].Reads()
-		this.composite = this.composite && vec[i].ConcurrentWritable()
 	}
 
 	// Apply transitions
@@ -253,28 +249,28 @@ func (this *Univalue) PrecheckAttributes(other *Univalue) {
 		panic("Error: Value type mismatched!")
 	}
 
-	if this.preexists && this.IsCommutative() && this.Reads() > 0 && this.composite == other.composite {
+	if this.preexists && this.IsCommutative() && this.Reads() > 0 && this.IfConcurrentWritable() == other.IfConcurrentWritable() {
 		this.Print()
 		fmt.Println("================================================================")
 		other.Print()
 		panic("Error: The composite attribute must match in different transitions")
 	}
 
-	if this.Value() == nil && this.composite {
+	if this.Value() == nil && this.IfConcurrentWritable() {
 		panic("Error: A deleted value cann't be composite")
 	}
 
-	if !this.preexists && this.composite {
+	if !this.preexists && this.IfConcurrentWritable() {
 		panic("Error: A new value cann't be composite")
 	}
 }
 
-func (this *Univalue) PostcheckAttributes() error {
-	if this.composite && this.reads > 0 {
-		panic("Error: Inconsistent properites")
-	}
-	return nil
-}
+// func (this *Univalue) PostcheckAttributes() error {
+// 	if this.composite && this.reads > 0 {
+// 		panic("Error: Inconsistent properites")
+// 	}
+// 	return nil
+// }
 
 func (this *Univalue) Deepcopy() interface{} {
 	v := &Univalue{
@@ -285,7 +281,6 @@ func (this *Univalue) Deepcopy() interface{} {
 		writes:    this.writes,
 		value:     this.value,
 		preexists: this.preexists,
-		composite: this.composite,
 	}
 
 	if v.value != nil {
@@ -306,7 +301,7 @@ func (this *Univalue) Print() {
 	fmt.Println(spaces+"path: ", *this.path)
 	fmt.Println(spaces+"value: ", this.value)
 	fmt.Println(spaces+"preexists: ", this.preexists)
-	fmt.Println(spaces+"composite: ", this.composite)
+
 	//this.value.(ccurlcommon.TypeInterface).Print()
 	fmt.Println("--------------------------------------------------------")
 }

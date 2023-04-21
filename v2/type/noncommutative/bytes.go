@@ -27,7 +27,6 @@ func (this *Bytes) Assign(v []byte) {
 
 func (this *Bytes) IsSelf(key interface{}) bool { return true }
 func (this *Bytes) TypeID() uint8               { return ccurlcommon.NoncommutativeBytes }
-func (this *Bytes) ConcurrentWritable() bool    { return false }
 
 func (this *Bytes) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
 	return v, 0, 1, 0

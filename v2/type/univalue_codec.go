@@ -1,10 +1,10 @@
 package ccurltype
 
 import (
+	"bytes"
 	"reflect"
 
 	codec "github.com/arcology-network/common-lib/codec"
-	common "github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 )
 
@@ -15,7 +15,7 @@ func (this *Univalue) Encode() []byte {
 }
 
 func (this *Univalue) HeaderSize() uint32 {
-	return uint32(10 * codec.UINT32_LEN)
+	return uint32(9 * codec.UINT32_LEN)
 }
 
 func (this *Univalue) Size() uint32 {
@@ -32,8 +32,8 @@ func (this *Univalue) Size() uint32 {
 		uint32(4) + // codec.Uint32(this.writes).Size() +
 		uint32(4) + // codec.Uint32(this.deltaWrites).Size() +
 		(vLen) +
-		uint32(1) + // codec.Bool(this.preexists).Size() +
-		uint32(1) // codec.Bool(this.composite).Size()
+		uint32(1) //+  codec.Bool(this.preexists).Size() +
+	// uint32(1) // codec.Bool(this.composite).Size()
 }
 
 func (this *Univalue) FillHeader(buffer []byte) int {
@@ -56,7 +56,7 @@ func (this *Univalue) FillHeader(buffer []byte) int {
 			codec.Uint32(this.deltaWrites).Size(),
 			vLen,
 			codec.Bool(this.preexists).Size(),
-			codec.Bool(this.composite).Size(),
+			// codec.Bool(this.composite).Size(),
 		},
 	)
 }
@@ -74,7 +74,7 @@ func (this *Univalue) EncodeToBuffer(buffer []byte) int {
 	}
 
 	offset += codec.Bool(this.preexists).EncodeToBuffer(buffer[offset:])
-	offset += codec.Bool(this.composite).EncodeToBuffer(buffer[offset:])
+	// offset += codec.Bool(this.composite).EncodeToBuffer(buffer[offset:])
 	return offset
 }
 
@@ -85,8 +85,8 @@ func (this *Univalue) Decode(buffer []byte) interface{} {
 	}
 
 	this.vType = uint8(reflect.Kind(codec.Uint8(1).Decode(fields[0]).(codec.Uint8)))
-	this.tx = uint32(codec.Uint32(1).Decode(fields[1]).(codec.Uint32))
-	key := string(codec.String("").Decode(common.ArrayCopy(fields[2])).(codec.String))
+	this.tx = uint32(codec.Uint32(0).Decode(fields[1]).(codec.Uint32))
+	key := string(codec.String("").Decode(bytes.Clone(fields[2])).(codec.String))
 	this.path = &key
 	this.reads = uint32(codec.Uint32(1).Decode(fields[3]).(codec.Uint32))
 	this.writes = uint32(codec.Uint32(1).Decode(fields[4]).(codec.Uint32))
@@ -94,7 +94,7 @@ func (this *Univalue) Decode(buffer []byte) interface{} {
 
 	this.value = (&Decoder{}).Decode(fields[6], this.vType)
 	this.preexists = bool(codec.Bool(true).Decode(fields[7]).(codec.Bool))
-	this.composite = bool(codec.Bool(true).Decode(fields[8]).(codec.Bool))
+	// this.composite = bool(codec.Bool(true).Decode(fields[8]).(codec.Bool))
 	this.reserved = fields[6] // For merkle root calculation
 
 	if this.value == nil || this.IsCommutative() {
@@ -133,7 +133,7 @@ func (this *Univalue) GetEncodedSize() []int {
 		int(codec.Uint32(this.deltaWrites).Size()),
 		len(vBytes),
 		int(codec.Bool(this.preexists).Size()),
-		int(codec.Bool(this.composite).Size()),
+		// int(codec.Bool(this.composite).Size()),
 	}
 }
 
@@ -144,7 +144,7 @@ func (this *Univalue) GobEncode() ([]byte, error) {
 func (this *Univalue) GobDecode(data []byte) error {
 	v := this.Decode(data).(*Univalue)
 	this.vType = v.vType
-	this.composite = v.composite
+	// this.composite = v.composite
 	this.path = v.path
 	this.preexists = v.preexists
 	this.tx = v.tx

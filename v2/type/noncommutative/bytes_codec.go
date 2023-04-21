@@ -1,10 +1,10 @@
 package noncommutative
 
 import (
+	"bytes"
 	"fmt"
 
 	codec "github.com/arcology-network/common-lib/codec"
-	"github.com/arcology-network/common-lib/common"
 )
 
 func (this *Bytes) HeaderSize() uint32 {
@@ -28,11 +28,11 @@ func (this *Bytes) EncodeToBuffer(buffer []byte) int {
 	return offset + codec.Bytes(this.data).EncodeToBuffer(buffer[offset:])
 }
 
-func (*Bytes) Decode(bytes []byte) interface{} {
-	fields := codec.Byteset{}.Decode(bytes).(codec.Byteset)
+func (*Bytes) Decode(buffer []byte) interface{} {
+	fields := codec.Byteset{}.Decode(buffer).(codec.Byteset)
 	return &Bytes{
 		placeholder: bool(codec.Bool(true).Decode(fields[0]).(codec.Bool)),
-		data:        common.ArrayCopy(fields[1]),
+		data:        bytes.Clone(fields[1]),
 	}
 }
 

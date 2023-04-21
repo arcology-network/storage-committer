@@ -19,9 +19,9 @@ func NewBigint(v int64) interface{} {
 func (this *Bigint) IsSelf(key interface{}) bool           { return true }
 func (this *Bigint) TypeID() uint8                         { return uint8(ccurlcommon.NoncommutativeBigint) }
 func (this *Bigint) Latest(source interface{}) interface{} { return this }
-func (this *Bigint) ConcurrentWritable() bool              { return false }
-func (this *Bigint) Value() interface{}                    { return this }
-func (this *Bigint) ToAccess() interface{}                 { return nil }
+
+func (this *Bigint) Value() interface{}    { return this }
+func (this *Bigint) ToAccess() interface{} { return nil }
 
 func (this *Bigint) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
 	return v, 0, 1, 0

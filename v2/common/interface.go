@@ -12,7 +12,6 @@ type TypeInterface interface { // value type
 	CopyTo(interface{}) (interface{}, uint32, uint32, uint32)
 	Latest(interface{}) interface{}
 	ApplyDelta(interface{}) TypeInterface
-	ConcurrentWritable() bool
 	IsSelf(interface{}) bool
 	Hash(func([]byte) []byte) []byte
 	Encode() []byte
@@ -46,7 +45,7 @@ type UnivalueInterface interface { // value type
 
 	ApplyDelta(uint32, interface{}) error
 	Preexist() bool
-	ConcurrentWritable() bool // Delta writable
+	IfConcurrentWritable() bool
 	Deepcopy() interface{}
 	Export(interface{}) (interface{}, interface{})
 	GetEncoded() []byte

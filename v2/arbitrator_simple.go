@@ -5,10 +5,9 @@ import (
 	"sort"
 
 	"github.com/arcology-network/common-lib/codec"
-	"github.com/arcology-network/common-lib/common"
+	common "github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 
-	orderedmap "github.com/elliotchance/orderedmap"
 	murmur "github.com/spaolacci/murmur3"
 )
 
@@ -64,7 +63,7 @@ func (this *ArbitratorSlow) Detect(newTrans []ccurlcommon.UnivalueInterface) (ma
 		})
 	}
 
-	txToRemove := orderedmap.NewOrderedMap()
+	txToRemove := make(map[uint32]bool)
 	conflictDict := make(map[string][]ccurlcommon.UnivalueInterface)
 	for _, value := range this.transitions {
 		v := *value
@@ -73,25 +72,33 @@ func (this *ArbitratorSlow) Detect(newTrans []ccurlcommon.UnivalueInterface) (ma
 				continue
 			}
 
-			if v[0].ConcurrentWritable() && v[i].ConcurrentWritable() {
+			if v[0].IfConcurrentWritable() && v[i].IfConcurrentWritable() {
 				continue
 			}
 
 			if v[0].Writes() > 0 || v[i].Writes() > 0 {
 				conflictDict[*v[0].GetPath()] = append(conflictDict[*v[0].GetPath()], v[i])
-				txToRemove.Set(v[i].GetTx(), true)
+				txToRemove[v[i].GetTx()] = true
 			}
 		}
 	}
-	keys := txToRemove.Keys()
-	txs := make([]uint32, len(keys))
-	for i, v := range keys {
-		txs[i] = v.(uint32)
-	}
+	txs := common.MapKeys(txToRemove)
+	// keys := txToRemove.Keys()
+	// txs := make([]uint32, len(keys))
+	// for i, v := range keys {
+	// 	txs[i] = v
+	// }
 
 	this.transitions = make(map[string]*[]ccurlcommon.UnivalueInterface)
 	return conflictDict, txs
 }
+
+// func IsConflict(lhv, rhv ccurlcommon.UnivalueInterface) {
+// 	if (lhv.Writes() > 0 || rhv.Writes() > 0) ||
+
+// 	{
+
+// }
 
 func HashPaths(records []ccurlcommon.UnivalueInterface) {
 	numThreads := 1

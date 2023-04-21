@@ -14,8 +14,8 @@ func CreateUnivalueForTest(transitType uint8, vType uint8, tx uint32, path strin
 		writes:    writes,
 		value:     value,
 		preexists: preexists,
-		composite: composite,
-		reserved:  nil,
+		// composite: composite,
+		reserved: nil,
 	}
 }
 

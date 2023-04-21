@@ -87,19 +87,19 @@ func TestU256DeltaOutRange(t *testing.T) {
 		t.Error(err)
 	}
 
-	delta = NewU256Delta(uint256.NewInt(10), false)
+	delta = NewU256Delta(uint256.NewInt(10), false) //  - 10
 	if _, _, _, _, err := v.(*U256).Set(delta, nil); err != nil {
 		t.Error(err)
 	}
 
-	delta = NewU256Delta(uint256.NewInt(40), false)
-	if _, _, _, _, err := v.(*U256).Set(delta, nil); err != nil {
-		t.Error(err)
+	delta = NewU256Delta(uint256.NewInt(40), false) //  - 40
+	if _, _, _, _, err := v.(*U256).Set(delta, nil); err == nil {
+		t.Error("Error: Should have failed")
 	}
 
 	delta = NewU256Delta(uint256.NewInt(0), false)
 	if _, _, _, _, err := v.(*U256).Set(delta, nil); err != nil {
-		t.Error("Error: Should have failed")
+		t.Error(err)
 	}
 
 	delta = NewU256Delta(uint256.NewInt(1), false)

@@ -9,7 +9,7 @@ func TestNewInt64(t *testing.T) {
 	v := NewInt64((5), (0)).(*Int64)
 
 	final, _, _ := v.Get(nil)
-	if final.(*Int64).value != 5 || final.(*Int64).finalized {
+	if final.(*Int64).value != 5 {
 		t.Error("Wrong value")
 	}
 
@@ -22,7 +22,7 @@ func TestNewInt64(t *testing.T) {
 	}
 
 	final, _, _ = v.Get(nil)
-	if final.(*Int64).value != 6 || final.(*Int64).delta != 0 || !final.(*Int64).finalized {
+	if final.(*Int64).value != 6 || final.(*Int64).delta != 0 {
 		t.Error("Wrong value")
 	}
 }

@@ -5,14 +5,12 @@ import (
 )
 
 type Int64 struct {
-	finalized bool
-	value     int64
-	delta     int64
+	value int64
+	delta int64
 }
 
 func NewInt64(value, delta int64) interface{} {
 	return &Int64{
-		false,
 		value,
 		delta,
 	}
@@ -20,7 +18,6 @@ func NewInt64(value, delta int64) interface{} {
 
 func NewInt64Delta(delta int64) interface{} {
 	return &Int64{
-		false,
 		0,
 		delta,
 	}
@@ -35,7 +32,6 @@ func (this *Int64) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
 
 func (this *Int64) Deepcopy() interface{} {
 	return &Int64{
-		this.finalized,
 		this.value,
 		this.delta,
 	}
@@ -54,17 +50,15 @@ func (this *Int64) Get(source interface{}) (interface{}, uint32, uint32) {
 		return this, 1, 0
 	}
 
-	this.finalized = true
 	return &Int64{
-		finalized: true,
-		value:     this.value + this.delta,
-		delta:     0,
+		value: this.value + this.delta,
+		delta: 0,
 	}, 1, 1
 }
 
 func (this *Int64) Latest(source interface{}) interface{} {
 	return &Int64{
-		this.finalized,
+
 		this.value + this.delta,
 		0,
 	}
@@ -72,7 +66,7 @@ func (this *Int64) Latest(source interface{}) interface{} {
 
 func (this *Int64) Delta() interface{} {
 	return &Int64{
-		this.finalized,
+
 		0,
 		this.delta,
 	}
@@ -113,10 +107,7 @@ func (this *Int64) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 	return this
 }
 
-func (this *Int64) ConcurrentWritable() bool { return !this.finalized }
-
 func (this *Int64) Purge() {
-	this.finalized = false
 	this.delta = 0
 }
 
