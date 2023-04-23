@@ -89,9 +89,9 @@ func (this *DeltaSequence) Finalize() {
 		panic(err)
 	}
 
-	if this.base.Value() != nil {
-		this.base.Value().(ccurlcommon.TypeInterface).Purge() // Remove non-essential attributes
-	}
+	// if this.base.Value() != nil {
+	// 	this.base.Value().(ccurlcommon.TypeInterface).Purge() // Remove non-essential attributes
+	// }
 }
 
 func (this *DeltaSequence) Reclaim() {

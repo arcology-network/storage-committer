@@ -7,8 +7,7 @@ import (
 	codec "github.com/arcology-network/common-lib/codec"
 
 	// performance "github.com/arcology-network/common-lib/mhasher"
-
-	orderedmap "github.com/elliotchance/orderedmap"
+	orderedset "github.com/arcology-network/common-lib/container/set"
 )
 
 func (this *Meta) Encode(processors ...func(interface{}) interface{}) []byte {
@@ -27,8 +26,8 @@ func (this *Meta) Size() uint32 {
 	}
 
 	total := this.HeaderSize() +
-		codec.Strings(this.added).Size() +
-		codec.Strings(this.removed).Size()
+		codec.Strings(this.addedDict.Keys()).Size() +
+		codec.Strings(this.removedDict.Keys()).Size()
 	return total
 }
 
@@ -37,45 +36,36 @@ func (this *Meta) FillHeader(buffer []byte) {
 
 	offset := uint32(0)
 	codec.Uint32(offset).EncodeToBuffer(buffer[codec.UINT32_LEN*1:])
-	offset += codec.Strings(this.added).Size()
+	offset += codec.Strings(this.addedDict.Keys()).Size()
 
 	codec.Uint32(offset).EncodeToBuffer(buffer[codec.UINT32_LEN*2:])
-	//offset += codec.Strings(this.removed).Size()
 }
 
 func (this *Meta) EncodeToBuffer(buffer []byte, processors ...func(interface{}) interface{}) int {
 	this.FillHeader(buffer)
 	offset := int(this.HeaderSize())
 
-	offset += codec.Strings(this.added).EncodeToBuffer(buffer[offset:])
-	offset += codec.Strings(this.removed).EncodeToBuffer(buffer[offset:])
+	offset += codec.Strings(this.addedDict.Keys()).EncodeToBuffer(buffer[offset:])
+	offset += codec.Strings(this.removedDict.Keys()).EncodeToBuffer(buffer[offset:])
 
 	return int(offset)
 }
 
 func (this *Meta) Decode(buffer []byte) interface{} {
 	buffers := codec.Byteset{}.Decode(buffer).(codec.Byteset)
-
 	this = &Meta{
-		committedKeys: []string{},
-		added:         codec.Strings([]string{}).Decode(bytes.Clone(buffers[0])).(codec.Strings),
-		removed:       codec.Strings([]string{}).Decode(buffers[1]).(codec.Strings),
-		view:          nil,
-		addedDict:     orderedmap.NewOrderedMap(),
-		removedDict:   orderedmap.NewOrderedMap(),
+		view:          orderedset.NewOrderedSet([]string{}),
+		addedDict:     orderedset.NewOrderedSet(codec.Strings([]string{}).Decode(bytes.Clone(buffers[0])).(codec.Strings)),
+		removedDict:   orderedset.NewOrderedSet(codec.Strings([]string{}).Decode(bytes.Clone(buffers[1])).(codec.Strings)),
 		snapshotDirty: false,
 	}
-
-	// if len(this.added) > 0 {
-	// 	panic(this.added)
-	// }
 
 	return this
 }
 
 func (this *Meta) EncodeCompact() []byte {
 	byteset := [][]byte{
-		codec.Strings(this.committedKeys).Encode(),
+		codec.Strings(this.view.Keys()).Encode(),
 	}
 	return codec.Byteset(byteset).Encode()
 }
@@ -83,19 +73,19 @@ func (this *Meta) EncodeCompact() []byte {
 func (this *Meta) DecodeCompact(bytes []byte) interface{} {
 	buffers := codec.Byteset{}.Decode(bytes).(codec.Byteset)
 	return &Meta{
-		committedKeys: codec.Strings([]string{}).Decode(buffers[0]).(codec.Strings),
-		added:         []string{},
-		removed:       []string{},
-		view:          nil,
-		addedDict:     orderedmap.NewOrderedMap(),
-		removedDict:   orderedmap.NewOrderedMap(),
+		// committedKeys: codec.Strings([]string{}).Decode(buffers[0]).(codec.Strings),
+		// added:         []string{},
+		// removed:       []string{},
+		view:          orderedset.NewOrderedSet(codec.Strings([]string{}).Decode(buffers[0]).(codec.Strings)),
+		addedDict:     orderedset.NewOrderedSet([]string{}),
+		removedDict:   orderedset.NewOrderedSet([]string{}),
 		snapshotDirty: false,
 	}
 }
 
 func (this *Meta) Print() {
-	fmt.Println("Keys: ", this.committedKeys)
-	fmt.Println("Added: ", this.added)
-	fmt.Println("Removed: ", this.removed)
+	// fmt.Println("Keys: ", this.committedKeys)
+	fmt.Println("Added: ", this.addedDict.Keys())
+	fmt.Println("Removed: ", this.removedDict.Keys())
 	fmt.Println()
 }

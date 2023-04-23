@@ -36,7 +36,7 @@ func FilterAccesses(buffer []ccurlcommon.UnivalueInterface, platform interface{}
 	univals := common.DeepCopy(buffer)
 	for i := 0; i < len(univals); i++ {
 		if univals[i].DeltaWrites() > 0 && univals[i].TypeID() != ccurlcommon.CommutativeMeta {
-			univals[i].SetValue(univals[i].Value().(ccurlcommon.TypeInterface).Delta()) // Numeric Delta writes only, no meta
+			// univals[i].SetValue(univals[i].Value().(ccurlcommon.TypeInterface).Delta()) // Numeric Delta writes only, no meta
 		} else {
 			// univals[i].SetValue(nil)
 		}

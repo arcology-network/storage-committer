@@ -174,7 +174,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/2", noncommutative.NewString("4"))
 
 	path, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	if reflect.DeepEqual(path.(*commutative.Meta).Latest().(*commutative.Meta).CommittedKeys(), []interface{}{"1", "2", "3", "4"}) {
+	if reflect.DeepEqual(path.(*commutative.Meta).Latest(), []string{"1", "2", "3", "4"}) {
 		t.Error("Error: Not match")
 	}
 
@@ -211,7 +211,7 @@ func TestStateUpdate(t *testing.T) {
 	tx1Out := univalue.Univalues{}.Decode(tx1bytes).(univalue.Univalues)
 
 	// url.Import(url.Decode(univalue.Univalues(append(tx0Out, tx1Out...)).Encode()))
-	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(append(tx0Out, tx1Out...)).Encode()).(univalue.Univalues))
+	url.Import((append(tx0Out, tx1Out...)))
 
 	url.PostImport()
 	errs := url.Commit([]uint32{0, 1})
@@ -228,12 +228,12 @@ func TestStateUpdate(t *testing.T) {
 		t.Error("Error: Wrong sub paths")
 	}
 
-	if !reflect.DeepEqual(v.(ccurlcommon.TypeInterface).Latest().(*commutative.Meta).CommittedKeys(), []string{"ctrn-0/", "ctrn-1/"}) {
+	if !reflect.DeepEqual(v.(ccurlcommon.TypeInterface).Value().(*commutative.Meta).CommittedKeys(), []string{"ctrn-0/", "ctrn-1/"}) {
 		t.Error("Error: Didn't find the subpath!")
 	}
 
 	v, _ = url.Read(9, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	keys := v.(ccurlcommon.TypeInterface).Latest().(*commutative.Meta).CommittedKeys()
+	keys := v.(ccurlcommon.TypeInterface).Value().(*commutative.Meta).CommittedKeys()
 	if !reflect.DeepEqual(keys, []string{"elem-00", "elem-01"}) {
 		t.Error("Error: Keys don't match !")
 	}
@@ -257,9 +257,9 @@ func TestStateUpdate(t *testing.T) {
 		t.Error(err)
 	}
 
-	// if v, _ := url.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/"); v != nil {
-	// 	t.Error("Error: Should be gone already !")
-	// }
+	if v, _ := url.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/"); v != nil {
+		t.Error("Error: Should be gone already !")
+	}
 }
 
 func TestMultipleTxStateUpdate(t *testing.T) {
@@ -292,7 +292,7 @@ func TestMultipleTxStateUpdate(t *testing.T) {
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(append(tx0Out, tx1Out...)).Encode()).(univalue.Univalues))
 	url.PostImport()
 
-	errs := url.Commit([]uint32{1})
+	errs := url.Commit([]uint32{0, 1})
 	if len(errs) != 0 {
 		t.Error(errs)
 	}
@@ -300,13 +300,23 @@ func TestMultipleTxStateUpdate(t *testing.T) {
 	// url.Init(store)
 	CheckPaths(alice, url) /* Check Paths */
 
-	// if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-111", noncommutative.NewString("tx0-elem-111")); err != nil {
-	// 	t.Error("Error: Failed to delete the path !")
-	// }
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-111", noncommutative.NewString("tx0-elem-111")); err != nil {
+		t.Error("Error: Failed to delete the path !")
+	}
 
-	// if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-222", noncommutative.NewString("tx0-elem-222")); err != nil {
-	// 	t.Error("Error: Failed to delete the path !")
-	// }
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-222", noncommutative.NewString("tx0-elem-222")); err != nil {
+		t.Error("Error: Failed to delete the path !")
+	}
+
+	v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-111")
+	if *(v.(ccurlcommon.TypeInterface).Value().(*noncommutative.String)) != "tx0-elem-111" {
+		t.Error("Error: Failed to delete the path !")
+	}
+
+	v, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-222")
+	if *(v.(ccurlcommon.TypeInterface).Value().(*noncommutative.String)) != "tx0-elem-222" {
+		t.Error("Error: Failed to delete the path !")
+	}
 
 	// _, transitions := url.Export(indexer.Sorter)
 	// url.Import(univalue.Univalues{}.Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues))
@@ -315,12 +325,12 @@ func TestMultipleTxStateUpdate(t *testing.T) {
 	// url.Commit([]uint32{1})
 
 	// url.Init(store)
-	// v, _ := url.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	// keys := v.(ccurlcommon.TypeInterface).Value()
-	// if !reflect.DeepEqual(keys, []string{"elem-00", "elem-01", "elem-111", "elem-222"}) {
-	// 	t.Error("Error: Keys don't match !")
-	// } */
-	//url.Indexer().Store().Print()
+	v, _ = url.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
+	keys := v.(ccurlcommon.TypeInterface).Value().(*commutative.Meta).CommittedKeys()
+	if !reflect.DeepEqual(keys, []string{"elem-00", "elem-01", "elem-111", "elem-222"}) {
+		t.Error("Error: Keys don't match !")
+	}
+	// url.Indexer().Store().Print()
 }
 
 func TestAccessControl(t *testing.T) {
