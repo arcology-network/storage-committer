@@ -8,6 +8,7 @@ import (
 	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl/v2"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
+	indexer "github.com/arcology-network/concurrenturl/v2/indexer"
 	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
 	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
 	univalue "github.com/arcology-network/concurrenturl/v2/univalue"
@@ -40,7 +41,7 @@ func TestSimpleBalance(t *testing.T) {
 	}
 
 	// Export variables
-	_, transitions := url.Export(true)
+	_, transitions := url.Export(indexer.Sorter)
 	buffer := univalue.Univalues(transitions).Encode()
 	out := univalue.Univalues{}.Decode(buffer).(univalue.Univalues)
 	for i := range transitions {
@@ -67,7 +68,7 @@ func TestSimpleBalance(t *testing.T) {
 		t.Error("Error: Wrong blcc://eth1.0/account/alice/balance value")
 	}
 
-	records, trans := url2.Export(true)
+	records, trans := url2.Export(indexer.Sorter)
 	univalue.Univalues(trans).Encode()
 	for _, v := range records {
 		if v.Writes() == v.Reads() && v.Writes() == 0 {
@@ -150,7 +151,7 @@ func TestBalance(t *testing.T) {
 	}
 
 	// Export variables
-	_, transitions := url.Export(true)
+	_, transitions := url.Export(indexer.Sorter)
 	// for i := range transitions {
 	trans := transitions[10]
 
@@ -188,7 +189,7 @@ func TestNonce(t *testing.T) {
 		t.Error("Error: blcc://eth1.0/account/alice/nonce ")
 	}
 
-	_, trans := url1.Export(false)
+	_, trans := url1.Export(nil)
 	url1.Import(trans)
 	url1.PostImport()
 	url1.Commit([]uint32{0})
@@ -217,7 +218,7 @@ func TestMultipleNonces(t *testing.T) {
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
-	_, trans0 := url0.Export(false)
+	_, trans0 := url0.Export(nil)
 	// ccurltype.SetInvariate(trans0, "nonce")
 
 	url1 := ccurl.NewConcurrentUrl(store)
@@ -234,7 +235,7 @@ func TestMultipleNonces(t *testing.T) {
 		t.Error(err, "blcc://eth1.0/account/"+bob+"/balance")
 	}
 
-	_, trans1 := url1.Export(false)
+	_, trans1 := url1.Export(nil)
 	// ccurltype.SetInvariate(trans1, "nonce")
 
 	url0.Import(trans0)

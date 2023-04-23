@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
-	"strings"
 
 	common "github.com/arcology-network/common-lib/common"
 	ccmap "github.com/arcology-network/common-lib/container/map"
@@ -47,6 +46,8 @@ func NewIndexer(store ccurlcommon.DatastoreInterface, platform *ccurlcommon.Plat
 	})
 	return &indexer
 }
+
+func (this *Indexer) Platform() *ccurlcommon.Platform { return this.platform }
 
 func (this *Indexer) MergeFrom(other *Indexer) {
 	for k, from := range other.buffer {
@@ -104,18 +105,18 @@ func (this *Indexer) Peek(path string) (interface{}, bool) {
 func (this *Indexer) Write(tx uint32, path string, value interface{}) error {
 	parentPath := ccurlcommon.GetParentPath(path)
 	if this.IfExists(parentPath) || tx == ccurlcommon.SYSTEM { // The parent path exists or to inject the path directly
-		univalue := this.GetOrInit(tx, path)         // Get a univalue wrapper
-		if univalue.Value() == nil && value == nil { // Try to delete something nonexistent
-			return nil
-		} else {
-			err := univalue.Set(tx, path, value, this)
-			if !this.platform.IsSysPath(parentPath) && tx != ccurlcommon.SYSTEM && err == nil { // System paths don't keep track of child paths
-				if parentMeta := this.GetOrInit(tx, parentPath); parentMeta != nil && parentMeta.Value() != nil {
-					err = parentMeta.Set(tx, path, univalue.Value(), this)
-				}
+		univalue := this.GetOrInit(tx, path) // Get a univalue wrapper
+		// if univalue.Value() == nil && value == nil { // Try to delete something nonexistent
+		// 	return nil
+		// } else {
+		err := univalue.Set(tx, path, value, this)
+		if !this.platform.IsSysPath(parentPath) && tx != ccurlcommon.SYSTEM && err == nil { // System paths don't keep track of child paths
+			if parentMeta := this.GetOrInit(tx, parentPath); parentMeta != nil && parentMeta.Value() != nil {
+				err = parentMeta.Set(tx, path, univalue.Value(), this)
 			}
-			return err
 		}
+		return err
+		// }
 	}
 	return errors.New("Error: The parent path doesn't exist: " + parentPath)
 }
@@ -157,12 +158,11 @@ func (this *Indexer) Import(txTrans []ccurlcommon.UnivalueInterface, args ...int
 				}
 
 				deltaSeq[i] = seqPool.Get().(*DeltaSequence)                // create a new delta sequence from the pool
-				deltaSeq[i].(*DeltaSequence).Reset(nKeys[i], this, uniPool) // Reset the sequence
+				deltaSeq[i].(*DeltaSequence).Reset(nKeys[i], this, uniPool) // Reset the sequence in case it was used before
 
-				if !preexist { //new entry
-					continue
+				if preexist {
+					deltaSeq[i].(*DeltaSequence).Init(nKeys[i], this, uniPool) // Get the initial value from the cache / persistent DB
 				}
-				deltaSeq[i].(*DeltaSequence).Init(nKeys[i], this, uniPool) // Get the initial value from the cache / persistent DB
 			}
 		}
 	}
@@ -232,13 +232,13 @@ func (this *Indexer) SortTransitions() {
 		for i := start; i < end; i++ {
 			deltaSeq, _ := this.byPath.Get(this.updatedKeys[i])
 
-			typeValue := deltaSeq.(*DeltaSequence).base
-			if typeValue == nil {
-				typeValue = deltaSeq.(*DeltaSequence).values[0]
-			}
+			// typeValue := deltaSeq.(*DeltaSequence).base
+			// if typeValue == nil {
+			// 	typeValue = deltaSeq.(*DeltaSequence).values[0]
+			// }
 
 			// if typeValue.Value().(ccurlcommon.TypeInterface).TypeID() == ccurlcommon.CommutativeMeta {
-			deltaSeq.(*DeltaSequence).Sort()
+			deltaSeq.(*DeltaSequence).Sort() // Sort the transitions in the sequence
 			// }
 		}
 	}
@@ -253,7 +253,7 @@ func (this *Indexer) FinalizeStates() {
 		for i := start; i < end; i++ {
 			deltaSeq, _ := this.byPath.Get(this.updatedKeys[i])
 			deltaSeq.(*DeltaSequence).Finalize()
-			if deltaSeq.(*DeltaSequence).Value() == nil { // Some sequences may have been deleted with transactions they belong
+			if deltaSeq.(*DeltaSequence).Value() == nil { // Some sequences may have been deleted with transactions they belong to
 				this.updatedKeys[i] = ""
 				this.updatedValues[i] = nil
 				continue
@@ -327,10 +327,4 @@ func (this *Indexer) Print() {
 		fmt.Println("Level : ", i)
 		elem.Print()
 	}
-}
-
-func (this *Indexer) SkipExport(univalue interface{}) bool {
-	uv := univalue.(ccurlcommon.UnivalueInterface)
-	return uv.Preexist() && strings.HasSuffix(*uv.GetPath(), "/storage/native/")
-
 }

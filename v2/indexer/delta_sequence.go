@@ -74,7 +74,7 @@ func (this *DeltaSequence) Finalize() {
 	}
 
 	i := 0
-	for ; i < len(this.values); i++ {
+	for ; i < len(this.values); i++ { // Find th first non nil value, where transitions will be applied on
 		if this.values[i].GetPath() != nil {
 			this.base = this.values[i]
 			break

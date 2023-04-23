@@ -37,10 +37,6 @@ func (this *Int64) Deepcopy() interface{} {
 	}
 }
 
-func (this *Int64) Value() interface{} {
-	return this.value
-}
-
 func (this *Int64) ToAccess() interface{} {
 	return this
 }
@@ -56,9 +52,12 @@ func (this *Int64) Get(source interface{}) (interface{}, uint32, uint32) {
 	}, 1, 1
 }
 
-func (this *Int64) Latest(source interface{}) interface{} {
-	return &Int64{
+func (this *Int64) Value() interface{} {
+	return this.value
+}
 
+func (this *Int64) Latest() interface{} {
+	return &Int64{
 		this.value + this.delta,
 		0,
 	}

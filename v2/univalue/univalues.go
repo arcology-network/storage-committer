@@ -1,23 +1,12 @@
 package univalue
 
 import (
-	"bytes"
 	"crypto/sha256"
-	"sort"
 
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 )
 
 type Univalues []ccurlcommon.UnivalueInterface
-
-func (this Univalues) Sort() {
-	sort.SliceStable(this, func(i, j int) bool {
-		lhs := (*(this[i].GetPath()))
-		rhs := (*(this[j].GetPath()))
-		return bytes.Compare([]byte(lhs)[:], []byte(rhs)[:]) < 0
-	})
-	//return this
-}
 
 func (this Univalues) IfContains(condition ccurlcommon.UnivalueInterface) bool {
 	for _, v := range this {

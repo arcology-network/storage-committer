@@ -2,6 +2,7 @@ package univalue
 
 import (
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -21,7 +22,6 @@ type Univalue struct {
 	deltaWrites uint32
 	value       interface{}
 	preexists   bool
-	// composite   bool
 	reserved    interface{}
 	reclaimFunc func(interface{})
 }
@@ -35,37 +35,36 @@ func NewUnivalue(tx uint32, key string, reads, writes uint32, deltaWrites uint32
 		writes:      writes,
 		deltaWrites: deltaWrites,
 		value:       args[0],
-		preexists:   false,
-		// composite:   false,
 	}
 
 	if len(args) > 1 {
 		v.SetPreexist(key, args[1])
-		// v.composite = v.IfConcurrentWritable()
 	}
 
 	return v
 }
 
-func (value *Univalue) Init(tx uint32, key string, reads, writes uint32, v interface{}, args ...interface{}) {
-	value.vType = (&Univalue{}).GetTypeID(v)
-	value.tx = tx
-	value.path = &key
-	value.reads = reads
-	value.writes = writes
-	value.value = v
-	value.preexists = false
-	// value.composite = false // Non by default
-	value.reserved = nil
+func (this *Univalue) TypeID() uint8 { return this.vType }
+
+func (this *Univalue) Init(tx uint32, key string, reads, writes uint32, v interface{}, args ...interface{}) {
+	this.vType = (&Univalue{}).GetTypeID(v)
+	this.tx = tx
+	this.path = &key
+	this.reads = reads
+	this.writes = writes
+	this.value = v
+	this.preexists = false
+
+	this.reserved = nil
 	if len(args) > 0 {
-		value.SetPreexist(key, args[0]) // Check if the key  exists in indexer already
+		this.SetPreexist(key, args[0]) // Check if the key  exists in indexer already
 		// value.composite = value.IfConcurrentWritable()
 	}
 }
 
-func (value *Univalue) Reclaim() {
-	if value.reclaimFunc != nil {
-		value.reclaimFunc(value)
+func (this *Univalue) Reclaim() {
+	if this.reclaimFunc != nil {
+		this.reclaimFunc(this)
 	}
 }
 
@@ -140,41 +139,6 @@ func (this *Univalue) IfConcurrentWritable() bool { // Call this before setting 
 	return (this.value != nil && this.reads == 0 && this.writes == 0)
 }
 
-func (this *Univalue) Export(source interface{}) (interface{}, interface{}) {
-	if this.Value() != nil {
-		this.value = this.value.(ccurlcommon.TypeInterface).Delta()
-	}
-
-	accessRecord := &Univalue{ // For the arbitrator, just make a deep copy and clear the value field
-		tx:        this.GetTx(),
-		vType:     this.GetTypeID(this.Value()),
-		path:      this.GetPath(),
-		reads:     this.Reads(),
-		writes:    this.Writes(),
-		value:     this.Value(),
-		preexists: this.Preexist(),
-		// composite: this.IfConcurrentWritable(),
-	}
-
-	if accessRecord.Value() != nil {
-		accessRecord.value = accessRecord.Value().(ccurlcommon.TypeInterface).ToAccess()
-	}
-
-	if source.(ccurlcommon.IndexerInterface).SkipExport(this) {
-		return accessRecord, nil
-	}
-
-	if this.Writes() > 0 && this.Value() != nil { // Rewrite an existing entry or create a new one
-		return accessRecord, this
-	}
-
-	if this.Writes() > 0 && this.Value() == nil && this.Preexist() { // Deletion of an existing entry
-		return accessRecord, this
-	}
-
-	return accessRecord, nil
-}
-
 func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{} {
 	if this.value != nil {
 		tempV, r, w := this.value.(ccurlcommon.TypeInterface).Get(source) //RW: Affiliated reads and writes
@@ -188,22 +152,25 @@ func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{
 
 func (this *Univalue) This(source interface{}) interface{} {
 	if this.value != nil {
-		return this.value.(ccurlcommon.TypeInterface).Latest(source)
+		return this.value.(ccurlcommon.TypeInterface).Latest()
 	}
 	return this.value
 }
 
 func (this *Univalue) Set(tx uint32, path string, typedV interface{}, source interface{}) error { // update the value
 	this.tx = tx
+	if this.Value() == nil && typedV == nil {
+		this.writes++ // Delete an non-existing value
+		return errors.New("Error: The value doesn't exists")
+	}
+
 	if this.Value() == nil { // Added a new value or try to delete an non-existent value
-		if typedV != nil {
-			this.vType = typedV.(ccurlcommon.TypeInterface).TypeID()
-			v, r, w, dw := typedV.(ccurlcommon.TypeInterface).CopyTo(typedV)
-			this.value = v
-			this.writes += w
-			this.reads += r
-			this.deltaWrites += dw
-		}
+		this.vType = typedV.(ccurlcommon.TypeInterface).TypeID()
+		v, r, w, dw := typedV.(ccurlcommon.TypeInterface).CopyTo(typedV)
+		this.value = v
+		this.writes += w
+		this.reads += r
+		this.deltaWrites += dw
 		return nil
 	}
 
@@ -212,7 +179,6 @@ func (this *Univalue) Set(tx uint32, path string, typedV interface{}, source int
 	}
 
 	v, r, w, dw, err := this.value.(ccurlcommon.TypeInterface).Set(typedV, [3]interface{}{path, tx, source}) // Update one the current value
-
 	this.value = v
 	this.writes += w
 	this.reads += r
@@ -245,6 +211,10 @@ func (this *Univalue) ApplyDelta(tx uint32, v interface{}) error {
 }
 
 func (this *Univalue) PrecheckAttributes(other *Univalue) {
+	if other.reads == 0 && other.writes == 0 && other.deltaWrites == 0 {
+		panic("Error: Read/Write/Deltawrite all zero!!")
+	}
+
 	if other.writes == 0 {
 		panic("Error: Value type mismatched!")
 	}
@@ -264,13 +234,6 @@ func (this *Univalue) PrecheckAttributes(other *Univalue) {
 		panic("Error: A new value cann't be composite")
 	}
 }
-
-// func (this *Univalue) PostcheckAttributes() error {
-// 	if this.composite && this.reads > 0 {
-// 		panic("Error: Inconsistent properites")
-// 	}
-// 	return nil
-// }
 
 func (this *Univalue) Deepcopy() interface{} {
 	v := &Univalue{
@@ -306,23 +269,19 @@ func (this *Univalue) Print() {
 	fmt.Println("--------------------------------------------------------")
 }
 
-// func (this *Univalue) Equal(other *Univalue) bool {
-// 	if this.transitType == other.transitType &&
-// 		this.vType == other.vType &&
-// 		this.tx == other.tx &&
-// 		this.path == other.path &&
-// 		this.reads == other.reads &&
-// 		this.writes == other.writes &&
-// 		this.value == other.value &&
-// 		this.preexists == other.preexists {
-// 		return true
-// 	}
-// 	return false
-// }
-
 func (this *Univalue) Equal(other *Univalue) bool {
+	if this.value == nil &&
+		other.value == nil &&
+		this.TypeID() == other.TypeID() {
+		return true
+	}
+
+	if (this.value == nil && other.value != nil) || (this.value != nil && other.value == nil) {
+		return false
+	}
+
 	var vFlag bool
-	if this.value != nil && this.value.(ccurlcommon.TypeInterface).TypeID() == ccurlcommon.CommutativeMeta {
+	if this.value.(ccurlcommon.TypeInterface).TypeID() == ccurlcommon.CommutativeMeta {
 		vFlag = this.value.(*commutative.Meta).Equal(other.value.(*commutative.Meta))
 	} else {
 		vFlag = reflect.DeepEqual(this.value, other.value)

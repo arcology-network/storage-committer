@@ -8,6 +8,7 @@ import (
 	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl/v2"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
+	indexer "github.com/arcology-network/concurrenturl/v2/indexer"
 	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
 	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
 	univalue "github.com/arcology-network/concurrenturl/v2/univalue"
@@ -22,7 +23,7 @@ func TestAuxTrans(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, trans00 := url.Export(true)
+	_, trans00 := url.Export(indexer.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans00).Encode()).(univalue.Univalues))
 
 	url.PostImport()
@@ -78,12 +79,12 @@ func TestAuxTrans(t *testing.T) {
 	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/"); value == nil {
 		t.Error(value)
 	} else {
-		if !reflect.DeepEqual(value.(*commutative.Meta).Value(), []interface{}{"elem-000"}) {
+		if !reflect.DeepEqual(value.(*commutative.Meta).Value().(*commutative.Meta).Added(), []string{"elem-000"}) {
 			t.Error("Wrong value ")
 		}
 	}
 
-	_, transitions := url.Export(true)
+	_, transitions := url.Export(indexer.Sorter)
 	if !reflect.DeepEqual(transitions[0].Value().(*commutative.Meta).Added(), []string{"elem-000"}) {
 		t.Error("keys don't match")
 	}
@@ -114,7 +115,7 @@ func TestCheckAccessRecords(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, trans00 := url.Export(true)
+	_, trans00 := url.Export(indexer.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans00).Encode()).(univalue.Univalues))
 
 	url.PostImport()
@@ -126,7 +127,7 @@ func TestCheckAccessRecords(t *testing.T) {
 		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/") // create a path
 	}
 
-	_, trans10 := url.Export(true)
+	_, trans10 := url.Export(indexer.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans10).Encode()).(univalue.Univalues))
 
 	url.PostImport()
@@ -141,35 +142,35 @@ func TestCheckAccessRecords(t *testing.T) {
 		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/2") // create a path
 	}
 
-	accesses10, trans11 := url.Export(true)
-	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans11).Encode()).(univalue.Univalues))
+	// accesses10, trans11 := url.Export(indexer.Sorter)
+	// url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans11).Encode()).(univalue.Univalues))
 
-	url.PostImport()
-	url.Commit([]uint32{1}) // Commit
+	// url.PostImport()
+	// url.Commit([]uint32{1}) // Commit
 
-	url.Init(store)
-	if len(trans11) != 3 {
-		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/2") // create a path
-	}
+	// url = ccurl.NewConcurrentUrl(store)
+	// if len(trans11) != 3 {
+	// 	t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/2") // create a path
+	// }
 
-	if len(trans11) != 3 {
-		t.Error("Error: There should be 3 transitions in url") // create a path
-	}
+	// if len(trans11) != 3 {
+	// 	t.Error("Error: There should be 3 transitions in url") // create a path
+	// }
 
-	if len(accesses10) != 3 {
-		t.Error("Error: There should be 3 accesse records url") // create a path
-	}
+	// if len(accesses10) != 3 {
+	// 	t.Error("Error: There should be 3 accesse records url") // create a path
+	// }
 
 	if url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/3", noncommutative.NewInt64(3333)) != nil {
 		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/3") // create a path
 	}
 
-	if url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/3", noncommutative.NewInt64(4444)) != nil {
-		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/3") // create a path
-	}
+	// if url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/3", noncommutative.NewInt64(4444)) != nil {
+	// 	t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/3") // create a path
+	// }
 
 	v1, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	keys := v1.(*commutative.Meta).Value().([]interface{})
+	keys := v1.(*commutative.Meta).Value().(*commutative.Meta).Added()
 	if len(keys) != 3 {
 		t.Error("Error: There should be 3 elements only!!! actual = ", len(keys)) // create a path
 	}

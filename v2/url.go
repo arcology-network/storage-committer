@@ -24,10 +24,10 @@ type ConcurrentUrl struct {
 
 	Platform *ccurlcommon.Platform
 	// Buf for Export.
-	records       []ccurlcommon.UnivalueInterface // Transition + access record buffer
+	buffer        []ccurlcommon.UnivalueInterface // Transition + access record buffer
 	accesseBuf    []ccurlcommon.UnivalueInterface // Access records
 	transitBuf    []ccurlcommon.UnivalueInterface // Transitions
-	ImportFilters []ccurlcommon.TransitionFilterInterface
+	ImportFilters []ccurlcommon.FilterTransitionsInterface
 	numThreads    int
 }
 
@@ -38,11 +38,11 @@ func NewConcurrentUrl(store ccurlcommon.DatastoreInterface, args ...interface{})
 		invIndexer: indexer.NewIndexer(store, platform),
 		Platform:   platform,
 
-		records:    make([]ccurlcommon.UnivalueInterface, 0, 64),
+		buffer:     make([]ccurlcommon.UnivalueInterface, 0, 64),
 		accesseBuf: make([]ccurlcommon.UnivalueInterface, 0, 64),
 		transitBuf: make([]ccurlcommon.UnivalueInterface, 0, 64),
 
-		ImportFilters: []ccurlcommon.TransitionFilterInterface{&indexer.NonceFilter{}, &indexer.BalanceFilter{}},
+		ImportFilters: []ccurlcommon.FilterTransitionsInterface{&indexer.NonceFilter{}, &indexer.BalanceFilter{}},
 		numThreads:    8,
 	}
 }
@@ -66,7 +66,7 @@ func (this *ConcurrentUrl) Init(store ccurlcommon.DatastoreInterface) {
 }
 
 func (this *ConcurrentUrl) reset() {
-	this.records = this.records[:0]
+	this.buffer = this.buffer[:0]
 	this.accesseBuf = this.accesseBuf[:0]
 	this.transitBuf = this.transitBuf[:0]
 }
@@ -343,55 +343,21 @@ func (this *ConcurrentUrl) AllInOneCommit(transitions []ccurlcommon.UnivalueInte
 	return []error{}
 }
 
-// Convert to accesses and transitions
-func (this *ConcurrentUrl) convert(records []ccurlcommon.UnivalueInterface, accesseBuf, transitBuf *[]ccurlcommon.UnivalueInterface) {
-	*accesseBuf = append(*accesseBuf, make([]ccurlcommon.UnivalueInterface, len(records)-len(*accesseBuf))...)
-	*transitBuf = append(*transitBuf, make([]ccurlcommon.UnivalueInterface, len(records)-len(*transitBuf))...)
-
-	numThreads := 1
-	if len(records) > 64 {
-		numThreads = 4
+func (this *ConcurrentUrl) Export(sorter func([]ccurlcommon.UnivalueInterface) interface{}) ([]ccurlcommon.UnivalueInterface, []ccurlcommon.UnivalueInterface) {
+	this.indexer.Vectorize(this.indexer.Buffer(), &this.buffer, false) // Export records
+	if sorter != nil {                                                 // Sort by path, debug only
+		indexer.Sorter(this.buffer)
 	}
 
-	worker := func(start, end, index int, args ...interface{}) {
-		for i := start; i < end; i++ {
-			access, trans := records[i].Export(this.indexer)
-			if access != nil {
-				(*accesseBuf)[i] = access.(ccurlcommon.UnivalueInterface)
-			}
-			if trans != nil {
-				(*transitBuf)[i] = trans.(ccurlcommon.UnivalueInterface)
-			}
-		}
-	}
-	common.ParallelWorker(len(records), numThreads, worker)
-
-	common.RemoveIf(accesseBuf, func(v ccurlcommon.UnivalueInterface) bool { return v == nil })
-	common.RemoveIf(transitBuf, func(v ccurlcommon.UnivalueInterface) bool { return v == nil })
-}
-
-func (this *ConcurrentUrl) Export(needToSort bool) ([]ccurlcommon.UnivalueInterface, []ccurlcommon.UnivalueInterface) {
-	this.indexer.Vectorize(this.indexer.Buffer(), &this.records, false) // Export records
-	this.convert(this.records, &this.accesseBuf, &this.transitBuf)      // Convert records to accesses and transitions
-
-	if needToSort { // Sort by path, debug only
-		univalue.Univalues(this.accesseBuf).Sort()
-		univalue.Univalues(this.transitBuf).Sort()
-	}
-
-	// Not in use yet.
-	// objs := make([]interface{}, len(this.accesseBuf))
-	// for i := range this.accesseBuf {
-	// 	objs[i] = this.accesseBuf[i]
-	// }
-	// (*this.indexer.Store()).UpdateCacheStats(objs)
+	this.accesseBuf = indexer.FilterAccesses(this.buffer, this.Platform)
+	this.transitBuf = indexer.FilterTransitions(this.buffer, this.Platform)
 	return this.accesseBuf, this.transitBuf
 }
 
 type PostProcessFunc func(accesses, transitions []ccurlcommon.UnivalueInterface) ([]ccurlcommon.UnivalueInterface, []ccurlcommon.UnivalueInterface)
 
 func (this *ConcurrentUrl) ExportEncoded(ppf PostProcessFunc) ([][]byte, [][]byte) {
-	records, transitions := this.Export(false)
+	records, transitions := this.Export(nil)
 	if ppf != nil {
 		records, transitions = ppf(records, transitions)
 	}

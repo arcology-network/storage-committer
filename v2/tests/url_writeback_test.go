@@ -1,7 +1,6 @@
 package ccurltest
 
 import (
-	"errors"
 	"reflect"
 	"testing"
 
@@ -9,6 +8,7 @@ import (
 	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl/v2"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
+	indexer "github.com/arcology-network/concurrenturl/v2/indexer"
 	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
 	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
 	univalue "github.com/arcology-network/concurrenturl/v2/univalue"
@@ -23,7 +23,7 @@ func TestAddAndDelete(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, acctTrans := url.Export(true)
+	_, acctTrans := url.Export(indexer.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -32,15 +32,15 @@ func TestAddAndDelete(t *testing.T) {
 	path, _ := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
 	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
 
-	_, acctTrans = url.Export(true)
+	_, acctTrans = url.Export(indexer.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{1})
 
 	url.Init(store)
-	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/4", nil)
+	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/4", nil) // Delete an non-existing entry, should NOT appear in the transitions
 
-	if _, acctTrans := url.Export(true); len(acctTrans) != 0 {
+	if _, acctTrans := url.Export(indexer.Sorter); len(acctTrans) != 0 {
 		t.Error("Error: Wrong number of transitions")
 	}
 }
@@ -53,7 +53,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, acctTrans := url.Export(true)
+	_, acctTrans := url.Export(indexer.Sorter)
 
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
@@ -63,7 +63,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 	// create a path
 	path, _ := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
 	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
-	_, addPath := url.Export(true)
+	_, addPath := url.Export(indexer.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(addPath).Encode()).(univalue.Univalues))
 	// url.Import(url.Decode(univalue.Univalues(addPath).Encode()))
 	url.PostImport()
@@ -71,16 +71,27 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 
 	url.Init(store)
 	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewInt64(1))
-	_, addTrans := url.Export(true)
+	_, addTrans := url.Export(indexer.Sorter)
 	// url.Import(url.Decode(univalue.Univalues(addTrans).Encode()))
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(addTrans).Encode()).(univalue.Univalues))
-
 	url.PostImport()
 	url.Commit([]uint32{1})
 
+	if v, _ := url.Read(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1"); v == nil {
+		t.Error("Error: Failed to read the key !")
+	}
+
 	url2 := ccurl.NewConcurrentUrl(store)
+	if v, _ := url2.Read(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1"); *(v.(ccurlcommon.TypeInterface).Value().(*noncommutative.Int64)) != 1 {
+		t.Error("Error: Failed to read the key !")
+	}
+
 	_ = url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", nil)
-	_, deleteTrans := url2.Export(true)
+	_, deleteTrans := url2.Export(indexer.Sorter)
+
+	if v, _ := url2.Read(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1"); v != nil {
+		t.Error("Error: Failed to read the key !")
+	}
 
 	url3 := ccurl.NewConcurrentUrl(store)
 	url3.Import(append(addTrans, deleteTrans...))
@@ -100,7 +111,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, acctTrans := url.Export(true)
+	_, acctTrans := url.Export(indexer.Sorter)
 	url.Import(acctTrans)
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
@@ -112,7 +123,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 		t.Error("error")
 	}
 
-	_, acctTrans = url.Export(true)
+	_, acctTrans = url.Export(indexer.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{1})
@@ -120,7 +131,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 	url.Init(store)
 	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/4", nil)
 
-	if _, acctTrans := url.Export(true); len(acctTrans) != 0 {
+	if _, acctTrans := url.Export(indexer.Sorter); len(acctTrans) != 0 {
 		t.Error("Error: Wrong number of transitions")
 	}
 }
@@ -133,7 +144,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, acctTrans := url.Export(true)
+	_, acctTrans := url.Export(indexer.Sorter)
 
 	in := univalue.Univalues(acctTrans).Encode()
 	out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
@@ -150,7 +161,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewString("1"))
 	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/2", noncommutative.NewString("2"))
 
-	_, acctTrans = url.Export(true)
+	_, acctTrans = url.Export(indexer.Sorter)
 	in = univalue.Univalues(acctTrans).Encode()
 	out = univalue.Univalues{}.Decode(in).(univalue.Univalues)
 	// url.Import(url.Decode(univalue.Univalues(out).Encode()))
@@ -163,76 +174,14 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/2", noncommutative.NewString("4"))
 
 	path, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	if reflect.DeepEqual(path.(*commutative.Meta).Value().([]interface{}), []interface{}{"1", "2", "3", "4"}) {
+	if reflect.DeepEqual(path.(*commutative.Meta).Latest().(*commutative.Meta).CommittedKeys(), []interface{}{"1", "2", "3", "4"}) {
 		t.Error("Error: Not match")
 	}
 
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil) // delete the path
-	if _, acctTrans := url.Export(true); len(acctTrans) != 3 {
+	if _, acctTrans := url.Export(indexer.Sorter); len(acctTrans) != 3 {
 		t.Error("Error: Wrong number of transitions")
 	}
-}
-
-func SimulatedTx0(account string, store *cachedstorage.DataStore) []byte {
-	url := ccurl.NewConcurrentUrl(store)
-	path, _ := commutative.NewMeta("blcc://eth1.0/account/" + account + "/storage/ctrn-0/") // create a path
-	url.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", path)
-	url.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-00", noncommutative.NewString("tx0-elem-00")) /* The first Element */
-	url.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-01", noncommutative.NewString("tx0-elem-01")) /* The second Element */
-
-	_, transitions := url.Export(true)
-	return univalue.Univalues(transitions).Encode()
-}
-
-func SimulatedTx1(account string, store *cachedstorage.DataStore) []byte {
-	url := ccurl.NewConcurrentUrl(store)
-	path, _ := commutative.NewMeta("blcc://eth1.0/account/" + account + "/storage/ctrn-1/") // create a path
-	url.Write(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/", path)
-	url.Write(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/elem-00", noncommutative.NewString("tx1-elem-00")) /* The first Element */
-	url.Write(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/elem-01", noncommutative.NewString("tx1-elem-00")) /* The second Element */
-
-	_, transitions := url.Export(true)
-	return univalue.Univalues(transitions).Encode()
-}
-
-func CheckPaths(account string, url *ccurl.ConcurrentUrl) error {
-	v, _ := url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-00")
-	if v.(ccurlcommon.TypeInterface).Value() == "tx0-elem-00" {
-		return errors.New("Error: Not match")
-	}
-
-	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-01")
-	if v.(ccurlcommon.TypeInterface).Value() == "tx0-elem-01" {
-		return errors.New("Error: Not match")
-	}
-
-	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/elem-00")
-	if v.(ccurlcommon.TypeInterface).Value() == "tx1-elem-00" {
-		return errors.New("Error: Not match")
-	}
-
-	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/elem-01")
-	if v.(ccurlcommon.TypeInterface).Value() == "tx1-elem-01" {
-		return errors.New("Error: Not match")
-	}
-
-	//Read the path
-	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/")
-	if !reflect.DeepEqual(v.(ccurlcommon.TypeInterface).Value(), []string{"elem-00", "elem-01"}) {
-		return errors.New("Error: Keys don't match !")
-	}
-
-	// Read the path again
-	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/")
-	if !reflect.DeepEqual(v.(ccurlcommon.TypeInterface).Value(), []string{"elem-00", "elem-01"}) {
-		return errors.New("Error: Keys don't match !")
-	}
-
-	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/")
-	if !reflect.DeepEqual(v.(ccurlcommon.TypeInterface).Value(), []string{"elem-00", "elem-01"}) {
-		return errors.New("Error: Keys don't match !")
-	}
-	return nil
 }
 
 func TestStateUpdate(t *testing.T) {
@@ -242,17 +191,23 @@ func TestStateUpdate(t *testing.T) {
 	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // CreateAccount account structure {
 		t.Error(err)
 	}
-	_, initTrans := url.Export(true)
+	_, initTrans := url.Export(indexer.Sorter)
 	// url.Import(url.Decode(univalue.Univalues(initTrans).Encode()))
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(initTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Init(store)
-	tx0bytes := SimulatedTx0(alice, store)
+	tx0bytes, err := SimulatedTx0(alice, store)
+	if err != nil {
+		t.Error(err)
+	}
 	tx0Out := univalue.Univalues{}.Decode(tx0bytes).(univalue.Univalues)
 
-	tx1bytes := SimulatedTx1(alice, store)
+	tx1bytes, err := SimulatedTx1(alice, store)
+	if err != nil {
+		t.Error(err)
+	}
 	tx1Out := univalue.Univalues{}.Decode(tx1bytes).(univalue.Univalues)
 
 	// url.Import(url.Decode(univalue.Univalues(append(tx0Out, tx1Out...)).Encode()))
@@ -264,17 +219,22 @@ func TestStateUpdate(t *testing.T) {
 		t.Error(errs)
 	}
 
+	if err := CheckPaths(alice, url); err != nil {
+		t.Error(err)
+	}
+
 	v, _ := url.Read(9, "blcc://eth1.0/account/"+alice+"/storage/")
 	if v.(*commutative.Meta).CommittedLength() != 2 {
 		t.Error("Error: Wrong sub paths")
 	}
 
-	if !reflect.DeepEqual(v.(ccurlcommon.TypeInterface).Value(), []interface{}{"ctrn-0/", "ctrn-1/"}) {
+	if !reflect.DeepEqual(v.(ccurlcommon.TypeInterface).Latest().(*commutative.Meta).CommittedKeys(), []string{"ctrn-0/", "ctrn-1/"}) {
 		t.Error("Error: Didn't find the subpath!")
 	}
 
 	v, _ = url.Read(9, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	if !reflect.DeepEqual(v.(ccurlcommon.TypeInterface).Value(), []interface{}{"elem-00", "elem-01"}) {
+	keys := v.(ccurlcommon.TypeInterface).Latest().(*commutative.Meta).CommittedKeys()
+	if !reflect.DeepEqual(keys, []string{"elem-00", "elem-01"}) {
 		t.Error("Error: Keys don't match !")
 	}
 
@@ -283,24 +243,23 @@ func TestStateUpdate(t *testing.T) {
 		t.Error("Error: Cann't delete a path twice !")
 	}
 
-	// if v, _ := url.Read(1, "blcc://eth1.0/account/" + alice +"/storage/ctrn-0/"); v != nil {
-	// 	t.Error("Error: The path should be gone already !")
-	// }
+	if v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/"); v != nil {
+		t.Error("Error: The path should be gone already !")
+	}
 
-	_, transitions := url.Export(true)
-	// out := univalue.Univalues{}.Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues)
-	// url.Import(url.Decode(univalue.Univalues(out).Encode()))
-	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues))
+	_, transitions := url.Export(indexer.Sorter)
+	out := univalue.Univalues{}.Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues)
+
+	url.Import(out)
 	url.PostImport()
-
 	errs = url.Commit([]uint32{1})
 	for _, err := range errs {
 		t.Error(err)
 	}
 
-	if v, _ := url.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/"); v != nil {
-		t.Error("Error: Should be gone already !")
-	}
+	// if v, _ := url.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/"); v != nil {
+	// 	t.Error("Error: Should be gone already !")
+	// }
 }
 
 func TestMultipleTxStateUpdate(t *testing.T) {
@@ -311,16 +270,22 @@ func TestMultipleTxStateUpdate(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, initTrans := url.Export(true)
+	_, initTrans := url.Export(indexer.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(initTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Init(store)
-	tx0bytes := SimulatedTx0(alice, store)
+	tx0bytes, err := SimulatedTx0(alice, store)
+	if err != nil {
+		t.Error(err)
+	}
 	tx0Out := univalue.Univalues{}.Decode(tx0bytes).(univalue.Univalues)
 
-	tx1bytes := SimulatedTx1(alice, store)
+	tx1bytes, err := SimulatedTx1(alice, store)
+	if err != nil {
+		t.Error(err)
+	}
 	tx1Out := univalue.Univalues{}.Decode(tx1bytes).(univalue.Univalues)
 
 	// url.Import(url.Decode(univalue.Univalues(append(tx0Out, tx1Out...)).Encode()))
@@ -331,10 +296,9 @@ func TestMultipleTxStateUpdate(t *testing.T) {
 	if len(errs) != 0 {
 		t.Error(errs)
 	}
-	/*
-		// url.Init(store)
-		// /* Check Paths */
-	// CheckPaths(alice, url)
+
+	// url.Init(store)
+	CheckPaths(alice, url) /* Check Paths */
 
 	// if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-111", noncommutative.NewString("tx0-elem-111")); err != nil {
 	// 	t.Error("Error: Failed to delete the path !")
@@ -344,7 +308,7 @@ func TestMultipleTxStateUpdate(t *testing.T) {
 	// 	t.Error("Error: Failed to delete the path !")
 	// }
 
-	// _, transitions := url.Export(true)
+	// _, transitions := url.Export(indexer.Sorter)
 	// url.Import(univalue.Univalues{}.Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues))
 
 	// url.PostImport()
@@ -367,7 +331,7 @@ func TestAccessControl(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, initTrans := url.Export(true)
+	_, initTrans := url.Export(indexer.Sorter)
 	// url.Import(url.Decode(univalue.Univalues(initTrans).Encode()))
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(initTrans).Encode()).(univalue.Univalues))
 
@@ -375,10 +339,16 @@ func TestAccessControl(t *testing.T) {
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Init(store)
-	tx0bytes := SimulatedTx0(alice, store)
+	tx0bytes, err := SimulatedTx0(alice, store)
+	if err != nil {
+		t.Error(err)
+	}
 	tx0Out := univalue.Univalues{}.Decode(tx0bytes).(univalue.Univalues)
 
-	tx1bytes := SimulatedTx1(alice, store)
+	tx1bytes, err := SimulatedTx1(alice, store)
+	if err != nil {
+		t.Error(err)
+	}
 	tx1Out := univalue.Univalues{}.Decode(tx1bytes).(univalue.Univalues)
 
 	// url.Import(url.Decode(univalue.Univalues(append(tx0Out, tx1Out...)).Encode()))

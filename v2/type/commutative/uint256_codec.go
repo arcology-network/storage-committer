@@ -10,12 +10,11 @@ func (this *U256) HeaderSize() uint32 {
 }
 
 func (this *U256) Size() uint32 {
-	return codec.Bool(this.finalized).Size() +
-		32 + // Values
+	return 32 + // Values
 		32 + // Min
 		32 + // Max
 		32 + // delta
-		1 // operation
+		1 // delta Possitive
 }
 
 func (this *U256) Encode(processors ...func(interface{}) interface{}) []byte {
@@ -25,8 +24,7 @@ func (this *U256) Encode(processors ...func(interface{}) interface{}) []byte {
 }
 
 func (this *U256) EncodeToBuffer(buffer []byte, processors ...func(interface{}) interface{}) int {
-	offset := codec.Bool(this.finalized).EncodeToBuffer(buffer)
-	offset += codec.Uint64s(this.value[:]).EncodeToBuffer(buffer[offset:])
+	offset := codec.Uint64s(this.value[:]).EncodeToBuffer(buffer)
 	offset += codec.Uint64s(this.min[:]).EncodeToBuffer(buffer[offset:])
 	offset += codec.Uint64s(this.max[:]).EncodeToBuffer(buffer[offset:])
 	offset += codec.Uint64s(this.delta[:]).EncodeToBuffer(buffer[offset:])
@@ -36,7 +34,6 @@ func (this *U256) EncodeToBuffer(buffer []byte, processors ...func(interface{}) 
 
 func (this *U256) Decode(buffer []byte) interface{} {
 	this = &U256{
-		finalized:      bool(codec.Bool(true).Decode(buffer).(codec.Bool)),
 		value:          uint256.NewInt(0),
 		min:            uint256.NewInt(0),
 		max:            uint256.NewInt(0),
@@ -44,11 +41,11 @@ func (this *U256) Decode(buffer []byte) interface{} {
 		deltaPossitive: true, // negative
 	}
 
-	copy(this.value[:], codec.Uint64s{}.Decode(buffer[1+32*0:1+32*1]).(codec.Uint64s))
-	copy(this.min[:], codec.Uint64s{}.Decode(buffer[1+32*1:1+32*2]).(codec.Uint64s))
-	copy(this.max[:], codec.Uint64s{}.Decode(buffer[1+32*2:1+32*3]).(codec.Uint64s))
-	copy(this.delta[:], codec.Uint64s{}.Decode(buffer[1+32*3:1+32*4]).(codec.Uint64s))
-	this.deltaPossitive = bool(codec.Bool(true).Decode(buffer[1+32*4 : 1+32*4+1]).(codec.Bool))
+	copy(this.value[:], codec.Uint64s{}.Decode(buffer[32*0:32*1]).(codec.Uint64s))
+	copy(this.min[:], codec.Uint64s{}.Decode(buffer[32*1:32*2]).(codec.Uint64s))
+	copy(this.max[:], codec.Uint64s{}.Decode(buffer[32*2:32*3]).(codec.Uint64s))
+	copy(this.delta[:], codec.Uint64s{}.Decode(buffer[32*3:32*4]).(codec.Uint64s))
+	this.deltaPossitive = bool(codec.Bool(true).Decode(buffer[32*4 : 32*4+1]).(codec.Bool))
 
 	return this
 }

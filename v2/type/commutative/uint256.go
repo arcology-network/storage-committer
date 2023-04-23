@@ -29,7 +29,6 @@ var (
 )
 
 type U256 struct {
-	finalized      bool // For commutative values only
 	value          *uint256.Int
 	delta          *uint256.Int
 	min            *uint256.Int
@@ -107,16 +106,11 @@ func (this *U256) Deepcopy() interface{} {
 	}
 }
 
-func (this *U256) Value() interface{} {
-	return this.value
-}
-
 func (this *U256) ToAccess() interface{} {
 	return this
 }
 
 func (this *U256) Get(source interface{}) (interface{}, uint32, uint32) {
-	this.finalized = true
 	temp := &U256{
 		value:          this.value.Clone(),
 		delta:          this.delta.Clone(),
@@ -133,10 +127,31 @@ func (this *U256) Get(source interface{}) (interface{}, uint32, uint32) {
 	temp.deltaPossitive = false
 	temp.delta.Clear()
 
-	return temp, 1, 1
+	return temp, 1, 1 // One read one write
 }
 
-func (this *U256) Delta() interface{} { return this }
+func (this *U256) Value() interface{} {
+	v := &U256{
+		delta:          this.delta.Clone(),
+		deltaPossitive: this.deltaPossitive,
+	}
+
+	if this.deltaPossitive {
+		v.value = this.value.Clone().Abs(this.delta)
+	} else {
+		v.value = this.value.Clone().Sub(this.value, this.delta)
+	}
+	return this.value
+}
+
+func (this *U256) Delta() interface{} {
+	return this
+}
+
+func (this *U256) Latest() interface{} {
+	v, _, _ := this.Deepcopy().(*U256).Get(nil)
+	return v
+}
 
 func (this *U256) isOverflowed(v0 *uint256.Int, signV0 bool, v1 *uint256.Int, signV1 bool) (*uint256.Int, bool) {
 	if signV0 == signV1 { // Both positive or negative
@@ -148,9 +163,9 @@ func (this *U256) isOverflowed(v0 *uint256.Int, signV0 bool, v1 *uint256.Int, si
 	}
 
 	if v0.Cmp(v1) < 1 { // v0 <= v1
-		return v1.Sub(v1, v0), signV1
+		return uint256.NewInt(0).Sub(v1, v0), signV1
 	}
-	return v1.Sub(v0, v1), signV0
+	return uint256.NewInt(0).Sub(v0, v1), signV0
 }
 
 // Set delta
@@ -175,11 +190,6 @@ func (this *U256) Set(newDelta interface{}, source interface{}) (interface{}, ui
 		return this, 0, 0, 1, nil
 	}
 	return this, 0, 0, 1, errors.New("Error: Value out of range")
-}
-
-func (this *U256) Latest(source interface{}) interface{} {
-	v, _, _ := this.Deepcopy().(*U256).Get(source)
-	return v
 }
 
 func (this *U256) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
@@ -211,7 +221,6 @@ func (this *U256) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 }
 
 func (this *U256) Purge() {
-	this.finalized = false
 	this.delta = uint256.NewInt(0)
 }
 

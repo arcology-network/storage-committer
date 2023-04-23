@@ -56,7 +56,7 @@ func (this *Bytes) Get(source interface{}) (interface{}, uint32, uint32) {
 	return this, 1, 0
 }
 
-func (this *Bytes) Latest(source interface{}) interface{} {
+func (this *Bytes) Latest() interface{} {
 	return this
 }
 

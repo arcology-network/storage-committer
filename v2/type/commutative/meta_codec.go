@@ -61,10 +61,14 @@ func (this *Meta) Decode(buffer []byte) interface{} {
 		added:         codec.Strings([]string{}).Decode(bytes.Clone(buffers[0])).(codec.Strings),
 		removed:       codec.Strings([]string{}).Decode(buffers[1]).(codec.Strings),
 		view:          nil,
-		addedBuffer:   orderedmap.NewOrderedMap(),
-		removedBuffer: orderedmap.NewOrderedMap(),
+		addedDict:     orderedmap.NewOrderedMap(),
+		removedDict:   orderedmap.NewOrderedMap(),
 		snapshotDirty: false,
 	}
+
+	// if len(this.added) > 0 {
+	// 	panic(this.added)
+	// }
 
 	return this
 }
@@ -83,8 +87,8 @@ func (this *Meta) DecodeCompact(bytes []byte) interface{} {
 		added:         []string{},
 		removed:       []string{},
 		view:          nil,
-		addedBuffer:   orderedmap.NewOrderedMap(),
-		removedBuffer: orderedmap.NewOrderedMap(),
+		addedDict:     orderedmap.NewOrderedMap(),
+		removedDict:   orderedmap.NewOrderedMap(),
 		snapshotDirty: false,
 	}
 }

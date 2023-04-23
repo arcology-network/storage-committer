@@ -28,6 +28,7 @@ func NewPlatform() *Platform {
 
 func (this *Platform) Eth10() string        { return "blcc://eth1.0/" }
 func (this *Platform) Eth10Account() string { return this.Eth10() + "account/" }
+
 func Eth10AccountShard(numOfShard int, key string) int {
 	if len(key) < 24 {
 		panic("Invalid eth1.0 account shard key: " + key)

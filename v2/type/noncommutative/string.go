@@ -11,10 +11,10 @@ func NewString(v string) interface{} {
 	return &this
 }
 
-func (this *String) IsSelf(key interface{}) bool           { return true }
-func (this *String) TypeID() uint8                         { return uint8(ccurlcommon.NoncommutativeString) }
-func (this *String) Latest(source interface{}) interface{} { return this }
-func (this *String) Delta() interface{}                    { return this }
+func (this *String) IsSelf(key interface{}) bool { return true }
+func (this *String) TypeID() uint8               { return uint8(ccurlcommon.NoncommutativeString) }
+func (this *String) Latest() interface{}         { return this }
+func (this *String) Delta() interface{}          { return this }
 
 func (this *String) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
 	return v, 0, 1, 0

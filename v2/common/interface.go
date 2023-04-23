@@ -1,10 +1,8 @@
 package common
 
 type TransitionInterface interface { // value type
-	IncrementReads(uint32)
-	IncrementWrites(uint32)
-	IncrementDelta(uint32)
-	DecrementReads()
+	AddedArray() interface{}
+	RemovedArray() interface{}
 }
 
 type TypeInterface interface { // value type
@@ -16,7 +14,7 @@ type TypeInterface interface { // value type
 	Get(interface{}) (interface{}, uint32, uint32)
 	Set(interface{}, interface{}) (interface{}, uint32, uint32, uint32, error)
 	CopyTo(interface{}) (interface{}, uint32, uint32, uint32)
-	Latest(interface{}) interface{}
+	Latest() interface{}
 	ApplyDelta(interface{}) TypeInterface
 	IsSelf(interface{}) bool
 	Hash(func([]byte) []byte) []byte
@@ -31,6 +29,11 @@ type TypeInterface interface { // value type
 }
 
 type UnivalueInterface interface { // value type
+	TypeID() uint8
+	Reads() uint32
+	Writes() uint32
+	DeltaWrites() uint32
+
 	IncrementReads(uint32)
 	IncrementWrites(uint32)
 	IncrementDelta(uint32)
@@ -45,15 +48,11 @@ type UnivalueInterface interface { // value type
 	Value() interface{}
 	SetValue(interface{})
 
-	Reads() uint32
-	Writes() uint32
-	DeltaWrites() uint32
-
 	ApplyDelta(uint32, interface{}) error
 	Preexist() bool
 	IfConcurrentWritable() bool
 	Deepcopy() interface{}
-	Export(interface{}) (interface{}, interface{})
+	// Export(interface{}) (interface{}, interface{})
 	GetEncoded() []byte
 	Encode(...func(interface{}) interface{}) []byte
 	EncodeToBuffer([]byte, ...func(interface{}) interface{}) int
@@ -72,10 +71,10 @@ type IndexerInterface interface {
 	Buffer() *map[string]UnivalueInterface
 	Store() *DatastoreInterface
 
-	SkipExport(univalue interface{}) bool
+	Platform() *Platform
 }
 
-type TransitionFilterInterface interface {
+type FilterTransitionsInterface interface {
 	Is(int, string) bool
 }
 
