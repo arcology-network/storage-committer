@@ -1,8 +1,8 @@
 package common
 
 type TransitionInterface interface { // value type
-	AddedArray() interface{}
-	RemovedArray() interface{}
+	Added() interface{}
+	Removed() interface{}
 }
 
 type TypeInterface interface { // value type

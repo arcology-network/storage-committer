@@ -49,12 +49,12 @@ func (this *Uint64) Get(source interface{}) (interface{}, uint32, uint32) {
 	}, 1, 1
 }
 
-func (this *Uint64) Latest() interface{} {
-	return &Uint64{
-		this.value + this.delta,
-		0,
-	}
-}
+// func (this *Uint64) Latest() interface{} {
+// 	return &Uint64{
+// 		this.value + this.delta,
+// 		0,
+// 	}
+// }
 
 func (this *Uint64) Delta() interface{} {
 	return &Uint64{

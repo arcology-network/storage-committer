@@ -148,10 +148,10 @@ func (this *U256) Delta() interface{} {
 	return this
 }
 
-func (this *U256) Latest() interface{} {
-	v, _, _ := this.Deepcopy().(*U256).Get(nil)
-	return v
-}
+// func (this *U256) Latest() interface{} {
+// 	v, _, _ := this.Deepcopy().(*U256).Get(nil)
+// 	return v
+// }
 
 func (this *U256) isOverflowed(v0 *uint256.Int, signV0 bool, v1 *uint256.Int, signV1 bool) (*uint256.Int, bool) {
 	if signV0 == signV1 { // Both positive or negative

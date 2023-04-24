@@ -74,19 +74,19 @@ func CheckPaths(account string, url *ccurl.ConcurrentUrl) error {
 
 	//Read the path
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/")
-	keys := v.(ccurlcommon.TypeInterface).Value().(*commutative.Meta).CommittedKeys()
+	keys := v.(ccurlcommon.TypeInterface).Value().(*commutative.Meta).SubDirs()
 	if !reflect.DeepEqual(keys, []string{"elem-00", "elem-01"}) {
 		return errors.New("Error: Meta don't match !")
 	}
 
 	// Read the path again
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/")
-	if !reflect.DeepEqual(v.(ccurlcommon.TypeInterface).Value().(*commutative.Meta).CommittedKeys(), []string{"elem-00", "elem-01"}) {
+	if !reflect.DeepEqual(v.(ccurlcommon.TypeInterface).Value().(*commutative.Meta).SubDirs(), []string{"elem-00", "elem-01"}) {
 		return errors.New("Error: Meta don't match !")
 	}
 
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/")
-	if !reflect.DeepEqual(v.(ccurlcommon.TypeInterface).Value().(*commutative.Meta).CommittedKeys(), []string{"elem-00", "elem-01"}) {
+	if !reflect.DeepEqual(v.(ccurlcommon.TypeInterface).Value().(*commutative.Meta).SubDirs(), []string{"elem-00", "elem-01"}) {
 		return errors.New("Error: Meta don't match !")
 	}
 	return nil

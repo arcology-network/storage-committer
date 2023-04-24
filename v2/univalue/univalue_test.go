@@ -47,7 +47,7 @@ func TestUnivalueCodeMeta(t *testing.T) {
 
 	meta := commutative.NewMeta()
 
-	meta.(*commutative.Meta).SetCommittedKeys([]string{"e-01", "e-001", "e-002", "e-002"})
+	meta.(*commutative.Meta).SetSubDirs([]string{"e-01", "e-001", "e-002", "e-002"})
 	meta.(*commutative.Meta).SetAdded([]string{"+01", "+001", "+002", "+002"})
 	meta.(*commutative.Meta).SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
 
@@ -82,7 +82,7 @@ func TestCodecMetaUnivalues(t *testing.T) {
 	alice := datacompression.RandomAccount()
 
 	meta := commutative.NewMeta()
-	meta.(*commutative.Meta).SetCommittedKeys([]string{"e-01", "e-001", "e-002", "e-002"})
+	meta.(*commutative.Meta).SetSubDirs([]string{"e-01", "e-001", "e-002", "e-002"})
 	meta.(*commutative.Meta).SetAdded([]string{"+01", "+001", "+002", "+002"})
 	meta.(*commutative.Meta).SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
 	unival := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 11, meta)

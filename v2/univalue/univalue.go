@@ -208,8 +208,8 @@ func (this *Univalue) PrecheckAttributes(other *Univalue) {
 		panic("Error: Read/Write/Deltawrite all zero!!")
 	}
 
-	if other.writes == 0 {
-		panic("Error: Value type mismatched!")
+	if other.writes == 0 && other.deltaWrites == 0 {
+		panic("Error: Value type mismatched!") // Read only variable should never be here.
 	}
 
 	if this.preexists && this.IsCommutative() && this.Reads() > 0 && this.IfConcurrentWritable() == other.IfConcurrentWritable() {

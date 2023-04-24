@@ -26,8 +26,8 @@ func (this *Meta) Size() uint32 {
 	}
 
 	total := this.HeaderSize() +
-		codec.Strings(this.addedDict.Keys()).Size() +
-		codec.Strings(this.removedDict.Keys()).Size()
+		codec.Strings(this.addDict.Keys()).Size() +
+		codec.Strings(this.delDict.Keys()).Size()
 	return total
 }
 
@@ -36,7 +36,7 @@ func (this *Meta) FillHeader(buffer []byte) {
 
 	offset := uint32(0)
 	codec.Uint32(offset).EncodeToBuffer(buffer[codec.UINT32_LEN*1:])
-	offset += codec.Strings(this.addedDict.Keys()).Size()
+	offset += codec.Strings(this.addDict.Keys()).Size()
 
 	codec.Uint32(offset).EncodeToBuffer(buffer[codec.UINT32_LEN*2:])
 }
@@ -45,8 +45,8 @@ func (this *Meta) EncodeToBuffer(buffer []byte, processors ...func(interface{}) 
 	this.FillHeader(buffer)
 	offset := int(this.HeaderSize())
 
-	offset += codec.Strings(this.addedDict.Keys()).EncodeToBuffer(buffer[offset:])
-	offset += codec.Strings(this.removedDict.Keys()).EncodeToBuffer(buffer[offset:])
+	offset += codec.Strings(this.addDict.Keys()).EncodeToBuffer(buffer[offset:])
+	offset += codec.Strings(this.delDict.Keys()).EncodeToBuffer(buffer[offset:])
 
 	return int(offset)
 }
@@ -54,10 +54,9 @@ func (this *Meta) EncodeToBuffer(buffer []byte, processors ...func(interface{}) 
 func (this *Meta) Decode(buffer []byte) interface{} {
 	buffers := codec.Byteset{}.Decode(buffer).(codec.Byteset)
 	this = &Meta{
-		view:          orderedset.NewOrderedSet([]string{}),
-		addedDict:     orderedset.NewOrderedSet(codec.Strings([]string{}).Decode(bytes.Clone(buffers[0])).(codec.Strings)),
-		removedDict:   orderedset.NewOrderedSet(codec.Strings([]string{}).Decode(bytes.Clone(buffers[1])).(codec.Strings)),
-		snapshotDirty: false,
+		view:    orderedset.NewOrderedSet([]string{}),
+		addDict: orderedset.NewOrderedSet(codec.Strings([]string{}).Decode(bytes.Clone(buffers[0])).(codec.Strings)),
+		delDict: orderedset.NewOrderedSet(codec.Strings([]string{}).Decode(bytes.Clone(buffers[1])).(codec.Strings)),
 	}
 
 	return this
@@ -73,19 +72,15 @@ func (this *Meta) EncodeCompact() []byte {
 func (this *Meta) DecodeCompact(bytes []byte) interface{} {
 	buffers := codec.Byteset{}.Decode(bytes).(codec.Byteset)
 	return &Meta{
-		// committedKeys: codec.Strings([]string{}).Decode(buffers[0]).(codec.Strings),
-		// added:         []string{},
-		// removed:       []string{},
-		view:          orderedset.NewOrderedSet(codec.Strings([]string{}).Decode(buffers[0]).(codec.Strings)),
-		addedDict:     orderedset.NewOrderedSet([]string{}),
-		removedDict:   orderedset.NewOrderedSet([]string{}),
-		snapshotDirty: false,
+		view:    orderedset.NewOrderedSet(codec.Strings([]string{}).Decode(buffers[0]).(codec.Strings)),
+		addDict: orderedset.NewOrderedSet([]string{}),
+		delDict: orderedset.NewOrderedSet([]string{}),
 	}
 }
 
 func (this *Meta) Print() {
 	// fmt.Println("Keys: ", this.committedKeys)
-	fmt.Println("Added: ", this.addedDict.Keys())
-	fmt.Println("Removed: ", this.removedDict.Keys())
+	fmt.Println("Added: ", this.addDict.Keys())
+	fmt.Println("Removed: ", this.delDict.Keys())
 	fmt.Println()
 }

@@ -174,7 +174,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/2", noncommutative.NewString("4"))
 
 	path, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	if reflect.DeepEqual(path.(*commutative.Meta).Latest(), []string{"1", "2", "3", "4"}) {
+	if reflect.DeepEqual(path.(*commutative.Meta).Value(), []string{"1", "2", "3", "4"}) {
 		t.Error("Error: Not match")
 	}
 
@@ -228,12 +228,12 @@ func TestStateUpdate(t *testing.T) {
 		t.Error("Error: Wrong sub paths")
 	}
 
-	if !reflect.DeepEqual(v.(ccurlcommon.TypeInterface).Value().(*commutative.Meta).CommittedKeys(), []string{"ctrn-0/", "ctrn-1/"}) {
+	if !reflect.DeepEqual(v.(ccurlcommon.TypeInterface).Value().(*commutative.Meta).SubDirs(), []string{"ctrn-0/", "ctrn-1/"}) {
 		t.Error("Error: Didn't find the subpath!")
 	}
 
 	v, _ = url.Read(9, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	keys := v.(ccurlcommon.TypeInterface).Value().(*commutative.Meta).CommittedKeys()
+	keys := v.(ccurlcommon.TypeInterface).Value().(*commutative.Meta).SubDirs()
 	if !reflect.DeepEqual(keys, []string{"elem-00", "elem-01"}) {
 		t.Error("Error: Keys don't match !")
 	}
@@ -326,7 +326,7 @@ func TestMultipleTxStateUpdate(t *testing.T) {
 
 	// url.Init(store)
 	v, _ = url.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	keys := v.(ccurlcommon.TypeInterface).Value().(*commutative.Meta).CommittedKeys()
+	keys := v.(ccurlcommon.TypeInterface).Value().(*commutative.Meta).SubDirs()
 	if !reflect.DeepEqual(keys, []string{"elem-00", "elem-01", "elem-111", "elem-222"}) {
 		t.Error("Error: Keys don't match !")
 	}
@@ -437,7 +437,7 @@ func TestAccessControl(t *testing.T) {
 		t.Error("Error: Failed to read the storage !")
 	}
 
-	err = url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/", meta)
+	err = url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/", meta) //this should preexists
 	if err != nil {
 		t.Error("Error: The system should be able to change the storage path !")
 	}

@@ -49,16 +49,13 @@ func FilterTransitions(buffer []ccurlcommon.UnivalueInterface, platform interfac
 	univals := Bypasser(common.DeepCopy(buffer), platform)
 
 	for i := 0; i < len(univals); i++ {
-		if univals[i].Writes() > 0 || univals[i].DeltaWrites() > 0 {
-			if univals[i].Value() != nil { // A new one or update or an existing entry
-				univals[i].SetValue(univals[i].Value().(ccurlcommon.TypeInterface).Delta())
-			} else {
-				if !univals[i].Preexist() { // Delete entries, ignore non existing ones
-					univals[i] = nil
-				}
-			}
-		} else {
+		if univals[i].Writes() == 0 && univals[i].DeltaWrites() == 0 {
 			univals[i] = nil
+			continue
+		}
+
+		if univals[i].Value() == nil && !univals[i].Preexist() {
+			univals[i] = nil // A new one or update or an existing entry
 		}
 	}
 	common.RemoveIf(&univals, func(v ccurlcommon.UnivalueInterface) bool { return v == nil })

@@ -56,12 +56,12 @@ func (this *Int64) Value() interface{} {
 	return this.value
 }
 
-func (this *Int64) Latest() interface{} {
-	return &Int64{
-		this.value + this.delta,
-		0,
-	}
-}
+// func (this *Int64) Latest() interface{} {
+// 	return &Int64{
+// 		this.value + this.delta,
+// 		0,
+// 	}
+// }
 
 func (this *Int64) Delta() interface{} {
 	return &Int64{

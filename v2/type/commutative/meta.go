@@ -1,7 +1,6 @@
 package commutative
 
 import (
-	"errors"
 	"reflect"
 	"strings"
 
@@ -11,16 +10,16 @@ import (
 
 type Meta struct {
 	view          *orderedset.OrderedSet // committed keys + added - removed
-	addedDict     *orderedset.OrderedSet
-	removedDict   *orderedset.OrderedSet
+	addDict       *orderedset.OrderedSet
+	delDict       *orderedset.OrderedSet
 	snapshotDirty bool
 }
 
 func NewMeta() interface{} {
 	this := &Meta{
 		view:          orderedset.NewOrderedSet([]string{}),
-		addedDict:     orderedset.NewOrderedSet([]string{}),
-		removedDict:   orderedset.NewOrderedSet([]string{}),
+		addDict:       orderedset.NewOrderedSet([]string{}),
+		delDict:       orderedset.NewOrderedSet([]string{}),
 		snapshotDirty: false,
 	}
 	return this
@@ -44,19 +43,16 @@ func (this *Meta) At(idx uint64) {}
 
 func (this *Meta) Deepcopy() interface{} {
 	meta := &Meta{
-		// committedKeys: this.committedKeys,
-		// added:         common.DeepCopy(this.added),
-		// removed:       common.DeepCopy(this.removed),
-		view:        this.view.Clone(),
-		addedDict:   this.addedDict.Clone(),
-		removedDict: this.removedDict.Clone(),
+		view:    this.view.Clone(),
+		addDict: this.addDict.Clone(),
+		delDict: this.delDict.Clone(),
 	}
 	return meta
 }
 
 func (this *Meta) Equal(other *Meta) bool {
-	return reflect.DeepEqual(this.addedDict.Keys(), other.addedDict.Keys()) &&
-		reflect.DeepEqual(this.removedDict.Keys(), other.removedDict.Keys())
+	return reflect.DeepEqual(this.addDict.Keys(), other.addDict.Keys()) &&
+		reflect.DeepEqual(this.delDict.Keys(), other.delDict.Keys())
 }
 
 func (this *Meta) ToAccess() interface{} {
@@ -64,7 +60,7 @@ func (this *Meta) ToAccess() interface{} {
 }
 
 func (this *Meta) Get(source interface{}) (interface{}, uint32, uint32) {
-	if !this.snapshotDirty { // cache clean
+	if this.addDict.Len() > 0 || this.delDict.Len() > 0 { // cache clean
 		return this, 1, 0
 	}
 
@@ -73,13 +69,9 @@ func (this *Meta) Get(source interface{}) (interface{}, uint32, uint32) {
 
 func (this *Meta) Delta() interface{} {
 	return &Meta{
-		// committedKeys: []string{},     // committed keys
-		// added:         this.Added(),   // Get the keys to be added from the dictionary
-		// removed:       this.Removed(), // Get the keys to be removed from the dictionary
-		view:          this.view,
-		addedDict:     this.addedDict,
-		removedDict:   this.removedDict,
-		snapshotDirty: this.snapshotDirty,
+		view:    this.view,
+		addDict: this.addDict,
+		delDict: this.delDict,
 	}
 }
 
@@ -89,22 +81,14 @@ func (this *Meta) Value() interface{} {
 }
 
 // committed keys + added - removed
-func (this *Meta) Latest() interface{} {
-	this.RefreshView()
-	return this.view.Keys()
-	// return &Meta{
-	// 	committedKeys: this.view.Keys(), // committed keys
-	// }
-}
+// func (this *Meta) Latest() interface{} {
+// 	this.RefreshView()
+// 	return this.view.Keys()
+// }
 
 func (this *Meta) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
-	// k := common.To(this.addedDict.Keys(), string(""))
-	// if !common.EqualArray(k, this.added) {
-	// 	panic("")
-	// }
-
-	keys := append(this.view.Keys(), this.addedDict.Keys()...)
-	toRemove := this.removedDict.Keys()
+	keys := append(this.view.Keys(), this.addDict.Keys()...)
+	toRemove := this.delDict.Keys()
 	vec := v.([]ccurlcommon.UnivalueInterface)
 	for i := 0; i < len(vec); i++ {
 		if vec[i].GetPath() == nil { // Not in the whitelist
@@ -123,8 +107,8 @@ func (this *Meta) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 			this = this.Value().(*Meta) // A new value
 		}
 
-		keys = append(keys, v.(*Meta).AddedArray().([]string)...)
-		toRemove = append(toRemove, v.(*Meta).RemovedArray().([]string)...)
+		keys = append(keys, v.(*Meta).Added()...)
+		toRemove = append(toRemove, v.(*Meta).Removed()...)
 	}
 
 	if this != nil {
@@ -149,7 +133,6 @@ func (this *Meta) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 		}
 
 		this.view = orderedset.NewOrderedSet(keys)
-		this.snapshotDirty = false
 	}
 	//fmt.Println("ApplyDelta :", time.Since(t0))
 
@@ -164,10 +147,10 @@ func (this *Meta) RefreshView() {
 	if this.view != nil { // Keys have been loaded already.
 		return
 	}
-	this.view.Sync()
 
-	this.view.Difference(this.removedDict)
-	this.view.Union(this.addedDict)
+	this.view.Sync()
+	this.view.Difference(this.delDict)
+	this.view.Union(this.addDict)
 }
 
 // Write and afflicated operations
@@ -201,52 +184,51 @@ func (this *Meta) Set(value interface{}, source interface{}) (interface{}, uint3
 	}
 
 	univ, _ := (*indexer.Buffer())[path]
-	addFlag := this.includeBuffer(subkey, value, univ.Preexist())
-	removedFlag := this.excludeBuffer(subkey, value, univ.Preexist())
-	this.snapshotDirty = addFlag || removedFlag // Either is dirty
+	added := this.addKey(subkey, value, univ.Preexist())
+	deleted := this.delKeys(subkey, value, univ.Preexist())
 
-	if removedFlag == addFlag && removedFlag {
-		return this, 0, 1, 0, errors.New("Error: Impossible to be in both sets!!")
+	if added != deleted {
+		return this, 0, 0, 1, nil
+	} else {
+		if added {
+			panic("Error: This is impossible 222!")
+		}
 	}
+	panic("Error: This is impossible!")
 	return this, 0, 1, 0, nil //<<<>>> deltawrits ?????
 }
 
-func (this *Meta) includeBuffer(subkey string, value interface{}, preexists bool) bool {
-	// if _, ok := this.removedDict[subkey]; ok { // Adding back a preexisting entry
-	// 	delete(this.removedDict, subkey) // Cancel out each other
-	// 	return true
-	// }
-
-	if _, ok := this.removedDict.Get(subkey); ok { // Adding back a preexisting entry
-		this.removedDict.Delete(subkey) // Cancel out each other
+func (this *Meta) addKey(subkey string, value interface{}, preexists bool) bool {
+	if _, ok := this.delDict.Get(subkey); ok { // Adding back a preexisting entry
+		this.delDict.Delete(subkey) // Cancel out each other
 		return true
 	}
 
 	if !preexists && value != nil {
-		this.addedDict.Set(subkey) //  duplicate is ok
+		this.addDict.Set(subkey) //  duplicate is ok
 		return true
 	}
 	return false
 }
 
 // Only the preexisting keys are in this buffer, or they will be cancel each other
-func (this *Meta) excludeBuffer(subkey string, value interface{}, preexists bool) bool {
+func (this *Meta) delKeys(subkey string, value interface{}, preexists bool) bool {
 	if value != nil {
 		return false
 	}
 
 	if preexists { // Preexists and value == nil
-		this.removedDict.Set(subkey)
+		this.delDict.Set(subkey)
 		return true
 	}
-	return this.addedDict.Delete(subkey) // Leave out the entry if it is in the added buffer
+	return this.addDict.Delete(subkey) // Leave out the entry if it is in the added buffer
 }
 
 // data cleaning before saving to storage
 func (this *Meta) Purge() {
 	this.view = orderedset.NewOrderedSet([]string{})
-	this.addedDict = orderedset.NewOrderedSet([]string{})
-	this.removedDict = orderedset.NewOrderedSet([]string{})
+	this.addDict = orderedset.NewOrderedSet([]string{})
+	this.delDict = orderedset.NewOrderedSet([]string{})
 }
 
 func (this *Meta) Hash(hasher func([]byte) []byte) []byte {
@@ -254,12 +236,10 @@ func (this *Meta) Hash(hasher func([]byte) []byte) []byte {
 }
 
 // Debugging interfaces
-func (this *Meta) CommittedKeys() []string   { return this.view.Keys() }        // Check new keys
-func (this *Meta) AddedArray() interface{}   { return this.addedDict.Keys() }   // Check new keys
-func (this *Meta) RemovedArray() interface{} { return this.removedDict.Keys() } // Peek the removed keys
+func (this *Meta) SubDirs() []string { return this.view.Keys() }    // Check new keys
+func (this *Meta) Added() []string   { return this.addDict.Keys() } // Check new keys
+func (this *Meta) Removed() []string { return this.delDict.Keys() } // Peek the removed keys
 
-func (this *Meta) Added() []string                { return this.addedDict.Keys() }   // Check new keys
-func (this *Meta) Removed() []string              { return this.removedDict.Keys() } // Peek the removed keys
-func (this *Meta) SetCommittedKeys(keys []string) { this.view = orderedset.NewOrderedSet(keys) }
-func (this *Meta) SetAdded(keys []string)         { this.addedDict = orderedset.NewOrderedSet(keys) }
-func (this *Meta) SetRemoved(keys []string)       { this.removedDict = orderedset.NewOrderedSet(keys) }
+func (this *Meta) SetSubDirs(keys []string) { this.view = orderedset.NewOrderedSet(keys) }
+func (this *Meta) SetAdded(keys []string)   { this.addDict = orderedset.NewOrderedSet(keys) }
+func (this *Meta) SetRemoved(keys []string) { this.delDict = orderedset.NewOrderedSet(keys) }
