@@ -90,7 +90,7 @@ func (this *ConcurrentUrl) CreateAccount(tx uint32, platform string, acct string
 		var v interface{}
 		switch path.ID {
 		case ccurlcommon.CommutativeMeta: // Path
-			v, err = commutative.NewMeta(path.Default.(string))
+			v = commutative.NewMeta()
 
 		case uint8(reflect.Kind(ccurlcommon.NoncommutativeString)): // delta big int
 			v = noncommutative.NewString(path.Default.(string))

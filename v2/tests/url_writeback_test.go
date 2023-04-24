@@ -29,7 +29,7 @@ func TestAddAndDelete(t *testing.T) {
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Init(store)
-	path, _ := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
+	path := commutative.NewMeta()
 	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
 
 	_, acctTrans = url.Export(indexer.Sorter)
@@ -61,7 +61,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 
 	url.Init(store)
 	// create a path
-	path, _ := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
+	path := commutative.NewMeta()
 	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
 	_, addPath := url.Export(indexer.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(addPath).Encode()).(univalue.Univalues))
@@ -116,7 +116,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Init(store)
-	path, _ := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/containers/ctrn-0/")
+	path := commutative.NewMeta()
 	err := url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/containers/ctrn-0/", path)
 
 	if err != nil {
@@ -156,7 +156,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 
 	url.Init(store)
 	// create a path
-	path, _ := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
+	path := commutative.NewMeta()
 	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
 	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewString("1"))
 	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/2", noncommutative.NewString("2"))
@@ -426,7 +426,7 @@ func TestAccessControl(t *testing.T) {
 	}
 
 	/* Storage */
-	meta, _ := commutative.NewMeta("")
+	meta := commutative.NewMeta()
 	// err = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/", meta)
 	// if err == nil {
 	// 	t.Error("Error: Users shouldn't be able to change the storage path !")

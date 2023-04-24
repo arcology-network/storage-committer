@@ -17,11 +17,7 @@ import (
 
 func TestNoncommutativeCodec(t *testing.T) {
 	/* Noncommutative Path Test*/
-	alice := datacompression.RandomAccount()
-	inPath, err := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
-	if err != nil {
-		t.Error(err)
-	}
+	inPath := commutative.NewMeta()
 
 	pathBytes := inPath.(*commutative.Meta).Encode()
 	outPath := (&commutative.Meta{}).Decode(pathBytes)

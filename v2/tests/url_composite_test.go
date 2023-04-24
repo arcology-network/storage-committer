@@ -31,10 +31,7 @@ func TestAuxTrans(t *testing.T) {
 
 	url.Init(store)
 	// create a path
-	path, err := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
-	if err != nil {
-		t.Error("Failed to create the path")
-	}
+	path := commutative.NewMeta()
 
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		t.Error(err)
@@ -122,7 +119,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	url.Commit([]uint32{1}) // Commit
 
 	url.Init(store)
-	path, _ := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
+	path := commutative.NewMeta()
 	if url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path) != nil {
 		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/") // create a path
 	}

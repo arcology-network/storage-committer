@@ -16,23 +16,14 @@ type Meta struct {
 	snapshotDirty bool
 }
 
-func NewMeta(path string) (interface{}, error) {
-	if !ccurlcommon.IsPath(path) {
-		return nil, errors.New("Error: Wrong path format !")
-	}
-
-	if !ccurlcommon.CheckDepth(path) {
-		return nil, errors.New("Error: Exceeded the maximum depth")
-	}
-
+func NewMeta() interface{} {
 	this := &Meta{
 		view:          orderedset.NewOrderedSet([]string{}),
 		addedDict:     orderedset.NewOrderedSet([]string{}),
 		removedDict:   orderedset.NewOrderedSet([]string{}),
 		snapshotDirty: false,
 	}
-	// this.view = orderedset.NewOrderedSet(this.committedKeys)
-	return this, nil
+	return this
 }
 
 func (this *Meta) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {

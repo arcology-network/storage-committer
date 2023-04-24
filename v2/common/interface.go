@@ -14,7 +14,6 @@ type TypeInterface interface { // value type
 	Get(interface{}) (interface{}, uint32, uint32)
 	Set(interface{}, interface{}) (interface{}, uint32, uint32, uint32, error)
 	CopyTo(interface{}) (interface{}, uint32, uint32, uint32)
-	Latest() interface{}
 	ApplyDelta(interface{}) TypeInterface
 	IsSelf(interface{}) bool
 	Hash(func([]byte) []byte) []byte
@@ -41,7 +40,6 @@ type UnivalueInterface interface { // value type
 
 	Set(uint32, string, interface{}, interface{}) error
 	Get(uint32, string, interface{}) interface{}
-	This(interface{}) interface{}
 	GetTx() uint32
 	GetPath() *string
 	SetPath(*string)

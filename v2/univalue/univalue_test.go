@@ -15,7 +15,7 @@ func TestUnivalueEncodeDecode(t *testing.T) {
 	/* Commutative Int64 Test */
 	alice := datacompression.RandomAccount()
 
-	// meta, _ := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
+	// meta:= commutative.NewMeta()
 	u256 := commutative.NewU256(uint256.NewInt(100), uint256.NewInt(0), uint256.NewInt(100))
 	in := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, u256)
 	in.reads = 1
@@ -45,7 +45,7 @@ func TestUnivalueCodeMeta(t *testing.T) {
 	/* Commutative Int64 Test */
 	alice := datacompression.RandomAccount()
 
-	meta, _ := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
+	meta := commutative.NewMeta()
 
 	meta.(*commutative.Meta).SetCommittedKeys([]string{"e-01", "e-001", "e-002", "e-002"})
 	meta.(*commutative.Meta).SetAdded([]string{"+01", "+001", "+002", "+002"})
@@ -81,7 +81,7 @@ func TestCodecMetaUnivalues(t *testing.T) {
 	/* Commutative Int64 Test */
 	alice := datacompression.RandomAccount()
 
-	meta, _ := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
+	meta := commutative.NewMeta()
 	meta.(*commutative.Meta).SetCommittedKeys([]string{"e-01", "e-001", "e-002", "e-002"})
 	meta.(*commutative.Meta).SetAdded([]string{"+01", "+001", "+002", "+002"})
 	meta.(*commutative.Meta).SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
@@ -110,7 +110,7 @@ func TestCodecMetaUnivalues(t *testing.T) {
 func BenchmarkUnivalueEncodeDecode(t *testing.B) {
 	/* Commutative Int64 Test */
 	alice := datacompression.RandomAccount()
-	v, _ := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
+	v := commutative.NewMeta()
 	bytes := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 1, v).Encode()
 	// bytes := in1.Encode()
 	fmt.Println("Encoded length of one entry:", len(bytes)*4)

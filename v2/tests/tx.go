@@ -15,7 +15,7 @@ import (
 
 func SimulatedTx0(account string, store *cachedstorage.DataStore) ([]byte, error) {
 	url := ccurl.NewConcurrentUrl(store)
-	path, _ := commutative.NewMeta("blcc://eth1.0/account/" + account + "/storage/ctrn-0/") // create a path
+	path := commutative.NewMeta() // create a path
 	if err := url.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", path); err != nil {
 		return []byte{}, err
 	}
@@ -34,7 +34,7 @@ func SimulatedTx0(account string, store *cachedstorage.DataStore) ([]byte, error
 
 func SimulatedTx1(account string, store *cachedstorage.DataStore) ([]byte, error) {
 	url := ccurl.NewConcurrentUrl(store)
-	path, _ := commutative.NewMeta("blcc://eth1.0/account/" + account + "/storage/ctrn-1/") // create a path
+	path := commutative.NewMeta() // create a path
 	if err := url.Write(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/", path); err != nil {
 		return []byte{}, err
 	}

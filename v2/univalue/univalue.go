@@ -150,13 +150,6 @@ func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{
 	return this.value
 }
 
-func (this *Univalue) This(source interface{}) interface{} {
-	if this.value != nil {
-		return this.value.(ccurlcommon.TypeInterface).Latest()
-	}
-	return this.value
-}
-
 func (this *Univalue) Set(tx uint32, path string, typedV interface{}, source interface{}) error { // update the value
 	this.tx = tx
 	if this.Value() == nil && typedV == nil {

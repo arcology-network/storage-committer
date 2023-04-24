@@ -62,7 +62,7 @@ func TestAddThenDeletePath(t *testing.T) {
 
 	url.Init(store)
 	// create a path
-	path, _ := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
+	path := commutative.NewMeta()
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		t.Error(err)
 	}
@@ -108,7 +108,7 @@ func TestBasic(t *testing.T) {
 
 	url.Init(store)
 	// create a path
-	path, _ := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
+	path := commutative.NewMeta()
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		t.Error(err)
 	}
@@ -206,7 +206,7 @@ func TestUrl1(t *testing.T) {
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Init(store)
-	path, _ := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
+	path := commutative.NewMeta()
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		t.Error(err)
 	}
@@ -290,7 +290,7 @@ func TestUrl2(t *testing.T) {
 
 	url.Init(store)
 	// Create a new container
-	path, _ := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
+	path := commutative.NewMeta()
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		t.Error(err, "Error:  Failed to MakePath: "+"/ctrn-0/")
 	}
@@ -454,7 +454,7 @@ func TestUnivaluesBatchCodec(t *testing.T) {
 		t.Error(err)
 	}
 
-	// path, err := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
+	// path := commutative.NewMeta()
 	// if err != nil {
 	// 	t.Error("Error: Failed to create the path")
 	// }
@@ -495,11 +495,7 @@ func TestCommutative(t *testing.T) {
 	}
 
 	// create a path
-	path, err := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
-	if err != nil {
-		t.Error("Error: Failed to create the path: blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
-	}
-
+	path := commutative.NewMeta()
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		t.Error(err, " Failed to MakePath: blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
 	}
@@ -593,19 +589,14 @@ func TestNestedPath(t *testing.T) {
 	}
 
 	// create a path
-	path, err := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
-	if err != nil {
-		t.Error("Error: Failed to create the path")
-	}
+	path := commutative.NewMeta()
+
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		t.Error(err)
 	}
 
 	// create a sub path
-	path, err = commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/ctrn-00/")
-	if err != nil {
-		t.Error("Error: Failed to create the path")
-	}
+	path = commutative.NewMeta()
 
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/ctrn-00/", path); err != nil {
 		t.Error(err)

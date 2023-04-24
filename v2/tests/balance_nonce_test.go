@@ -88,11 +88,7 @@ func TestBalance(t *testing.T) {
 	}
 
 	// create a path
-	path, err := commutative.NewMeta("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/")
-	if err != nil {
-		t.Error("Failed to create the path: blcc://eth1.0/account/alice/storage/ctrn-0/")
-	}
-
+	path := commutative.NewMeta()
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		t.Error(err, " Failed to MakePath: blcc://eth1.0/account/alice/storage/ctrn-0/")
 	}
