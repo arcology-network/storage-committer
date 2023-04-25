@@ -3,6 +3,7 @@ package concurrenturl
 import (
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"runtime"
 	"sort"
@@ -101,7 +102,7 @@ func (this *ConcurrentUrl) CreateAccount(tx uint32, platform string, acct string
 			v = commutative.NewU256(uint256.NewInt(0), commutative.U256MIN, commutative.U256MAX)
 
 		case uint8(reflect.Kind(ccurlcommon.CommutativeInt64)):
-			v = commutative.NewInt64(0, 0)
+			v = commutative.NewInt64(0, math.MaxInt64)
 
 		case uint8(reflect.Kind(ccurlcommon.NoncommutativeInt64)):
 			v = noncommutative.NewInt64(0)

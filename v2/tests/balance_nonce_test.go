@@ -1,6 +1,7 @@
 package ccurltest
 
 import (
+	"math"
 	"math/big"
 	"testing"
 
@@ -167,22 +168,26 @@ func TestNonce(t *testing.T) {
 		t.Error(err)
 	}
 
-	if err := url1.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewInt64(10, 1)); err != nil { //initialization
+	if err := url1.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewInt64(0, math.MaxInt64)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
-	if err := url1.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewInt64(10, 2)); err != nil { //initialization
+	if err := url1.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewInt64Delta(1)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
-	if err := url1.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewInt64(10, 3)); err != nil { //initialization
+	if err := url1.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewInt64Delta(2)); err != nil { //initialization
+		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
+	}
+
+	if err := url1.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewInt64Delta(3)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
 	nonce, _ := url1.Read(0, "blcc://eth1.0/account/"+alice+"/nonce")
 	v := nonce.(ccurlcommon.TypeInterface).(*commutative.Int64).Value().(int64)
 	if v != 6 {
-		t.Error("Error: blcc://eth1.0/account/alice/nonce ")
+		t.Error("Error: blcc://eth1.0/account/alice/nonce should be ", 6)
 	}
 
 	_, trans := url1.Export(nil)
@@ -206,11 +211,12 @@ func TestMultipleNonces(t *testing.T) {
 		t.Error(err)
 	}
 
-	if err := url0.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewInt64(0, 1)); err != nil { //initialization
+	url0.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewInt64(0, math.MaxInt64))
+	if err := url0.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewInt64Delta(1)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
-	if err := url0.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewInt64(0, 1)); err != nil { //initialization
+	if err := url0.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewInt64Delta(1)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
@@ -223,11 +229,12 @@ func TestMultipleNonces(t *testing.T) {
 		t.Error(err)
 	}
 
-	if err := url1.Write(0, "blcc://eth1.0/account/"+bob+"/nonce", commutative.NewInt64(0, 1)); err != nil { //initialization
+	url0.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewInt64(0, math.MaxInt64))
+	if err := url1.Write(0, "blcc://eth1.0/account/"+bob+"/nonce", commutative.NewInt64Delta(1)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+bob+"/balance")
 	}
 
-	if err := url1.Write(0, "blcc://eth1.0/account/"+bob+"/nonce", commutative.NewInt64(0, 1)); err != nil { //initialization
+	if err := url1.Write(0, "blcc://eth1.0/account/"+bob+"/nonce", commutative.NewInt64Delta(1)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+bob+"/balance")
 	}
 
