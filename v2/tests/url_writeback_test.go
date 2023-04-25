@@ -420,7 +420,7 @@ func TestAccessControl(t *testing.T) {
 	}
 
 	/* Nonce */
-	err = url.Write(1, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewInt64(0, 10))
+	err = url.Write(1, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64(0, 10))
 	if err != nil {
 		t.Error("Error: Failed to read the nonce value !")
 	}

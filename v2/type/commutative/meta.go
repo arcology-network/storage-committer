@@ -2,8 +2,8 @@ package commutative
 
 import (
 	"errors"
-	"reflect"
 
+	"github.com/arcology-network/common-lib/common"
 	orderedset "github.com/arcology-network/common-lib/container/set"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 )
@@ -50,8 +50,13 @@ func (this *Meta) Deepcopy() interface{} {
 }
 
 func (this *Meta) Equal(other *Meta) bool {
-	return reflect.DeepEqual(this.addDict.Keys(), other.addDict.Keys()) &&
-		reflect.DeepEqual(this.delDict.Keys(), other.delDict.Keys())
+	_1a := this.addDict.Keys()
+	_2a := other.addDict.Keys()
+
+	_1r := this.delDict.Keys()
+	_2r := other.delDict.Keys()
+
+	return common.EqualArray(_1a, _2a) && common.EqualArray(_1r, _2r)
 }
 
 func (this *Meta) ToAccess() interface{} {

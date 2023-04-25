@@ -11,7 +11,27 @@ import (
 	"github.com/holiman/uint256"
 )
 
-func TestUnivalueEncodeDecode(t *testing.T) {
+func TestUnivalueCodecUint64(t *testing.T) {
+	/* Commutative Int64 Test */
+	alice := datacompression.RandomAccount()
+
+	// meta:= commutative.NewMeta()
+	u256 := commutative.NewUint64(0, 100)
+	in := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, u256)
+	in.reads = 1
+	in.writes = 2
+	in.deltaWrites = 3
+
+	bytes := in.Encode()
+	v := (&Univalue{}).Decode(bytes).(*Univalue)
+	out := v.Value()
+
+	if *(in.value.(*commutative.Uint64)) != *(out.(*commutative.Uint64)) {
+		t.Error("Error")
+	}
+}
+
+func TestUnivalueCodecU256(t *testing.T) {
 	/* Commutative Int64 Test */
 	alice := datacompression.RandomAccount()
 
@@ -59,20 +79,7 @@ func TestUnivalueCodeMeta(t *testing.T) {
 	bytes := in.Encode()
 	out := (&Univalue{}).Decode(bytes).(*Univalue)
 
-	committedKeys := (in.Value().(*commutative.Meta).Keys())
-	added := (in.Value().(*commutative.Meta).Added())
-	removed := (in.Value().(*commutative.Meta).Removed())
-
-	fmt.Println(committedKeys)
-	fmt.Println(added)
-	fmt.Println(removed)
-	// fmt.Println("=========== ")
-
-	// // fmt.Println(out.Value().(*commutative.Meta).Keys())
-	// fmt.Println(out.Value().(*commutative.Meta).Added())
-	// fmt.Println(out.Value().(*commutative.Meta).Removed())
-
-	if in.Value().(*commutative.Meta).Equal(out.Value().(*commutative.Meta)) {
+	if !in.Value().(*commutative.Meta).Equal(out.Value().(*commutative.Meta)) {
 		t.Error("Error")
 	}
 }
@@ -95,8 +102,8 @@ func TestCodecMetaUnivalues(t *testing.T) {
 	// in.
 
 	for i := 0; i < len(out); i++ {
-		fmt.Print(in[i].Value().(*commutative.Meta).Keys())
-		fmt.Println(out[i].Value().(*commutative.Meta).Keys())
+		fmt.Print(in[i].Value().(*commutative.Meta).SubDirs())
+		fmt.Println(out[i].Value().(*commutative.Meta).SubDirs())
 
 		fmt.Print(in[i].Value().(*commutative.Meta).Added())
 		fmt.Println(out[i].Value().(*commutative.Meta).Added())

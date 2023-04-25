@@ -84,6 +84,9 @@ func (Decoder) Decode(bytes []byte, vType uint8) interface{} {
 	case ccurlcommon.CommutativeUint256: // delta big int
 		return (&commutative.U256{}).Decode(bytes)
 
+	case ccurlcommon.CommutativeUint64: // delta int 64
+		return (&commutative.Uint64{}).Decode(bytes)
+
 	case ccurlcommon.CommutativeInt64: // delta int 64
 		return (&commutative.Int64{}).Decode(bytes)
 	}

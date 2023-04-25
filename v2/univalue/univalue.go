@@ -85,6 +85,8 @@ func (*Univalue) GetTypeID(value interface{}) uint8 {
 			return ccurlcommon.CommutativeUint256
 		case *commutative.Int64:
 			return ccurlcommon.CommutativeInt64
+		case *commutative.Uint64:
+			return ccurlcommon.CommutativeUint64
 		}
 	}
 	return uint8(reflect.Invalid)

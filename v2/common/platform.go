@@ -13,7 +13,7 @@ func NewPlatform() *Platform {
 		map[string]uint8{
 			"/":                    CommutativeMeta,
 			"/code":                NoncommutativeBytes,
-			"/nonce":               CommutativeInt64,
+			"/nonce":               CommutativeUint64,
 			"/balance":             CommutativeUint256,
 			"/storage/":            CommutativeMeta,
 			"/storage/containers/": CommutativeMeta,
