@@ -38,13 +38,8 @@ func (this *Uint64) Deepcopy() interface{} {
 	}
 }
 
-func (this *Uint64) Value() interface{} {
-	return this.value
-}
-
-func (this *Uint64) Delta() interface{} {
-	return this.delta
-}
+func (this *Uint64) Value() interface{} { return this.value }
+func (this *Uint64) Delta() interface{} { return this.delta }
 
 func (this *Uint64) ToAccess() interface{} {
 	return this

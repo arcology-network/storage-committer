@@ -12,7 +12,9 @@ func (this *Int64) HeaderSize() uint32 {
 
 func (this *Int64) Size() uint32 {
 	return codec.Int64(this.value).Size() +
-		codec.Int64(this.delta).Size()
+		codec.Int64(this.delta).Size() +
+		codec.Int64(this.min).Size() +
+		codec.Int64(this.max).Size()
 }
 
 func (this *Int64) Encode(processors ...func(interface{}) interface{}) []byte {
@@ -24,6 +26,8 @@ func (this *Int64) Encode(processors ...func(interface{}) interface{}) []byte {
 func (this *Int64) EncodeToBuffer(buffer []byte, processors ...func(interface{}) interface{}) int {
 	offset := codec.Int64(this.value).EncodeToBuffer(buffer)
 	offset += codec.Int64(this.delta).EncodeToBuffer(buffer[offset:])
+	offset += codec.Int64(this.min).EncodeToBuffer(buffer[offset:])
+	offset += codec.Int64(this.max).EncodeToBuffer(buffer[offset:])
 	return offset
 }
 
@@ -31,6 +35,9 @@ func (this *Int64) Decode(buffer []byte) interface{} {
 	this = &Int64{
 		int64(codec.Int64(0).Decode(buffer[:]).(codec.Int64)),                  // value
 		int64(codec.Int64(0).Decode(buffer[codec.INT64_LEN*1:]).(codec.Int64)), // delta
+		int64(codec.Int64(0).Decode(buffer[codec.INT64_LEN*2:]).(codec.Int64)), // min
+		int64(codec.Int64(0).Decode(buffer[codec.INT64_LEN*3:]).(codec.Int64)), // max
+
 	}
 	return this
 }
