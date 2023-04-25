@@ -66,14 +66,6 @@ func (this *Meta) Get(source interface{}) (interface{}, uint32, uint32) {
 	return this, 1, 1
 }
 
-func (this *Meta) Delta() interface{} {
-	return &Meta{
-		view:    this.view,
-		addDict: this.addDict,
-		delDict: this.delDict,
-	}
-}
-
 // Just return the object, do nothing
 func (this *Meta) Value() interface{} {
 	return this

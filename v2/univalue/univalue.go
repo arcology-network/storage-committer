@@ -120,9 +120,9 @@ func (this *Univalue) DeltaWrites() uint32 { return this.deltaWrites }
 
 func (this *Univalue) Preexist() bool { return this.preexists } // Exist in cache as a failed read
 
-func (this *Univalue) IncrementReads(reads uint32)   { this.reads += reads }
-func (this *Univalue) IncrementWrites(writes uint32) { this.writes += writes }
-func (this *Univalue) IncrementDelta(writes uint32)  { this.deltaWrites += writes }
+func (this *Univalue) IncrementReads(reads uint32)       { this.reads += reads }
+func (this *Univalue) IncrementWrites(writes uint32)     { this.writes += writes }
+func (this *Univalue) IncrementDelta(deltaWrites uint32) { this.deltaWrites += deltaWrites }
 
 func (this *Univalue) DecrementReads() {
 	if this.reads <= uint32(0) {

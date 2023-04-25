@@ -49,6 +49,7 @@ func NewIndexer(store ccurlcommon.DatastoreInterface, platform *ccurlcommon.Plat
 
 func (this *Indexer) Platform() *ccurlcommon.Platform { return this.platform }
 
+// Merge two indexers
 func (this *Indexer) MergeFrom(other *Indexer) {
 	for k, from := range other.buffer {
 		if to, ok := this.buffer[k]; ok { // already exists

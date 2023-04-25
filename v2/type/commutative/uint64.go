@@ -1,20 +1,26 @@
 package commutative
 
 import (
+	"errors"
+
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 )
 
 type Uint64 struct {
 	value uint64
 	delta uint64
+	min   uint64
+	max   uint64
 }
 
-func NewUint64(value uint64, delta uint64) interface{} {
+func NewUint64(min, max uint64) interface{} {
 	return &Uint64{
-		value,
-		delta,
+		min: min,
+		max: max,
 	}
 }
+
+func NewUint64Delta(delta uint64) interface{} { return &Uint64{delta: delta} }
 
 func (this *Uint64) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
 	return v, 0, 1, 0
@@ -27,11 +33,17 @@ func (this *Uint64) Deepcopy() interface{} {
 	return &Uint64{
 		this.value,
 		this.delta,
+		this.min,
+		this.max,
 	}
 }
 
 func (this *Uint64) Value() interface{} {
 	return this.value
+}
+
+func (this *Uint64) Delta() interface{} {
+	return this.delta
 }
 
 func (this *Uint64) ToAccess() interface{} {
@@ -46,26 +58,18 @@ func (this *Uint64) Get(source interface{}) (interface{}, uint32, uint32) {
 	return &Uint64{
 		value: this.value + this.delta,
 		delta: 0,
+		min:   this.min,
+		max:   this.max,
 	}, 1, 1
 }
 
-// func (this *Uint64) Latest() interface{} {
-// 	return &Uint64{
-// 		this.value + this.delta,
-// 		0,
-// 	}
-// }
-
-func (this *Uint64) Delta() interface{} {
-	return &Uint64{
-		0,
-		this.delta,
-	}
-}
-
 func (this *Uint64) Set(v interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
+	if (this.max < v.(*Uint64).delta) || (this.max-v.(*Uint64).delta < this.value+this.delta) {
+		return this, 0, 1, 0, errors.New("Error: Value out of range!!")
+	}
+
 	this.delta += v.(*Uint64).delta
-	return this, 0, 1, 0, nil
+	return this, 0, 0, 1, nil
 }
 
 func (this *Uint64) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {

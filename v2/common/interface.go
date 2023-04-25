@@ -9,7 +9,7 @@ type TypeInterface interface { // value type
 	TypeID() uint8
 	Deepcopy() interface{}
 	Value() interface{}
-	Delta() interface{}
+	// Delta() interface{}
 	ToAccess() interface{}
 	Get(interface{}) (interface{}, uint32, uint32)
 	Set(interface{}, interface{}) (interface{}, uint32, uint32, uint32, error)
