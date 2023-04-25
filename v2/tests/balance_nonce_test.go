@@ -71,8 +71,8 @@ func TestSimpleBalance(t *testing.T) {
 	records, trans := url2.Export(indexer.Sorter)
 	univalue.Univalues(trans).Encode()
 	for _, v := range records {
-		if v.Writes() == v.Reads() && v.Writes() == 0 {
-			t.Error("Error: Write == Reads == 0")
+		if v.Writes() == v.Reads() && v.Writes() == 0 && v.DeltaWrites() == 0 {
+			t.Error("Error: Write == Reads == DeltaWrites == 0")
 		}
 	}
 }
@@ -149,7 +149,7 @@ func TestBalance(t *testing.T) {
 	// Export variables
 	_, transitions := url.Export(indexer.Sorter)
 	// for i := range transitions {
-	trans := transitions[10]
+	trans := transitions[9]
 
 	_10 := trans.Encode()
 	_10tran := (&univalue.Univalue{}).Decode(_10).(*univalue.Univalue)

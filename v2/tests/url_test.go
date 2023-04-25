@@ -102,7 +102,6 @@ func TestBasic(t *testing.T) {
 
 	_, acctTrans := url.Export(indexer.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
-
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
@@ -189,6 +188,87 @@ func TestBasic(t *testing.T) {
 	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"); value == nil {
 		t.Error("Error: Entry not found")
 	}
+}
+
+func TestPathAddThenDelete(t *testing.T) {
+	store := cachedstorage.NewDataStore()
+	url := ccurl.NewConcurrentUrl(store)
+	alice := datacompression.RandomAccount()
+	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // CreateAccount account structure {
+		fmt.Println(err)
+	}
+
+	_, acctTrans := url.Export(indexer.Sorter)
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
+
+	url.PostImport()
+	url.Commit([]uint32{ccurlcommon.SYSTEM})
+
+	url.Init(store)
+	// create a path
+
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.NewMeta()); err != nil {
+		t.Error(err)
+	}
+
+	// Try to rewrite a path, should fail !
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", "path"); err == nil {
+		t.Error(err)
+	}
+
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", noncommutative.NewInt64(0)); err != nil {
+		t.Error(err)
+	}
+
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", noncommutative.NewInt64(2222)); err != nil {
+		t.Error(err)
+	}
+
+	// Write an entry having the the same name of a path, should go through
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil); err != nil {
+		t.Error(err)
+	}
+
+	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/"); value != nil {
+		t.Error("not found")
+	}
+
+	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"); value != nil {
+		t.Error("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-000 not found")
+	}
+
+	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001"); value != nil {
+		t.Error("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-001 not found")
+	}
+
+	// Write an entry having the the same name of a path, should go through
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.NewMeta()); err != nil {
+		t.Error(err)
+	}
+
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-888", noncommutative.NewInt64(888)); err != nil {
+		t.Error(err)
+	}
+
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-999", noncommutative.NewInt64(999)); err != nil {
+		t.Error(err)
+	}
+
+	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-888"); value == nil {
+		t.Error("not found")
+	}
+
+	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-999"); value == nil {
+		t.Error("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-000 not found")
+	}
+
+	meta, err := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
+	if err != nil || len(meta.(*commutative.Meta).View().Keys()) != 2 ||
+		meta.(*commutative.Meta).View().Keys()[0] != "elem-888" ||
+		meta.(*commutative.Meta).View().Keys()[1] != "elem-999" {
+		t.Error(err)
+	}
+
 }
 
 func TestUrl1(t *testing.T) {
@@ -356,6 +436,10 @@ func TestUrl2(t *testing.T) {
 		t.Error("Error: Failed to delete: " + "blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-000")
 	}
 
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", nil); err == nil {
+		t.Error("Error: Failed to delete: " + "blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-000")
+	}
+
 	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"); value != nil {
 		t.Error("Error: The element wasn't successfully deleted")
 	}
@@ -391,6 +475,10 @@ func TestUrl2(t *testing.T) {
 	if v == nil {
 		t.Error("Error: keys don't match")
 	}
+
+	// if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"); (*value.(*noncommutative.Int64)) != 9999 {
+	// 	t.Error("Error: The element wasn't successfully deleted")
+	// }
 
 	/* Remove the path and all the elements underneath */
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil); err != nil { // Delete the path and its sub paths

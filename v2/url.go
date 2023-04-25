@@ -9,13 +9,14 @@ import (
 	"time"
 
 	"github.com/arcology-network/common-lib/common"
+	"github.com/holiman/uint256"
+
 	// performance "github.com/arcology-network/common-lib/mhasher"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 	indexer "github.com/arcology-network/concurrenturl/v2/indexer"
 	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
-	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
+	"github.com/arcology-network/concurrenturl/v2/type/noncommutative"
 	univalue "github.com/arcology-network/concurrenturl/v2/univalue"
-	"github.com/holiman/uint256"
 )
 
 type ConcurrentUrl struct {
@@ -84,32 +85,33 @@ func (this *ConcurrentUrl) Clear() {
 
 // load accounts
 func (this *ConcurrentUrl) CreateAccount(tx uint32, platform string, acct string) error {
-	paths, syspaths, err := this.Platform.Builtin(platform, acct)
-	for _, p := range paths {
-		path := syspaths[p]
+	paths, typeids := this.Platform.GetBuiltins(acct)
+
+	var err error
+	for i, path := range paths {
 		var v interface{}
-		switch path.ID {
+		switch typeids[i] {
 		case ccurlcommon.CommutativeMeta: // Path
 			v = commutative.NewMeta()
 
 		case uint8(reflect.Kind(ccurlcommon.NoncommutativeString)): // delta big int
-			v = noncommutative.NewString(path.Default.(string))
+			v = noncommutative.NewString("")
 
 		case uint8(reflect.Kind(ccurlcommon.CommutativeUint256)): // delta big int
-			v = commutative.NewU256(path.Default.(*uint256.Int), commutative.U256MIN, commutative.U256MAX)
+			v = commutative.NewU256(uint256.NewInt(0), commutative.U256MIN, commutative.U256MAX)
 
-		case uint8(reflect.Kind(ccurlcommon.CommutativeInt64)): // big int pointer
-			v = commutative.NewInt64(path.Default.(int64), path.Default.(int64))
+		case uint8(reflect.Kind(ccurlcommon.CommutativeInt64)):
+			v = commutative.NewInt64(0, 0)
 
-		case uint8(reflect.Kind(ccurlcommon.NoncommutativeInt64)): // big int pointer
-			v = noncommutative.NewInt64(path.Default.(int64))
+		case uint8(reflect.Kind(ccurlcommon.NoncommutativeInt64)):
+			v = noncommutative.NewInt64(0)
 
-		case uint8(reflect.Kind(ccurlcommon.NoncommutativeBytes)): // big int pointer
-			v = noncommutative.NewBytes(path.Default.([]byte))
+		case uint8(reflect.Kind(ccurlcommon.NoncommutativeBytes)):
+			v = noncommutative.NewBytes([]byte{})
 		}
 
-		if !this.indexer.IfExists(p) {
-			err = this.indexer.Write(tx, p, v) // root path
+		if !this.indexer.IfExists(path) {
+			err = this.indexer.Write(tx, path, v) // root path
 		}
 	}
 	return err

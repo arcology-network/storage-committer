@@ -95,19 +95,21 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 
 func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	store := cachedstorage.NewDataStore()
+	alice := datacompression.RandomAccount()
 	url := ccurl.NewConcurrentUrl(store)
-	meta := commutative.NewMeta()
-	url.Write(ccurlcommon.SYSTEM, ccurlcommon.NewPlatform().Eth10Account(), meta)
-	_, trans := url.Export(nil)
-	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
+	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // CreateAccount account structure {
+		t.Error(err)
+	}
+
+	// url.Write(ccurlcommon.SYSTEM, ccurlcommon.NewPlatform().Eth10Account(), commutative.NewMeta())
+	_, acctTrans := url.Export(indexer.Sorter)
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
-
 	url.Init(store)
-	alice := datacompression.RandomAccount()
-	url.CreateAccount(1, url.Platform.Eth10(), alice)                      // CreateAccount account structure {
-	path1 := commutative.NewMeta()                                         // create a path
-	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path1) // create a path
+
+	url.CreateAccount(1, url.Platform.Eth10(), alice)
+	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", commutative.NewMeta()) // create a path
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-1"))
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-1"))
 	accesses1, transitions1 := url.Export(indexer.Sorter)
@@ -115,15 +117,16 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	url2 := ccurl.NewConcurrentUrl(store)
 	url2.CreateAccount(2, url.Platform.Eth10(), alice) // CreateAccount account structure {
 	path2 := commutative.NewMeta()                     // create a path
+
 	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path2)
 	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-2"))
 	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-2"))
 	accesses2, transitions2 := url2.Export(indexer.Sorter)
 
-	arib := indexer.NewArbitratorSlow()
-	indexer.HashPaths(accesses1)
-	indexer.HashPaths(accesses2)
-	_, conflictTx := arib.Detect(append(accesses1, accesses2...))
+	aribi := indexer.NewArbitratorSlow()
+	// indexer.HashPaths(accesses1)
+	// indexer.HashPaths(accesses2)
+	_, conflictTx := aribi.Detect(append(accesses1, accesses2...))
 	if len(conflictTx) != 1 {
 		t.Error("Error: There shouldn 1 conflict")
 	}
@@ -132,33 +135,34 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 
 	in := univalue.Univalues(append(transitions1, transitions2...)).Encode()
 	out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
-	// url.Import(url.Decode(univalue.Univalues(out).Encode()))
-
-	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(out).Encode()).(univalue.Univalues))
-
+	url.Import(out)
 	url.PostImport()
 	url.Commit(toCommit)
 
 	url3 := ccurl.NewConcurrentUrl(store)
-	url3.Write(3, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("url3-1-by-tx-3"))
+	if err := url3.Write(3, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("url3-1-by-tx-3")); err != nil {
+		t.Error(err)
+	}
 	accesses3, transitions3 := url3.Export(indexer.Sorter)
 
 	url4 := ccurl.NewConcurrentUrl(store)
-	url4.Write(4, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("url4-1-by-tx-3"))
+	if err := url4.Write(4, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("url4-1-by-tx-3")); err != nil {
+		t.Error(err)
+	}
 	accesses4, transitions4 := url4.Export(indexer.Sorter)
 
-	_, conflictTx = arib.Detect(append(accesses3, accesses4...))
+	aribi = indexer.NewArbitratorSlow()
+	_, conflictTx = aribi.Detect(append(accesses3, accesses4...))
 	if len(conflictTx) != 1 || conflictTx[0] != 4 {
-		t.Error("Error: There shouldn 1 conflict")
+		t.Error("Error: There should be 1 conflict")
 	}
-
 	toCommit = ccurlcommon.Exclude([]uint32{3, 4}, conflictTx)
 
 	in = univalue.Univalues(append(transitions3, transitions4...)).Encode()
 	out = univalue.Univalues{}.Decode(in).(univalue.Univalues)
 
-	trans = append(transitions3, transitions4...)
-	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
+	acctTrans = append(transitions3, transitions4...)
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	// url.Import(url.Decode(univalue.Univalues(append(transitions3, transitions4...)).Encode()))
 	url.PostImport()

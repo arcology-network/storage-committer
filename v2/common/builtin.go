@@ -1,33 +1,32 @@
 package common
 
-import (
-	"errors"
-
-	"github.com/holiman/uint256"
-)
-
 const (
 	ETH10_ACCOUNT_LENGTH = 40
 )
 
-type Syspath struct {
-	Permissions []bool
-	ID          uint8
-	Default     interface{}
-}
-
 type Platform struct {
-	syspaths map[string]Syspath
+	syspaths map[string]uint8
 }
 
 func NewPlatform() *Platform {
 	return &Platform{
-		syspaths: make(map[string]Syspath),
+		map[string]uint8{
+			"/":                    CommutativeMeta,
+			"/code":                NoncommutativeBytes,
+			"/nonce":               CommutativeInt64,
+			"/balance":             CommutativeUint256,
+			"/storage/":            CommutativeMeta,
+			"/storage/containers/": CommutativeMeta,
+			"/storage/native/":     CommutativeMeta,
+		},
 	}
 }
 
 func (this *Platform) Eth10() string        { return "blcc://eth1.0/" }
 func (this *Platform) Eth10Account() string { return this.Eth10() + "account/" }
+func (this *Platform) Eth10AccountLenght() int {
+	return len(this.Eth10()+"account/") + ETH10_ACCOUNT_LENGTH
+}
 
 func Eth10AccountShard(numOfShard int, key string) int {
 	if len(key) < 24 {
@@ -36,7 +35,7 @@ func Eth10AccountShard(numOfShard int, key string) int {
 	return (hex2int(key[22])*16 + hex2int(key[23])) % numOfShard
 }
 
-func (this *Platform) RootLength() int { return len(this.Eth10Account()) + 20 }
+func (this *Platform) RootLength() int { return len(this.Eth10Account()) + ETH10_ACCOUNT_LENGTH }
 
 func hex2int(c byte) int {
 	if c >= 'a' {
@@ -47,41 +46,25 @@ func hex2int(c byte) int {
 }
 
 // Get ths builtin paths
-func (this *Platform) Builtin(platform string, acct string) ([]string, map[string]Syspath, error) {
-	switch platform {
-	case this.Eth10():
-		break
-	default:
-		return nil, nil, errors.New("Error: Unknown platform !")
+func (this *Platform) GetBuiltins(acct string) ([]string, []uint8) {
+	paths := make([]string, len(this.syspaths))
+	typeIds := make([]uint8, len(this.syspaths))
+	i := 0
+	for k, v := range this.syspaths {
+		paths[i] = this.Eth10Account() + acct + k
+		typeIds[i] = v
+		i++
 	}
-
-	this.syspaths[this.Eth10Account()+acct+"/"] = Syspath{[]bool{true, false, false}, CommutativeMeta, this.Eth10Account() + acct + "/"}
-	this.syspaths[this.Eth10Account()+acct+"/code"] = Syspath{[]bool{true, true, true}, NoncommutativeBytes, []byte{}}
-	this.syspaths[this.Eth10Account()+acct+"/nonce"] = Syspath{[]bool{true, true, true}, CommutativeInt64, int64(0)}
-	this.syspaths[this.Eth10Account()+acct+"/balance"] = Syspath{[]bool{true, true, true}, CommutativeUint256, uint256.NewInt(0)}
-	this.syspaths[this.Eth10Account()+acct+"/defer/"] = Syspath{[]bool{true, true, true}, CommutativeMeta, this.Eth10Account() + acct + "/defer/"}
-	this.syspaths[this.Eth10Account()+acct+"/storage/"] = Syspath{[]bool{true, false, false}, CommutativeMeta, this.Eth10Account() + acct + "/storage/"}
-	this.syspaths[this.Eth10Account()+acct+"/storage/containers/"] = Syspath{[]bool{true, true, false}, CommutativeMeta, this.Eth10Account() + acct + "/storage/containers/"}
-	this.syspaths[this.Eth10Account()+acct+"/storage/native/"] = Syspath{[]bool{true, true, false}, CommutativeMeta, this.Eth10Account() + acct + "/storage/native/"}
-	this.syspaths[this.Eth10Account()+acct+"/storage/containers/!/"] = Syspath{[]bool{true, true, false}, CommutativeMeta, this.Eth10Account() + acct + "/storage/containers/!/"}
-
-	paths := []string{
-		this.Eth10Account() + acct + "/",
-		this.Eth10Account() + acct + "/code",
-		this.Eth10Account() + acct + "/nonce",
-		this.Eth10Account() + acct + "/balance",
-		this.Eth10Account() + acct + "/defer/",
-		this.Eth10Account() + acct + "/storage/",
-		this.Eth10Account() + acct + "/storage/containers/",
-		this.Eth10Account() + acct + "/storage/native/",
-		this.Eth10Account() + acct + "/storage/containers/!/",
-	}
-
-	return paths, this.syspaths, nil
+	return paths, typeIds
 }
 
-// The path on the control list
+// These paths won't keep the sub elements
 func (this *Platform) IsSysPath(path string) bool {
-	_, ok := this.syspaths[path]
-	return ok || path == this.Eth10() || path == this.Eth10Account()
+	if len(path) <= this.Eth10AccountLenght() {
+		return path == this.Eth10() || path == this.Eth10Account()
+	}
+
+	subPath := path[this.Eth10AccountLenght():]
+	_, ok := this.syspaths[subPath]
+	return ok
 }

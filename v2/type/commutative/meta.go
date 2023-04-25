@@ -1,8 +1,8 @@
 package commutative
 
 import (
+	"errors"
 	"reflect"
-	"strings"
 
 	orderedset "github.com/arcology-network/common-lib/container/set"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
@@ -34,7 +34,6 @@ func (this *Meta) IsSelf(key interface{}) bool  { return ccurlcommon.IsPath(key.
 func (this *Meta) TypeID() uint8                { return ccurlcommon.CommutativeMeta }
 func (this *Meta) CommittedLength() int         { return len(this.view.Keys()) }
 func (this *Meta) Length() int {
-	this.RefreshView()
 	return int(this.view.Len())
 }
 
@@ -79,12 +78,6 @@ func (this *Meta) Delta() interface{} {
 func (this *Meta) Value() interface{} {
 	return this
 }
-
-// committed keys + added - removed
-// func (this *Meta) Latest() interface{} {
-// 	this.RefreshView()
-// 	return this.view.Keys()
-// }
 
 func (this *Meta) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 	keys := append(this.view.Keys(), this.addDict.Keys()...)
@@ -142,39 +135,27 @@ func (this *Meta) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 	return this
 }
 
-// Load keys into an orderedmap for quick access, only happens at once
-func (this *Meta) RefreshView() {
-	if this.view != nil { // Keys have been loaded already.
-		return
-	}
-
-	this.view.Sync()
-	this.view.Difference(this.delDict)
-	this.view.Union(this.addDict)
-}
-
 // Write and afflicated operations
 func (this *Meta) Set(value interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
-	path := source.([3]interface{})[0].(string)
-	tx := source.([3]interface{})[1].(uint32)
-	indexer := source.([3]interface{})[2].(ccurlcommon.IndexerInterface)
-	subkey := path[strings.LastIndex(path[:len(path)-1], "/")+1:] // Extract the  key
+	targetPath := source.([]interface{})[0].(string)
+	myPath := source.([]interface{})[1].(string)
+	tx := source.([]interface{})[2].(uint32)
+	indexer := source.([]interface{})[3].(ccurlcommon.IndexerInterface)
 
-	this.RefreshView()             // Initialize the key view if has been done yet.
-	ok := this.view.Exists(subkey) // If exists
-	if ok && value != nil {
-		return this, 1, 0, 0, nil // No meta changes, value update only
-	}
-
-	if !ok && value == nil {
-		return this, 1, 0, 0, nil // Delete an non existent entry
-	}
-
-	if value == nil && ccurlcommon.IsPath(path) { // Delete the whole path
-		for _, subpath := range this.Value().([]interface{}) { // Get all the sub paths
-			indexer.Write(tx, path+subpath.(string), nil) // Remove all the sub paths.
+	if ccurlcommon.IsPath(targetPath) && len(targetPath) == len(myPath) { // Delete or rewrite the path
+		if value == nil { // Delete the path and all its elements
+			for _, subpath := range this.view.Keys() { // Get all the sub paths
+				indexer.Write(tx, targetPath+subpath, nil) //FIXME: THIS EMITS SOME ERROR MESSAGE, DOESN't SEEM HARMFUL, BUT WEIRED
+			}
+			return this, 0, 1, 0, nil
 		}
-		return this, 0, 1, 0, nil
+		return this, 0, 1, 0, errors.New("Error: Cannot rewrite a path!")
+	}
+
+	subkey := targetPath[len(targetPath)-(len(targetPath)-len(myPath)):] // Extract the sub key from the path
+	ok := this.view.Exists(subkey)
+	if (ok && value != nil) || (!ok && value == nil) {
+		return this, 1, 0, 0, nil //value update only or delete an non existent entry
 	}
 
 	if value == nil {
@@ -183,29 +164,21 @@ func (this *Meta) Set(value interface{}, source interface{}) (interface{}, uint3
 		this.view.Insert(subkey)
 	}
 
-	univ, _ := (*indexer.Buffer())[path]
-	added := this.addKey(subkey, value, univ.Preexist())
-	deleted := this.delKeys(subkey, value, univ.Preexist())
+	preexists := (*indexer.Buffer())[targetPath].Preexist()
+	this.addKey(subkey, value, preexists)
+	this.delKeys(subkey, value, preexists)
 
-	if added != deleted {
-		return this, 0, 0, 1, nil
-	} else {
-		if added {
-			panic("Error: This is impossible 222!")
-		}
-	}
-	panic("Error: This is impossible!")
-	return this, 0, 1, 0, nil //<<<>>> deltawrits ?????
+	return this, 0, 0, 1, nil
 }
 
 func (this *Meta) addKey(subkey string, value interface{}, preexists bool) bool {
-	if _, ok := this.delDict.Get(subkey); ok { // Adding back a preexisting entry
+	if this.delDict.Exists(subkey) { // Adding back a preexisting entry
 		this.delDict.Delete(subkey) // Cancel out each other
 		return true
 	}
 
 	if !preexists && value != nil {
-		this.addDict.Set(subkey) //  duplicate is ok
+		this.addDict.Insert(subkey) // won't be duplicate
 		return true
 	}
 	return false
@@ -218,7 +191,7 @@ func (this *Meta) delKeys(subkey string, value interface{}, preexists bool) bool
 	}
 
 	if preexists { // Preexists and value == nil
-		this.delDict.Set(subkey)
+		this.delDict.Insert(subkey)
 		return true
 	}
 	return this.addDict.Delete(subkey) // Leave out the entry if it is in the added buffer

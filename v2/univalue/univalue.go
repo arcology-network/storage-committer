@@ -150,7 +150,7 @@ func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{
 	return this.value
 }
 
-func (this *Univalue) Set(tx uint32, path string, typedV interface{}, source interface{}) error { // update the value
+func (this *Univalue) Set(tx uint32, path string, typedV interface{}, indexer interface{}) error { // update the value
 	this.tx = tx
 	if this.Value() == nil && typedV == nil {
 		this.writes++ // Delete an non-existing value
@@ -171,7 +171,7 @@ func (this *Univalue) Set(tx uint32, path string, typedV interface{}, source int
 		this.value = this.value.(ccurlcommon.TypeInterface).Deepcopy()
 	}
 
-	v, r, w, dw, err := this.value.(ccurlcommon.TypeInterface).Set(typedV, [3]interface{}{path, tx, source}) // Update one the current value
+	v, r, w, dw, err := this.value.(ccurlcommon.TypeInterface).Set(typedV, []interface{}{path, *this.path, tx, indexer}) // Update one the current value
 	this.value = v
 	this.writes += w
 	this.reads += r
