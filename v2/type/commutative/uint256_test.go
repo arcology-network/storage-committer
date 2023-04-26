@@ -119,10 +119,25 @@ func TestCodec(t *testing.T) {
 	out := (&(U256{})).Decode(buffer).(*U256)
 	fmt.Println("U256 Encoded size :", out)
 
-	if out.value.Uint64() != 4 || (*out.min).Uint64() != 0 || (*out.max).Uint64() != 4 || (*out.min).Uint64() != (*in.min).Uint64() || (*out.max).Uint64() != (*in.max).Uint64() || out.deltaPossitive != in.deltaPossitive {
+	if out.value.Uint64() != 4 || (*out.min).Uint64() != 0 || (*out.max).Uint64() != 4 || (*out.min).Uint64() != (*in.min).Uint64() || (*out.max).Uint64() != (*in.max).Uint64() || out.deltaPositive != in.deltaPositive {
 		t.Error("Error: Out of range, should have failed")
 	}
 }
+
+// func TestU256DeltaCodec(t *testing.T) {
+// 	v := NewU256Delta(uint256.NewInt(100), false)
+
+// 	in := v.(*U256)
+// 	fmt.Println("Value :", in)
+
+// 	buffer := in.Encode()
+// 	out := (&(U256{})).Decode(buffer).(*U256)
+// 	fmt.Println("U256 Encoded size :", out)
+
+// 	if out.value.Uint64() != 4 || (*out.min).Uint64() != 0 || (*out.max).Uint64() != 4 || (*out.min).Uint64() != (*in.min).Uint64() || (*out.max).Uint64() != (*in.max).Uint64() || out.deltaPositive != in.deltaPositive {
+// 		t.Error("Error: Out of range, should have failed")
+// 	}
+// }
 
 // func TestDeepCopy(t *testing.T) {
 // 	b := NewU256(uint256.NewInt(5), big.NewInt(0))

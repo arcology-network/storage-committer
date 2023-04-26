@@ -6,12 +6,12 @@ import (
 	codec "github.com/arcology-network/common-lib/codec"
 )
 
-func (this *Bigint) Encode(processors ...func(interface{}) interface{}) []byte {
+func (this *Bigint) Encode(processors ...interface{}) []byte {
 	v := codec.Bigint(*this)
 	return v.Encode()
 }
 
-func (this *Bigint) EncodeToBuffer(buffer []byte, processors ...func(interface{}) interface{}) int {
+func (this *Bigint) EncodeToBuffer(buffer []byte, processors ...interface{}) int {
 	v := codec.Bigint(*this)
 	return v.EncodeToBuffer(buffer)
 }

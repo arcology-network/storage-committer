@@ -9,7 +9,7 @@ type TypeInterface interface { // value type
 	TypeID() uint8
 	Deepcopy() interface{}
 	Value() interface{}
-	// Delta() interface{}
+	Delta() interface{}
 	ToAccess() interface{}
 	Get(interface{}) (interface{}, uint32, uint32)
 	Set(interface{}, interface{}) (interface{}, uint32, uint32, uint32, error)
@@ -17,8 +17,8 @@ type TypeInterface interface { // value type
 	ApplyDelta(interface{}) TypeInterface
 	IsSelf(interface{}) bool
 	Hash(func([]byte) []byte) []byte
-	Encode(...func(interface{}) interface{}) []byte
-	EncodeToBuffer([]byte, ...func(interface{}) interface{}) int
+	Encode(...interface{}) []byte
+	EncodeToBuffer([]byte, ...interface{}) int
 	Decode([]byte) interface{}
 	Size() uint32
 	EncodeCompact() []byte
@@ -51,8 +51,8 @@ type UnivalueInterface interface { // value type
 	Deepcopy() interface{}
 	// Export(interface{}) (interface{}, interface{})
 	GetEncoded() []byte
-	Encode(...func(interface{}) interface{}) []byte
-	EncodeToBuffer([]byte, ...func(interface{}) interface{}) int
+	Encode(...interface{}) []byte
+	EncodeToBuffer([]byte, ...interface{}) int
 	Decode([]byte) interface{}
 	ClearReserve()
 

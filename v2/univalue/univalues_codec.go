@@ -53,6 +53,7 @@ func (this Univalues) EncodeSimple(args interface{}) []byte {
 	byteset := make([][]byte, len(this))
 	for i := range this {
 		byteset[i] = this[i].Encode()
+
 	}
 	return codec.Byteset(byteset).Encode()
 }

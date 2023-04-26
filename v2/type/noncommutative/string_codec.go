@@ -11,11 +11,11 @@ func (this *String) Size() uint32 {
 	return uint32(len(*this))
 }
 
-func (this *String) Encode(processors ...func(interface{}) interface{}) []byte {
+func (this *String) Encode(processors ...interface{}) []byte {
 	return codec.String(string(*this)).Encode()
 }
 
-func (this *String) EncodeToBuffer(buffer []byte, processors ...func(interface{}) interface{}) int {
+func (this *String) EncodeToBuffer(buffer []byte, processors ...interface{}) int {
 	return codec.String(*this).EncodeToBuffer(buffer)
 }
 

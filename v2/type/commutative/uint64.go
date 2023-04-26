@@ -3,6 +3,7 @@ package commutative
 import (
 	"errors"
 
+	codec "github.com/arcology-network/common-lib/codec"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 )
 
@@ -38,8 +39,8 @@ func (this *Uint64) Deepcopy() interface{} {
 	}
 }
 
-func (this *Uint64) Value() interface{} { return this.value }
-func (this *Uint64) Delta() interface{} { return this.delta }
+func (this *Uint64) Value() interface{} { return codec.Uint64(this.value) }
+func (this *Uint64) Delta() interface{} { return codec.Uint64(this.delta) }
 
 func (this *Uint64) ToAccess() interface{} {
 	return this

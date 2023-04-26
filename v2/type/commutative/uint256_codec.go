@@ -17,35 +17,35 @@ func (this *U256) Size() uint32 {
 		1 // delta Possitive
 }
 
-func (this *U256) Encode(processors ...func(interface{}) interface{}) []byte {
+func (this *U256) Encode(processors ...interface{}) []byte {
 	buffer := make([]byte, this.Size())
 	this.EncodeToBuffer(buffer)
 	return buffer
 }
 
-func (this *U256) EncodeToBuffer(buffer []byte, processors ...func(interface{}) interface{}) int {
+func (this *U256) EncodeToBuffer(buffer []byte, processors ...interface{}) int {
 	offset := codec.Uint64s(this.value[:]).EncodeToBuffer(buffer)
 	offset += codec.Uint64s(this.min[:]).EncodeToBuffer(buffer[offset:])
 	offset += codec.Uint64s(this.max[:]).EncodeToBuffer(buffer[offset:])
 	offset += codec.Uint64s(this.delta[:]).EncodeToBuffer(buffer[offset:])
-	offset += codec.Bool(this.deltaPossitive).EncodeToBuffer(buffer[offset:])
+	offset += codec.Bool(this.deltaPositive).EncodeToBuffer(buffer[offset:])
 	return offset
 }
 
 func (this *U256) Decode(buffer []byte) interface{} {
 	this = &U256{
-		value:          uint256.NewInt(0),
-		min:            uint256.NewInt(0),
-		max:            uint256.NewInt(0),
-		delta:          uint256.NewInt(0),
-		deltaPossitive: true, // negative
+		value:         uint256.NewInt(0),
+		min:           uint256.NewInt(0),
+		max:           uint256.NewInt(0),
+		delta:         uint256.NewInt(0),
+		deltaPositive: true, // negative
 	}
 
 	copy(this.value[:], codec.Uint64s{}.Decode(buffer[32*0:32*1]).(codec.Uint64s))
 	copy(this.min[:], codec.Uint64s{}.Decode(buffer[32*1:32*2]).(codec.Uint64s))
 	copy(this.max[:], codec.Uint64s{}.Decode(buffer[32*2:32*3]).(codec.Uint64s))
 	copy(this.delta[:], codec.Uint64s{}.Decode(buffer[32*3:32*4]).(codec.Uint64s))
-	this.deltaPossitive = bool(codec.Bool(true).Decode(buffer[32*4 : 32*4+1]).(codec.Bool))
+	this.deltaPositive = bool(codec.Bool(true).Decode(buffer[32*4 : 32*4+1]).(codec.Bool))
 
 	return this
 }
@@ -94,10 +94,10 @@ func (this *U256) DecodeCompact(buffer []byte) interface{} {
 	}
 
 	return &U256{
-		value:          v,
-		delta:          uint256.NewInt(0),
-		min:            min,
-		max:            max,
-		deltaPossitive: this.deltaPossitive,
+		value:         v,
+		delta:         uint256.NewInt(0),
+		min:           min,
+		max:           max,
+		deltaPositive: this.deltaPositive,
 	}
 }

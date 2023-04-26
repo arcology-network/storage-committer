@@ -8,6 +8,7 @@ import (
 	"unsafe"
 
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
+	"github.com/arcology-network/common-lib/codec"
 	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl/v2"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
@@ -763,6 +764,14 @@ func TestNestedPath(t *testing.T) {
 	url.Commit([]uint32{1})
 }
 
+func DeltaEncoder(typed ccurlcommon.TypeInterface) []byte {
+	return typed.Delta().(codec.Encodeable).Encode()
+}
+
+func ValueEncoder(typed ccurlcommon.TypeInterface) []byte {
+	return typed.Value().(codec.Encodeable).Encode()
+}
+
 func TestMetaEncodeSelector(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
@@ -771,8 +780,7 @@ func TestMetaEncodeSelector(t *testing.T) {
 		t.Error(err)
 	}
 
-	// create a path
-	path := commutative.NewMeta()
+	path := commutative.NewMeta() // create a path
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		t.Error(err)
 	}
@@ -788,5 +796,7 @@ func TestMetaEncodeSelector(t *testing.T) {
 	// _, acctTrans := url.Export(indexer.Sorter)
 
 	// out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
+
+	// (&univalue.Univalues{}).EncodeSimple()
 
 }

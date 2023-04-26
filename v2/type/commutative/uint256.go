@@ -9,17 +9,6 @@ import (
 	uint256 "github.com/holiman/uint256"
 )
 
-const (
-	UNKNOWN = iota
-	ADDITION
-	SUBTRACT
-	MULTIPLY
-	DIVIDE
-
-	ADD_SUB
-	MUL_DIV
-)
-
 var (
 	U256MIN = uint256.NewInt(0) // default limits
 	U256MAX = uint256.NewInt(0).SetAllOne()
@@ -29,11 +18,11 @@ var (
 )
 
 type U256 struct {
-	value          *uint256.Int
-	delta          *uint256.Int
-	min            *uint256.Int
-	max            *uint256.Int
-	deltaPossitive bool
+	value         *uint256.Int
+	delta         *uint256.Int
+	min           *uint256.Int
+	max           *uint256.Int
+	deltaPositive bool
 }
 
 func NewU256(value, min, max *uint256.Int) interface{} {
@@ -42,11 +31,11 @@ func NewU256(value, min, max *uint256.Int) interface{} {
 	}
 
 	return &U256{
-		value:          value,
-		delta:          uint256.NewInt(0),
-		min:            min,
-		max:            max,
-		deltaPossitive: true, // positive delta by default
+		value:         value,
+		delta:         uint256.NewInt(0),
+		min:           min,
+		max:           max,
+		deltaPositive: true, // positive delta by default
 	}
 }
 
@@ -62,13 +51,13 @@ func NewU256FromBytes(value []byte, min, max []byte) interface{} {
 	return this
 }
 
-func NewU256Delta(delta *uint256.Int, deltaPossitive bool) interface{} {
+func NewU256Delta(delta *uint256.Int, deltaPositive bool) interface{} {
 	return &U256{
-		value:          nil,
-		min:            nil,
-		max:            nil,
-		delta:          delta,
-		deltaPossitive: deltaPossitive,
+		value:         nil,
+		min:           nil,
+		max:           nil,
+		delta:         delta,
+		deltaPositive: deltaPositive,
 	}
 }
 
@@ -80,8 +69,8 @@ func NewU256DeltaFromBigInt(delta *big.Int) (interface{}, bool) {
 	}
 
 	return &U256{
-		delta:          deltaV,
-		deltaPossitive: sign != -1, // >= 0
+		delta:         deltaV,
+		deltaPositive: sign != -1, // >= 0
 	}, true
 }
 
@@ -89,7 +78,7 @@ func (this *U256) FromBytes(value []byte, min, max []byte) {
 	this.value.SetBytes(value)
 	this.min.SetBytes(min)
 	this.max.SetBytes(max)
-	this.deltaPossitive = true
+	this.deltaPositive = true
 }
 
 func (this *U256) HasCustomizedLimit() bool {
@@ -98,11 +87,11 @@ func (this *U256) HasCustomizedLimit() bool {
 
 func (this *U256) Deepcopy() interface{} {
 	return &U256{
-		value:          this.value.Clone(),
-		delta:          this.delta.Clone(),
-		min:            this.min.Clone(),
-		max:            this.max.Clone(),
-		deltaPossitive: this.deltaPossitive,
+		value:         this.value.Clone(),
+		delta:         this.delta.Clone(),
+		min:           this.min.Clone(),
+		max:           this.max.Clone(),
+		deltaPositive: this.deltaPositive,
 	}
 }
 
@@ -112,11 +101,11 @@ func (this *U256) ToAccess() interface{} {
 
 func (this *U256) Get(source interface{}) (interface{}, uint32, uint32) {
 	temp := &U256{
-		value:          this.value.Clone(),
-		delta:          this.delta.Clone(),
-		min:            this.min,
-		max:            this.max,
-		deltaPossitive: this.deltaPossitive,
+		value:         this.value.Clone(),
+		delta:         this.delta.Clone(),
+		min:           this.min,
+		max:           this.max,
+		deltaPositive: this.deltaPositive,
 	}
 
 	if this.delta.Eq(UINT256ZERO) {
@@ -124,7 +113,7 @@ func (this *U256) Get(source interface{}) (interface{}, uint32, uint32) {
 	}
 
 	temp.value.Add(temp.value, temp.delta)
-	temp.deltaPossitive = false
+	temp.deltaPositive = false
 	temp.delta.Clear()
 
 	return temp, 1, 1 // One read one write
@@ -132,11 +121,11 @@ func (this *U256) Get(source interface{}) (interface{}, uint32, uint32) {
 
 func (this *U256) Value() interface{} {
 	v := &U256{
-		delta:          this.delta.Clone(),
-		deltaPossitive: this.deltaPossitive,
+		delta:         this.delta.Clone(),
+		deltaPositive: this.deltaPositive,
 	}
 
-	if this.deltaPossitive {
+	if this.deltaPositive {
 		v.value = this.value.Clone().Abs(this.delta)
 	} else {
 		v.value = this.value.Clone().Sub(this.value, this.delta)
@@ -144,18 +133,11 @@ func (this *U256) Value() interface{} {
 	return this.value
 }
 
-func (this *U256) Delta() interface{} {
-	return this
-}
-
-// func (this *U256) Latest() interface{} {
-// 	v, _, _ := this.Deepcopy().(*U256).Get(nil)
-// 	return v
-// }
+func (this *U256) Delta() interface{} { return this }
 
 func (this *U256) isOverflowed(v0 *uint256.Int, signV0 bool, v1 *uint256.Int, signV1 bool) (*uint256.Int, bool) {
 	if signV0 == signV1 { // Both positive or negative
-		summed, overflowed := v0.Clone().AddOverflow(v0, v1)
+		summed, overflowed := v0.AddOverflow(v0, v1)
 		if overflowed {
 			return nil, true
 		}
@@ -174,7 +156,7 @@ func (this *U256) Set(newDelta interface{}, source interface{}) (interface{}, ui
 		return this, 1, 0, 0, nil
 	}
 
-	accumDelta, deltaSign := this.isOverflowed(this.delta.Clone(), this.deltaPossitive, newDelta.(*U256).delta, newDelta.(*U256).deltaPossitive)
+	accumDelta, deltaSign := this.isOverflowed(this.delta.Clone(), this.deltaPositive, newDelta.(*U256).delta, newDelta.(*U256).deltaPositive)
 	if accumDelta == nil {
 		return this, 0, 0, 1, errors.New("Error: Value out of range")
 	}
@@ -186,7 +168,7 @@ func (this *U256) Set(newDelta interface{}, source interface{}) (interface{}, ui
 
 	if this.min.Cmp(tempV) < 1 && tempV.Cmp(this.max) < 1 {
 		this.delta = accumDelta
-		this.deltaPossitive = deltaSign
+		this.deltaPositive = deltaSign
 		return this, 0, 0, 1, nil
 	}
 	return this, 0, 0, 1, errors.New("Error: Value out of range")

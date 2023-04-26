@@ -3,6 +3,7 @@ package commutative
 import (
 	"errors"
 
+	codec "github.com/arcology-network/common-lib/codec"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 )
 
@@ -56,16 +57,8 @@ func (this *Int64) Get(source interface{}) (interface{}, uint32, uint32) {
 	}, 1, 1
 }
 
-func (this *Int64) Value() interface{} { return this.value }
-func (this *Int64) Delta() interface{} { return this.delta }
-
-// return &Int64{
-// 	0,
-// 	this.delta,
-// 	this.min,
-// 	this.max,
-// }
-// }
+func (this *Int64) Value() interface{} { return codec.Int64(this.value) }
+func (this *Int64) Delta() interface{} { return codec.Int64(this.delta) }
 
 func (this *Int64) Set(v interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
 	if this.isUnderflow(v.(*Int64).delta) || this.isOverflow(v.(*Int64).delta) {

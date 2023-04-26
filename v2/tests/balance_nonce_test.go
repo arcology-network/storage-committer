@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
+	"github.com/arcology-network/common-lib/codec"
 	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl/v2"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
@@ -185,7 +186,7 @@ func TestNonce(t *testing.T) {
 	}
 
 	nonce, _ := url1.Read(0, "blcc://eth1.0/account/"+alice+"/nonce")
-	v := nonce.(ccurlcommon.TypeInterface).(*commutative.Uint64).Value().(uint64)
+	v := nonce.(ccurlcommon.TypeInterface).(*commutative.Uint64).Value().(codec.Uint64)
 	if v != 6 {
 		t.Error("Error: blcc://eth1.0/account/alice/nonce should be ", 6)
 	}
@@ -196,7 +197,7 @@ func TestNonce(t *testing.T) {
 	url1.Commit([]uint32{0})
 
 	nonce, _ = url1.Read(0, "blcc://eth1.0/account/"+alice+"/nonce")
-	v = nonce.(ccurlcommon.TypeInterface).(*commutative.Uint64).Value().(uint64)
+	v = nonce.(ccurlcommon.TypeInterface).(*commutative.Uint64).Value().(codec.Uint64)
 	if v != 6 {
 		t.Error("Error: blcc://eth1.0/account/alice/nonce ")
 	}
@@ -249,7 +250,7 @@ func TestMultipleNonces(t *testing.T) {
 
 	nonce, _ := url1.Read(0, "blcc://eth1.0/account/"+bob+"/nonce")
 
-	bobNonce := nonce.(ccurlcommon.TypeInterface).(*commutative.Uint64).Value().(uint64)
+	bobNonce := nonce.(ccurlcommon.TypeInterface).(*commutative.Uint64).Value().(codec.Uint64)
 	if bobNonce != 2 {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
 	}

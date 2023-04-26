@@ -55,7 +55,7 @@ func FilterTransitions(buffer []ccurlcommon.UnivalueInterface, platform interfac
 		}
 
 		if univals[i].Value() == nil && !univals[i].Preexist() {
-			univals[i] = nil // A new one or update or an existing entry
+			univals[i] = nil // Delete an non existing entry
 		}
 	}
 	common.RemoveIf(&univals, func(v ccurlcommon.UnivalueInterface) bool { return v == nil })
