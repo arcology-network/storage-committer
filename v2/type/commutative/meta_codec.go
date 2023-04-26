@@ -54,7 +54,7 @@ func (this *Meta) EncodeToBuffer(buffer []byte, processors ...func(interface{}) 
 func (this *Meta) Decode(buffer []byte) interface{} {
 	buffers := codec.Byteset{}.Decode(buffer).(codec.Byteset)
 	this = &Meta{
-		view:    orderedset.NewOrderedSet([]string{}),
+		value:   orderedset.NewOrderedSet([]string{}),
 		addDict: orderedset.NewOrderedSet(codec.Strings([]string{}).Decode(bytes.Clone(buffers[0])).(codec.Strings)),
 		delDict: orderedset.NewOrderedSet(codec.Strings([]string{}).Decode(bytes.Clone(buffers[1])).(codec.Strings)),
 	}
@@ -64,7 +64,7 @@ func (this *Meta) Decode(buffer []byte) interface{} {
 
 func (this *Meta) EncodeCompact() []byte {
 	byteset := [][]byte{
-		codec.Strings(this.view.Keys()).Encode(),
+		codec.Strings(this.value.Keys()).Encode(),
 	}
 	return codec.Byteset(byteset).Encode()
 }
@@ -72,7 +72,7 @@ func (this *Meta) EncodeCompact() []byte {
 func (this *Meta) DecodeCompact(bytes []byte) interface{} {
 	buffers := codec.Byteset{}.Decode(bytes).(codec.Byteset)
 	return &Meta{
-		view:    orderedset.NewOrderedSet(codec.Strings([]string{}).Decode(buffers[0]).(codec.Strings)),
+		value:   orderedset.NewOrderedSet(codec.Strings([]string{}).Decode(buffers[0]).(codec.Strings)),
 		addDict: orderedset.NewOrderedSet([]string{}),
 		delDict: orderedset.NewOrderedSet([]string{}),
 	}

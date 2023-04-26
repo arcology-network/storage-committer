@@ -36,7 +36,6 @@ type UnivalueInterface interface { // value type
 	IncrementReads(uint32)
 	IncrementWrites(uint32)
 	IncrementDelta(uint32)
-	DecrementReads()
 
 	Set(uint32, string, interface{}, interface{}) error
 	Get(uint32, string, interface{}) interface{}
@@ -56,6 +55,8 @@ type UnivalueInterface interface { // value type
 	EncodeToBuffer([]byte, ...func(interface{}) interface{}) int
 	Decode([]byte) interface{}
 	ClearReserve()
+
+	Equal(UnivalueInterface) bool
 	Print()
 }
 

@@ -126,13 +126,6 @@ func (this *Univalue) IncrementReads(reads uint32)       { this.reads += reads }
 func (this *Univalue) IncrementWrites(writes uint32)     { this.writes += writes }
 func (this *Univalue) IncrementDelta(deltaWrites uint32) { this.deltaWrites += deltaWrites }
 
-func (this *Univalue) DecrementReads() {
-	if this.reads <= uint32(0) {
-		panic("Reads cannot be negative !!!")
-	}
-	this.reads--
-}
-
 func (this *Univalue) SetPreexist(key string, source interface{}) {
 	this.preexists = source.(ccurlcommon.IndexerInterface).RetriveShallow(key) != nil
 }
@@ -264,28 +257,26 @@ func (this *Univalue) Print() {
 	fmt.Println("--------------------------------------------------------")
 }
 
-func (this *Univalue) Equal(other *Univalue) bool {
-	if this.value == nil &&
-		other.value == nil &&
-		this.TypeID() == other.TypeID() {
+func (this *Univalue) Equal(other ccurlcommon.UnivalueInterface) bool {
+	if this.value == nil && other.Value() == nil {
 		return true
 	}
 
-	if (this.value == nil && other.value != nil) || (this.value != nil && other.value == nil) {
+	if (this.value == nil && other.Value() != nil) || (this.value != nil && other.Value() == nil) {
 		return false
 	}
 
 	var vFlag bool
 	if this.value.(ccurlcommon.TypeInterface).TypeID() == ccurlcommon.CommutativeMeta {
-		vFlag = this.value.(*commutative.Meta).Equal(other.value.(*commutative.Meta))
+		vFlag = this.value.(*commutative.Meta).Equal(other.Value().(*commutative.Meta))
 	} else {
-		vFlag = reflect.DeepEqual(this.value, other.value)
+		vFlag = reflect.DeepEqual(this.value, other.Value())
 	}
 
-	return this.tx == other.tx &&
-		*this.path == *other.path &&
-		this.reads == other.reads &&
-		this.writes == other.writes &&
+	return this.tx == other.GetTx() &&
+		*this.path == *other.GetPath() &&
+		this.reads == other.Reads() &&
+		this.writes == other.Writes() &&
 		vFlag &&
-		this.preexists == other.preexists
+		this.preexists == other.Preexist()
 }

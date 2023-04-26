@@ -56,18 +56,16 @@ func (this *Int64) Get(source interface{}) (interface{}, uint32, uint32) {
 	}, 1, 1
 }
 
-func (this *Int64) Value() interface{} {
-	return this.value
-}
+func (this *Int64) Value() interface{} { return this.value }
+func (this *Int64) Delta() interface{} { return this.delta }
 
-func (this *Int64) Delta() interface{} {
-	return &Int64{
-		0,
-		this.delta,
-		this.min,
-		this.max,
-	}
-}
+// return &Int64{
+// 	0,
+// 	this.delta,
+// 	this.min,
+// 	this.max,
+// }
+// }
 
 func (this *Int64) Set(v interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
 	if this.isUnderflow(v.(*Int64).delta) || this.isOverflow(v.(*Int64).delta) {

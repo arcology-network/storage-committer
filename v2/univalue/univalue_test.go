@@ -102,8 +102,8 @@ func TestCodecMetaUnivalues(t *testing.T) {
 	// in.
 
 	for i := 0; i < len(out); i++ {
-		fmt.Print(in[i].Value().(*commutative.Meta).SubDirs())
-		fmt.Println(out[i].Value().(*commutative.Meta).SubDirs())
+		fmt.Print(in[i].Value().(*commutative.Meta).Value())
+		fmt.Println(out[i].Value().(*commutative.Meta).Value())
 
 		fmt.Print(in[i].Value().(*commutative.Meta).Added())
 		fmt.Println(out[i].Value().(*commutative.Meta).Added())

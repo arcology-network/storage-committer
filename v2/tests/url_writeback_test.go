@@ -228,12 +228,12 @@ func TestStateUpdate(t *testing.T) {
 	// 	t.Error("Error: Wrong sub paths")
 	// }
 
-	// if !reflect.DeepEqual(v.(ccurlcommon.TypeInterface).Value().(*commutative.Meta).SubDirs(), []string{"ctrn-0/", "ctrn-1/"}) {
+	// if !reflect.DeepEqual(v.(ccurlcommon.TypeInterface).Value().(*commutative.Meta).Value().([]string), []string{"ctrn-0/", "ctrn-1/"}) {
 	// 	t.Error("Error: Didn't find the subpath!")
 	// }
 
 	v, _ = url.Read(9, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	keys := v.(ccurlcommon.TypeInterface).Value().(*commutative.Meta).SubDirs()
+	keys := v.(ccurlcommon.TypeInterface).Value().([]string)
 	if !reflect.DeepEqual(keys, []string{"elem-00", "elem-01"}) {
 		t.Error("Error: Keys don't match !")
 	}
@@ -326,7 +326,7 @@ func TestMultipleTxStateUpdate(t *testing.T) {
 
 	// url.Init(store)
 	v, _ = url.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	keys := v.(ccurlcommon.TypeInterface).Value().(*commutative.Meta).SubDirs()
+	keys := v.(ccurlcommon.TypeInterface).Value().([]string)
 	if !reflect.DeepEqual(keys, []string{"elem-00", "elem-01", "elem-111", "elem-222"}) {
 		t.Error("Error: Keys don't match !")
 	}

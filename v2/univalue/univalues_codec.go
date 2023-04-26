@@ -38,23 +38,23 @@ func (this Univalues) Encode() []byte {
 	return buffer
 }
 
-func (this Univalues) EncodeSimple() []byte {
-	byteset := make([][]byte, len(this))
-	worker := func(start, end, index int, args ...interface{}) {
-		for i := start; i < end; i++ {
-			byteset[i] = this[i].Encode()
-		}
-	}
-	common.ParallelWorker(len(this), 6, worker)
-	return codec.Byteset(byteset).Encode()
-}
+// func (this Univalues) EncodeSimple() []byte {
+// 	byteset := make([][]byte, len(this))
+// 	worker := func(start, end, index int, args ...interface{}) {
+// 		for i := start; i < end; i++ {
+// 			byteset[i] = this[i].Encode()
+// 		}
+// 	}
+// 	common.ParallelWorker(len(this), 6, worker)
+// 	return codec.Byteset(byteset).Encode()
+// }
 
-func (this Univalues) EncodeV2() [][]byte {
+func (this Univalues) EncodeSimple(args interface{}) []byte {
 	byteset := make([][]byte, len(this))
 	for i := range this {
 		byteset[i] = this[i].Encode()
 	}
-	return byteset
+	return codec.Byteset(byteset).Encode()
 }
 
 func (Univalues) Decode(bytes []byte) interface{} {
@@ -74,16 +74,16 @@ func (Univalues) Decode(bytes []byte) interface{} {
 	return Univalues(univalues)
 }
 
-func (Univalues) DecodeV2(bytesset [][]byte, get func() interface{}, put func(interface{})) Univalues {
-	univalues := make([]ccurlcommon.UnivalueInterface, len(bytesset))
-	for i := range bytesset {
-		v := get().(*Univalue)
-		v.reclaimFunc = put
-		v.Decode(bytesset[i])
-		univalues[i] = v
-	}
-	return Univalues(univalues)
-}
+// func (Univalues) DecodeV2(bytesset [][]byte, get func() interface{}, put func(interface{})) Univalues {
+// 	univalues := make([]ccurlcommon.UnivalueInterface, len(bytesset))
+// 	for i := range bytesset {
+// 		v := get().(*Univalue)
+// 		v.reclaimFunc = put
+// 		v.Decode(bytesset[i])
+// 		univalues[i] = v
+// 	}
+// 	return Univalues(univalues)
+// }
 
 func (this Univalues) GobEncode() ([]byte, error) {
 	return this.Encode(), nil

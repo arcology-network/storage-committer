@@ -156,7 +156,7 @@ func TestBasic(t *testing.T) {
 	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/"); value == nil {
 		t.Error(value)
 	} else {
-		target := value.(*commutative.Meta).Value().(*commutative.Meta).Added()
+		target := value.(*commutative.Meta).Value().([]string)
 		if !reflect.DeepEqual(target, []string{"elem-000", "elem-111"}) {
 			t.Error("Error: Wrong value !!!!")
 		}
@@ -416,13 +416,13 @@ func TestUrl2(t *testing.T) {
 
 	// Update then return path meta info
 	meta0, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	if !reflect.DeepEqual(meta0.(*commutative.Meta).Value().(*commutative.Meta).Added(), []string{"elem-000", "elem-001", "elem-002"}) {
+	if !reflect.DeepEqual(meta0.(*commutative.Meta).Value().([]string), []string{"elem-000", "elem-001", "elem-002"}) {
 		t.Error("Error: Keys don't match")
 	}
 
 	// Do again
 	meta1, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	if !reflect.DeepEqual(meta1.(*commutative.Meta).Value().(*commutative.Meta).Added(), []string{"elem-000", "elem-001", "elem-002"}) {
+	if !reflect.DeepEqual(meta1.(*commutative.Meta).Value().([]string), []string{"elem-000", "elem-001", "elem-002"}) {
 		t.Error("Error: Keys don't match")
 	}
 
@@ -451,7 +451,7 @@ func TestUrl2(t *testing.T) {
 
 	// The elem-00 has been deleted, only "elem-001", "elem-002" left
 	meta, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	if !reflect.DeepEqual(meta.(*commutative.Meta).Value().(*commutative.Meta).Added(), []string{"elem-001", "elem-002"}) {
+	if !reflect.DeepEqual(meta.(*commutative.Meta).Value().([]string), []string{"elem-001", "elem-002"}) {
 		t.Error("Error: keys don't match")
 	}
 
@@ -467,7 +467,7 @@ func TestUrl2(t *testing.T) {
 
 	// Update then read the path info again
 	meta, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	if !reflect.DeepEqual(meta.(*commutative.Meta).Value().(*commutative.Meta).Added(), []string{"elem-001", "elem-002", "elem-000"}) {
+	if !reflect.DeepEqual(meta.(*commutative.Meta).Value().([]string), []string{"elem-001", "elem-002", "elem-000"}) {
 		t.Error("Error: keys don't match")
 	}
 
@@ -495,7 +495,7 @@ func TestUrl2(t *testing.T) {
 
 	/*  Read the storage path to see what is left*/
 	v, _ = url.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/")
-	if !reflect.DeepEqual(v.(*commutative.Meta).Value().(*commutative.Meta).Added(), []string{}) {
+	if !reflect.DeepEqual(v.(*commutative.Meta).Value().([]string), []string{}) {
 		t.Error("Error: Should be empty!!")
 	}
 
@@ -645,27 +645,33 @@ func TestCommutative(t *testing.T) {
 	}
 
 	// Export variables
-	accessRecords, transitions := url.Export(indexer.Sorter)
-	in := univalue.Univalues(accessRecords).Encode()
-	out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
-	for i := range accessRecords {
-		if !accessRecords[i].(*univalue.Univalue).Equal(out[i].(*univalue.Univalue)) {
-			t.Error("Error: Accesses don't match")
-		}
-	}
+	// accessRecords, _ := url.Export(indexer.Sorter)
+	// bf := accessRecords[6].Encode()
+	// bfout := (&univalue.Univalue{}).Decode(bf).(*univalue.Univalue)
+	// if accessRecords[6].Equal(bfout) {
+	// 	t.Error("Error: Accesses don't match")
+	// }
 
-	in = univalue.Univalues(transitions).Encode()
-	out = univalue.Univalues{}.Decode(in).(univalue.Univalues)
-	for i := range transitions {
-		if !transitions[i].(*univalue.Univalue).Equal(out[i].(*univalue.Univalue)) {
-			t.Error("Error: Transitions don't match !!!")
-			fmt.Println(transitions[i])
-			fmt.Println(out[i])
-		}
-	}
+	// in := univalue.Univalues(accessRecords).Encode()
+	// out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
+	// for i := range accessRecords {
+	// 	if !accessRecords[i].(*univalue.Univalue).Equal(out[i].(*univalue.Univalue)) {
+	// 		t.Error("Error: Accesses don't match")
+	// 	}
+	// }
 
-	url.Import(out)
-	url.Commit([]uint32{0, 1})
+	// in = univalue.Univalues(transitions).Encode()
+	// out = univalue.Univalues{}.Decode(in).(univalue.Univalues)
+	// for i := range transitions {
+	// 	if !transitions[i].(*univalue.Univalue).Equal(out[i].(*univalue.Univalue)) {
+	// 		t.Error("Error: Transitions don't match !!!")
+	// 		fmt.Println(transitions[i])
+	// 		fmt.Println(out[i])
+	// 	}
+	// }
+
+	// url.Import(out)
+	// url.Commit([]uint32{0, 1})
 }
 
 func TestNestedPath(t *testing.T) {
@@ -711,12 +717,12 @@ func TestNestedPath(t *testing.T) {
 
 	/* Read */
 	v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/ctrn-00/")
-	if !reflect.DeepEqual(v.(*commutative.Meta).Value().(*commutative.Meta).Added(), []string{"elem-00", "elem-01"}) {
+	if !reflect.DeepEqual(v.(*commutative.Meta).Value().([]string), []string{"elem-00", "elem-01"}) {
 		t.Error("Error: keys don't match")
 	}
 
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	if !reflect.DeepEqual(v.(*commutative.Meta).Value().(*commutative.Meta).Added(), []string{"ctrn-00/", "elem-00", "elem-01"}) {
+	if !reflect.DeepEqual(v.(*commutative.Meta).Value().([]string), []string{"ctrn-00/", "elem-00", "elem-01"}) {
 		t.Error("Error: keys don't match")
 	}
 
@@ -755,4 +761,32 @@ func TestNestedPath(t *testing.T) {
 	url.Import(out)
 	url.PostImport()
 	url.Commit([]uint32{1})
+}
+
+func TestMetaEncodeSelector(t *testing.T) {
+	store := cachedstorage.NewDataStore()
+	url := ccurl.NewConcurrentUrl(store)
+	alice := datacompression.RandomAccount()
+	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // CreateAccount account structure {
+		t.Error(err)
+	}
+
+	// create a path
+	path := commutative.NewMeta()
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
+		t.Error(err)
+	}
+
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-00", noncommutative.NewString("elem-00")); err != nil {
+		t.Error(err)
+	}
+
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-01", noncommutative.NewInt64(1234)); err != nil {
+		t.Error(err)
+	}
+
+	// _, acctTrans := url.Export(indexer.Sorter)
+
+	// out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
+
 }

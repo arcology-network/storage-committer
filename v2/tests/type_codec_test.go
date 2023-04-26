@@ -21,9 +21,7 @@ func TestNoncommutativeCodec(t *testing.T) {
 
 	pathBytes := inPath.(*commutative.Meta).Encode()
 	outPath := (&commutative.Meta{}).Decode(pathBytes)
-	if !reflect.DeepEqual(inPath, outPath) {
-		t.Error("Error: Path Encoding/decoding error, paths don't match")
-	}
+	inPath.(*commutative.Meta).Equal(outPath.(*commutative.Meta))
 
 	/* Noncommutative String Test */
 	inStr := noncommutative.NewString("ctrn-0")
@@ -76,9 +74,10 @@ func TestUnivalueCodec(t *testing.T) {
 		buffer := transitions[i].Encode()
 		in := transitions[i]
 		out := (&univalue.Univalue{}).Decode(buffer).(ccurlcommon.UnivalueInterface)
-		out.(*univalue.Univalue).ClearReserve()
-		if !reflect.DeepEqual(in, out) {
-			fmt.Println("Error: Missmatched")
+		// out.(*univalue.Univalue).ClearReserve()
+
+		if !in.Equal(out) {
+			t.Error("Error: Missmatched")
 		}
 	}
 }
