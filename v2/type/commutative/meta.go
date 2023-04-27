@@ -3,6 +3,7 @@ package commutative
 import (
 	"errors"
 
+	"github.com/arcology-network/common-lib/common"
 	orderedset "github.com/arcology-network/common-lib/container/set"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 )
@@ -43,22 +44,15 @@ func (this *Meta) Deepcopy() interface{} {
 	return meta
 }
 
-func (this *Meta) Equal(other *Meta) bool {
-	return this.value.Equal(other.value) && this.delta.addDict.Equal(other.delta.addDict) && this.delta.delDict.Equal(other.delta.delDict)
+func (this *Meta) Equal(other interface{}) bool {
+	return this.value.Equal(other.(*Meta).value) && this.delta.Equal(other.(*Meta).delta)
 }
 
-func (this *Meta) ToAccess() interface{} {
-	return nil
+func (this *Meta) Get() (interface{}, uint32, uint32) {
+	return this.value.Keys(), 1, common.IfThen(!this.value.Touched(), func() uint32 { return 0 }, func() uint32 { return 1 })
 }
 
-func (this *Meta) Get(source interface{}) (interface{}, uint32, uint32) {
-	if !this.value.Touched() { // cache clean
-		return this, 1, 0 // No key was added or deleted, read only
-	}
-	return this, 1, 1 //
-}
-
-func (this *Meta) Value() interface{} { return this.value.Keys() }
+// func (this *Meta) Value() interface{} { return this.value.Keys() }
 func (this *Meta) Delta() interface{} { return this.delta }
 
 func (this *Meta) ApplyDelta(v interface{}) ccurlcommon.TypeInterface { // Apply the transitions to the original value
@@ -78,12 +72,12 @@ func (this *Meta) ApplyDelta(v interface{}) ccurlcommon.TypeInterface { // Apply
 			continue
 		}
 
-		if this == nil {
-			this = this.Value().(*Meta) // A new value
-		}
+		// if this == nil {
+		// 	this = this.Value().(*Meta) // A new value
+		// }
 
-		keys = append(keys, delta.(*Meta).Added()...)
-		toRemove = append(toRemove, delta.(*Meta).Removed()...)
+		keys = append(keys, delta.(*Meta).PeekAdded()...)
+		toRemove = append(toRemove, delta.(*Meta).PeekRemoved()...)
 	}
 
 	if this != nil {
@@ -191,20 +185,23 @@ func (this *Meta) Hash(hasher func([]byte) []byte) []byte {
 	return hasher(this.EncodeCompact())
 }
 
-func (this *Meta) Added() []string { // Check new keys
+// Peek the removed keys
+
+func (this *Meta) PeekValue() []string { return this.value.Keys() }
+
+func (this *Meta) PeekAdded() []string { // Check new keys
 	if this.delta.addDict == nil {
 		return []string{}
 	}
 	return this.delta.addDict.Keys()
 }
 
-func (this *Meta) Removed() []string {
+func (this *Meta) PeekRemoved() []string {
 	if this.delta.addDict == nil {
 		return []string{}
 	}
 	return this.delta.delDict.Keys()
-} // Peek the removed keys
-
+}
 func (this *Meta) SetSubDirs(keys []string) { this.value = orderedset.NewOrderedSet(keys) }
 func (this *Meta) SetAdded(keys []string)   { this.delta.addDict = orderedset.NewOrderedSet(keys) }
 func (this *Meta) SetRemoved(keys []string) { this.delta.delDict = orderedset.NewOrderedSet(keys) }

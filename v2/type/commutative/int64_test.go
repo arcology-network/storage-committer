@@ -11,33 +11,33 @@ func TestNewInt64(t *testing.T) {
 	v.Set(NewInt64Delta(3), nil)
 	v.Set(NewInt64Delta(2), nil)
 
-	final, _, _ := v.Get(nil)
-	if final.(*Int64).value != 5 {
+	final, _, _ := v.Get()
+	if final.(int64) != 5 {
 		t.Error("Wrong value")
 	}
 
 	v.Set(NewInt64Delta(3), nil)
 	v.Set(NewInt64Delta(2), nil)
-	final, _, _ = v.Get(nil)
-	if final.(*Int64).value != 5 {
+	final, _, _ = v.Get()
+	if final.(int64) != 5 {
 		t.Error("Wrong value")
 	}
 
 	v.Set(NewInt64Delta(-3), nil)
-	final, _, _ = v.Get(nil)
-	if final.(*Int64).value != 2 {
+	final, _, _ = v.Get()
+	if final.(int64) != 2 {
 		t.Error("Wrong value")
 	}
 
 	v.Set(NewInt64Delta(1), nil)
-	final, _, _ = v.Get(nil)
-	if final.(*Int64).value != 3 {
+	final, _, _ = v.Get()
+	if final.(int64) != 3 {
 		t.Error("Wrong value")
 	}
 
 	v.Set(NewInt64Delta(1), nil)
-	final, _, _ = v.Get(nil)
-	if final.(*Int64).value != 4 {
+	final, _, _ = v.Get()
+	if final.(int64) != 4 {
 		t.Error("Wrong value")
 	}
 
@@ -45,15 +45,15 @@ func TestNewInt64(t *testing.T) {
 	v.Set(NewInt64Delta(-3), nil)
 	v.Set(NewInt64Delta(-2), nil)
 
-	final, _, _ = v.Get(nil)
-	if final.(*Int64).value != -5 {
+	final, _, _ = v.Get()
+	if final.(int64) != -5 {
 		t.Error("Wrong value")
 	}
 
 	v.Set(NewInt64Delta(-1), nil)
 	v.Set(NewInt64Delta(-2), nil)
-	final, _, _ = v.Get(nil)
-	if final.(*Int64).value != -5 {
+	final, _, _ = v.Get()
+	if final.(int64) != -5 {
 		t.Error("Wrong value")
 	}
 }
@@ -62,8 +62,8 @@ func TestNewInt64Limits(t *testing.T) {
 	v := NewInt64(math.MinInt32, math.MaxInt32).(*Int64)
 	v.Set(NewInt64Delta(1), nil)
 
-	final, _, _ := v.Get(nil)
-	if final.(*Int64).value != 1 {
+	final, _, _ := v.Get()
+	if final.(int64) != 1 {
 		t.Error("Wrong value")
 	}
 
@@ -72,8 +72,8 @@ func TestNewInt64Limits(t *testing.T) {
 		t.Error("Wrong value")
 	}
 
-	final, _, _ = v.Get(nil)
-	if final.(*Int64).value != 3 {
+	final, _, _ = v.Get()
+	if final.(int64) != 3 {
 		t.Error("Wrong value")
 	}
 
@@ -82,21 +82,21 @@ func TestNewInt64Limits(t *testing.T) {
 		t.Error("Wrong value")
 	}
 
-	final, _, _ = v.Get(nil)
-	if final.(*Int64).value != 0 {
+	final, _, _ = v.Get()
+	if final.(int64) != 0 {
 		t.Error("Wrong value")
 	}
 
 	v.Set(NewInt64Delta(math.MinInt32), nil)
-	final, _, _ = v.Get(nil)
-	if final.(*Int64).value != math.MinInt32 {
+	final, _, _ = v.Get()
+	if final.(int64) != math.MinInt32 {
 		t.Error("Wrong value")
 	}
 
 	// Out of the lower limit tests
 	v.Set(NewInt64Delta(math.MinInt32), nil)
-	final, _, _ = v.Get(nil)
-	if final.(*Int64).value != math.MinInt32 {
+	final, _, _ = v.Get()
+	if final.(int64) != math.MinInt32 {
 		t.Error("Wrong value")
 	}
 }
@@ -104,46 +104,46 @@ func TestNewInt64Limits(t *testing.T) {
 func TestNewInt64MinMax(t *testing.T) {
 	v := NewInt64(math.MinInt32, math.MaxInt32).(*Int64)
 	v.Set(NewInt64Delta(math.MinInt32), nil)
-	final, _, _ := v.Get(nil)
-	if final.(*Int64).value != math.MinInt32 {
+	final, _, _ := v.Get()
+	if final.(int64) != math.MinInt32 {
 		t.Error("Error: Wrong value, should be ", math.MinInt32)
 	}
 
 	v.Set(NewInt64Delta(math.MaxInt32), nil)
 	v.Set(NewInt64Delta(1), nil)
-	final, _, _ = v.Get(nil)
-	if final.(*Int64).value != 0 {
+	final, _, _ = v.Get()
+	if final.(int64) != 0 {
 		t.Error("Error: Wrong value, should be ", 0)
 	}
 
 	v = NewInt64(math.MinInt32, math.MaxInt32).(*Int64)
 	v.Set(NewInt64Delta(math.MaxInt32), nil)
-	final, _, _ = v.Get(nil)
-	if final.(*Int64).value != math.MaxInt32 {
+	final, _, _ = v.Get()
+	if final.(int64) != math.MaxInt32 {
 		t.Error("Error: Wrong value, should be ", math.MaxInt32)
 	}
 
 	v.Set(NewInt64Delta(math.MaxInt32), nil)
-	final, _, _ = v.Get(nil)
-	if final.(*Int64).value != math.MaxInt32 {
+	final, _, _ = v.Get()
+	if final.(int64) != math.MaxInt32 {
 		t.Error("Error: Wrong value, should be ", 0)
 	}
 
 	v.Set(NewInt64Delta(1), nil)
-	final, _, _ = v.Get(nil)
-	if final.(*Int64).value != math.MaxInt32 {
+	final, _, _ = v.Get()
+	if final.(int64) != math.MaxInt32 {
 		t.Error("Error: Wrong value, should be ", 0)
 	}
 
 	v.Set(NewInt64Delta(-1), nil)
-	final, _, _ = v.Get(nil)
-	if final.(*Int64).value != math.MaxInt32-1 {
+	final, _, _ = v.Get()
+	if final.(int64) != math.MaxInt32-1 {
 		t.Error("Error: Wrong value, should be ", 0)
 	}
 
 	v.Set(NewInt64Delta(math.MinInt32), nil)
-	final, _, _ = v.Get(nil)
-	if final.(*Int64).value != -2 {
+	final, _, _ = v.Get()
+	if final.(int64) != -2 {
 		t.Error("Error: Wrong value, should be ", 0)
 	}
 }

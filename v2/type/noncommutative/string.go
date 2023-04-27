@@ -26,10 +26,10 @@ func (this *String) Deepcopy() interface{} {
 	return (*String)(&value)
 }
 
-func (this *String) Value() interface{}    { return this }
-func (this *String) ToAccess() interface{} { return nil }
+func (this *String) Equal(other interface{}) bool { return *this == *(other.(*String)) }
+func (this *String) Value() interface{}           { return this }
 
-func (this *String) Get(source interface{}) (interface{}, uint32, uint32) {
+func (this *String) Get() (interface{}, uint32, uint32) {
 	return this, 1, 0
 }
 

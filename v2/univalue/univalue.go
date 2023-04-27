@@ -136,7 +136,7 @@ func (this *Univalue) IfConcurrentWritable() bool { // Call this before setting 
 
 func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{} {
 	if this.value != nil {
-		tempV, r, w := this.value.(ccurlcommon.TypeInterface).Get(source) //RW: Affiliated reads and writes
+		tempV, r, w := this.value.(ccurlcommon.TypeInterface).Get() //RW: Affiliated reads and writes
 		this.reads += r
 		this.writes += w
 		return tempV
@@ -266,13 +266,7 @@ func (this *Univalue) Equal(other ccurlcommon.UnivalueInterface) bool {
 		return false
 	}
 
-	var vFlag bool
-	if this.value.(ccurlcommon.TypeInterface).TypeID() == ccurlcommon.CommutativeMeta {
-		vFlag = this.value.(*commutative.Meta).Equal(other.Value().(*commutative.Meta))
-	} else {
-		vFlag = reflect.DeepEqual(this.value, other.Value())
-	}
-
+	vFlag := this.value.(ccurlcommon.TypeInterface).Equal(other.Value().(ccurlcommon.TypeInterface))
 	return this.tx == other.GetTx() &&
 		*this.path == *other.GetPath() &&
 		this.reads == other.Reads() &&

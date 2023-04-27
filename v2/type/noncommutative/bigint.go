@@ -1,6 +1,7 @@
 package noncommutative
 
 import (
+	"bytes"
 	"math/big"
 
 	codec "github.com/arcology-network/common-lib/codec"
@@ -20,9 +21,9 @@ func (this *Bigint) IsSelf(key interface{}) bool { return true }
 func (this *Bigint) TypeID() uint8               { return uint8(ccurlcommon.NoncommutativeBigint) }
 
 // func (this *Bigint) Latest() interface{}         { return this }
-
-func (this *Bigint) Value() interface{}    { return this }
-func (this *Bigint) ToAccess() interface{} { return nil }
+func (this *Bigint) Equal(other interface{}) bool {
+	return bytes.Equal((*big.Int)(this).Bytes(), (*big.Int)(other.(*Bigint)).Bytes())
+}
 
 func (this *Bigint) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
 	return v, 0, 1, 0
@@ -38,7 +39,7 @@ func (this *Bigint) Size() uint32 {
 	return v.Size()
 }
 
-func (this *Bigint) Get(source interface{}) (interface{}, uint32, uint32) {
+func (this *Bigint) Get() (interface{}, uint32, uint32) {
 	return this, 1, 0
 }
 

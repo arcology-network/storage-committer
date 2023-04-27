@@ -8,8 +8,8 @@ import (
 func TestNewUint64(t *testing.T) {
 	v := NewUint64(0, 8).(*Uint64)
 
-	final, _, _ := v.Get(nil)
-	if final.(*Uint64).value != 0 {
+	final, _, _ := v.Get()
+	if final.(uint64) != 0 {
 		t.Error("Wrong value")
 	}
 
@@ -19,15 +19,15 @@ func TestNewUint64(t *testing.T) {
 	v.Set(NewUint64Delta(1), nil)
 	v.Set(NewUint64Delta(1), nil)
 
-	final, _, _ = v.Get(nil)
-	if final.(*Uint64).value != 8 || final.(*Uint64).delta != 0 {
+	final, _, _ = v.Get()
+	if final.(uint64) != 8 {
 		t.Error("Wrong value")
 	}
 
 	v = NewUint64(0, 8).(*Uint64)
 
-	final, _, _ = v.Get(nil)
-	if final.(*Uint64).value != 0 {
+	final, _, _ = v.Get()
+	if final.(uint64) != 0 {
 		t.Error("Wrong value")
 	}
 
@@ -36,8 +36,8 @@ func TestNewUint64(t *testing.T) {
 		t.Error("Wrong value")
 	}
 
-	final, _, _ = v.Get(nil)
-	if final.(*Uint64).value != 0 || final.(*Uint64).delta != 0 {
+	final, _, _ = v.Get()
+	if final.(uint64) != 0 {
 		t.Error("Wrong value")
 	}
 }
@@ -48,8 +48,8 @@ func TestNewUint64Max(t *testing.T) {
 	v.Set(NewUint64Delta(math.MaxUint64-1), nil)
 	v.Set(NewUint64Delta(2), nil)
 
-	final, _, _ := v.Get(nil)
-	if final.(*Uint64).value != math.MaxUint64-1 || final.(*Uint64).delta != 0 {
+	final, _, _ := v.Get()
+	if final.(uint64) != math.MaxUint64-1 {
 		t.Error("Error: Wrong value")
 	}
 
@@ -59,8 +59,8 @@ func TestNewUint64Max(t *testing.T) {
 	v.Set(NewUint64Delta(1), nil)
 	v.Set(NewUint64Delta(1), nil)
 
-	final, _, _ = v.Get(nil)
-	if final.(*Uint64).value != math.MaxUint64 || final.(*Uint64).delta != 0 {
+	final, _, _ = v.Get()
+	if final.(uint64) != math.MaxUint64 {
 		t.Error("Wrong value")
 	}
 
@@ -69,8 +69,8 @@ func TestNewUint64Max(t *testing.T) {
 	v.Set(NewUint64Delta(math.MaxUint64-1), nil)
 	v.Set(NewUint64Delta(math.MaxUint64), nil)
 
-	final, _, _ = v.Get(nil)
-	if final.(*Uint64).value != math.MaxUint64-1 || final.(*Uint64).delta != 0 {
+	final, _, _ = v.Get()
+	if final.(uint64) != math.MaxUint64-1 {
 		t.Error("Wrong value")
 	}
 
@@ -80,8 +80,8 @@ func TestNewUint64Max(t *testing.T) {
 		t.Error("Error: Should report an overflow")
 	}
 
-	final, _, _ = v.Get(nil)
-	if final.(*Uint64).value != math.MaxUint64 || final.(*Uint64).delta != 0 {
+	final, _, _ = v.Get()
+	if final.(uint64) != math.MaxUint64 {
 		t.Error("Wrong value")
 	}
 }

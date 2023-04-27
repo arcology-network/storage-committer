@@ -12,27 +12,27 @@ func (this *Bytes) HeaderSize() uint32 {
 }
 
 func (this *Bytes) Size() uint32 {
-	return this.HeaderSize() + uint32(1+len(this.data))
+	return this.HeaderSize() + uint32(1+len(this.value))
 }
 
 func (this *Bytes) Encode(processors ...interface{}) []byte {
 	byteset := [][]byte{
 		codec.Bool(this.placeholder).Encode(),
-		this.data,
+		this.value,
 	}
 	return codec.Byteset(byteset).Encode()
 }
 
 func (this *Bytes) EncodeToBuffer(buffer []byte, processors ...interface{}) int {
 	offset := codec.Bool(this.placeholder).EncodeToBuffer(buffer)
-	return offset + codec.Bytes(this.data).EncodeToBuffer(buffer[offset:])
+	return offset + codec.Bytes(this.value).EncodeToBuffer(buffer[offset:])
 }
 
 func (*Bytes) Decode(buffer []byte) interface{} {
 	fields := codec.Byteset{}.Decode(buffer).(codec.Byteset)
 	return &Bytes{
 		placeholder: bool(codec.Bool(true).Decode(fields[0]).(codec.Bool)),
-		data:        bytes.Clone(fields[1]),
+		value:       bytes.Clone(fields[1]),
 	}
 }
 

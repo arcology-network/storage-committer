@@ -17,17 +17,17 @@ func TestMeta(t *testing.T) {
 	inPath.SetAdded([]string{"+01", "+001", "+002", "+002"})
 	inPath.SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
 
-	meta, _, _ = inPath.Get(nil)
+	meta, _, _ = inPath.Get()
 
-	if !common.EqualArray(inPath.Value().([]string), []string{"e-01", "e-001", "e-002", "e-002"}) {
+	if !common.EqualArray(inPath.PeekValue(), []string{"e-01", "e-001", "e-002", "e-002"}) {
 		t.Error("Error: Don't match!!")
 	}
 
-	if !common.EqualArray(inPath.Added(), []string{"+01", "+001", "+002", "+002"}) {
+	if !common.EqualArray(inPath.PeekAdded(), []string{"+01", "+001", "+002", "+002"}) {
 		t.Error("Error: Don't match!!")
 	}
 
-	if !common.EqualArray(inPath.Removed(), []string{"-091", "-0092", "-092", "-092", "-097"}) {
+	if !common.EqualArray(inPath.PeekRemoved(), []string{"-091", "-0092", "-092", "-092", "-097"}) {
 		t.Error("Error: Don't match!!")
 	}
 
@@ -45,15 +45,15 @@ func TestCodecPathMeta(t *testing.T) {
 	buffer := in.(*Meta).Encode()
 	out := (&Meta{}).Decode(buffer).(*Meta)
 
-	if common.EqualArray(out.Value().([]string), []string{"e-01", "e-001", "e-002", "e-002"}) {
+	if common.EqualArray(out.PeekValue(), []string{"e-01", "e-001", "e-002", "e-002"}) {
 		t.Error("Error: Should have gone!")
 	}
 
-	if !common.EqualArray(out.Added(), []string{"+01", "+001", "+002", "+002"}) {
+	if !common.EqualArray(out.PeekAdded(), []string{"+01", "+001", "+002", "+002"}) {
 		t.Error("Error: Don't match!!")
 	}
 
-	if !common.EqualArray(out.Removed(), []string{"-091", "-0092", "-092", "-092", "-097"}) {
+	if !common.EqualArray(out.PeekRemoved(), []string{"-091", "-0092", "-092", "-092", "-097"}) {
 		t.Error("Error: Don't match!!")
 	}
 

@@ -27,15 +27,9 @@ func (this *Int64) Deepcopy() interface{} {
 	return (*Int64)(&value)
 }
 
-func (this *Int64) Value() interface{} {
-	return this
-}
+func (this *Int64) Equal(other interface{}) bool { return *this == *(other.(*Int64)) }
 
-func (this *Int64) ToAccess() interface{} {
-	return nil
-}
-
-func (this *Int64) Get(source interface{}) (interface{}, uint32, uint32) {
+func (this *Int64) Get() (interface{}, uint32, uint32) {
 	return this, 1, 0
 }
 

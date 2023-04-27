@@ -8,7 +8,6 @@ import (
 	"unsafe"
 
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
-	"github.com/arcology-network/common-lib/codec"
 	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl/v2"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
@@ -157,7 +156,7 @@ func TestBasic(t *testing.T) {
 	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/"); value == nil {
 		t.Error(value)
 	} else {
-		target := value.(*commutative.Meta).Value().([]string)
+		target := value.([]string)
 		if !reflect.DeepEqual(target, []string{"elem-000", "elem-111"}) {
 			t.Error("Error: Wrong value !!!!")
 		}
@@ -165,7 +164,7 @@ func TestBasic(t *testing.T) {
 
 	_, transitions := url.Export(indexer.Sorter)
 
-	if !reflect.DeepEqual(transitions[0].Value().(*commutative.Meta).Added(), []string{"elem-000", "elem-111"}) {
+	if !reflect.DeepEqual(transitions[0].Value().(*commutative.Meta).PeekAdded(), []string{"elem-000", "elem-111"}) {
 		t.Error("Error: keys are missing from the added buffer!")
 	}
 
@@ -264,9 +263,9 @@ func TestPathAddThenDelete(t *testing.T) {
 	}
 
 	meta, err := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	if err != nil || len(meta.(*commutative.Meta).View().Keys()) != 2 ||
-		meta.(*commutative.Meta).View().Keys()[0] != "elem-888" ||
-		meta.(*commutative.Meta).View().Keys()[1] != "elem-999" {
+	if err != nil || len(meta.([]string)) != 2 ||
+		meta.([]string)[0] != "elem-888" ||
+		meta.([]string)[1] != "elem-999" {
 		t.Error(err)
 	}
 
@@ -347,7 +346,7 @@ func TestUrl1(t *testing.T) {
 		t.Error("Error: keys don't match")
 	}
 
-	if !reflect.DeepEqual(ccurlcommon.SortString(transitions[1].Value().(*commutative.Meta).Added()), []string{"elem-000", "elem-001", "elem-002"}) {
+	if !reflect.DeepEqual(ccurlcommon.SortString(transitions[1].Value().(*commutative.Meta).PeekAdded()), []string{"elem-000", "elem-001", "elem-002"}) {
 		t.Error("Error: keys don't match")
 	}
 
@@ -417,13 +416,13 @@ func TestUrl2(t *testing.T) {
 
 	// Update then return path meta info
 	meta0, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	if !reflect.DeepEqual(meta0.(*commutative.Meta).Value().([]string), []string{"elem-000", "elem-001", "elem-002"}) {
+	if !reflect.DeepEqual(meta0.([]string), []string{"elem-000", "elem-001", "elem-002"}) {
 		t.Error("Error: Keys don't match")
 	}
 
 	// Do again
 	meta1, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	if !reflect.DeepEqual(meta1.(*commutative.Meta).Value().([]string), []string{"elem-000", "elem-001", "elem-002"}) {
+	if !reflect.DeepEqual(meta1.([]string), []string{"elem-000", "elem-001", "elem-002"}) {
 		t.Error("Error: Keys don't match")
 	}
 
@@ -452,7 +451,7 @@ func TestUrl2(t *testing.T) {
 
 	// The elem-00 has been deleted, only "elem-001", "elem-002" left
 	meta, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	if !reflect.DeepEqual(meta.(*commutative.Meta).Value().([]string), []string{"elem-001", "elem-002"}) {
+	if !reflect.DeepEqual(meta.([]string), []string{"elem-001", "elem-002"}) {
 		t.Error("Error: keys don't match")
 	}
 
@@ -468,7 +467,7 @@ func TestUrl2(t *testing.T) {
 
 	// Update then read the path info again
 	meta, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	if !reflect.DeepEqual(meta.(*commutative.Meta).Value().([]string), []string{"elem-001", "elem-002", "elem-000"}) {
+	if !reflect.DeepEqual(meta.([]string), []string{"elem-001", "elem-002", "elem-000"}) {
 		t.Error("Error: keys don't match")
 	}
 
@@ -496,7 +495,7 @@ func TestUrl2(t *testing.T) {
 
 	/*  Read the storage path to see what is left*/
 	v, _ = url.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/")
-	if !reflect.DeepEqual(v.(*commutative.Meta).Value().([]string), []string{}) {
+	if !reflect.DeepEqual(v.([]string), []string{}) {
 		t.Error("Error: Should be empty!!")
 	}
 
@@ -566,6 +565,8 @@ func TestUnivaluesBatchCodec(t *testing.T) {
 	accessRecords, _ := url.Export(indexer.Sorter)
 	in := univalue.Univalues(accessRecords).Encode()
 
+	// uint256delta isn't inthe encoder !!!
+
 	fmt.Println(len(in))
 	out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
 	for i := range accessRecords {
@@ -619,7 +620,7 @@ func TestCommutative(t *testing.T) {
 	}
 
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0")
-	if v.(*commutative.U256).Value().(*uint256.Int).Cmp(uint256.NewInt(300)) != 0 {
+	if v.(*uint256.Int).Cmp(uint256.NewInt(300)) != 0 {
 		t.Error("Error: comt-0 has a wrong returned value")
 	}
 
@@ -641,7 +642,7 @@ func TestCommutative(t *testing.T) {
 
 	// Read alice's balance
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/balance")
-	if v.(*commutative.U256).Value().(*uint256.Int).Cmp(uint256.NewInt(33)) != 0 {
+	if v.(*uint256.Int).Cmp(uint256.NewInt(33)) != 0 {
 		t.Error("Error: blcc://eth1.0/account/alice/balance")
 	}
 
@@ -718,16 +719,12 @@ func TestNestedPath(t *testing.T) {
 
 	/* Read */
 	v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/ctrn-00/")
-	if !reflect.DeepEqual(v.(*commutative.Meta).Value().([]string), []string{"elem-00", "elem-01"}) {
+	if !reflect.DeepEqual(v.([]string), []string{"elem-00", "elem-01"}) {
 		t.Error("Error: keys don't match")
 	}
 
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	if !reflect.DeepEqual(v.(*commutative.Meta).Value().([]string), []string{"ctrn-00/", "elem-00", "elem-01"}) {
-		t.Error("Error: keys don't match")
-	}
-
-	if !reflect.DeepEqual(v.(*commutative.Meta).Removed(), []string{}) {
+	if !reflect.DeepEqual(v.([]string), []string{"ctrn-00/", "elem-00", "elem-01"}) {
 		t.Error("Error: keys don't match")
 	}
 
@@ -764,13 +761,13 @@ func TestNestedPath(t *testing.T) {
 	url.Commit([]uint32{1})
 }
 
-func DeltaEncoder(typed ccurlcommon.TypeInterface) []byte {
-	return typed.Delta().(codec.Encodeable).Encode()
-}
+// func DeltaEncoder(typed ccurlcommon.TypeInterface) []byte {
+// 	return typed.Delta().(codec.Encodeable).Encode()
+// }
 
-func ValueEncoder(typed ccurlcommon.TypeInterface) []byte {
-	return typed.Value().(codec.Encodeable).Encode()
-}
+// func ValueEncoder(typed ccurlcommon.TypeInterface) []byte {
+// 	return typed.Value().(codec.Encodeable).Encode()
+// }
 
 func TestMetaEncodeSelector(t *testing.T) {
 	store := cachedstorage.NewDataStore()

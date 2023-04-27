@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/datacompression"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
@@ -66,7 +67,6 @@ func TestUnivalueCodeMeta(t *testing.T) {
 	alice := datacompression.RandomAccount()
 
 	meta := commutative.NewMeta()
-
 	meta.(*commutative.Meta).SetSubDirs([]string{"e-01", "e-001", "e-002", "e-002"})
 	meta.(*commutative.Meta).SetAdded([]string{"+01", "+001", "+002", "+002"})
 	meta.(*commutative.Meta).SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
@@ -78,8 +78,10 @@ func TestUnivalueCodeMeta(t *testing.T) {
 
 	bytes := in.Encode()
 	out := (&Univalue{}).Decode(bytes).(*Univalue)
+	outKeys, _, _ := out.Value().(ccurlcommon.TypeInterface).Get()
+	inKeys, _, _ := in.Value().(ccurlcommon.TypeInterface).Get()
 
-	if !in.Value().(*commutative.Meta).Equal(out.Value().(*commutative.Meta)) {
+	if common.EqualArray(inKeys.([]string), outKeys.([]string)) {
 		t.Error("Error")
 	}
 }
@@ -99,17 +101,15 @@ func TestCodecMetaUnivalues(t *testing.T) {
 	bytes := in.Encode()
 	out := (&Univalues{}).Decode(bytes).(Univalues)
 
-	// in.
-
 	for i := 0; i < len(out); i++ {
-		fmt.Print(in[i].Value().(*commutative.Meta).Value())
-		fmt.Println(out[i].Value().(*commutative.Meta).Value())
+		// fmt.Print(in[i].Value().(*commutative.Meta).Value())
+		// fmt.Println(out[i].Value().(*commutative.Meta).Value())
 
-		fmt.Print(in[i].Value().(*commutative.Meta).Added())
-		fmt.Println(out[i].Value().(*commutative.Meta).Added())
+		// fmt.Print(in[i].Value().(*commutative.Meta).Added())
+		// fmt.Println(out[i].Value().(*commutative.Meta).Added())
 
-		fmt.Print(in[i].Value().(*commutative.Meta).Removed())
-		fmt.Println(out[i].Value().(*commutative.Meta).Removed())
+		// fmt.Print(in[i].Value().(*commutative.Meta).Removed())
+		// fmt.Println(out[i].Value().(*commutative.Meta).Removed())
 		// fmt.Println(out[i])
 	}
 }

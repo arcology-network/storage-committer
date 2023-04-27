@@ -74,8 +74,8 @@ func TestU256(t *testing.T) {
 		t.Error("Error: Should have failed")
 	}
 
-	finalized, _, _ := v.(*U256).Get(nil)
-	if finalized.(*U256).value.ToBig().Uint64() != 6 {
+	finalized, _, _ := v.(*U256).Get()
+	if finalized.(*uint256.Int).ToBig().Uint64() != 6 {
 		t.Error("Error: Should have failed")
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	codec "github.com/arcology-network/common-lib/codec"
+	"github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 )
 
@@ -27,6 +28,12 @@ func (this *Uint64) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) 
 	return v, 0, 1, 0
 }
 
+func (this *Uint64) Equal(other interface{}) bool {
+	return this.value == other.(*Uint64).value && this.delta == other.(*Uint64).delta
+}
+
+func (this *Uint64) Delta() interface{}          { return codec.Uint64(this.delta) }
+func (this *Uint64) Value() interface{}          { return this.value } // Peek the committed value
 func (this *Uint64) TypeID() uint8               { return ccurlcommon.CommutativeUint64 }
 func (this *Uint64) IsSelf(key interface{}) bool { return true }
 
@@ -39,24 +46,8 @@ func (this *Uint64) Deepcopy() interface{} {
 	}
 }
 
-func (this *Uint64) Value() interface{} { return codec.Uint64(this.value) }
-func (this *Uint64) Delta() interface{} { return codec.Uint64(this.delta) }
-
-func (this *Uint64) ToAccess() interface{} {
-	return this
-}
-
-func (this *Uint64) Get(source interface{}) (interface{}, uint32, uint32) {
-	if this.delta == 0 {
-		return this, 1, 0
-	}
-
-	return &Uint64{
-		value: this.value + this.delta,
-		delta: 0,
-		min:   this.min,
-		max:   this.max,
-	}, 1, 1
+func (this *Uint64) Get() (interface{}, uint32, uint32) {
+	return this.value + this.delta, 1, common.IfThen(this.delta == 0, func() uint32 { return 0 }, func() uint32 { return 1 })
 }
 
 func (this *Uint64) Set(v interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {

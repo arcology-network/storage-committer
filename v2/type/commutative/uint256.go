@@ -1,6 +1,7 @@
 package commutative
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"math/big"
@@ -95,28 +96,19 @@ func (this *U256) Deepcopy() interface{} {
 	}
 }
 
-func (this *U256) ToAccess() interface{} {
-	return this
+func (this *U256) Equal(other interface{}) bool {
+	return bytes.Equal(this.value.Bytes(), other.(*U256).value.Bytes()) &&
+		bytes.Equal(this.delta.Bytes(), other.(*U256).delta.Bytes()) &&
+		bytes.Equal(this.min.Bytes(), other.(*U256).min.Bytes()) &&
+		bytes.Equal(this.max.Bytes(), other.(*U256).max.Bytes()) &&
+		this.deltaPositive == other.(*U256).deltaPositive
 }
 
-func (this *U256) Get(source interface{}) (interface{}, uint32, uint32) {
-	temp := &U256{
-		value:         this.value.Clone(),
-		delta:         this.delta.Clone(),
-		min:           this.min,
-		max:           this.max,
-		deltaPositive: this.deltaPositive,
-	}
-
+func (this *U256) Get() (interface{}, uint32, uint32) {
 	if this.delta.Eq(UINT256ZERO) {
-		return temp, 1, 0
+		return this.value, 1, 0
 	}
-
-	temp.value.Add(temp.value, temp.delta)
-	temp.deltaPositive = false
-	temp.delta.Clear()
-
-	return temp, 1, 1 // One read one write
+	return new(uint256.Int).Add(this.value.Clone(), this.delta), 1, 1
 }
 
 func (this *U256) Value() interface{} {
@@ -197,8 +189,9 @@ func (this *U256) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 		}
 	}
 
-	newValue, _, _ := this.Get(nil)
-	*this = (*newValue.(*U256))
+	newValue, _, _ := this.Get()
+	this.value = newValue.(*uint256.Int)
+	this.delta.Clear()
 	return this
 }
 

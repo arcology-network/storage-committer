@@ -1,6 +1,8 @@
 package noncommutative
 
 import (
+	"bytes"
+
 	"github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 )
@@ -9,7 +11,7 @@ import (
 
 type Bytes struct {
 	placeholder bool //
-	data        []byte
+	value       []byte
 }
 
 func NewBytes(v []byte) interface{} {
@@ -17,12 +19,12 @@ func NewBytes(v []byte) interface{} {
 	copy(b, v)
 	return &Bytes{
 		placeholder: true,
-		data:        b,
+		value:       b,
 	}
 }
 
 func (this *Bytes) Assign(v []byte) {
-	this.data = v
+	this.value = v
 }
 
 func (this *Bytes) IsSelf(key interface{}) bool { return true }
@@ -36,29 +38,17 @@ func (this *Bytes) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
 func (this *Bytes) Deepcopy() interface{} {
 	return &Bytes{
 		placeholder: true,
-		data:        common.DeepCopy(this.data),
+		value:       common.DeepCopy(this.value),
 	}
 }
 
-func (this *Bytes) Data() []byte {
-	return this.data
+func (this *Bytes) Equal(other interface{}) bool {
+	return bytes.Equal(this.value, other.(*Bytes).value)
 }
 
-func (this *Bytes) Value() interface{} {
-	return this
-}
-
-func (this *Bytes) ToAccess() interface{} {
-	return nil
-}
-
-func (this *Bytes) Get(source interface{}) (interface{}, uint32, uint32) {
+func (this *Bytes) Get() (interface{}, uint32, uint32) {
 	return this, 1, 0
 }
-
-// func (this *Bytes) Latest() interface{} {
-// 	return this
-// }
 
 func (this *Bytes) Delta() interface{} {
 	return this
@@ -66,8 +56,8 @@ func (this *Bytes) Delta() interface{} {
 
 func (this *Bytes) Set(value interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
 	if value != nil && this != value { // Avoid self copy.
-		this.data = make([]byte, len(value.(*Bytes).data))
-		copy(this.data, value.(*Bytes).data)
+		this.value = make([]byte, len(value.(*Bytes).value))
+		copy(this.value, value.(*Bytes).value)
 	}
 	return this, 0, 1, 0, nil
 }

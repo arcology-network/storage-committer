@@ -7,11 +7,12 @@ type TransitionInterface interface { // value type
 
 type TypeInterface interface { // value type
 	TypeID() uint8
+	Equal(interface{}) bool
 	Deepcopy() interface{}
-	Value() interface{}
+	// Value() interface{}
 	Delta() interface{}
-	ToAccess() interface{}
-	Get(interface{}) (interface{}, uint32, uint32)
+
+	Get() (interface{}, uint32, uint32)
 	Set(interface{}, interface{}) (interface{}, uint32, uint32, uint32, error)
 	CopyTo(interface{}) (interface{}, uint32, uint32, uint32)
 	ApplyDelta(interface{}) TypeInterface

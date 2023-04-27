@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
-	"github.com/arcology-network/common-lib/codec"
 	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl/v2"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
@@ -60,13 +59,13 @@ func TestSimpleBalance(t *testing.T) {
 	// Read alice's balance again
 	url2 := ccurl.NewConcurrentUrl(store)
 	balance, _ := url2.Read(1, "blcc://eth1.0/account/"+alice+"/balance")
-	if balance.(*commutative.U256).Value().(*uint256.Int).Cmp(uint256.NewInt(33)) != 0 {
+	if balance.(*uint256.Int).Cmp(uint256.NewInt(33)) != 0 {
 		t.Error("Error: Wrong blcc://eth1.0/account/alice/balance value")
 	}
 
 	url2.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(10), true))
 	balance, _ = url2.Read(1, "blcc://eth1.0/account/"+alice+"/balance")
-	if balance.(*commutative.U256).Value().(*uint256.Int).Cmp(uint256.NewInt(43)) != 0 {
+	if balance.(*uint256.Int).Cmp(uint256.NewInt(43)) != 0 {
 		t.Error("Error: Wrong blcc://eth1.0/account/alice/balance value")
 	}
 
@@ -123,7 +122,7 @@ func TestBalance(t *testing.T) {
 	}
 
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0")
-	if v.(*commutative.U256).Value().(*uint256.Int).Cmp(uint256.NewInt(303)) != 0 {
+	if v.(*uint256.Int).Cmp(uint256.NewInt(303)) != 0 {
 		t.Error("comt-0 has a wrong returned value")
 	}
 
@@ -144,7 +143,7 @@ func TestBalance(t *testing.T) {
 
 	// Read alice's balance
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/balance")
-	if v.(*commutative.U256).Value().(*uint256.Int).Cmp(uint256.NewInt(33)) != 0 {
+	if v.(*uint256.Int).Cmp(uint256.NewInt(33)) != 0 {
 		t.Error("blcc://eth1.0/account/" + alice + "/balance")
 	}
 
@@ -186,7 +185,7 @@ func TestNonce(t *testing.T) {
 	}
 
 	nonce, _ := url1.Read(0, "blcc://eth1.0/account/"+alice+"/nonce")
-	v := nonce.(ccurlcommon.TypeInterface).(*commutative.Uint64).Value().(codec.Uint64)
+	v := nonce.(uint64)
 	if v != 6 {
 		t.Error("Error: blcc://eth1.0/account/alice/nonce should be ", 6)
 	}
@@ -197,7 +196,7 @@ func TestNonce(t *testing.T) {
 	url1.Commit([]uint32{0})
 
 	nonce, _ = url1.Read(0, "blcc://eth1.0/account/"+alice+"/nonce")
-	v = nonce.(ccurlcommon.TypeInterface).(*commutative.Uint64).Value().(codec.Uint64)
+	v = nonce.(uint64)
 	if v != 6 {
 		t.Error("Error: blcc://eth1.0/account/alice/nonce ")
 	}
@@ -249,8 +248,7 @@ func TestMultipleNonces(t *testing.T) {
 	url0.Commit([]uint32{0})
 
 	nonce, _ := url1.Read(0, "blcc://eth1.0/account/"+bob+"/nonce")
-
-	bobNonce := nonce.(ccurlcommon.TypeInterface).(*commutative.Uint64).Value().(codec.Uint64)
+	bobNonce := nonce.(uint64)
 	if bobNonce != 2 {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
 	}

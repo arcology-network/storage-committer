@@ -26,6 +26,11 @@ func (this *MetaDelta) Clone() *MetaDelta {
 	}
 }
 
+func (this *MetaDelta) Equal(other *MetaDelta) bool {
+	return this.addDict.Equal(other.addDict) &&
+		this.delDict.Equal(other.delDict)
+}
+
 func (this *MetaDelta) ProcessKey(subkey string, value interface{}, preexists bool) bool {
 	return this.addKey(subkey, value, preexists) ||
 		this.delKeys(subkey, value, preexists)
