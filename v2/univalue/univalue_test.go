@@ -33,8 +33,7 @@ func TestUnivalueCodecUint64(t *testing.T) {
 }
 
 func TestUnivalueCodecU256(t *testing.T) {
-	/* Commutative Int64 Test */
-	alice := datacompression.RandomAccount()
+	alice := datacompression.RandomAccount() /* Commutative Int64 Test */
 
 	// meta:= commutative.NewMeta()
 	u256 := commutative.NewU256(uint256.NewInt(100), uint256.NewInt(0), uint256.NewInt(100))

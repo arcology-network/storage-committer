@@ -357,6 +357,23 @@ func (this *ConcurrentUrl) Export(sorter func([]ccurlcommon.UnivalueInterface) i
 	return this.accesseBuf, this.transitBuf
 }
 
+func (this *ConcurrentUrl) Export2(sorter func([]ccurlcommon.UnivalueInterface) interface{}) ([]ccurlcommon.UnivalueInterface, []ccurlcommon.UnivalueInterface) {
+	this.indexer.Vectorize(this.indexer.Buffer(), &this.buffer, false) // Export records
+	if sorter != nil {                                                 // Sort by path, debug only
+		indexer.Sorter(this.buffer)
+	}
+
+	for i := 0; i < len(this.buffer); i++ {
+		if this.buffer[i].Writes() == 0 && this.buffer[i].DeltaWrites() == 0 {
+			this.buffer[i] = nil // Clear read-only records
+		}
+	}
+
+	// this.accesseBuf = indexer.FilterAccesses(this.buffer, this.Platform)
+	// this.transitBuf = indexer.FilterTransitions(this.buffer, this.Platform)
+	return this.accesseBuf, this.transitBuf
+}
+
 type PostProcessFunc func(accesses, transitions []ccurlcommon.UnivalueInterface) ([]ccurlcommon.UnivalueInterface, []ccurlcommon.UnivalueInterface)
 
 func (this *ConcurrentUrl) ExportEncoded(ppf PostProcessFunc) ([][]byte, [][]byte) {

@@ -49,14 +49,14 @@ func (this *Meta) Equal(other interface{}) bool {
 }
 
 func (this *Meta) Get() (interface{}, uint32, uint32) {
-	return this.value.Keys(), 1, common.IfThen(!this.value.Touched(), func() uint32 { return 0 }, func() uint32 { return 1 })
+	return this.value.Keys(), 1, common.IfThen(!this.value.Touched(), uint32(0), uint32(1))
 }
 
 // func (this *Meta) Value() interface{} { return this.value.Keys() }
 func (this *Meta) Delta() interface{} { return this.delta }
 
 func (this *Meta) ApplyDelta(v interface{}) ccurlcommon.TypeInterface { // Apply the transitions to the original value
-	keys := append(this.value.Keys(), this.delta.addDict.Keys()...)
+	keys := append(this.value.Keys(), this.delta.addDict.Keys()...) // The value should only contain committed keys
 	toRemove := this.delta.delDict.Keys()
 	univals := v.([]ccurlcommon.UnivalueInterface)
 	for i := 0; i < len(univals); i++ {
@@ -71,10 +71,6 @@ func (this *Meta) ApplyDelta(v interface{}) ccurlcommon.TypeInterface { // Apply
 			this = nil
 			continue
 		}
-
-		// if this == nil {
-		// 	this = this.Value().(*Meta) // A new value
-		// }
 
 		keys = append(keys, delta.(*Meta).PeekAdded()...)
 		toRemove = append(toRemove, delta.(*Meta).PeekRemoved()...)
@@ -148,32 +144,6 @@ func (this *Meta) Set(value interface{}, source interface{}) (interface{}, uint3
 
 	return this, 0, 0, 1, nil
 }
-
-// func (this *Meta) addKey(subkey string, value interface{}, preexists bool) bool {
-// 	if this.delDict.Exists(subkey) { // Adding back a preexisting entry
-// 		this.delDict.Delete(subkey) // Cancel out each other
-// 		return true
-// 	}
-
-// 	if !preexists && value != nil {
-// 		this.delta.addDict.Insert(subkey) // won't be duplicate
-// 		return true
-// 	}
-// 	return false
-// }
-
-// // Only the preexisting keys are in this buffer, or they will be cancel each other
-// func (this *Meta) delKeys(subkey string, value interface{}, preexists bool) bool {
-// 	if value != nil {
-// 		return false
-// 	}
-
-// 	if preexists { // Preexists and value == nil
-// 		this.delDict.Insert(subkey)
-// 		return true
-// 	}
-// 	return this.delta.addDict.Delete(subkey) // Leave out the entry if it is in the added buffer
-// }
 
 // data cleaning before saving to storage
 func (this *Meta) Purge() {

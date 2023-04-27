@@ -29,12 +29,3 @@ func (this Univalues) Keys() []string {
 func (this Univalues) Checksum() [32]byte {
 	return sha256.Sum256(this.Encode())
 }
-
-// Only work when users aren't allowed to give arbitrary names
-// func (this Univalues) SetTransitType(trans []ccurlcommon.UnivalueInterface, func(name string) ()) {
-// 	for i := 0; i < len(trans); i++ {
-// 		if strings.Contains(*(trans[i].GetPath()), name) {
-// 			trans[i].SetTransitionType(ccurlcommon.INVARIATE_TRANSITIONS)
-// 		}
-// 	}
-// }

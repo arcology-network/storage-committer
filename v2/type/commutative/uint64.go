@@ -47,7 +47,7 @@ func (this *Uint64) Deepcopy() interface{} {
 }
 
 func (this *Uint64) Get() (interface{}, uint32, uint32) {
-	return this.value + this.delta, 1, common.IfThen(this.delta == 0, func() uint32 { return 0 }, func() uint32 { return 1 })
+	return this.value + this.delta, 1, common.IfThen(this.delta == 0, uint32(0), uint32(1))
 }
 
 func (this *Uint64) Set(v interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {

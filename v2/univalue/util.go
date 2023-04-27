@@ -2,16 +2,28 @@ package univalue
 
 func CreateUnivalueForTest(transitType uint8, vType uint8, tx uint32, path string, reads, writes uint32, value interface{}, preexists, composite bool) *Univalue {
 	return &Univalue{
-		vType:     vType,
-		tx:        tx,
-		path:      &path,
-		reads:     reads,
-		writes:    writes,
-		value:     value,
-		preexists: preexists,
-		// composite: composite,
-		reserved: nil,
+		Unimeta{
+			vType:       (&Univalue{}).GetTypeID(value),
+			tx:          tx,
+			path:        &path,
+			reads:       reads,
+			writes:      writes,
+			deltaWrites: 0,
+		},
+		value,
 	}
+
+	// return &Univalue{
+	// 	vType:     vType,
+	// 	tx:        tx,
+	// 	path:      &path,
+	// 	reads:     reads,
+	// 	writes:    writes,
+	// 	value:     value,
+	// 	preexists: preexists,
+	// 	// composite: composite,
+	// 	reserved: nil,
+	// }
 }
 
 // Only work when
