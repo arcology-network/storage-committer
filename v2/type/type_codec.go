@@ -46,7 +46,7 @@ func (Decoder) DecodeCompact(bytes []byte, vType uint8) interface{} {
 		return (&noncommutative.Bytes{}).DecodeCompact(bytes)
 
 	case ccurlcommon.CommutativeMeta: // Path
-		return (&commutative.Meta{}).DecodeCompact(bytes)
+		return (&commutative.Path{}).DecodeCompact(bytes)
 
 	case ccurlcommon.CommutativeUint256: // delta big int
 		return (&commutative.U256{}).DecodeCompact(bytes)
@@ -79,7 +79,7 @@ func (Decoder) Decode(bytes []byte, vType uint8) interface{} {
 		return (&noncommutative.Bytes{}).Decode(bytes)
 
 	case ccurlcommon.CommutativeMeta: // Path
-		return (&commutative.Meta{}).Decode(bytes)
+		return (&commutative.Path{}).Decode(bytes)
 
 	case ccurlcommon.CommutativeUint256: // delta big int
 		return (&commutative.U256{}).Decode(bytes)

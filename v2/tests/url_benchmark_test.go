@@ -34,7 +34,7 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 		fmt.Println(err)
 	}
 
-	path := commutative.NewMeta() // create a path
+	path := commutative.NewPath() // create a path
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		b.Error(err)
 	}
@@ -68,7 +68,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 		fmt.Println(err)
 	}
 
-	path := commutative.NewMeta() // create a path
+	path := commutative.NewPath() // create a path
 	if err := url.Write(0, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		b.Error(err)
 	}
@@ -80,7 +80,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 			fmt.Println(err)
 		}
 
-		path := commutative.NewMeta() // create a path
+		path := commutative.NewPath() // create a path
 		if err := url.Write(0, "blcc://eth1.0/account/"+acct+"/storage/ctrn-0/", path); err != nil {
 			b.Error(err)
 		}
@@ -115,7 +115,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 func BenchmarkUrlAddThenDelete(b *testing.B) {
 	store := cachedstorage.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
-	meta := commutative.NewMeta()
+	meta := commutative.NewPath()
 	url.Write(ccurlcommon.SYSTEM, ccurlcommon.NewPlatform().Eth10Account(), meta)
 	_, trans := url.Export(nil)
 
@@ -128,7 +128,7 @@ func BenchmarkUrlAddThenDelete(b *testing.B) {
 		fmt.Println(err)
 	}
 
-	path := commutative.NewMeta()
+	path := commutative.NewPath()
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
 
 	t0 := time.Now()
@@ -152,7 +152,7 @@ func BenchmarkUrlAddThenDelete(b *testing.B) {
 func BenchmarkUrlAddThenPop(b *testing.B) {
 	store := cachedstorage.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
-	meta := commutative.NewMeta()
+	meta := commutative.NewPath()
 	url.Write(ccurlcommon.SYSTEM, ccurlcommon.NewPlatform().Eth10Account(), meta)
 
 	_, trans := url.Export(nil)
@@ -166,7 +166,7 @@ func BenchmarkUrlAddThenPop(b *testing.B) {
 		fmt.Println(err)
 	}
 
-	path := commutative.NewMeta()
+	path := commutative.NewPath()
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
 
 	t0 := time.Now()
@@ -182,7 +182,7 @@ func BenchmarkUrlAddThenPop(b *testing.B) {
 	// t0 = time.Now()
 	// v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
 	// for i := 0; i < 50000; i++ {
-	// 	key := v.(*commutative.Meta).Next()
+	// 	key := v.(*commutative.Path).Next()
 	// 	url.Write(1, key, nil)
 	// }
 	// fmt.Println("Pop 50000 noncommutative bytes in", fmt.Sprint(50000), time.Since(t0))
@@ -281,7 +281,7 @@ func BenchmarkMetaIterator(b *testing.B) {
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
-	path := commutative.NewMeta()
+	path := commutative.NewPath()
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
 
 	t0 := time.Now()
@@ -294,22 +294,22 @@ func BenchmarkMetaIterator(b *testing.B) {
 	// t0 = time.Now()
 	// v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
 	// for i := 0; i < 100000; i++ {
-	// 	v.(*commutative.Meta).Next()
+	// 	v.(*commutative.Path).Next()
 	// }
 	// fmt.Println("Next "+fmt.Sprint(100000), time.Since(t0))
 
-	// v.(*commutative.Meta).ResetIterator()
+	// v.(*commutative.Path).ResetIterator()
 	// for i := 0; i < 100000; i++ {
-	// 	v.(*commutative.Meta).Next()
+	// 	v.(*commutative.Path).Next()
 	// }
 
 	// for i := 0; i < 100000; i++ {
-	// 	v.(*commutative.Meta).Previous()
+	// 	v.(*commutative.Path).Previous()
 	// }
 
-	// v.(*commutative.Meta).ResetReverseIterator()
+	// v.(*commutative.Path).ResetReverseIterator()
 	// for i := 0; i < 100000; i++ {
-	// 	v.(*commutative.Meta).Previous()
+	// 	v.(*commutative.Path).Previous()
 	// }
 }
 
@@ -349,7 +349,7 @@ func BenchmarkMapKeyLengthComparison(b *testing.B) {
 func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	lut := datacompression.NewCompressionLut()
 	store := cachedstorage.NewDataStore(lut)
-	meta := commutative.NewMeta()
+	meta := commutative.NewPath()
 	store.Inject((ccurlcommon.NewPlatform().Eth10Account()), meta)
 
 	t0 := time.Now()
@@ -381,7 +381,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 func TestAccountMerkleImportPerf(t *testing.T) {
 	lut := datacompression.NewCompressionLut()
 	store := cachedstorage.NewDataStore(lut)
-	meta := commutative.NewMeta()
+	meta := commutative.NewPath()
 	store.Inject((ccurlcommon.NewPlatform().Eth10Account()), meta)
 
 	url := ccurl.NewConcurrentUrl(store)
@@ -591,7 +591,7 @@ func TestHashPerformance(t *testing.T) {
 
 func BenchmarkTransitionImport(b *testing.B) {
 	store := cachedstorage.NewDataStore()
-	meta := commutative.NewMeta()
+	meta := commutative.NewPath()
 	store.Inject((ccurlcommon.NewPlatform().Eth10Account()), meta)
 
 	t0 := time.Now()
@@ -619,7 +619,7 @@ func BenchmarkTransitionImport(b *testing.B) {
 
 func BenchmarkConcurrentTransitionImport(b *testing.B) {
 	store := cachedstorage.NewDataStore()
-	meta := commutative.NewMeta()
+	meta := commutative.NewPath()
 	store.Inject((ccurlcommon.NewPlatform().Eth10Account()), meta)
 
 	t0 := time.Now()

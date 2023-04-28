@@ -10,17 +10,17 @@ import (
 	orderedset "github.com/arcology-network/common-lib/container/set"
 )
 
-func (this *Meta) Encode(processors ...interface{}) []byte {
+func (this *Path) Encode(processors ...interface{}) []byte {
 	buffer := make([]byte, this.Size()) //  no need to send the committed keys
 	this.EncodeToBuffer(buffer)
 	return buffer
 }
 
-func (this *Meta) HeaderSize() uint32 {
+func (this *Path) HeaderSize() uint32 {
 	return 3 * codec.UINT32_LEN // number of fields + 1
 }
 
-func (this *Meta) Size() uint32 {
+func (this *Path) Size() uint32 {
 	if this == nil {
 		return 0
 	}
@@ -31,7 +31,7 @@ func (this *Meta) Size() uint32 {
 	return total
 }
 
-func (this *Meta) FillHeader(buffer []byte) {
+func (this *Path) FillHeader(buffer []byte) {
 	codec.Uint32(2).EncodeToBuffer(buffer) // number of fields
 
 	offset := uint32(0)
@@ -41,7 +41,7 @@ func (this *Meta) FillHeader(buffer []byte) {
 	codec.Uint32(offset).EncodeToBuffer(buffer[codec.UINT32_LEN*2:])
 }
 
-func (this *Meta) EncodeToBuffer(buffer []byte, processors ...interface{}) int {
+func (this *Path) EncodeToBuffer(buffer []byte, processors ...interface{}) int {
 	this.FillHeader(buffer)
 	offset := int(this.HeaderSize())
 
@@ -51,9 +51,9 @@ func (this *Meta) EncodeToBuffer(buffer []byte, processors ...interface{}) int {
 	return int(offset)
 }
 
-func (this *Meta) Decode(buffer []byte) interface{} {
+func (this *Path) Decode(buffer []byte) interface{} {
 	buffers := codec.Byteset{}.Decode(buffer).(codec.Byteset)
-	this = &Meta{
+	this = &Path{
 		value: orderedset.NewOrderedSet([]string{}),
 		delta: NewMetaDelta(codec.Strings([]string{}).Decode(bytes.Clone(buffers[0])).(codec.Strings),
 			codec.Strings([]string{}).Decode(bytes.Clone(buffers[1])).(codec.Strings)),
@@ -64,16 +64,16 @@ func (this *Meta) Decode(buffer []byte) interface{} {
 	return this
 }
 
-func (this *Meta) EncodeCompact() []byte {
+func (this *Path) EncodeCompact() []byte {
 	byteset := [][]byte{
 		codec.Strings(this.value.Keys()).Encode(),
 	}
 	return codec.Byteset(byteset).Encode()
 }
 
-func (this *Meta) DecodeCompact(bytes []byte) interface{} {
+func (this *Path) DecodeCompact(bytes []byte) interface{} {
 	buffers := codec.Byteset{}.Decode(bytes).(codec.Byteset)
-	return &Meta{
+	return &Path{
 		value: orderedset.NewOrderedSet(codec.Strings([]string{}).Decode(buffers[0]).(codec.Strings)),
 		// addDict: orderedset.NewOrderedSet([]string{}),
 		// delDict: orderedset.NewOrderedSet([]string{}),
@@ -81,7 +81,7 @@ func (this *Meta) DecodeCompact(bytes []byte) interface{} {
 	}
 }
 
-func (this *Meta) Print() {
+func (this *Path) Print() {
 	// fmt.Println("Keys: ", this.committedKeys)
 	fmt.Println("Added: ", this.delta.addDict.Keys())
 	fmt.Println("Removed: ", this.delta.delDict.Keys())

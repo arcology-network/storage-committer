@@ -17,11 +17,11 @@ import (
 
 func TestNoncommutativeCodec(t *testing.T) {
 	/* Noncommutative Path Test*/
-	inPath := commutative.NewMeta()
+	inPath := commutative.NewPath()
 
-	pathBytes := inPath.(*commutative.Meta).Encode()
-	outPath := (&commutative.Meta{}).Decode(pathBytes)
-	inPath.(*commutative.Meta).Equal(outPath.(*commutative.Meta))
+	pathBytes := inPath.(*commutative.Path).Encode()
+	outPath := (&commutative.Path{}).Decode(pathBytes)
+	inPath.(*commutative.Path).Equal(outPath.(*commutative.Path))
 
 	/* Noncommutative String Test */
 	inStr := noncommutative.NewString("ctrn-0")

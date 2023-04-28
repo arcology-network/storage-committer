@@ -20,7 +20,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 
-	meta := commutative.NewMeta()
+	meta := commutative.NewPath()
 	url.Write(ccurlcommon.SYSTEM, ccurlcommon.NewPlatform().Eth10Account(), meta)
 	_, trans := url.Export(nil)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
@@ -61,7 +61,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 
-	meta := commutative.NewMeta()
+	meta := commutative.NewPath()
 	url.Write(ccurlcommon.SYSTEM, ccurlcommon.NewPlatform().Eth10Account(), meta)
 	_, trans := url.Export(nil)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
@@ -71,7 +71,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	url.Init(store)
 	alice := datacompression.RandomAccount()
 	url.CreateAccount(1, url.Platform.Eth10(), alice)                      // CreateAccount account structure {
-	path1 := commutative.NewMeta()                                         // create a path
+	path1 := commutative.NewPath()                                         // create a path
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path1) // create a path
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-1"))
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-1"))
@@ -79,7 +79,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 
 	url2 := ccurl.NewConcurrentUrl(store)
 	url2.CreateAccount(2, url.Platform.Eth10(), alice) // CreateAccount account structure {
-	path2 := commutative.NewMeta()                     // create a path
+	path2 := commutative.NewPath()                     // create a path
 	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path2)
 	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-2"))
 	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-2"))
@@ -101,7 +101,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 		t.Error(err)
 	}
 
-	// url.Write(ccurlcommon.SYSTEM, ccurlcommon.NewPlatform().Eth10Account(), commutative.NewMeta())
+	// url.Write(ccurlcommon.SYSTEM, ccurlcommon.NewPlatform().Eth10Account(), commutative.NewPath())
 	_, acctTrans := url.Export(indexer.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
@@ -109,14 +109,14 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	url.Init(store)
 
 	url.CreateAccount(1, url.Platform.Eth10(), alice)
-	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", commutative.NewMeta()) // create a path
+	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", commutative.NewPath()) // create a path
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-1"))
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-1"))
 	accesses1, transitions1 := url.Export(indexer.Sorter)
 
 	url2 := ccurl.NewConcurrentUrl(store)
 	url2.CreateAccount(2, url.Platform.Eth10(), alice) // CreateAccount account structure {
-	path2 := commutative.NewMeta()                     // create a path
+	path2 := commutative.NewPath()                     // create a path
 
 	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path2)
 	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-2"))
@@ -178,7 +178,7 @@ func BenchmarkSimpleArbitrator(b *testing.B) {
 	t0 := time.Now()
 	alice := datacompression.RandomAccount()
 	univalues := make([]ccurlcommon.UnivalueInterface, 5*200000)
-	v := commutative.NewMeta()
+	v := commutative.NewPath()
 	tx := make([]uint32, len(univalues)/5)
 	for i := 0; i < len(univalues)/5; i++ {
 		univalues[i*5] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)

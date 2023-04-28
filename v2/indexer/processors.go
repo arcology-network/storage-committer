@@ -23,7 +23,7 @@ func Bypasser(univals []ccurlcommon.UnivalueInterface, args interface{}) []ccurl
 	for i := 0; i < len(univals); i++ {
 		if platform.IsSysPath(*univals[i].GetPath()) && // Skip meta changes for the system path
 			univals[i].TypeID() == ccurlcommon.CommutativeMeta &&
-			univals[i].Writes() == 0 { // Meta CREATION and DELETION should pass!!!
+			univals[i].Writes() == 0 { // Path CREATION and DELETION should pass!!!
 			univals[i] = nil
 		}
 	}

@@ -8,54 +8,54 @@ import (
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 )
 
-type Meta struct {
+type Path struct {
 	value *orderedset.OrderedSet // committed keys + added - removed
 	delta *MetaDelta
 }
 
-func NewMeta() interface{} {
-	this := &Meta{
+func NewPath() interface{} {
+	this := &Path{
 		value: orderedset.NewOrderedSet([]string{}),
 		delta: NewMetaDelta([]string{}, []string{}),
 	}
 	return this
 }
 
-func (this *Meta) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
+func (this *Path) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
 	return v, 0, 1, 0
 }
 
-func (this *Meta) View() *orderedset.OrderedSet { return this.value }
-func (this *Meta) IsSelf(key interface{}) bool  { return ccurlcommon.IsPath(key.(string)) }
-func (this *Meta) TypeID() uint8                { return ccurlcommon.CommutativeMeta }
-func (this *Meta) CommittedLength() int         { return len(this.value.Keys()) }
-func (this *Meta) Length() int {
+func (this *Path) View() *orderedset.OrderedSet { return this.value }
+func (this *Path) IsSelf(key interface{}) bool  { return ccurlcommon.IsPath(key.(string)) }
+func (this *Path) TypeID() uint8                { return ccurlcommon.CommutativeMeta }
+func (this *Path) CommittedLength() int         { return len(this.value.Keys()) }
+func (this *Path) Length() int {
 	return int(this.value.Len())
 }
 
 // For linear access
-// func (this *Meta) At(idx uint64) {}
+// func (this *Path) At(idx uint64) {}
 
-func (this *Meta) Deepcopy() interface{} {
-	meta := &Meta{
+func (this *Path) Deepcopy() interface{} {
+	meta := &Path{
 		value: this.value.Clone(),
 		delta: this.delta.Clone(),
 	}
 	return meta
 }
 
-func (this *Meta) Equal(other interface{}) bool {
-	return this.value.Equal(other.(*Meta).value) && this.delta.Equal(other.(*Meta).delta)
+func (this *Path) Equal(other interface{}) bool {
+	return this.value.Equal(other.(*Path).value) && this.delta.Equal(other.(*Path).delta)
 }
 
-func (this *Meta) Get() (interface{}, uint32, uint32) {
+func (this *Path) Get() (interface{}, uint32, uint32) {
 	return this.value.Keys(), 1, common.IfThen(!this.value.Touched(), uint32(0), uint32(1))
 }
 
-// func (this *Meta) Value() interface{} { return this.value.Keys() }
-func (this *Meta) Delta() interface{} { return this.delta }
+// func (this *Path) Value() interface{} { return this.value.Keys() }
+func (this *Path) Delta() interface{} { return this.delta }
 
-func (this *Meta) ApplyDelta(v interface{}) ccurlcommon.TypeInterface { // Apply the transitions to the original value
+func (this *Path) ApplyDelta(v interface{}) ccurlcommon.TypeInterface { // Apply the transitions to the original value
 	keys := append(this.value.Keys(), this.delta.addDict.Keys()...) // The value should only contain committed keys
 	toRemove := this.delta.delDict.Keys()
 	univals := v.([]ccurlcommon.UnivalueInterface)
@@ -72,8 +72,8 @@ func (this *Meta) ApplyDelta(v interface{}) ccurlcommon.TypeInterface { // Apply
 			continue
 		}
 
-		keys = append(keys, delta.(*Meta).PeekAdded()...)
-		toRemove = append(toRemove, delta.(*Meta).PeekRemoved()...)
+		keys = append(keys, delta.(*Path).PeekAdded()...)
+		toRemove = append(toRemove, delta.(*Path).PeekRemoved()...)
 	}
 
 	if this != nil {
@@ -109,7 +109,7 @@ func (this *Meta) ApplyDelta(v interface{}) ccurlcommon.TypeInterface { // Apply
 }
 
 // Write and afflicated operations
-func (this *Meta) Set(value interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
+func (this *Path) Set(value interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
 	targetPath := source.([]interface{})[0].(string)
 	myPath := source.([]interface{})[1].(string)
 	tx := source.([]interface{})[2].(uint32)
@@ -146,32 +146,32 @@ func (this *Meta) Set(value interface{}, source interface{}) (interface{}, uint3
 }
 
 // data cleaning before saving to storage
-func (this *Meta) Purge() {
+func (this *Path) Purge() {
 	this.value = orderedset.NewOrderedSet([]string{})
 	this.delta = NewMetaDelta([]string{}, []string{})
 }
 
-func (this *Meta) Hash(hasher func([]byte) []byte) []byte {
+func (this *Path) Hash(hasher func([]byte) []byte) []byte {
 	return hasher(this.EncodeCompact())
 }
 
 // Peek the removed keys
 
-func (this *Meta) PeekValue() []string { return this.value.Keys() }
+func (this *Path) PeekValue() []string { return this.value.Keys() }
 
-func (this *Meta) PeekAdded() []string { // Check new keys
+func (this *Path) PeekAdded() []string { // Check new keys
 	if this.delta.addDict == nil {
 		return []string{}
 	}
 	return this.delta.addDict.Keys()
 }
 
-func (this *Meta) PeekRemoved() []string {
+func (this *Path) PeekRemoved() []string {
 	if this.delta.addDict == nil {
 		return []string{}
 	}
 	return this.delta.delDict.Keys()
 }
-func (this *Meta) SetSubDirs(keys []string) { this.value = orderedset.NewOrderedSet(keys) }
-func (this *Meta) SetAdded(keys []string)   { this.delta.addDict = orderedset.NewOrderedSet(keys) }
-func (this *Meta) SetRemoved(keys []string) { this.delta.delDict = orderedset.NewOrderedSet(keys) }
+func (this *Path) SetSubDirs(keys []string) { this.value = orderedset.NewOrderedSet(keys) }
+func (this *Path) SetAdded(keys []string)   { this.delta.addDict = orderedset.NewOrderedSet(keys) }
+func (this *Path) SetRemoved(keys []string) { this.delta.delDict = orderedset.NewOrderedSet(keys) }

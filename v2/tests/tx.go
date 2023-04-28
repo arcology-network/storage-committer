@@ -14,7 +14,7 @@ import (
 
 func SimulatedTx0(account string, store *cachedstorage.DataStore) ([]byte, error) {
 	url := ccurl.NewConcurrentUrl(store)
-	path := commutative.NewMeta() // create a path
+	path := commutative.NewPath() // create a path
 	if err := url.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", path); err != nil {
 		return []byte{}, err
 	}
@@ -33,7 +33,7 @@ func SimulatedTx0(account string, store *cachedstorage.DataStore) ([]byte, error
 
 func SimulatedTx1(account string, store *cachedstorage.DataStore) ([]byte, error) {
 	url := ccurl.NewConcurrentUrl(store)
-	path := commutative.NewMeta() // create a path
+	path := commutative.NewPath() // create a path
 	if err := url.Write(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/", path); err != nil {
 		return []byte{}, err
 	}
@@ -75,18 +75,18 @@ func CheckPaths(account string, url *ccurl.ConcurrentUrl) error {
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/")
 	keys := v.([]string)
 	if !reflect.DeepEqual(keys, []string{"elem-00", "elem-01"}) {
-		return errors.New("Error: Meta don't match !")
+		return errors.New("Error: Path don't match !")
 	}
 
 	// Read the path again
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/")
 	if !reflect.DeepEqual(v.([]string), []string{"elem-00", "elem-01"}) {
-		return errors.New("Error: Meta don't match !")
+		return errors.New("Error: Path don't match !")
 	}
 
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/")
 	if !reflect.DeepEqual(v.([]string), []string{"elem-00", "elem-01"}) {
-		return errors.New("Error: Meta don't match !")
+		return errors.New("Error: Path don't match !")
 	}
 	return nil
 }

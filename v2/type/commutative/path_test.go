@@ -10,8 +10,8 @@ import (
 func TestMeta(t *testing.T) {
 	/* Noncommutative Path Test*/
 
-	meta := NewMeta()
-	inPath := meta.(*Meta)
+	meta := NewPath()
+	inPath := meta.(*Path)
 
 	inPath.SetSubDirs([]string{"e-01", "e-001", "e-002", "e-002"})
 	inPath.SetAdded([]string{"+01", "+001", "+002", "+002"})
@@ -36,14 +36,14 @@ func TestMeta(t *testing.T) {
 
 func TestCodecPathMeta(t *testing.T) {
 	// /* Commutative Int64 Test */
-	in := NewMeta()
+	in := NewPath()
 
-	in.(*Meta).SetSubDirs([]string{"e-01", "e-001", "e-002", "e-002"})
-	in.(*Meta).SetAdded([]string{"+01", "+001", "+002", "+002"})
-	in.(*Meta).SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
+	in.(*Path).SetSubDirs([]string{"e-01", "e-001", "e-002", "e-002"})
+	in.(*Path).SetAdded([]string{"+01", "+001", "+002", "+002"})
+	in.(*Path).SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
 
-	buffer := in.(*Meta).Encode()
-	out := (&Meta{}).Decode(buffer).(*Meta)
+	buffer := in.(*Path).Encode()
+	out := (&Path{}).Decode(buffer).(*Path)
 
 	if common.EqualArray(out.PeekValue(), []string{"e-01", "e-001", "e-002", "e-002"}) {
 		t.Error("Error: Should have gone!")

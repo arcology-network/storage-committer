@@ -29,7 +29,7 @@ func TestAddAndDelete(t *testing.T) {
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Init(store)
-	path := commutative.NewMeta()
+	path := commutative.NewPath()
 	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
 
 	_, acctTrans = url.Export(indexer.Sorter)
@@ -61,7 +61,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 
 	url.Init(store)
 	// create a path
-	path := commutative.NewMeta()
+	path := commutative.NewPath()
 	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
 	_, addPath := url.Export(indexer.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(addPath).Encode()).(univalue.Univalues))
@@ -116,7 +116,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Init(store)
-	path := commutative.NewMeta()
+	path := commutative.NewPath()
 	err := url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/containers/ctrn-0/", path)
 
 	if err != nil {
@@ -156,7 +156,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 
 	url.Init(store)
 	// create a path
-	path := commutative.NewMeta()
+	path := commutative.NewPath()
 	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
 	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewString("1"))
 	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/2", noncommutative.NewString("2"))
@@ -224,7 +224,7 @@ func TestStateUpdate(t *testing.T) {
 	}
 
 	v, _ := url.Read(9, "blcc://eth1.0/account/"+alice+"/storage/") //system doesn't generate sub paths for /storage/
-	// if v.(*commutative.Meta).CommittedLength() != 2 {
+	// if v.(*commutative.Path).CommittedLength() != 2 {
 	// 	t.Error("Error: Wrong sub paths")
 	// }
 
@@ -426,7 +426,7 @@ func TestAccessControl(t *testing.T) {
 	}
 
 	/* Storage */
-	meta := commutative.NewMeta()
+	meta := commutative.NewPath()
 	// err = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/", meta)
 	// if err == nil {
 	// 	t.Error("Error: Users shouldn't be able to change the storage path !")

@@ -93,7 +93,7 @@ func (this *ConcurrentUrl) CreateAccount(tx uint32, platform string, acct string
 		var v interface{}
 		switch typeids[i] {
 		case ccurlcommon.CommutativeMeta: // Path
-			v = commutative.NewMeta()
+			v = commutative.NewPath()
 
 		case uint8(reflect.Kind(ccurlcommon.NoncommutativeString)): // delta big int
 			v = noncommutative.NewString("")
@@ -151,7 +151,7 @@ func (this *ConcurrentUrl) at(tx uint32, path string, idx uint64) (interface{}, 
 		return nil, err
 	}
 
-	key, ok := meta.(*commutative.Meta).View().KeyOf(idx)
+	key, ok := meta.(*commutative.Path).View().KeyOf(idx)
 	if key == nil || !ok {
 		return nil, errors.New("Error: The element wasn't found!!!")
 	}
@@ -179,8 +179,8 @@ func (this *ConcurrentUrl) PopBack(tx uint32, path string) (interface{}, error) 
 		return nil, err
 	}
 
-	if length := meta.(*commutative.Meta).View().Len(); length > 0 {
-		if key, ok := meta.(*commutative.Meta).View().KeyOf(length - 1); ok {
+	if length := meta.(*commutative.Path).View().Len(); length > 0 {
+		if key, ok := meta.(*commutative.Path).View().KeyOf(length - 1); ok {
 			value, err := this.Read(tx, path+key.(string))
 			if value == nil || err != nil {
 				return value, err

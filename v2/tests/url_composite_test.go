@@ -31,7 +31,7 @@ func TestAuxTrans(t *testing.T) {
 
 	url.Init(store)
 	// create a path
-	path := commutative.NewMeta()
+	path := commutative.NewPath()
 
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		t.Error(err)
@@ -82,7 +82,7 @@ func TestAuxTrans(t *testing.T) {
 	}
 
 	_, transitions := url.Export(indexer.Sorter)
-	if !reflect.DeepEqual(transitions[0].Value().(*commutative.Meta).PeekAdded(), []string{"elem-000"}) {
+	if !reflect.DeepEqual(transitions[0].Value().(*commutative.Path).PeekAdded(), []string{"elem-000"}) {
 		t.Error("keys don't match")
 	}
 
@@ -119,7 +119,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	url.Commit([]uint32{1}) // Commit
 
 	url.Init(store)
-	path := commutative.NewMeta()
+	path := commutative.NewPath()
 	if url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path) != nil {
 		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/") // create a path
 	}

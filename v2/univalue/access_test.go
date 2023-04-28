@@ -11,7 +11,7 @@ func TestUnimetaCodecUint64(t *testing.T) {
 	/* Commutative Int64 Test */
 	alice := datacompression.RandomAccount()
 
-	// meta:= commutative.NewMeta()
+	// meta:= commutative.NewPath()
 	u256 := commutative.NewUint64(0, 100)
 	in := NewUnimeta(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, u256)
 	in.reads = 1

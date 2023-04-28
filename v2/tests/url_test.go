@@ -62,7 +62,7 @@ func TestAddThenDeletePath(t *testing.T) {
 
 	url.Init(store)
 	// create a path
-	path := commutative.NewMeta()
+	path := commutative.NewPath()
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		t.Error(err)
 	}
@@ -107,7 +107,7 @@ func TestBasic(t *testing.T) {
 
 	url.Init(store)
 	// create a path
-	path := commutative.NewMeta()
+	path := commutative.NewPath()
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		t.Error(err)
 	}
@@ -164,7 +164,7 @@ func TestBasic(t *testing.T) {
 
 	_, transitions := url.Export(indexer.Sorter)
 
-	if !reflect.DeepEqual(transitions[0].Value().(*commutative.Meta).PeekAdded(), []string{"elem-000", "elem-111"}) {
+	if !reflect.DeepEqual(transitions[0].Value().(*commutative.Path).PeekAdded(), []string{"elem-000", "elem-111"}) {
 		t.Error("Error: keys are missing from the added buffer!")
 	}
 
@@ -207,7 +207,7 @@ func TestPathAddThenDelete(t *testing.T) {
 	url.Init(store)
 	// create a path
 
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.NewMeta()); err != nil {
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.NewPath()); err != nil {
 		t.Error(err)
 	}
 
@@ -242,7 +242,7 @@ func TestPathAddThenDelete(t *testing.T) {
 	}
 
 	// Write an entry having the the same name of a path, should go through
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.NewMeta()); err != nil {
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.NewPath()); err != nil {
 		t.Error(err)
 	}
 
@@ -286,7 +286,7 @@ func TestUrl1(t *testing.T) {
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Init(store)
-	path := commutative.NewMeta()
+	path := commutative.NewPath()
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		t.Error(err)
 	}
@@ -346,7 +346,7 @@ func TestUrl1(t *testing.T) {
 		t.Error("Error: keys don't match")
 	}
 
-	if !reflect.DeepEqual(ccurlcommon.SortString(transitions[1].Value().(*commutative.Meta).PeekAdded()), []string{"elem-000", "elem-001", "elem-002"}) {
+	if !reflect.DeepEqual(ccurlcommon.SortString(transitions[1].Value().(*commutative.Path).PeekAdded()), []string{"elem-000", "elem-001", "elem-002"}) {
 		t.Error("Error: keys don't match")
 	}
 
@@ -370,7 +370,7 @@ func TestUrl2(t *testing.T) {
 
 	url.Init(store)
 	// Create a new container
-	path := commutative.NewMeta()
+	path := commutative.NewPath()
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		t.Error(err, "Error:  Failed to MakePath: "+"/ctrn-0/")
 	}
@@ -542,7 +542,7 @@ func TestUnivaluesBatchCodec(t *testing.T) {
 		t.Error(err)
 	}
 
-	// path := commutative.NewMeta()
+	// path := commutative.NewPath()
 	// if err != nil {
 	// 	t.Error("Error: Failed to create the path")
 	// }
@@ -585,7 +585,7 @@ func TestCommutative(t *testing.T) {
 	}
 
 	// create a path
-	path := commutative.NewMeta()
+	path := commutative.NewPath()
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		t.Error(err, " Failed to MakePath: blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
 	}
@@ -685,14 +685,14 @@ func TestNestedPath(t *testing.T) {
 	}
 
 	// create a path
-	path := commutative.NewMeta()
+	path := commutative.NewPath()
 
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		t.Error(err)
 	}
 
 	// create a sub path
-	path = commutative.NewMeta()
+	path = commutative.NewPath()
 
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/ctrn-00/", path); err != nil {
 		t.Error(err)
@@ -777,7 +777,7 @@ func TestMetaEncodeSelector(t *testing.T) {
 		t.Error(err)
 	}
 
-	path := commutative.NewMeta() // create a path
+	path := commutative.NewPath() // create a path
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		t.Error(err)
 	}
