@@ -1,5 +1,10 @@
 package common
 
+import (
+	"bytes"
+	"sort"
+)
+
 type TransitionInterface interface { // value type
 	Added() interface{}
 	Removed() interface{}
@@ -9,7 +14,8 @@ type TypeInterface interface { // value type
 	TypeID() uint8
 	Equal(interface{}) bool
 	Deepcopy() interface{}
-	// Value() interface{}
+
+	//Value() interface{} // Get() - read/write count
 	Delta() interface{}
 
 	Get() (interface{}, uint32, uint32)
@@ -18,8 +24,8 @@ type TypeInterface interface { // value type
 	ApplyDelta(interface{}) TypeInterface
 	IsSelf(interface{}) bool
 	Hash(func([]byte) []byte) []byte
-	Encode(...interface{}) []byte
-	EncodeToBuffer([]byte, ...interface{}) int
+	Encode() []byte
+	EncodeToBuffer([]byte) int
 	Decode([]byte) interface{}
 	Size() uint32
 	EncodeCompact() []byte
@@ -33,6 +39,8 @@ type UnivalueInterface interface { // value type
 	Reads() uint32
 	Writes() uint32
 	DeltaWrites() uint32
+
+	Meta() interface{}
 
 	IncrementReads(uint32)
 	IncrementWrites(uint32)
@@ -53,8 +61,9 @@ type UnivalueInterface interface { // value type
 	Deepcopy() interface{}
 	// Export(interface{}) (interface{}, interface{})
 	GetEncoded() []byte
-	Encode(...interface{}) []byte
-	EncodeToBuffer([]byte, ...interface{}) int
+	Size() uint32
+	Encode() []byte
+	EncodeToBuffer([]byte) int
 	Decode([]byte) interface{}
 	ClearCache()
 
@@ -97,3 +106,12 @@ type DatastoreInterface interface {
 }
 
 type Hasher func(TypeInterface) []byte
+
+func Sorter(univals []UnivalueInterface) interface{} {
+	sort.SliceStable(univals, func(i, j int) bool {
+		lhs := (*(univals[i].GetPath()))
+		rhs := (*(univals[j].GetPath()))
+		return bytes.Compare([]byte(lhs)[:], []byte(rhs)[:]) < 0
+	})
+	return univals
+}

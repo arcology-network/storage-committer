@@ -41,7 +41,7 @@ func NewU256(value, min, max *uint256.Int) interface{} {
 }
 
 func (this *U256) IsSelf(key interface{}) bool { return true }
-func (this *U256) TypeID() uint8               { return ccurlcommon.CommutativeUint256 }
+func (this *U256) TypeID() uint8               { return ccurlcommon.Commutative{}.Uint256() }
 func (this *U256) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
 	return v, 0, 1, 0
 }

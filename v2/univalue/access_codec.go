@@ -7,7 +7,7 @@ import (
 	codec "github.com/arcology-network/common-lib/codec"
 )
 
-func (this *Unimeta) Encode(processors ...interface{}) []byte {
+func (this *Unimeta) Encode() []byte {
 	buffer := make([]byte, this.Size())
 	this.EncodeToBuffer(buffer)
 	return buffer
@@ -43,7 +43,7 @@ func (this *Unimeta) FillHeader(buffer []byte) int {
 	)
 }
 
-func (this *Unimeta) EncodeToBuffer(buffer []byte, processors ...interface{}) int {
+func (this *Unimeta) EncodeToBuffer(buffer []byte) int {
 	offset := this.FillHeader(buffer)
 	offset += codec.Uint8(this.vType).EncodeToBuffer(buffer[offset:])
 	offset += codec.Uint32(this.tx).EncodeToBuffer(buffer[offset:])

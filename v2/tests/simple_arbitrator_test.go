@@ -31,11 +31,11 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	alice := datacompression.RandomAccount()
 	url.Init(store)
 	url.CreateAccount(1, url.Platform.Eth10(), alice) // CreateAccount account structure {
-	accesses1, transitions1 := url.Export(indexer.Sorter)
+	accesses1, transitions1 := url.Export(ccurlcommon.Sorter)
 
 	url2 := ccurl.NewConcurrentUrl(store)
 	url2.CreateAccount(2, url.Platform.Eth10(), "bob") // CreateAccount account structure {
-	accesses2, transitions2 := url2.Export(indexer.Sorter)
+	accesses2, transitions2 := url2.Export(ccurlcommon.Sorter)
 
 	arib := indexer.NewArbitratorSlow()
 
@@ -75,7 +75,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path1) // create a path
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-1"))
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-1"))
-	accesses1, _ := url.Export(indexer.Sorter)
+	accesses1, _ := url.Export(ccurlcommon.Sorter)
 
 	url2 := ccurl.NewConcurrentUrl(store)
 	url2.CreateAccount(2, url.Platform.Eth10(), alice) // CreateAccount account structure {
@@ -83,7 +83,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path2)
 	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-2"))
 	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-2"))
-	accesses2, _ := url2.Export(indexer.Sorter)
+	accesses2, _ := url2.Export(ccurlcommon.Sorter)
 
 	arib := indexer.NewArbitratorSlow()
 	_, conflictTx := arib.Detect(append(accesses1, accesses2...))
@@ -102,7 +102,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	}
 
 	// url.Write(ccurlcommon.SYSTEM, ccurlcommon.NewPlatform().Eth10Account(), commutative.NewPath())
-	_, acctTrans := url.Export(indexer.Sorter)
+	_, acctTrans := url.Export(ccurlcommon.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -112,7 +112,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", commutative.NewPath()) // create a path
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-1"))
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-1"))
-	accesses1, transitions1 := url.Export(indexer.Sorter)
+	accesses1, transitions1 := url.Export(ccurlcommon.Sorter)
 
 	url2 := ccurl.NewConcurrentUrl(store)
 	url2.CreateAccount(2, url.Platform.Eth10(), alice) // CreateAccount account structure {
@@ -121,7 +121,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path2)
 	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-2"))
 	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-2"))
-	accesses2, transitions2 := url2.Export(indexer.Sorter)
+	accesses2, transitions2 := url2.Export(ccurlcommon.Sorter)
 
 	aribi := indexer.NewArbitratorSlow()
 	// indexer.HashPaths(accesses1)
@@ -143,13 +143,13 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	if err := url3.Write(3, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("url3-1-by-tx-3")); err != nil {
 		t.Error(err)
 	}
-	accesses3, transitions3 := url3.Export(indexer.Sorter)
+	accesses3, transitions3 := url3.Export(ccurlcommon.Sorter)
 
 	url4 := ccurl.NewConcurrentUrl(store)
 	if err := url4.Write(4, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("url4-1-by-tx-3")); err != nil {
 		t.Error(err)
 	}
-	accesses4, transitions4 := url4.Export(indexer.Sorter)
+	accesses4, transitions4 := url4.Export(ccurlcommon.Sorter)
 
 	aribi = indexer.NewArbitratorSlow()
 	_, conflictTx = aribi.Detect(append(accesses3, accesses4...))

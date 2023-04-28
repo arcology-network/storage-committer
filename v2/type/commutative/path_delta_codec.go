@@ -5,7 +5,7 @@ import (
 	orderedset "github.com/arcology-network/common-lib/container/set"
 )
 
-func (this *PathDelta) Encode(processors ...interface{}) []byte {
+func (this *PathDelta) Encode() []byte {
 	buffer := make([]byte, this.Size()) //  no need to send the committed keys
 	this.EncodeToBuffer(buffer)
 	return buffer
@@ -15,7 +15,7 @@ func (this *PathDelta) Size() uint32 {
 	return codec.Stringset([][]string{this.addDict.Keys(), this.delDict.Keys()}).Size()
 }
 
-func (this *PathDelta) EncodeToBuffer(buffer []byte, processors ...interface{}) int {
+func (this *PathDelta) EncodeToBuffer(buffer []byte) int {
 	return codec.Stringset([][]string{this.addDict.Keys(), this.delDict.Keys()}).EncodeToBuffer(buffer)
 }
 

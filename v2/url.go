@@ -9,6 +9,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	"github.com/holiman/uint256"
 
@@ -92,22 +93,22 @@ func (this *ConcurrentUrl) CreateAccount(tx uint32, platform string, acct string
 	for i, path := range paths {
 		var v interface{}
 		switch typeids[i] {
-		case ccurlcommon.CommutativeMeta: // Path
+		case ccurlcommon.Commutative{}.Path(): // Path
 			v = commutative.NewPath()
 
-		case uint8(reflect.Kind(ccurlcommon.NoncommutativeString)): // delta big int
+		case uint8(reflect.Kind(ccurlcommon.NonCommutative{}.String())): // delta big int
 			v = noncommutative.NewString("")
 
-		case uint8(reflect.Kind(ccurlcommon.CommutativeUint256)): // delta big int
+		case uint8(reflect.Kind(ccurlcommon.Commutative{}.Uint256())): // delta big int
 			v = commutative.NewU256(uint256.NewInt(0), commutative.U256MIN, commutative.U256MAX)
 
-		case uint8(reflect.Kind(ccurlcommon.CommutativeUint64)):
+		case uint8(reflect.Kind(ccurlcommon.Commutative{}.Uint64())):
 			v = commutative.NewUint64(0, math.MaxUint64)
 
-		case uint8(reflect.Kind(ccurlcommon.NoncommutativeInt64)):
+		case uint8(reflect.Kind(ccurlcommon.NonCommutative{}.Int64())):
 			v = noncommutative.NewInt64(0)
 
-		case uint8(reflect.Kind(ccurlcommon.NoncommutativeBytes)):
+		case uint8(reflect.Kind(ccurlcommon.NonCommutative{}.Bytes())):
 			v = noncommutative.NewBytes([]byte{})
 		}
 
@@ -349,51 +350,57 @@ func (this *ConcurrentUrl) AllInOneCommit(transitions []ccurlcommon.UnivalueInte
 func (this *ConcurrentUrl) Export(sorter func([]ccurlcommon.UnivalueInterface) interface{}) ([]ccurlcommon.UnivalueInterface, []ccurlcommon.UnivalueInterface) {
 	this.indexer.Vectorize(this.indexer.Buffer(), &this.buffer, false) // Export records
 	if sorter != nil {                                                 // Sort by path, debug only
-		indexer.Sorter(this.buffer)
+		ccurlcommon.Sorter(this.buffer)
 	}
 
-	this.accesseBuf = indexer.FilterAccesses(this.buffer, this.Platform)
-	this.transitBuf = indexer.FilterTransitions(this.buffer, this.Platform)
+	this.transitBuf = common.Clone(this.buffer)
+	common.RemoveIf(&this.transitBuf,
+		TransitionFilter{}.ReadOnly,
+		TransitionFilter{}.DelNonExist,
+	)
+
+	common.CastTo(this.transitBuf, func(v ccurlcommon.UnivalueInterface) codec.Encodeable {
+		return common.IfThenDo1st(
+			v.Value() != nil &&
+				v.DeltaWrites() > 0 &&
+				v.Reads() == 0 &&
+				v.Writes() == 0 &&
+				v.TypeID() != commutative.PathID,
+			func() codec.Encodeable { return v.Value().(codec.Encodeable) },
+			v.Meta().(codec.Encodeable))
+	})
+
+	this.accesseBuf = this.buffer
 	return this.accesseBuf, this.transitBuf
 }
 
-func (this *ConcurrentUrl) Export2(sorter func([]ccurlcommon.UnivalueInterface) interface{}) ([]ccurlcommon.UnivalueInterface, []ccurlcommon.UnivalueInterface) {
+func (this *ConcurrentUrl) Export2(sorter func([]ccurlcommon.UnivalueInterface) interface{}) ([]codec.Encodeable, []codec.Encodeable) {
 	this.indexer.Vectorize(this.indexer.Buffer(), &this.buffer, false) // Export records
 	if sorter != nil {                                                 // Sort by path, debug only
-		indexer.Sorter(this.buffer)
+		ccurlcommon.Sorter(this.buffer)
 	}
 
-	for i := 0; i < len(this.buffer); i++ {
-		if this.buffer[i].IsReadOnly() {
-			this.buffer[i] = nil // Clear read-only records
-		}
-	}
+	accesseBuf := common.CastTo(this.buffer, func(v ccurlcommon.UnivalueInterface) codec.Encodeable {
+		return common.IfThenDo1st(
+			v.Value() != nil &&
+				v.DeltaWrites() > 0 &&
+				v.Reads() == 0 &&
+				v.Writes() == 0 &&
+				v.TypeID() != commutative.PathID,
+			func() codec.Encodeable { return v.Value().(codec.Encodeable) },
+			v.Meta().(codec.Encodeable))
+	})
 
-	// this.accesseBuf = indexer.FilterAccesses(this.buffer, this.Platform)
-	// this.transitBuf = indexer.FilterTransitions(this.buffer, this.Platform)
-	return this.accesseBuf, this.transitBuf
+	transits := common.CastTo(
+		common.RemoveIf(&this.buffer, TransitionFilter{}.ReadOnly, TransitionFilter{}.DelNonExist),
+		func(v ccurlcommon.UnivalueInterface) codec.Encodeable {
+			return v.(codec.Encodeable)
+		})
+
+	return accesseBuf, transits
 }
 
 type PostProcessFunc func(accesses, transitions []ccurlcommon.UnivalueInterface) ([]ccurlcommon.UnivalueInterface, []ccurlcommon.UnivalueInterface)
-
-func (this *ConcurrentUrl) ExportEncoded(ppf PostProcessFunc) ([][]byte, [][]byte) {
-	records, transitions := this.Export(nil)
-	if ppf != nil {
-		records, transitions = ppf(records, transitions)
-	}
-
-	recordsBytes := make([][]byte, len(records))
-	for i := 0; i < len(records); i++ {
-		recordsBytes[i] = records[i].Encode()
-	}
-
-	transBytes := make([][]byte, len(transitions))
-	for i := 0; i < len(transitions); i++ {
-		transBytes[i] = transitions[i].Encode()
-	}
-
-	return recordsBytes, transBytes
-}
 
 func (this *ConcurrentUrl) Print() {
 	this.indexer.Print()

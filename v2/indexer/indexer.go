@@ -236,7 +236,7 @@ func (this *Indexer) SortTransitions() {
 			// 	typeValue = deltaSeq.(*DeltaSequence).values[0]
 			// }
 
-			// if typeValue.Value().(ccurlcommon.TypeInterface).TypeID() == ccurlcommon.CommutativeMeta {
+			// if typeValue.Value().(ccurlcommon.TypeInterface).TypeID() == ccurlcommon.Commutative{}.Path() {
 			deltaSeq.(*DeltaSequence).Sort() // Sort the transitions in the sequence
 			// }
 		}

@@ -17,13 +17,13 @@ func (this *U256) Size() uint32 {
 		1 // delta Possitive
 }
 
-func (this *U256) Encode(processors ...interface{}) []byte {
+func (this *U256) Encode() []byte {
 	buffer := make([]byte, this.Size())
 	this.EncodeToBuffer(buffer)
 	return buffer
 }
 
-func (this *U256) EncodeToBuffer(buffer []byte, processors ...interface{}) int {
+func (this *U256) EncodeToBuffer(buffer []byte) int {
 	offset := codec.Uint64s(this.value[:]).EncodeToBuffer(buffer)
 	offset += codec.Uint64s(this.min[:]).EncodeToBuffer(buffer[offset:])
 	offset += codec.Uint64s(this.max[:]).EncodeToBuffer(buffer[offset:])

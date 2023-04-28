@@ -8,10 +8,10 @@ import (
 	"unsafe"
 
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
+	"github.com/arcology-network/common-lib/codec"
 	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl/v2"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
-	indexer "github.com/arcology-network/concurrenturl/v2/indexer"
 
 	// univalue "github.com/arcology-network/concurrenturl/v2/type"
 	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
@@ -29,7 +29,8 @@ func TestSize(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, acctTrans := url.Export(indexer.Sorter)
+	_, acctTrans := url.Export(ccurlcommon.Sorter)
+
 	buf := univalue.Univalues(acctTrans).Encode()
 	url.Import(univalue.Univalues{}.Decode(buf).(univalue.Univalues))
 
@@ -53,7 +54,7 @@ func TestAddThenDeletePath(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, acctTrans := url.Export(indexer.Sorter)
+	_, acctTrans := url.Export(ccurlcommon.Sorter)
 
 	//values := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).([]ccurlcommon.UnivalueInterface)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
@@ -67,7 +68,7 @@ func TestAddThenDeletePath(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, transitions := url.Export(indexer.Sorter)
+	_, transitions := url.Export(ccurlcommon.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{1})
@@ -82,7 +83,7 @@ func TestAddThenDeletePath(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, acctTrans = url.Export(indexer.Sorter)
+	_, acctTrans = url.Export(ccurlcommon.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{1})
@@ -90,6 +91,56 @@ func TestAddThenDeletePath(t *testing.T) {
 	// if v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/"); v != nil {
 	// 	t.Error("Error: The path should have been deleted")
 	// }
+}
+
+func TestAddThenDeletePath2(t *testing.T) {
+	// compressionLut := datacompression.NewCompressionLut()
+	store := cachedstorage.NewDataStore()
+	alice := datacompression.RandomAccount()
+	url := ccurl.NewConcurrentUrl(store)
+	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // CreateAccount account structure {
+		t.Error(err)
+	}
+
+	_, trans := url.Export2(ccurlcommon.Sorter)
+	acctTrans := (&univalue.Univalues{}).Decode(codec.Encodeables(trans).Encode()).(univalue.Univalues)
+
+	//values := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).([]ccurlcommon.UnivalueInterface)
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
+	url.PostImport()
+	url.Commit([]uint32{ccurlcommon.SYSTEM})
+
+	url.Init(store)
+	// create a path
+	path := commutative.NewPath()
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
+		t.Error(err)
+	}
+
+	_, transitions := url.Export2(ccurlcommon.Sorter)
+	url.Import((&univalue.Univalues{}).Decode(codec.Encodeables(transitions).Encode()).(univalue.Univalues))
+
+	url.PostImport()
+	url.Commit([]uint32{1})
+
+	v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
+	if v == nil {
+		t.Error("Error: The path should exists")
+	}
+
+	url.Init(store)
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil); err != nil { // Delete the path
+		t.Error(err)
+	}
+
+	_, trans = url.Export2(ccurlcommon.Sorter)
+	url.Import((&univalue.Univalues{}).Decode(codec.Encodeables(trans).Encode()).(univalue.Univalues))
+	url.PostImport()
+	url.Commit([]uint32{1})
+
+	if v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/"); v != nil {
+		t.Error("Error: The path should have been deleted")
+	}
 }
 
 func TestBasic(t *testing.T) {
@@ -100,7 +151,7 @@ func TestBasic(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, acctTrans := url.Export(indexer.Sorter)
+	_, acctTrans := url.Export(ccurlcommon.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -162,7 +213,7 @@ func TestBasic(t *testing.T) {
 		}
 	}
 
-	_, transitions := url.Export(indexer.Sorter)
+	_, transitions := url.Export(ccurlcommon.Sorter)
 
 	if !reflect.DeepEqual(transitions[0].Value().(*commutative.Path).PeekAdded(), []string{"elem-000", "elem-111"}) {
 		t.Error("Error: keys are missing from the added buffer!")
@@ -198,7 +249,7 @@ func TestPathAddThenDelete(t *testing.T) {
 		fmt.Println(err)
 	}
 
-	_, acctTrans := url.Export(indexer.Sorter)
+	_, acctTrans := url.Export(ccurlcommon.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	url.PostImport()
@@ -279,7 +330,7 @@ func TestUrl1(t *testing.T) {
 		fmt.Println(err)
 	}
 
-	_, acctTrans := url.Export(indexer.Sorter)
+	_, acctTrans := url.Export(ccurlcommon.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	url.PostImport()
@@ -341,7 +392,7 @@ func TestUrl1(t *testing.T) {
 	}
 
 	// Export all access records and state transitions
-	_, transitions := url.Export(indexer.Sorter)
+	_, transitions := url.Export(ccurlcommon.Sorter)
 	if (*transitions[0].Value().(*noncommutative.String)) != "ctrn-0" {
 		t.Error("Error: keys don't match")
 	}
@@ -363,7 +414,7 @@ func TestUrl2(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, acctTrans := url.Export(indexer.Sorter)
+	_, acctTrans := url.Export(ccurlcommon.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -500,7 +551,7 @@ func TestUrl2(t *testing.T) {
 	}
 
 	/*  Export all */
-	accessRecords, transitions := url.Export(indexer.Sorter)
+	accessRecords, transitions := url.Export(ccurlcommon.Sorter)
 
 	// 3 writes + 1 affiliated write
 	value := univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, nil)
@@ -562,7 +613,7 @@ func TestUnivaluesBatchCodec(t *testing.T) {
 	// 	t.Error("Error: Bigint values don't match")
 	// }
 
-	accessRecords, _ := url.Export(indexer.Sorter)
+	accessRecords, _ := url.Export(ccurlcommon.Sorter)
 	in := univalue.Univalues(accessRecords).Encode()
 
 	// uint256delta isn't inthe encoder !!!
@@ -647,7 +698,7 @@ func TestCommutative(t *testing.T) {
 	}
 
 	// Export variables
-	// accessRecords, _ := url.Export(indexer.Sorter)
+	// accessRecords, _ := url.Export(ccurlcommon.Sorter)
 	// bf := accessRecords[6].Encode()
 	// bfout := (&univalue.Univalue{}).Decode(bf).(*univalue.Univalue)
 	// if accessRecords[6].Equal(bfout) {
@@ -739,7 +790,7 @@ func TestNestedPath(t *testing.T) {
 		t.Error("Error: Error:  Path should been deleted already !")
 	}
 
-	accessRecords, transitions := url.Export(indexer.Sorter)
+	accessRecords, transitions := url.Export(ccurlcommon.Sorter)
 	in := univalue.Univalues(accessRecords).Encode()
 	out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
 	for i := range accessRecords {
@@ -790,7 +841,7 @@ func TestMetaEncodeSelector(t *testing.T) {
 		t.Error(err)
 	}
 
-	// _, acctTrans := url.Export(indexer.Sorter)
+	// _, acctTrans := url.Export(ccurlcommon.Sorter)
 
 	// out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
 

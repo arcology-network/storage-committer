@@ -8,7 +8,6 @@ import (
 	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl/v2"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
-	indexer "github.com/arcology-network/concurrenturl/v2/indexer"
 	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
 	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
 	univalue "github.com/arcology-network/concurrenturl/v2/univalue"
@@ -23,7 +22,7 @@ func TestAuxTrans(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, trans00 := url.Export(indexer.Sorter)
+	_, trans00 := url.Export(ccurlcommon.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans00).Encode()).(univalue.Univalues))
 
 	url.PostImport()
@@ -81,7 +80,7 @@ func TestAuxTrans(t *testing.T) {
 		}
 	}
 
-	_, transitions := url.Export(indexer.Sorter)
+	_, transitions := url.Export(ccurlcommon.Sorter)
 	if !reflect.DeepEqual(transitions[0].Value().(*commutative.Path).PeekAdded(), []string{"elem-000"}) {
 		t.Error("keys don't match")
 	}
@@ -112,7 +111,7 @@ func TestCheckAccessRecords(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, trans00 := url.Export(indexer.Sorter)
+	_, trans00 := url.Export(ccurlcommon.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans00).Encode()).(univalue.Univalues))
 
 	url.PostImport()
@@ -124,7 +123,7 @@ func TestCheckAccessRecords(t *testing.T) {
 		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/") // create a path
 	}
 
-	_, trans10 := url.Export(indexer.Sorter)
+	_, trans10 := url.Export(ccurlcommon.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans10).Encode()).(univalue.Univalues))
 
 	url.PostImport()
@@ -139,7 +138,7 @@ func TestCheckAccessRecords(t *testing.T) {
 		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/2") // create a path
 	}
 
-	// accesses10, trans11 := url.Export(indexer.Sorter)
+	// accesses10, trans11 := url.Export(ccurlcommon.Sorter)
 	// url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans11).Encode()).(univalue.Univalues))
 
 	// url.PostImport()

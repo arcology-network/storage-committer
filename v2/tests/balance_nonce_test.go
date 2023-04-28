@@ -9,7 +9,6 @@ import (
 	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl/v2"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
-	indexer "github.com/arcology-network/concurrenturl/v2/indexer"
 	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
 	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
 	univalue "github.com/arcology-network/concurrenturl/v2/univalue"
@@ -42,7 +41,7 @@ func TestSimpleBalance(t *testing.T) {
 	}
 
 	// Export variables
-	_, in := url.Export(indexer.Sorter)
+	_, in := url.Export(ccurlcommon.Sorter)
 	buffer := univalue.Univalues(in).Encode()
 	out := univalue.Univalues{}.Decode(buffer).(univalue.Univalues)
 	for i := range in {
@@ -69,7 +68,7 @@ func TestSimpleBalance(t *testing.T) {
 		t.Error("Error: Wrong blcc://eth1.0/account/alice/balance value")
 	}
 
-	records, trans := url2.Export(indexer.Sorter)
+	records, trans := url2.Export(ccurlcommon.Sorter)
 	univalue.Univalues(trans).Encode()
 	for _, v := range records {
 		if v.Writes() == v.Reads() && v.Writes() == 0 && v.DeltaWrites() == 0 {
@@ -148,7 +147,7 @@ func TestBalance(t *testing.T) {
 	}
 
 	// Export variables
-	_, transitions := url.Export(indexer.Sorter)
+	_, transitions := url.Export(ccurlcommon.Sorter)
 	// for i := range transitions {
 	trans := transitions[9]
 

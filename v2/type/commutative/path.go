@@ -27,7 +27,7 @@ func (this *Path) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
 
 func (this *Path) View() *orderedset.OrderedSet { return this.value }
 func (this *Path) IsSelf(key interface{}) bool  { return ccurlcommon.IsPath(key.(string)) }
-func (this *Path) TypeID() uint8                { return ccurlcommon.CommutativeMeta }
+func (this *Path) TypeID() uint8                { return ccurlcommon.Commutative{}.Path() }
 func (this *Path) CommittedLength() int         { return len(this.value.Keys()) }
 func (this *Path) Length() int {
 	return int(this.value.Len())

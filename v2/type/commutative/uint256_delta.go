@@ -42,13 +42,13 @@ func (this *U256Delta) Add(newDelta interface{}, sign bool) (interface{}, error)
 
 func (this *U256Delta) Size() uint32 { return 32 + 1 }
 
-func (this *U256Delta) Encode(processors ...interface{}) []byte {
+func (this *U256Delta) Encode() []byte {
 	buffer := make([]byte, this.Size())
 	this.EncodeToBuffer(buffer)
 	return buffer
 }
 
-func (this *U256Delta) EncodeToBuffer(buffer []byte, processors ...interface{}) int {
+func (this *U256Delta) EncodeToBuffer(buffer []byte) int {
 	offset := codec.Bytes(this.value.Bytes()).EncodeToBuffer(buffer)
 	offset += codec.Bool(this.deltaPositive).EncodeToBuffer(buffer[offset:])
 	return offset

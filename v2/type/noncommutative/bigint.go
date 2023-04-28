@@ -18,7 +18,7 @@ func NewBigint(v int64) interface{} {
 }
 
 func (this *Bigint) IsSelf(key interface{}) bool { return true }
-func (this *Bigint) TypeID() uint8               { return uint8(ccurlcommon.NoncommutativeBigint) }
+func (this *Bigint) TypeID() uint8               { return uint8(ccurlcommon.NonCommutative{}.Bigint()) }
 
 // func (this *Bigint) Latest() interface{}         { return this }
 func (this *Bigint) Equal(other interface{}) bool {

@@ -7,7 +7,7 @@ import (
 	ccurltype "github.com/arcology-network/concurrenturl/v2/type"
 )
 
-func (this *Univalue) Encode(processors ...interface{}) []byte {
+func (this *Univalue) Encode() []byte {
 	buffer := make([]byte, this.Size())
 	this.EncodeToBuffer(buffer)
 	return buffer
@@ -43,7 +43,7 @@ func (this *Univalue) FillHeader(buffer []byte) int {
 	)
 }
 
-func (this *Univalue) EncodeToBuffer(buffer []byte, processors ...interface{}) int {
+func (this *Univalue) EncodeToBuffer(buffer []byte) int {
 	offset := this.FillHeader(buffer)
 
 	offset += this.Unimeta.EncodeToBuffer(buffer[offset:])

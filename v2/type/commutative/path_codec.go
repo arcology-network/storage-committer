@@ -10,7 +10,7 @@ import (
 	orderedset "github.com/arcology-network/common-lib/container/set"
 )
 
-func (this *Path) Encode(processors ...interface{}) []byte {
+func (this *Path) Encode() []byte {
 	buffer := make([]byte, this.Size()) //  no need to send the committed keys
 	this.EncodeToBuffer(buffer)
 	return buffer
@@ -41,7 +41,7 @@ func (this *Path) FillHeader(buffer []byte) {
 	codec.Uint32(offset).EncodeToBuffer(buffer[codec.UINT32_LEN*2:])
 }
 
-func (this *Path) EncodeToBuffer(buffer []byte, processors ...interface{}) int {
+func (this *Path) EncodeToBuffer(buffer []byte) int {
 	this.FillHeader(buffer)
 	offset := int(this.HeaderSize())
 

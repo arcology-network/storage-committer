@@ -18,13 +18,13 @@ func (this *Uint64) Size() uint32 {
 		codec.Uint64(this.max).Size()
 }
 
-func (this *Uint64) Encode(processors ...interface{}) []byte {
+func (this *Uint64) Encode() []byte {
 	buffer := make([]byte, this.Size())
 	this.EncodeToBuffer(buffer)
 	return buffer
 }
 
-func (this *Uint64) EncodeToBuffer(buffer []byte, processors ...interface{}) int {
+func (this *Uint64) EncodeToBuffer(buffer []byte) int {
 	offset := 0
 	offset += codec.Uint64(this.value).EncodeToBuffer(buffer[offset:])
 	offset += codec.Uint64(this.delta).EncodeToBuffer(buffer[offset:])

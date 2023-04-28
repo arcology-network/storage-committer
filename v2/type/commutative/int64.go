@@ -27,7 +27,7 @@ func NewInt64(min, max int64) interface{} {
 }
 
 func NewInt64Delta(delta int64) interface{}     { return &Int64{delta: delta} }
-func (this *Int64) TypeID() uint8               { return ccurlcommon.CommutativeInt64 }
+func (this *Int64) TypeID() uint8               { return ccurlcommon.Commutative{}.Int64() }
 func (this *Int64) IsSelf(key interface{}) bool { return true }
 
 func (this *Int64) Equal(other interface{}) bool {

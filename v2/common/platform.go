@@ -11,13 +11,13 @@ type Platform struct {
 func NewPlatform() *Platform {
 	return &Platform{
 		map[string]uint8{
-			"/":                    CommutativeMeta,
-			"/code":                NoncommutativeBytes,
-			"/nonce":               CommutativeUint64,
-			"/balance":             CommutativeUint256,
-			"/storage/":            CommutativeMeta,
-			"/storage/containers/": CommutativeMeta,
-			"/storage/native/":     CommutativeMeta,
+			"/":                    Commutative{}.Path(),
+			"/code":                NonCommutative{}.Bytes(),
+			"/nonce":               Commutative{}.Uint64(),
+			"/balance":             Commutative{}.Uint256(),
+			"/storage/":            Commutative{}.Path(),
+			"/storage/containers/": Commutative{}.Path(),
+			"/storage/native/":     Commutative{}.Path(),
 		},
 	}
 }

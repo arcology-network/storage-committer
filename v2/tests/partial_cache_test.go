@@ -8,7 +8,6 @@ import (
 	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl/v2"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
-	indexer "github.com/arcology-network/concurrenturl/v2/indexer"
 	ccurltype "github.com/arcology-network/concurrenturl/v2/type"
 	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
 	univalue "github.com/arcology-network/concurrenturl/v2/univalue"
@@ -25,7 +24,7 @@ func TestPartialCache(t *testing.T) {
 	}
 
 	url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
-	_, acctTrans := url.Export(indexer.Sorter)
+	_, acctTrans := url.Export(ccurlcommon.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -37,7 +36,7 @@ func TestPartialCache(t *testing.T) {
 	}
 
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999"))
-	_, acctTrans = url.Export(indexer.Sorter)
+	_, acctTrans = url.Export(ccurlcommon.Sorter)
 	(*url.Store()).(*cachedstorage.DataStore).LocalCache().Clear()
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues), true, excludeMemDB) // The changes will be discarded.
 	url.PostImport()
@@ -84,7 +83,7 @@ func TestPartialCacheWithFilter(t *testing.T) {
 	}
 
 	url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
-	_, acctTrans := url.Export(indexer.Sorter)
+	_, acctTrans := url.Export(ccurlcommon.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -93,7 +92,7 @@ func TestPartialCacheWithFilter(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, acctTrans = url.Export(indexer.Sorter)
+	_, acctTrans = url.Export(ccurlcommon.Sorter)
 	(*url.Store()).(*cachedstorage.DataStore).LocalCache().Clear()
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues), true, excludeMemDB) // The changes will be discarded.
 	url.PostImport()

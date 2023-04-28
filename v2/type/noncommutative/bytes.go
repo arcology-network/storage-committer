@@ -28,7 +28,7 @@ func (this *Bytes) Assign(v []byte) {
 }
 
 func (this *Bytes) IsSelf(key interface{}) bool { return true }
-func (this *Bytes) TypeID() uint8               { return ccurlcommon.NoncommutativeBytes }
+func (this *Bytes) TypeID() uint8               { return ccurlcommon.NonCommutative{}.Bytes() }
 
 func (this *Bytes) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
 	return v, 0, 1, 0
@@ -38,7 +38,7 @@ func (this *Bytes) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
 func (this *Bytes) Deepcopy() interface{} {
 	return &Bytes{
 		placeholder: true,
-		value:       common.DeepCopy(this.value),
+		value:       common.Clone(this.value),
 	}
 }
 

@@ -34,7 +34,7 @@ func (this *Uint64) Equal(other interface{}) bool {
 
 func (this *Uint64) Delta() interface{}          { return codec.Uint64(this.delta) }
 func (this *Uint64) Value() interface{}          { return this.value } // Peek the committed value
-func (this *Uint64) TypeID() uint8               { return ccurlcommon.CommutativeUint64 }
+func (this *Uint64) TypeID() uint8               { return ccurlcommon.Commutative{}.Uint64() }
 func (this *Uint64) IsSelf(key interface{}) bool { return true }
 
 func (this *Uint64) Deepcopy() interface{} {

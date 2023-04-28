@@ -6,7 +6,7 @@ import (
 
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
 	ccurl "github.com/arcology-network/concurrenturl/v2"
-	indexer "github.com/arcology-network/concurrenturl/v2/indexer"
+	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
 	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
 	univalue "github.com/arcology-network/concurrenturl/v2/univalue"
@@ -27,7 +27,7 @@ func SimulatedTx0(account string, store *cachedstorage.DataStore) ([]byte, error
 		return []byte{}, err
 	}
 
-	_, transitions := url.Export(indexer.Sorter)
+	_, transitions := url.Export(ccurlcommon.Sorter)
 	return univalue.Univalues(transitions).Encode(), nil
 }
 
@@ -46,7 +46,7 @@ func SimulatedTx1(account string, store *cachedstorage.DataStore) ([]byte, error
 		return []byte{}, err
 	}
 
-	_, transitions := url.Export(indexer.Sorter)
+	_, transitions := url.Export(ccurlcommon.Sorter)
 	return univalue.Univalues(transitions).Encode(), nil
 }
 

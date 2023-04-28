@@ -36,6 +36,7 @@ func NewUnivalue(tx uint32, key string, reads, writes uint32, deltaWrites uint32
 	return &v
 }
 
+func (this *Univalue) Meta() interface{}             { return &this.Unimeta }
 func (this *Univalue) ClearCache()                   { this.cache = this.cache[:0] }
 func (this *Univalue) Value() interface{}            { return this.value }
 func (this *Univalue) SetValue(newValue interface{}) { this.value = newValue }
