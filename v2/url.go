@@ -364,7 +364,7 @@ func (this *ConcurrentUrl) Export2(sorter func([]ccurlcommon.UnivalueInterface) 
 	}
 
 	for i := 0; i < len(this.buffer); i++ {
-		if this.buffer[i].Writes() == 0 && this.buffer[i].DeltaWrites() == 0 {
+		if this.buffer[i].IsReadOnly() {
 			this.buffer[i] = nil // Clear read-only records
 		}
 	}

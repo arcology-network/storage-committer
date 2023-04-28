@@ -72,7 +72,7 @@ func (this *ArbitratorSlow) Detect(newTrans []ccurlcommon.UnivalueInterface) (ma
 				continue
 			}
 
-			if v[0].IfConcurrentWritable() && v[i].IfConcurrentWritable() {
+			if v[0].IsConcurrentWritable() && v[i].IsConcurrentWritable() {
 				continue
 			}
 

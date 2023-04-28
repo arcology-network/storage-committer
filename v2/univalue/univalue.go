@@ -39,6 +39,7 @@ func NewUnivalue(tx uint32, key string, reads, writes uint32, deltaWrites uint32
 func (this *Univalue) ClearCache()                   { this.cache = this.cache[:0] }
 func (this *Univalue) Value() interface{}            { return this.value }
 func (this *Univalue) SetValue(newValue interface{}) { this.value = newValue }
+func (this *Univalue) IsReadOnly() bool              { return this.Writes() == 0 && this.DeltaWrites() == 0 }
 
 func (this *Univalue) Init(tx uint32, key string, reads, writes uint32, v interface{}, args ...interface{}) {
 	this.vType = (&Univalue{}).GetTypeID(v)
@@ -120,7 +121,7 @@ func (this *Univalue) ApplyDelta(tx uint32, v interface{}) error {
 	return nil
 }
 
-func (this *Univalue) IfConcurrentWritable() bool { // Call this before setting the value attribute to nil
+func (this *Univalue) IsConcurrentWritable() bool { // Call this before setting the value attribute to nil
 	return (this.value != nil && this.reads == 0 && this.writes == 0)
 }
 
@@ -133,18 +134,18 @@ func (this *Univalue) PrecheckAttributes(other *Univalue) {
 		panic("Error: Value type mismatched!") // Read only variable should never be here.
 	}
 
-	if this.preexists && this.IsCommutative(this) && this.Reads() > 0 && this.IfConcurrentWritable() == other.IfConcurrentWritable() {
+	if this.preexists && this.IsCommutative(this) && this.Reads() > 0 && this.IsConcurrentWritable() == other.IsConcurrentWritable() {
 		this.Print()
 		fmt.Println("================================================================")
 		other.Print()
 		panic("Error: The composite attribute must match in different transitions")
 	}
 
-	if this.Value() == nil && this.IfConcurrentWritable() {
+	if this.Value() == nil && this.IsConcurrentWritable() {
 		panic("Error: A deleted value cann't be composite")
 	}
 
-	if !this.preexists && this.IfConcurrentWritable() {
+	if !this.preexists && this.IsConcurrentWritable() {
 		panic("Error: A new value cann't be composite")
 	}
 }

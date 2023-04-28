@@ -48,7 +48,8 @@ type UnivalueInterface interface { // value type
 
 	ApplyDelta(uint32, interface{}) error
 	Preexist() bool
-	IfConcurrentWritable() bool
+	IsReadOnly() bool
+	IsConcurrentWritable() bool
 	Deepcopy() interface{}
 	// Export(interface{}) (interface{}, interface{})
 	GetEncoded() []byte
