@@ -10,13 +10,13 @@ import (
 
 type Path struct {
 	value *orderedset.OrderedSet // committed keys + added - removed
-	delta *MetaDelta
+	delta *PathDelta
 }
 
 func NewPath() interface{} {
 	this := &Path{
 		value: orderedset.NewOrderedSet([]string{}),
-		delta: NewMetaDelta([]string{}, []string{}),
+		delta: NewPathDelta([]string{}, []string{}),
 	}
 	return this
 }
@@ -148,7 +148,7 @@ func (this *Path) Set(value interface{}, source interface{}) (interface{}, uint3
 // data cleaning before saving to storage
 func (this *Path) Purge() {
 	this.value = orderedset.NewOrderedSet([]string{})
-	this.delta = NewMetaDelta([]string{}, []string{})
+	this.delta = NewPathDelta([]string{}, []string{})
 }
 
 func (this *Path) Hash(hasher func([]byte) []byte) []byte {

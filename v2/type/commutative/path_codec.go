@@ -55,7 +55,7 @@ func (this *Path) Decode(buffer []byte) interface{} {
 	buffers := codec.Byteset{}.Decode(buffer).(codec.Byteset)
 	this = &Path{
 		value: orderedset.NewOrderedSet([]string{}),
-		delta: NewMetaDelta(codec.Strings([]string{}).Decode(bytes.Clone(buffers[0])).(codec.Strings),
+		delta: NewPathDelta(codec.Strings([]string{}).Decode(bytes.Clone(buffers[0])).(codec.Strings),
 			codec.Strings([]string{}).Decode(bytes.Clone(buffers[1])).(codec.Strings)),
 		// addDict: orderedset.NewOrderedSet(codec.Strings([]string{}).Decode(bytes.Clone(buffers[0])).(codec.Strings)),
 		// delDict: orderedset.NewOrderedSet(codec.Strings([]string{}).Decode(bytes.Clone(buffers[1])).(codec.Strings)),
@@ -77,7 +77,7 @@ func (this *Path) DecodeCompact(bytes []byte) interface{} {
 		value: orderedset.NewOrderedSet(codec.Strings([]string{}).Decode(buffers[0]).(codec.Strings)),
 		// addDict: orderedset.NewOrderedSet([]string{}),
 		// delDict: orderedset.NewOrderedSet([]string{}),
-		delta: NewMetaDelta([]string{}, []string{}),
+		delta: NewPathDelta([]string{}, []string{}),
 	}
 }
 

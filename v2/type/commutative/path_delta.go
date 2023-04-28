@@ -4,39 +4,39 @@ import (
 	orderedset "github.com/arcology-network/common-lib/container/set"
 )
 
-type MetaDelta struct {
+type PathDelta struct {
 	addDict *orderedset.OrderedSet
 	delDict *orderedset.OrderedSet
 }
 
-func NewMetaDelta(add []string, del []string) *MetaDelta {
-	return &MetaDelta{
+func NewPathDelta(add []string, del []string) *PathDelta {
+	return &PathDelta{
 		orderedset.NewOrderedSet(add),
 		orderedset.NewOrderedSet(del),
 	}
 }
 
-func (this *MetaDelta) Clone() *MetaDelta {
+func (this *PathDelta) Clone() *PathDelta {
 	if this == nil {
 		return this
 	}
-	return &MetaDelta{
+	return &PathDelta{
 		this.addDict.Clone(),
 		this.delDict.Clone(),
 	}
 }
 
-func (this *MetaDelta) Equal(other *MetaDelta) bool {
+func (this *PathDelta) Equal(other *PathDelta) bool {
 	return this.addDict.Equal(other.addDict) &&
 		this.delDict.Equal(other.delDict)
 }
 
-func (this *MetaDelta) ProcessKey(subkey string, value interface{}, preexists bool) bool {
+func (this *PathDelta) ProcessKey(subkey string, value interface{}, preexists bool) bool {
 	return this.addKey(subkey, value, preexists) ||
 		this.delKeys(subkey, value, preexists)
 }
 
-func (this *MetaDelta) addKey(subkey string, value interface{}, preexists bool) bool {
+func (this *PathDelta) addKey(subkey string, value interface{}, preexists bool) bool {
 	if this.delDict.Exists(subkey) { // Adding back a preexisting entry
 		this.delDict.Delete(subkey) // Cancel out each other
 		return true
@@ -50,7 +50,7 @@ func (this *MetaDelta) addKey(subkey string, value interface{}, preexists bool) 
 }
 
 // Only the preexisting keys are in this buffer, or they will be cancel each other
-func (this *MetaDelta) delKeys(subkey string, value interface{}, preexists bool) bool {
+func (this *PathDelta) delKeys(subkey string, value interface{}, preexists bool) bool {
 	if value != nil {
 		return false
 	}
@@ -62,5 +62,5 @@ func (this *MetaDelta) delKeys(subkey string, value interface{}, preexists bool)
 	return this.addDict.Delete(subkey) // Leave out the entry if it is in the added buffer
 }
 
-func (this *MetaDelta) Added() interface{}   { return this.addDict.Keys() }
-func (this *MetaDelta) Removed() interface{} { return this.delDict.Keys() }
+func (this *PathDelta) Added() interface{}   { return this.addDict.Keys() }
+func (this *PathDelta) Removed() interface{} { return this.delDict.Keys() }
