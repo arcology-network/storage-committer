@@ -33,7 +33,7 @@ func TestSize(t *testing.T) {
 	buf := univalue.Univalues(acctTrans).Encode()
 	url.Import(univalue.Univalues{}.Decode(buf).(univalue.Univalues))
 
-	fmt.Println(univalue.Univalues(acctTrans).GetEncodedSize())
+	fmt.Println(univalue.Univalues(acctTrans).Sizes())
 	fmt.Println(unsafe.Sizeof(map[string]int{}))
 
 	original := []int{1, 2, 3, 4}

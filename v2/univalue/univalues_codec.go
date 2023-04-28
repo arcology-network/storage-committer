@@ -103,10 +103,10 @@ func (this Univalues) Print() {
 	fmt.Println(" --------------------  ")
 }
 
-func (this Univalues) GetEncodedSize() [][]int {
+func (this Univalues) Sizes() [][]int {
 	sizes := make([][]int, len(this))
 	for i, v := range this {
-		sizes[i] = v.(*Univalue).GetEncodedSize()
+		sizes[i] = v.(*Univalue).Sizes()
 	}
 	return sizes
 }

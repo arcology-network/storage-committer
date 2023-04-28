@@ -55,7 +55,7 @@ type UnivalueInterface interface { // value type
 	Encode(...interface{}) []byte
 	EncodeToBuffer([]byte, ...interface{}) int
 	Decode([]byte) interface{}
-	ClearReserve()
+	ClearCache()
 
 	Equal(UnivalueInterface) bool
 	Print()

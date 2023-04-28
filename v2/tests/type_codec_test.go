@@ -103,7 +103,7 @@ func TestUnivaluesCodec(t *testing.T) {
 	for i := 0; i < len(transitions); i++ {
 		tran := transitions[i]
 		univ := out[i].(*univalue.Univalue)
-		univ.ClearReserve()
+		univ.ClearCache()
 		if !reflect.DeepEqual(tran, univ) {
 			//fmt.Println("Error: Missmatched")
 		}

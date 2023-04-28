@@ -39,7 +39,6 @@ func (this *Unimeta) FillHeader(buffer []byte) int {
 			codec.Uint32(this.writes).Size(),
 			codec.Uint32(this.deltaWrites).Size(),
 			codec.Bool(this.preexists).Size(),
-			// codec.Bool(this.composite).Size(),
 		},
 	)
 }
@@ -89,17 +88,17 @@ func (this *Unimeta) Decode(buffer []byte) interface{} {
 // 	return this.reserved.([]byte)
 // }
 
-func (this *Unimeta) GetEncodedSize() []int {
-	return []int{
-		int(codec.Uint8(this.vType).Size()),
-		int(codec.Uint32(this.tx).Size()),
-		int(codec.String(*this.path).Size()),
-		int(codec.Uint32(this.reads).Size()),
-		int(codec.Uint32(this.writes).Size()),
-		int(codec.Uint32(this.deltaWrites).Size()),
-		int(codec.Bool(this.preexists).Size()),
-	}
-}
+// func (this *Unimeta) Sizes() []int {
+// 	return []int{
+// 		int(codec.Uint8(this.vType).Size()),
+// 		int(codec.Uint32(this.tx).Size()),
+// 		int(codec.String(*this.path).Size()),
+// 		int(codec.Uint32(this.reads).Size()),
+// 		int(codec.Uint32(this.writes).Size()),
+// 		int(codec.Uint32(this.deltaWrites).Size()),
+// 		int(codec.Bool(this.preexists).Size()),
+// 	}
+// }
 
 func (this *Unimeta) GobEncode() ([]byte, error) {
 	return this.Encode(), nil

@@ -89,7 +89,10 @@ func TestPartialCacheWithFilter(t *testing.T) {
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
-	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999"))
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999")); err != nil {
+		t.Error(err)
+	}
+
 	_, acctTrans = url.Export(indexer.Sorter)
 	(*url.Store()).(*cachedstorage.DataStore).LocalCache().Clear()
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues), true, excludeMemDB) // The changes will be discarded.
@@ -99,7 +102,7 @@ func TestPartialCacheWithFilter(t *testing.T) {
 	if v, _ := url.Read(2, "blcc://eth1.0/account/"+alice+"/storage/1234"); v == nil {
 		t.Error("Error: The entry shouldn't be in the DB as the persistent DB has been excluded !")
 	} else {
-		if string(*(v.(*noncommutative.String))) != "1234" {
+		if string(*(v.(*noncommutative.String))) != "9999" {
 			t.Error("Error: The entry shouldn't changed !")
 		}
 	}

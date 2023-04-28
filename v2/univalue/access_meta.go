@@ -35,7 +35,6 @@ func (this *Unimeta) GetTx() uint32        { return this.tx }
 func (this *Unimeta) GetPath() *string     { return this.path }
 func (this *Unimeta) SetPath(path *string) { this.path = path }
 func (this *Unimeta) ClearPath()           { *this.path = (*this.path)[:0] }
-func (this *Unimeta) ClearReserve()        { this.reserved = nil }
 func (this *Unimeta) TypeID() uint8        { return this.vType }
 
 func (this *Unimeta) Reads() uint32       { return this.reads }
@@ -60,7 +59,6 @@ func (this *Unimeta) Clone() Unimeta {
 		reads:       this.reads,
 		writes:      this.writes,
 		preexists:   this.preexists,
-		reserved:    this.reserved,
 		reclaimFunc: this.reclaimFunc,
 	}
 }

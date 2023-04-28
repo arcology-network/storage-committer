@@ -1,10 +1,8 @@
 package univalue
 
 import (
-	"bytes"
-	"reflect"
-
 	codec "github.com/arcology-network/common-lib/codec"
+	"github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 	ccurltype "github.com/arcology-network/concurrenturl/v2/type"
 )
@@ -16,92 +14,58 @@ func (this *Univalue) Encode(processors ...interface{}) []byte {
 }
 
 func (this *Univalue) HeaderSize() uint32 {
-	return uint32(9 * codec.UINT32_LEN)
+	return uint32(4 * codec.UINT32_LEN)
+}
+
+func (this *Univalue) Sizes() []int {
+	return []int{
+		int(this.HeaderSize()),
+		int(this.Unimeta.Size()),
+		int(this.value.(ccurlcommon.TypeInterface).Size()),
+		int(codec.Bytes(this.cache).Size()),
+	}
 }
 
 func (this *Univalue) Size() uint32 {
-	vLen := uint32(0)
-	if this.value != nil {
-		vLen = (this.value.(ccurlcommon.TypeInterface).Size())
-	}
-
-	return this.HeaderSize() + // uint32(9*codec.UINT32_LEN) +
-		uint32(1) + // codec.Uint8(this.vType).Size() +
-		uint32(4) + // codec.Uint32(uint32(this.tx)).Size() +
-		uint32(len(*this.path)) + // codec.String(*this.path).Size() +
-		uint32(4) + // codec.Uint32(this.reads).Size() +
-		uint32(4) + // codec.Uint32(this.writes).Size() +
-		uint32(4) + // codec.Uint32(this.deltaWrites).Size() +
-		(vLen) +
-		uint32(1) //+  codec.Bool(this.preexists).Size() +
-	// uint32(1) // codec.Bool(this.composite).Size()
+	return this.HeaderSize() + this.Unimeta.Size() +
+		common.IfThenDo1st(this.value != nil, func() uint32 { return this.value.(ccurlcommon.TypeInterface).Size() }, 0) +
+		codec.Bytes(this.cache).Size()
 }
 
 func (this *Univalue) FillHeader(buffer []byte) int {
-	vLen := uint32(0)
-	if this.value != nil {
-		vLen = this.value.(ccurlcommon.TypeInterface).Size()
-		if uint32(len(this.value.(ccurlcommon.TypeInterface).Encode())) != this.value.(ccurlcommon.TypeInterface).Size() {
-			panic("Error: Sizes don't match")
-		}
-	}
-
 	return codec.Encoder{}.FillHeader(
 		buffer,
 		[]uint32{
-			uint32(codec.Uint8(this.vType).Size()),
-			codec.Uint32(this.tx).Size(),
-			codec.String(*this.path).Size(),
-			codec.Uint32(this.reads).Size(),
-			codec.Uint32(this.writes).Size(),
-			codec.Uint32(this.deltaWrites).Size(),
-			vLen,
-			codec.Bool(this.preexists).Size(),
-			// codec.Bool(this.composite).Size(),
+			this.Unimeta.Size(),
+			common.IfThenDo1st(this.value != nil, func() uint32 { return this.value.(ccurlcommon.TypeInterface).Size() }, 0),
+			codec.Bytes(this.cache).Size(),
 		},
 	)
 }
 
 func (this *Univalue) EncodeToBuffer(buffer []byte, processors ...interface{}) int {
 	offset := this.FillHeader(buffer)
-	offset += codec.Uint8(this.vType).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint32(this.tx).EncodeToBuffer(buffer[offset:])
-	offset += codec.String(*this.path).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint32(this.reads).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint32(this.writes).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint32(this.deltaWrites).EncodeToBuffer(buffer[offset:])
-	if this.value != nil {
-		offset += codec.Bytes(this.value.(ccurlcommon.TypeInterface).Encode()).EncodeToBuffer(buffer[offset:])
-	}
 
-	offset += codec.Bool(this.preexists).EncodeToBuffer(buffer[offset:])
-	// offset += codec.Bool(this.composite).EncodeToBuffer(buffer[offset:])
+	offset += this.Unimeta.EncodeToBuffer(buffer[offset:])
+	offset += common.IfThenDo1st(this.value != nil, func() int {
+		return codec.Bytes(this.value.(ccurlcommon.TypeInterface).Encode()).EncodeToBuffer(buffer[offset:])
+	}, 0)
+	offset += codec.Bytes{}.EncodeToBuffer(buffer[offset:])
+
 	return offset
 }
 
 func (this *Univalue) Decode(buffer []byte) interface{} {
 	fields := codec.Byteset{}.Decode(buffer).(codec.Byteset)
-	if len(fields) == 1 {
-		return this
+	unimeta := (&Unimeta{}).Decode(fields[0]).(*Unimeta)
+
+	return &Univalue{
+		*unimeta,
+		common.IfThenDo1st(len(fields) > 1, func() interface{} {
+			return (&ccurltype.Decoder{}).Decode(fields[1], unimeta.vType)
+		}, nil),
+		(&codec.Bytes{}).Decode(fields[2]).(codec.Bytes),
 	}
-
-	this.vType = uint8(reflect.Kind(codec.Uint8(1).Decode(fields[0]).(codec.Uint8)))
-	this.tx = uint32(codec.Uint32(0).Decode(fields[1]).(codec.Uint32))
-	key := string(codec.String("").Decode(bytes.Clone(fields[2])).(codec.String))
-	this.path = &key
-	this.reads = uint32(codec.Uint32(1).Decode(fields[3]).(codec.Uint32))
-	this.writes = uint32(codec.Uint32(1).Decode(fields[4]).(codec.Uint32))
-	this.deltaWrites = uint32(codec.Uint32(1).Decode(fields[5]).(codec.Uint32))
-
-	this.value = (&ccurltype.Decoder{}).Decode(fields[6], this.vType)
-	this.preexists = bool(codec.Bool(true).Decode(fields[7]).(codec.Bool))
-	// this.composite = bool(codec.Bool(true).Decode(fields[8]).(codec.Bool))
-	this.reserved = fields[6] // For merkle root calculation
-
-	if this.value == nil || this.IsCommutative(this) {
-		this.reserved = nil
-	}
-	return this
 }
 
 func (this *Univalue) GetEncoded() []byte {
@@ -113,45 +77,17 @@ func (this *Univalue) GetEncoded() []byte {
 		return this.value.(ccurlcommon.TypeInterface).EncodeCompact()
 	}
 
-	if this.reserved == nil {
+	if len(this.cache) > 0 {
 		return this.value.(ccurlcommon.TypeInterface).EncodeCompact()
 	}
-	return this.reserved.([]byte)
-}
-
-func (this *Univalue) GetEncodedSize() []int {
-	vBytes := []byte{}
-	if this.value != nil {
-		vBytes = this.value.(ccurlcommon.TypeInterface).Encode()
-	}
-
-	return []int{
-		int(codec.Uint8(this.vType).Size()),
-		int(codec.Uint32(this.tx).Size()),
-		int(codec.String(*this.path).Size()),
-		int(codec.Uint32(this.reads).Size()),
-		int(codec.Uint32(this.writes).Size()),
-		int(codec.Uint32(this.deltaWrites).Size()),
-		len(vBytes),
-		int(codec.Bool(this.preexists).Size()),
-		// int(codec.Bool(this.composite).Size()),
-	}
+	return this.cache
 }
 
 func (this *Univalue) GobEncode() ([]byte, error) {
 	return this.Encode(), nil
 }
 
-func (this *Univalue) GobDecode(data []byte) error {
-	v := this.Decode(data).(*Univalue)
-	this.vType = v.vType
-	// this.composite = v.composite
-	this.path = v.path
-	this.preexists = v.preexists
-	this.tx = v.tx
-	this.value = v.value
-	this.reads = v.reads
-	this.writes = v.writes
-	this.deltaWrites = v.deltaWrites
+func (this *Univalue) GobDecode(buffer []byte) error {
+	*this = *(&Univalue{}).Decode(buffer).(*Univalue)
 	return nil
 }

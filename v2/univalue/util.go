@@ -11,20 +11,22 @@ func CreateUnivalueForTest(transitType uint8, vType uint8, tx uint32, path strin
 			deltaWrites: 0,
 		},
 		value,
+		[]byte{},
 	}
-
-	// return &Univalue{
-	// 	vType:     vType,
-	// 	tx:        tx,
-	// 	path:      &path,
-	// 	reads:     reads,
-	// 	writes:    writes,
-	// 	value:     value,
-	// 	preexists: preexists,
-	// 	// composite: composite,
-	// 	reserved: nil,
-	// }
 }
+
+// return &Univalue{
+// 	vType:     vType,
+// 	tx:        tx,
+// 	path:      &path,
+// 	reads:     reads,
+// 	writes:    writes,
+// 	value:     value,
+// 	preexists: preexists,
+// 	// composite: composite,
+// 	reserved: nil,
+// }
+// }
 
 // Only work when
 // func SetInvariate(trans []ccurlcommon.UnivalueInterface, name string) {

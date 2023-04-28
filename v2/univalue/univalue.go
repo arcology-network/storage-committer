@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 )
@@ -15,6 +16,7 @@ import (
 type Univalue struct {
 	Unimeta
 	value interface{}
+	cache []byte
 }
 
 func NewUnivalue(tx uint32, key string, reads, writes uint32, deltaWrites uint32, args ...interface{}) *Univalue {
@@ -29,10 +31,12 @@ func NewUnivalue(tx uint32, key string, reads, writes uint32, deltaWrites uint32
 			preexists:   common.IfThenDo1st(args != nil && len(args) > 1, func() bool { return (&Unimeta{}).CheckPreexist(key, args[1]) }, false),
 		},
 		args[0],
+		[]byte{},
 	}
 	return &v
 }
 
+func (this *Univalue) ClearCache()                   { this.cache = this.cache[:0] }
 func (this *Univalue) Value() interface{}            { return this.value }
 func (this *Univalue) SetValue(newValue interface{}) { this.value = newValue }
 
@@ -149,6 +153,7 @@ func (this *Univalue) Deepcopy() interface{} {
 	v := &Univalue{
 		this.Unimeta.Clone(),
 		common.IfThen(this.value != nil, this.value.(ccurlcommon.TypeInterface).Deepcopy(), nil),
+		codec.Bytes(this.cache).Clone(),
 	}
 	return v
 }
