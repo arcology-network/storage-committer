@@ -15,6 +15,7 @@ type TypeInterface interface { // value type
 	Equal(interface{}) bool
 	Clone() interface{}
 
+	Latest() interface{}
 	Value() interface{} // Get() - read/write count
 	Delta() interface{}
 
@@ -28,8 +29,8 @@ type TypeInterface interface { // value type
 	EncodeToBuffer([]byte) int
 	Decode([]byte) interface{}
 	Size() uint32
-	EncodeCompact() []byte
-	DecodeCompact([]byte) interface{}
+	// EncodeCompact() []byte
+	// DecodeCompact([]byte) interface{}
 	Purge()
 	Print()
 }

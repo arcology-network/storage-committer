@@ -3,6 +3,7 @@ package commutative
 import (
 	"errors"
 
+	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	orderedset "github.com/arcology-network/common-lib/container/set"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
@@ -52,10 +53,11 @@ func (this *Path) Get() (interface{}, uint32, uint32) {
 	return this.value.Keys(), 1, common.IfThen(!this.value.Touched(), uint32(0), uint32(1))
 }
 
-func (this *Path) Delta() interface{} { return this.delta }
+func (this *Path) Latest() interface{} { return this.Value() }
+func (this *Path) Delta() interface{}  { return this.delta }
 func (this *Path) Value() interface{} {
 	v, _, _ := this.Get()
-	return v
+	return codec.Strings(v.([]string))
 }
 
 func (this *Path) ApplyDelta(v interface{}) ccurlcommon.TypeInterface { // Apply the transitions to the original value

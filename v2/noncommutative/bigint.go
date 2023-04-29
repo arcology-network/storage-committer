@@ -43,8 +43,9 @@ func (this *Bigint) Get() (interface{}, uint32, uint32) {
 	return this, 1, 0
 }
 
-func (this *Bigint) Value() interface{} { return this }
-func (this *Bigint) Delta() interface{} { return this }
+func (this *Bigint) Latest() interface{} { return this.Value() }
+func (this *Bigint) Value() interface{}  { return this }
+func (this *Bigint) Delta() interface{}  { return this }
 
 func (this *Bigint) Set(value interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
 	if value != nil {

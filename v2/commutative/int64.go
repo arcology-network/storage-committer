@@ -51,8 +51,9 @@ func (this *Int64) Get() (interface{}, uint32, uint32) {
 	return this.value + this.delta, 1, common.IfThen(this.delta == 0, uint32(0), uint32(1))
 }
 
-func (this *Int64) Value() interface{} { return codec.Int64(this.value) }
-func (this *Int64) Delta() interface{} { return codec.Int64(this.delta) }
+func (this *Int64) Latest() interface{} { return this.value }
+func (this *Int64) Value() interface{}  { return this }
+func (this *Int64) Delta() interface{}  { return codec.Int64(this.delta) }
 
 func (this *Int64) Set(v interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
 	if this.isUnderflow(v.(*Int64).delta) || this.isOverflow(v.(*Int64).delta) {

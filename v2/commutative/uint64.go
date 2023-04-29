@@ -32,11 +32,9 @@ func (this *Uint64) Equal(other interface{}) bool {
 	return this.value == other.(*Uint64).value && this.delta == other.(*Uint64).delta
 }
 
-func (this *Uint64) Delta() interface{} { return codec.Uint64(this.delta) }
-func (this *Uint64) Value() interface{} {
-	v, _, _ := this.Get()
-	return v
-}                                                // Peek the committed value
+func (this *Uint64) Latest() interface{}         { return this.Value() }
+func (this *Uint64) Delta() interface{}          { return codec.Uint64(this.delta) }
+func (this *Uint64) Value() interface{}          { return this } // Peek the committed value
 func (this *Uint64) TypeID() uint8               { return ccurlcommon.Commutative{}.Uint64() }
 func (this *Uint64) IsSelf(key interface{}) bool { return true }
 

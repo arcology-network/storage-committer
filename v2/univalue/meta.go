@@ -16,7 +16,6 @@ type Unimeta struct {
 	writes      uint32
 	deltaWrites uint32
 	preexists   bool
-	reserved    interface{}
 	reclaimFunc func(interface{})
 }
 

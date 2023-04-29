@@ -1,6 +1,7 @@
 package univalue
 
 import (
+	"github.com/arcology-network/common-lib/codec"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 	commutative "github.com/arcology-network/concurrenturl/v2/commutative"
 	noncommutative "github.com/arcology-network/concurrenturl/v2/noncommutative"
@@ -11,7 +12,7 @@ func ToBytes(value interface{}) []byte {
 	if value == nil {
 		return []byte{} // Deletion
 	}
-	encoded := value.(ccurlcommon.TypeInterface).EncodeCompact()
+	encoded := value.(ccurlcommon.TypeInterface).Value().(codec.Encodeable).Encode()
 	encoded = append(encoded, value.(ccurlcommon.TypeInterface).TypeID())
 	return encoded
 }
