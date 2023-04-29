@@ -142,7 +142,7 @@ func TestCodec(t *testing.T) {
 // func TestDeepCopy(t *testing.T) {
 // 	b := NewU256(uint256.NewInt(5), big.NewInt(0))
 // 	b.(*U256).Reset("", NewU256WithLimits(uint256.NewInt(0), big.NewInt(0), uint256.NewInt(0), uint256.NewInt(100)), nil)
-// 	b0 := b.(*U256).Deepcopy()
+// 	b0 := b.(*U256).Clone()
 
 // 	if b.(*U256).value.Uint64() != uint64(0) {
 // 		t.Error("Error: Wrong value")

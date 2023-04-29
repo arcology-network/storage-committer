@@ -86,7 +86,7 @@ func (this *U256) HasCustomizedLimit() bool {
 	return this.min.Cmp(U256MIN) != 0 || this.max.Cmp(U256MAX) != 0
 }
 
-func (this *U256) Deepcopy() interface{} {
+func (this *U256) Clone() interface{} {
 	return &U256{
 		value:         this.value.Clone(),
 		delta:         this.delta.Clone(),
@@ -104,6 +104,11 @@ func (this *U256) Equal(other interface{}) bool {
 		this.deltaPositive == other.(*U256).deltaPositive
 }
 
+func (this *U256) Value() interface{} {
+	v, _, _ := this.Get()
+	return v
+}
+
 func (this *U256) Get() (interface{}, uint32, uint32) {
 	if this.delta.Eq(UINT256ZERO) {
 		return this.value, 1, 0
@@ -111,19 +116,19 @@ func (this *U256) Get() (interface{}, uint32, uint32) {
 	return new(uint256.Int).Add(this.value.Clone(), this.delta), 1, 1
 }
 
-func (this *U256) Value() interface{} {
-	v := &U256{
-		delta:         this.delta.Clone(),
-		deltaPositive: this.deltaPositive,
-	}
+// func (this *U256) Value() interface{} {
+// 	v := &U256{
+// 		delta:         this.delta.Clone(),
+// 		deltaPositive: this.deltaPositive,
+// 	}
 
-	if this.deltaPositive {
-		v.value = this.value.Clone().Abs(this.delta)
-	} else {
-		v.value = this.value.Clone().Sub(this.value, this.delta)
-	}
-	return this.value
-}
+// 	if this.deltaPositive {
+// 		v.value = this.value.Clone().Abs(this.delta)
+// 	} else {
+// 		v.value = this.value.Clone().Sub(this.value, this.delta)
+// 	}
+// 	return this.value
+// }
 
 func (this *U256) Delta() interface{} { return this }
 

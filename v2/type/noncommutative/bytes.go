@@ -35,7 +35,7 @@ func (this *Bytes) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
 }
 
 // create a new path
-func (this *Bytes) Deepcopy() interface{} {
+func (this *Bytes) Clone() interface{} {
 	return &Bytes{
 		placeholder: true,
 		value:       common.Clone(this.value),
@@ -50,6 +50,7 @@ func (this *Bytes) Get() (interface{}, uint32, uint32) {
 	return this, 1, 0
 }
 
+func (this *Bytes) Value() interface{} { return this }
 func (this *Bytes) Delta() interface{} {
 	return this
 }

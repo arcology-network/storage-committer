@@ -87,7 +87,7 @@ func (this *Univalue) Set(tx uint32, path string, typedV interface{}, indexer in
 	}
 
 	if this.writes == 0 && this.value != nil && typedV != nil { // Make a deep copy if haven't done so
-		this.value = this.value.(ccurlcommon.TypeInterface).Deepcopy()
+		this.value = this.value.(ccurlcommon.TypeInterface).Clone()
 	}
 
 	v, r, w, dw, err := this.value.(ccurlcommon.TypeInterface).Set(typedV, []interface{}{path, *this.path, tx, indexer}) // Update one the current value
@@ -151,10 +151,10 @@ func (this *Univalue) PrecheckAttributes(other *Univalue) {
 	}
 }
 
-func (this *Univalue) Deepcopy() interface{} {
+func (this *Univalue) Clone() interface{} {
 	v := &Univalue{
 		this.Unimeta.Clone(),
-		common.IfThen(this.value != nil, this.value.(ccurlcommon.TypeInterface).Deepcopy(), nil),
+		common.IfThen(this.value != nil, this.value.(ccurlcommon.TypeInterface).Clone(), nil),
 		codec.Bytes(this.cache).Clone(),
 	}
 	return v

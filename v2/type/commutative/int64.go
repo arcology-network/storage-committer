@@ -38,7 +38,7 @@ func (this *Int64) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
 	return v, 0, 1, 0
 }
 
-func (this *Int64) Deepcopy() interface{} {
+func (this *Int64) Clone() interface{} {
 	return &Int64{
 		this.value,
 		this.delta,

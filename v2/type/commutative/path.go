@@ -36,7 +36,7 @@ func (this *Path) Length() int {
 // For linear access
 // func (this *Path) At(idx uint64) {}
 
-func (this *Path) Deepcopy() interface{} {
+func (this *Path) Clone() interface{} {
 	meta := &Path{
 		value: this.value.Clone(),
 		delta: this.delta.Clone(),
@@ -52,8 +52,11 @@ func (this *Path) Get() (interface{}, uint32, uint32) {
 	return this.value.Keys(), 1, common.IfThen(!this.value.Touched(), uint32(0), uint32(1))
 }
 
-// func (this *Path) Value() interface{} { return this.value.Keys() }
 func (this *Path) Delta() interface{} { return this.delta }
+func (this *Path) Value() interface{} {
+	v, _, _ := this.Get()
+	return v
+}
 
 func (this *Path) ApplyDelta(v interface{}) ccurlcommon.TypeInterface { // Apply the transitions to the original value
 	keys := append(this.value.Keys(), this.delta.addDict.Keys()...) // The value should only contain committed keys

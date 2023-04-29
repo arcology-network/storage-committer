@@ -14,20 +14,18 @@ func NewString(v string) interface{} {
 func (this *String) IsSelf(key interface{}) bool { return true }
 func (this *String) TypeID() uint8               { return uint8(ccurlcommon.NonCommutative{}.String()) }
 
-// func (this *String) Latest() interface{}         { return this }
-func (this *String) Delta() interface{} { return this }
+func (this *String) Value() interface{}           { return this }
+func (this *String) Delta() interface{}           { return this }
+func (this *String) Equal(other interface{}) bool { return *this == *(other.(*String)) }
 
 func (this *String) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
 	return v, 0, 1, 0
 }
 
-func (this *String) Deepcopy() interface{} {
+func (this *String) Clone() interface{} {
 	value := *this
 	return (*String)(&value)
 }
-
-func (this *String) Equal(other interface{}) bool { return *this == *(other.(*String)) }
-func (this *String) Value() interface{}           { return this }
 
 func (this *String) Get() (interface{}, uint32, uint32) {
 	return this, 1, 0

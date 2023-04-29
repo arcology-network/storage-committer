@@ -13,9 +13,9 @@ type TransitionInterface interface { // value type
 type TypeInterface interface { // value type
 	TypeID() uint8
 	Equal(interface{}) bool
-	Deepcopy() interface{}
+	Clone() interface{}
 
-	//Value() interface{} // Get() - read/write count
+	Value() interface{} // Get() - read/write count
 	Delta() interface{}
 
 	Get() (interface{}, uint32, uint32)
@@ -58,7 +58,7 @@ type UnivalueInterface interface { // value type
 	Preexist() bool
 	IsReadOnly() bool
 	IsConcurrentWritable() bool
-	Deepcopy() interface{}
+	Clone() interface{}
 	// Export(interface{}) (interface{}, interface{})
 	GetEncoded() []byte
 	Size() uint32

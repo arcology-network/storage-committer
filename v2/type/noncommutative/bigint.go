@@ -29,7 +29,7 @@ func (this *Bigint) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) 
 	return v, 0, 1, 0
 }
 
-func (this *Bigint) Deepcopy() interface{} {
+func (this *Bigint) Clone() interface{} {
 	v := big.Int(*this)
 	return Bigint(*new(big.Int).Set(&v))
 }
@@ -43,9 +43,8 @@ func (this *Bigint) Get() (interface{}, uint32, uint32) {
 	return this, 1, 0
 }
 
-func (this *Bigint) Delta() interface{} {
-	return this
-}
+func (this *Bigint) Value() interface{} { return this }
+func (this *Bigint) Delta() interface{} { return this }
 
 func (this *Bigint) Set(value interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
 	if value != nil {
