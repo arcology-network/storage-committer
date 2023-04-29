@@ -160,8 +160,6 @@ func (this *Path) Hash(hasher func([]byte) []byte) []byte {
 
 // Peek the removed keys
 
-func (this *Path) PeekValue() []string { return this.value.Keys() }
-
 func (this *Path) PeekAdded() []string { // Check new keys
 	if this.delta.addDict == nil {
 		return []string{}

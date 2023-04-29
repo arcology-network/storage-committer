@@ -130,7 +130,7 @@ func (this *U256) Get() (interface{}, uint32, uint32) {
 // 	return this.value
 // }
 
-func (this *U256) Delta() interface{} { return this }
+func (this *U256) Delta() interface{} { return this.delta }
 
 func (this *U256) isOverflowed(v0 *uint256.Int, signV0 bool, v1 *uint256.Int, signV1 bool) (*uint256.Int, bool) {
 	if signV0 == signV1 { // Both positive or negative
@@ -212,8 +212,4 @@ func (this *U256) Print() {
 	fmt.Println("Value: ", this.value)
 	fmt.Println("Delta: ", this.delta)
 	fmt.Println()
-}
-
-func (this *U256) GetDelta() interface{} {
-	return this.delta
 }

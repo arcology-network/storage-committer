@@ -55,7 +55,3 @@ func (this *Int64) Print() {
 	fmt.Println("Delta: ", this.delta)
 	fmt.Println()
 }
-
-func (this *Int64) GetDelta() interface{} {
-	return this.delta
-}

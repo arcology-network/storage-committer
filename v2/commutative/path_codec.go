@@ -1,7 +1,6 @@
 package commutative
 
 import (
-	"bytes"
 	"fmt"
 
 	codec "github.com/arcology-network/common-lib/codec"
@@ -24,44 +23,18 @@ func (this *Path) Size() uint32 {
 	if this == nil {
 		return 0
 	}
-
-	total := this.HeaderSize() +
-		codec.Strings(this.delta.addDict.Keys()).Size() +
-		codec.Strings(this.delta.delDict.Keys()).Size()
-	return total
-}
-
-func (this *Path) FillHeader(buffer []byte) {
-	codec.Uint32(2).EncodeToBuffer(buffer) // number of fields
-
-	offset := uint32(0)
-	codec.Uint32(offset).EncodeToBuffer(buffer[codec.UINT32_LEN*1:])
-	offset += codec.Strings(this.delta.addDict.Keys()).Size()
-
-	codec.Uint32(offset).EncodeToBuffer(buffer[codec.UINT32_LEN*2:])
+	return this.delta.Size()
 }
 
 func (this *Path) EncodeToBuffer(buffer []byte) int {
-	this.FillHeader(buffer)
-	offset := int(this.HeaderSize())
-
-	offset += codec.Strings(this.delta.addDict.Keys()).EncodeToBuffer(buffer[offset:])
-	offset += codec.Strings(this.delta.delDict.Keys()).EncodeToBuffer(buffer[offset:])
-
-	return int(offset)
+	return int(this.delta.EncodeToBuffer(buffer))
 }
 
 func (this *Path) Decode(buffer []byte) interface{} {
-	buffers := codec.Byteset{}.Decode(buffer).(codec.Byteset)
-	this = &Path{
+	return &Path{
 		value: orderedset.NewOrderedSet([]string{}),
-		delta: NewPathDelta(codec.Strings([]string{}).Decode(bytes.Clone(buffers[0])).(codec.Strings),
-			codec.Strings([]string{}).Decode(bytes.Clone(buffers[1])).(codec.Strings)),
-		// addDict: orderedset.NewOrderedSet(codec.Strings([]string{}).Decode(bytes.Clone(buffers[0])).(codec.Strings)),
-		// delDict: orderedset.NewOrderedSet(codec.Strings([]string{}).Decode(bytes.Clone(buffers[1])).(codec.Strings)),
+		delta: (&PathDelta{}).Decode(buffer).(*PathDelta),
 	}
-
-	return this
 }
 
 func (this *Path) EncodeCompact() []byte {
@@ -75,8 +48,6 @@ func (this *Path) DecodeCompact(bytes []byte) interface{} {
 	buffers := codec.Byteset{}.Decode(bytes).(codec.Byteset)
 	return &Path{
 		value: orderedset.NewOrderedSet(codec.Strings([]string{}).Decode(buffers[0]).(codec.Strings)),
-		// addDict: orderedset.NewOrderedSet([]string{}),
-		// delDict: orderedset.NewOrderedSet([]string{}),
 		delta: NewPathDelta([]string{}, []string{}),
 	}
 }

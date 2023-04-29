@@ -47,7 +47,7 @@ func TestUnivalueCodecU256(t *testing.T) {
 	out := v.Value()
 
 	if in.Value().(*commutative.U256).Value().(*uint256.Int).Cmp(out.(*commutative.U256).Value().(*uint256.Int)) != 0 ||
-		in.Value().(*commutative.U256).GetDelta().(*uint256.Int).Cmp(out.(*commutative.U256).GetDelta().(*uint256.Int)) != 0 {
+		in.Value().(*commutative.U256).Delta().(*uint256.Int).Cmp(out.(*commutative.U256).Delta().(*uint256.Int)) != 0 {
 		t.Error("Error")
 	}
 

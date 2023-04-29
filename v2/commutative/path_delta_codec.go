@@ -1,6 +1,8 @@
 package commutative
 
 import (
+	"fmt"
+
 	codec "github.com/arcology-network/common-lib/codec"
 	orderedset "github.com/arcology-network/common-lib/container/set"
 )
@@ -26,4 +28,11 @@ func (this *PathDelta) Decode(buffer []byte) interface{} {
 		delDict: orderedset.NewOrderedSet(fields[1]),
 	}
 	return this
+}
+
+func (this *PathDelta) Print() {
+	// fmt.Println("Keys: ", this.committedKeys)
+	fmt.Println("Added: ", this.addDict.Keys())
+	fmt.Println("Removed: ", this.delDict.Keys())
+	fmt.Println()
 }

@@ -19,7 +19,7 @@ func TestMeta(t *testing.T) {
 
 	meta, _, _ = inPath.Get()
 
-	if !common.EqualArray(inPath.PeekValue(), []string{"e-01", "e-001", "e-002", "e-002"}) {
+	if !common.EqualArray(inPath.Value().([]string), []string{"e-01", "e-001", "e-002", "e-002"}) {
 		t.Error("Error: Don't match!!")
 	}
 
@@ -45,7 +45,7 @@ func TestCodecPathMeta(t *testing.T) {
 	buffer := in.(*Path).Encode()
 	out := (&Path{}).Decode(buffer).(*Path)
 
-	if common.EqualArray(out.PeekValue(), []string{"e-01", "e-001", "e-002", "e-002"}) {
+	if common.EqualArray(out.Value().([]string), []string{"e-01", "e-001", "e-002", "e-002"}) {
 		t.Error("Error: Should have gone!")
 	}
 
