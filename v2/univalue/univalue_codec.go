@@ -4,7 +4,6 @@ import (
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
-	ccurltype "github.com/arcology-network/concurrenturl/v2/type"
 )
 
 func (this *Univalue) Encode() []byte {
@@ -62,7 +61,7 @@ func (this *Univalue) Decode(buffer []byte) interface{} {
 	return &Univalue{
 		*unimeta,
 		common.IfThenDo1st(len(fields) > 1, func() interface{} {
-			return (&ccurltype.Decoder{}).Decode(fields[1], unimeta.vType)
+			return (&Decoder{}).Decode(fields[1], unimeta.vType)
 		}, nil),
 		(&codec.Bytes{}).Decode(fields[2]).(codec.Bytes),
 	}

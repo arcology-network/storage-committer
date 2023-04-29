@@ -8,7 +8,7 @@ import (
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/datacompression"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
-	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
+	commutative "github.com/arcology-network/concurrenturl/v2/commutative"
 	"github.com/holiman/uint256"
 )
 

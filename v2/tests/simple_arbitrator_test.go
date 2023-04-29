@@ -10,9 +10,9 @@ import (
 	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl/v2"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
+	commutative "github.com/arcology-network/concurrenturl/v2/commutative"
 	indexer "github.com/arcology-network/concurrenturl/v2/indexer"
-	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
-	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
+	noncommutative "github.com/arcology-network/concurrenturl/v2/noncommutative"
 	univalue "github.com/arcology-network/concurrenturl/v2/univalue"
 )
 

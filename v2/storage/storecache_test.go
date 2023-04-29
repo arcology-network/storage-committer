@@ -7,9 +7,8 @@ import (
 
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
-	ccurltype "github.com/arcology-network/concurrenturl/v2/type"
-	noncommutative "github.com/arcology-network/concurrenturl/v2/type/noncommutative"
-	"github.com/arcology-network/concurrenturl/v2/univalue"
+	noncommutative "github.com/arcology-network/concurrenturl/v2/noncommutative"
+	univalue "github.com/arcology-network/concurrenturl/v2/univalue"
 )
 
 func TestCachePolicyLowScore(t *testing.T) {
@@ -28,7 +27,7 @@ func TestCachePolicyLowScore(t *testing.T) {
 
 		persistentDB := cachedstorage.NewMemDB()
 		cachePolicy := cachedstorage.NewCachePolicy(1, 1.0) // 1 byte only
-		dataStore := cachedstorage.NewDataStore(nil, cachePolicy, persistentDB, ccurltype.ToBytes, ccurltype.FromBytes)
+		dataStore := cachedstorage.NewDataStore(nil, cachePolicy, persistentDB, univalue.ToBytes, univalue.FromBytes)
 
 		// -------------------- First insertion --------------------
 		dataStore.BatchInject(keys, nVals)
@@ -74,7 +73,7 @@ func TestCachePolicyAndPersistentDB(t *testing.T) {
 
 		persistentDB := cachedstorage.NewMemDB()
 		cachePolicy := cachedstorage.NewCachePolicy(1, 0.8)
-		dataStore := cachedstorage.NewDataStore(nil, cachePolicy, persistentDB, ccurltype.ToBytes, ccurltype.FromBytes)
+		dataStore := cachedstorage.NewDataStore(nil, cachePolicy, persistentDB, univalue.ToBytes, univalue.FromBytes)
 
 		// First insertion
 		dataStore.BatchInject(keys, nVals)
@@ -109,12 +108,12 @@ func TestCacheWithPersistentStorage(t *testing.T) {
 	for i := 0; i < len(keys); i++ {
 		keys[i] = fmt.Sprint(i)
 		nVals[i] = univalue.NewUnivalue(uint32(i), keys[i], 1, 1, 2, noncommutative.NewInt64(int64(i)))
-		encoded[i] = ccurltype.ToBytes(nVals[i].(ccurlcommon.UnivalueInterface).Value())
+		encoded[i] = univalue.ToBytes(nVals[i].(ccurlcommon.UnivalueInterface).Value())
 	}
 	persistentDB := cachedstorage.NewMemDB()
 	persistentDB.BatchSet(keys, encoded)
 	cachePolicy := cachedstorage.NewCachePolicy(1, 0.8)
-	dataStore := cachedstorage.NewDataStore(nil, cachePolicy, persistentDB, ccurltype.ToBytes, ccurltype.FromBytes)
+	dataStore := cachedstorage.NewDataStore(nil, cachePolicy, persistentDB, univalue.ToBytes, univalue.FromBytes)
 
 	// First insertion
 	dataStore.BatchInject(keys, nVals)

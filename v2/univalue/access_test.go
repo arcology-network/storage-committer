@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/arcology-network/common-lib/datacompression"
-	commutative "github.com/arcology-network/concurrenturl/v2/type/commutative"
+	commutative "github.com/arcology-network/concurrenturl/v2/commutative"
 )
 
 func TestUnimetaCodecUint64(t *testing.T) {
