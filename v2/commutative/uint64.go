@@ -8,21 +8,23 @@ import (
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 )
 
+type Selector []bool
+
 type Uint64 struct {
-	value uint64
-	delta uint64
-	min   uint64
-	max   uint64
+	value codec.Uint64
+	delta codec.Uint64
+	min   codec.Uint64
+	max   codec.Uint64
 }
 
 func NewUint64(min, max uint64) interface{} {
 	return &Uint64{
-		min: min,
-		max: max,
+		min: codec.Uint64(min),
+		max: codec.Uint64(max),
 	}
 }
 
-func NewUint64Delta(delta uint64) interface{} { return &Uint64{delta: delta} }
+func NewUint64Delta(delta uint64) interface{} { return &Uint64{delta: codec.Uint64(delta)} }
 
 func (this *Uint64) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
 	return v, 0, 1, 0
@@ -40,15 +42,15 @@ func (this *Uint64) IsSelf(key interface{}) bool { return true }
 
 func (this *Uint64) Clone() interface{} {
 	return &Uint64{
-		this.value,
-		this.delta,
-		this.min,
-		this.max,
+		value: this.value,
+		delta: this.delta,
+		min:   this.min,
+		max:   this.max,
 	}
 }
 
 func (this *Uint64) Get() (interface{}, uint32, uint32) {
-	return this.value + this.delta, 1, common.IfThen(this.delta == 0, uint32(0), uint32(1))
+	return uint64(this.value + this.delta), 1, common.IfThen(this.delta == 0, uint32(0), uint32(1))
 }
 
 func (this *Uint64) Set(v interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {

@@ -365,7 +365,7 @@ func (this *ConcurrentUrl) Export(sorter func([]ccurlcommon.UnivalueInterface) i
 				v.DeltaWrites() > 0 &&
 				v.Reads() == 0 &&
 				v.Writes() == 0 &&
-				v.TypeID() != commutative.PathID,
+				v.TypeID() != ccurlcommon.Commutative{}.Path(),
 			func() codec.Encodeable { return v.Value().(codec.Encodeable) },
 			v.Meta().(codec.Encodeable))
 	})
@@ -386,7 +386,7 @@ func (this *ConcurrentUrl) Export2(sorter func([]ccurlcommon.UnivalueInterface) 
 				v.DeltaWrites() > 0 &&
 				v.Reads() == 0 &&
 				v.Writes() == 0 &&
-				v.TypeID() != commutative.PathID,
+				v.TypeID() != ccurlcommon.Commutative{}.Path(),
 			func() codec.Encodeable { return v.Value().(codec.Encodeable) },
 			v.Meta().(codec.Encodeable))
 	})

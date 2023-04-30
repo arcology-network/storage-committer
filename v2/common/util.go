@@ -9,12 +9,12 @@ func IsPath(path string) bool {
 	return !(len(path) == 0 || path[len(path)-1] != '/')
 }
 
-func CheckDepth(path string) bool {
-	return strings.Count(path, "/") <= int(MaxDepth)
-}
+// func CheckDepth(path string) bool {
+// 	return strings.Count(path, "/") <= int(MAX_DEPTH)
+// }
 
 func GetParentPath(key string) string {
-	if len(key) == 0 || key == Root {
+	if len(key) == 0 || key == "/" { //Root or empty
 		return key
 	}
 	path := key[:strings.LastIndex(key[:len(key)-1], "/")+1]

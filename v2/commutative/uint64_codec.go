@@ -2,44 +2,54 @@ package commutative
 
 import (
 	"fmt"
+	"math"
 
 	codec "github.com/arcology-network/common-lib/codec"
+	"github.com/arcology-network/common-lib/common"
 )
 
 func (this *Uint64) HeaderSize() uint32 {
-	return 0 //static size only , no header needed,
+	return 5 * codec.UINT32_LEN //static size only , no header needed,
 }
 
-func (this *Uint64) Size() uint32 {
-	return this.HeaderSize() + // No need to encode this.finalized
-		codec.Uint64(this.value).Size() +
-		codec.Uint64(this.delta).Size() +
-		codec.Uint64(this.min).Size() +
-		codec.Uint64(this.max).Size()
+func (this *Uint64) Size(selector ...bool) uint32 {
+	return this.HeaderSize() +
+		common.IfThen(len(selector) == 0 || selector[0], uint32(8), 0) +
+		common.IfThen(len(selector) == 0 || selector[1], uint32(8), 0) +
+		common.IfThen(len(selector) == 0 || selector[2], uint32(8), 0) +
+		common.IfThen(len(selector) == 0 || selector[3], uint32(8), 0)
 }
 
-func (this *Uint64) Encode() []byte {
-	buffer := make([]byte, this.Size())
-	this.EncodeToBuffer(buffer)
+func (this *Uint64) Encode(selector ...bool) []byte {
+	buffer := make([]byte, this.Size(selector...))
+	offset := codec.Encoder{}.FillHeader(
+		buffer,
+		[]uint32{
+			common.IfThen(len(selector) == 0 || selector[0], uint32(8), 0),
+			common.IfThen(len(selector) == 0 || selector[1], uint32(8), 0),
+			common.IfThen(len(selector) == 0 || selector[2], uint32(8), 0),
+			common.IfThen(len(selector) == 0 || selector[3], uint32(8), 0),
+		},
+	)
+	this.EncodeToBuffer(buffer[offset:], selector...)
 	return buffer
 }
 
-func (this *Uint64) EncodeToBuffer(buffer []byte) int {
-	offset := 0
-	offset += codec.Uint64(this.value).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.delta).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.min).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.max).EncodeToBuffer(buffer[offset:])
+func (this *Uint64) EncodeToBuffer(buffer []byte, selector ...bool) int {
+	offset := common.IfThenDo1st(len(selector) == 0 || selector[0], func() int { return this.value.EncodeToBuffer(buffer) }, 0)
+	offset += common.IfThenDo1st(len(selector) == 0 || selector[1], func() int { return this.delta.EncodeToBuffer(buffer[offset:]) }, 0)
+	offset += common.IfThenDo1st(len(selector) == 0 || selector[2], func() int { return this.min.EncodeToBuffer(buffer[offset:]) }, 0)
+	offset += common.IfThenDo1st(len(selector) == 0 || selector[3], func() int { return this.max.EncodeToBuffer(buffer[offset:]) }, 0)
 	return offset
 }
 
 func (this *Uint64) Decode(buffer []byte) interface{} {
-	this = &Uint64{
-		uint64(codec.Uint64(0).Decode(buffer).(codec.Uint64)),                      // value
-		uint64(codec.Uint64(0).Decode(buffer[codec.UINT64_LEN*1:]).(codec.Uint64)), // delta
-		uint64(codec.Uint64(0).Decode(buffer[codec.UINT64_LEN*2:]).(codec.Uint64)), // min
-		uint64(codec.Uint64(0).Decode(buffer[codec.UINT64_LEN*3:]).(codec.Uint64)), // max
-	}
+	fields := codec.Byteset{}.Decode(buffer).(codec.Byteset)
+
+	this.value = codec.Uint64(0).Decode(fields[0]).(codec.Uint64)
+	this.delta = codec.Uint64(0).Decode(fields[1]).(codec.Uint64)
+	this.min = codec.Uint64(0).Decode(fields[2]).(codec.Uint64)
+	this.max = codec.Uint64(math.MaxUint64).Decode(fields[3]).(codec.Uint64)
 	return this
 }
 

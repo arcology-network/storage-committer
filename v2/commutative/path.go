@@ -157,7 +157,7 @@ func (this *Path) Purge() {
 }
 
 func (this *Path) Hash(hasher func([]byte) []byte) []byte {
-	return hasher(this.EncodeCompact())
+	return hasher(this.Encode())
 }
 
 // Peek the removed keys

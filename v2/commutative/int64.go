@@ -9,10 +9,10 @@ import (
 )
 
 type Int64 struct {
-	value int64
-	delta int64
-	min   int64
-	max   int64
+	value codec.Int64
+	delta codec.Int64
+	min   codec.Int64
+	max   codec.Int64
 }
 
 func NewInt64(min, max int64) interface{} {
@@ -21,12 +21,12 @@ func NewInt64(min, max int64) interface{} {
 	}
 
 	return &Int64{
-		min: min,
-		max: max,
+		min: codec.Int64(min),
+		max: codec.Int64(max),
 	}
 }
 
-func NewInt64Delta(delta int64) interface{}     { return &Int64{delta: delta} }
+func NewInt64Delta(delta int64) interface{}     { return &Int64{delta: codec.Int64(delta)} }
 func (this *Int64) TypeID() uint8               { return ccurlcommon.Commutative{}.Int64() }
 func (this *Int64) IsSelf(key interface{}) bool { return true }
 
@@ -48,7 +48,7 @@ func (this *Int64) Clone() interface{} {
 }
 
 func (this *Int64) Get() (interface{}, uint32, uint32) {
-	return this.value + this.delta, 1, common.IfThen(this.delta == 0, uint32(0), uint32(1))
+	return int64(this.value + this.delta), 1, common.IfThen(this.delta == 0, uint32(0), uint32(1))
 }
 
 func (this *Int64) Latest() interface{} { return this.value }
@@ -56,7 +56,7 @@ func (this *Int64) Value() interface{}  { return this }
 func (this *Int64) Delta() interface{}  { return codec.Int64(this.delta) }
 
 func (this *Int64) Set(v interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
-	if this.isUnderflow(v.(*Int64).delta) || this.isOverflow(v.(*Int64).delta) {
+	if this.isUnderflow(int64(v.(*Int64).delta)) || this.isOverflow(int64(v.(*Int64).delta)) {
 		return this, 0, 1, 0, errors.New("Error: Value out of range!!")
 	}
 
@@ -70,15 +70,15 @@ func (this *Int64) Set(v interface{}, source interface{}) (interface{}, uint32, 
 }
 
 func (this *Int64) isOverflow(delta int64) bool {
-	flag := this.max-delta < this.value+this.delta
+	flag := this.max-codec.Int64(delta) < this.value+this.delta
 	return (delta >= 0 && this.delta >= 0) &&
-		(this.max < delta || flag)
+		(this.max < codec.Int64(delta) || flag)
 }
 
 func (this *Int64) isUnderflow(delta int64) bool {
-	flag := this.min-delta > this.value+this.delta
+	flag := this.min-codec.Int64(delta) > this.value+this.delta
 	return (delta < 0 && this.delta < 0) &&
-		(this.min > delta || flag)
+		(this.min > codec.Int64(delta) || flag)
 }
 
 func (this *Int64) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {

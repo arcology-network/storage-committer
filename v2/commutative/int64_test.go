@@ -149,18 +149,27 @@ func TestNewInt64MinMax(t *testing.T) {
 }
 
 func TestInt64Codec(t *testing.T) {
-	in := NewInt64(0, 5).(*Int64)
-	in.Set(NewInt64Delta(4), nil)
+	in := NewInt64(-2, 5).(*Int64)
+	in.Set(NewInt64Delta(-1), nil)
 	buffer := in.Encode()
-	out := (&Int64{}).Decode(buffer)
-	if *(in) != *(out.(*Int64)) {
+	out := (&Int64{}).Decode(buffer).(*Int64)
+	if *(in) != *(out) {
 		t.Error("Wrong value")
 	}
 
-	in = NewInt64(math.MinInt64, 0).(*Int64)
-	buffer = in.Encode()
-	out = (&Int64{}).Decode(buffer)
-	if *(in) != *(out.(*Int64)) {
-		t.Error("Wrong value")
+	if out.value != in.value ||
+		out.delta != in.delta ||
+		out.min != in.min ||
+		out.max != in.max {
+		t.Error("Error: Wrong value ")
+	}
+	buffer = in.Encode(true, true, false, false)
+	out = (&Int64{}).Decode(buffer).(*Int64)
+
+	if out.value != in.value ||
+		out.delta != in.delta ||
+		out.min != math.MinInt64 ||
+		out.max != math.MaxInt64 {
+		t.Error("Error: Wrong value ")
 	}
 }

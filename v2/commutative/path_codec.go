@@ -4,51 +4,43 @@ import (
 	"fmt"
 
 	codec "github.com/arcology-network/common-lib/codec"
+	"github.com/arcology-network/common-lib/common"
 
 	// performance "github.com/arcology-network/common-lib/mhasher"
 	orderedset "github.com/arcology-network/common-lib/container/set"
 )
 
-func (this *Path) Encode() []byte {
-	buffer := make([]byte, this.Size()) //  no need to send the committed keys
-	this.EncodeToBuffer(buffer)
-	return buffer
-}
-
 func (this *Path) HeaderSize() uint32 {
 	return 3 * codec.UINT32_LEN // number of fields + 1
 }
 
-func (this *Path) Size() uint32 {
-	if this == nil {
-		return 0
-	}
-	return this.delta.Size()
+func (this *Path) Size(selectors ...bool) uint32 {
+	return common.IfThen(len(selectors) == 0 || selectors[0], this.value.Size(), 0) +
+		common.IfThen(len(selectors) == 0 || selectors[1], this.delta.Size(), 0)
 }
 
-func (this *Path) EncodeToBuffer(buffer []byte) int {
-	return int(this.delta.EncodeToBuffer(buffer))
+func (this *Path) Encode(selectors ...bool) []byte {
+	buffer := make([]byte, this.Size()) //  no need to send the committed keys
+	offset := codec.Encoder{}.FillHeader(buffer,
+		[]uint32{
+			common.IfThen(len(selectors) == 0 || selectors[0], this.value.Size(), 0),
+			common.IfThen(len(selectors) == 0 || selectors[0], this.delta.Size(), 0),
+		},
+	)
+	this.EncodeToBuffer(buffer[offset:], selectors...)
+	return buffer
+}
+
+func (this *Path) EncodeToBuffer(buffer []byte, selectors ...bool) int {
+	offset := common.IfThen(len(selectors) == 0 || selectors[0], this.value.EncodeToBuffer(buffer), 0)
+	offset += common.IfThen(len(selectors) == 0 || selectors[1], this.delta.EncodeToBuffer(buffer[offset:]), 0)
+	return offset
 }
 
 func (this *Path) Decode(buffer []byte) interface{} {
 	return &Path{
 		value: orderedset.NewOrderedSet([]string{}),
 		delta: (&PathDelta{}).Decode(buffer).(*PathDelta),
-	}
-}
-
-func (this *Path) EncodeCompact() []byte {
-	byteset := [][]byte{
-		codec.Strings(this.value.Keys()).Encode(),
-	}
-	return codec.Byteset(byteset).Encode()
-}
-
-func (this *Path) DecodeCompact(bytes []byte) interface{} {
-	buffers := codec.Byteset{}.Decode(bytes).(codec.Byteset)
-	return &Path{
-		value: orderedset.NewOrderedSet(codec.Strings([]string{}).Decode(buffers[0]).(codec.Strings)),
-		delta: NewPathDelta([]string{}, []string{}),
 	}
 }
 

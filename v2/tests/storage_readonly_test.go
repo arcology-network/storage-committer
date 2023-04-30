@@ -1,4 +1,4 @@
-package ccdb
+package ccurltest
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
 	noncommutative "github.com/arcology-network/concurrenturl/v2/noncommutative"
+	storage "github.com/arcology-network/concurrenturl/v2/storage"
 	univalue "github.com/arcology-network/concurrenturl/v2/univalue"
 )
 
@@ -15,7 +16,7 @@ func TestReadonlyStorageLocal(t *testing.T) {
 	// Server end
 	persistentDB := cachedstorage.NewMemDB()
 	serverCachePolicy := cachedstorage.NewCachePolicy(1, 0.8)
-	serverDataStore := cachedstorage.NewDataStore(nil, serverCachePolicy, persistentDB, univalue.ToBytes, univalue.FromBytes)
+	serverDataStore := cachedstorage.NewDataStore(nil, serverCachePolicy, persistentDB, storage.ToBytes, storage.FromBytes)
 
 	keys := []string{}
 	values := []interface{}{}
@@ -24,7 +25,7 @@ func TestReadonlyStorageLocal(t *testing.T) {
 		v := univalue.NewUnivalue(uint32(i), fmt.Sprint(i), 1, 1, 2, noncommutative.NewInt64(int64(i)))
 		values = append(values, v)
 
-		persistentDB.Set(fmt.Sprint(i), univalue.ToBytes(noncommutative.NewInt64(int64(i)))) // save to the DB directly
+		persistentDB.Set(fmt.Sprint(i), storage.ToBytes(noncommutative.NewInt64(int64(i)))) // save to the DB directly
 	}
 	serverDataStore.Precommit(keys[:4], values[:4]) // 4 in the server side cache
 	serverDataStore.Commit()
@@ -37,10 +38,10 @@ func TestReadonlyStorageLocal(t *testing.T) {
 		values1 = append(values1, univalue.NewUnivalue(uint32(i), fmt.Sprint(i), 1, 1, 2, noncommutative.NewInt64(int64(i))))
 	}
 
-	placeholderEncoder := func(v interface{}) []byte { return univalue.ToBytes(v) }
-	placeholderDecoder := func(bytes []byte) interface{} { return univalue.FromBytes(bytes) }
+	placeholderEncoder := func(v interface{}) []byte { return storage.ToBytes(v) }
+	placeholderDecoder := func(bytes []byte) interface{} { return storage.FromBytes(bytes) }
 
-	readonlyClientProxy := NewReadonlyClient("", "", nil, serverDataStore)
+	readonlyClientProxy := storage.NewReadonlyClient("", "", nil, serverDataStore)
 	clientCachePolicy := cachedstorage.NewCachePolicy(1, 0.8)
 	clientDataStore := cachedstorage.NewDataStore(nil, clientCachePolicy, readonlyClientProxy, placeholderEncoder, placeholderDecoder)
 	clientDataStore.Precommit(keys1[:2], values1[:2]) // 2 in the client side cache
@@ -76,7 +77,7 @@ func TestReadonlyStorageRemote(t *testing.T) {
 	// Server end
 	persistentDB := cachedstorage.NewMemDB()
 	serverCachePolicy := cachedstorage.NewCachePolicy(1, 0.8)
-	serverDataStore := cachedstorage.NewDataStore(nil, serverCachePolicy, persistentDB, univalue.ToBytes, univalue.FromBytes)
+	serverDataStore := cachedstorage.NewDataStore(nil, serverCachePolicy, persistentDB, storage.ToBytes, storage.FromBytes)
 
 	keys := []string{}
 	values := []interface{}{}
@@ -84,12 +85,12 @@ func TestReadonlyStorageRemote(t *testing.T) {
 		keys = append(keys, fmt.Sprint(i))
 		v := univalue.NewUnivalue(uint32(i), fmt.Sprint(i), 1, 1, 2, noncommutative.NewInt64(int64(i)))
 		values = append(values, v)
-		persistentDB.Set(fmt.Sprint(i), univalue.ToBytes(noncommutative.NewInt64(int64(i)))) // save to the DB directly
+		persistentDB.Set(fmt.Sprint(i), storage.ToBytes(noncommutative.NewInt64(int64(i)))) // save to the DB directly
 	}
 	serverDataStore.Precommit(keys[:4], values[:4]) // 4 in the server side cache
 	serverDataStore.Commit()
 
-	server := NewReadonlyServer("", univalue.ToBytes, univalue.FromBytes, serverDataStore)
+	server := storage.NewReadonlyServer("", storage.ToBytes, storage.FromBytes, serverDataStore)
 	go func() {
 		http.HandleFunc("/store", server.Receive)
 		http.ListenAndServe(":8090", nil)
@@ -103,10 +104,10 @@ func TestReadonlyStorageRemote(t *testing.T) {
 		values1 = append(values1, univalue.NewUnivalue(uint32(i), fmt.Sprint(i), 1, 1, 2, noncommutative.NewInt64(int64(i))))
 	}
 
-	proxyEncoder := func(v interface{}) []byte { return univalue.ToBytes(v) }
-	proxyDecoder := func(bytes []byte) interface{} { return univalue.FromBytes(bytes) }
+	proxyEncoder := func(v interface{}) []byte { return storage.ToBytes(v) }
+	proxyDecoder := func(bytes []byte) interface{} { return storage.FromBytes(bytes) }
 
-	readonlyClientProxy := NewReadonlyClient("http://localhost:8090", "store", nil)
+	readonlyClientProxy := storage.NewReadonlyClient("http://localhost:8090", "store", nil)
 	clientCachePolicy := cachedstorage.NewCachePolicy(1, 0.8)
 	clientDataStore := cachedstorage.NewDataStore(nil, clientCachePolicy, readonlyClientProxy, proxyEncoder, proxyDecoder)
 	clientDataStore.Precommit(keys1[:2], values1[:2]) // 2 in the client side cache

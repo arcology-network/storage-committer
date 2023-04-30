@@ -1,4 +1,4 @@
-package univalue
+package ccdb
 
 import (
 	"github.com/arcology-network/common-lib/codec"

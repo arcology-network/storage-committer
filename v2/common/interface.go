@@ -25,12 +25,12 @@ type TypeInterface interface { // value type
 	ApplyDelta(interface{}) TypeInterface
 	IsSelf(interface{}) bool
 	Hash(func([]byte) []byte) []byte
-	Encode() []byte
-	EncodeToBuffer([]byte) int
+
+	Size(...bool) uint32
+	Encode(...bool) []byte
+	EncodeToBuffer([]byte, ...bool) int
 	Decode([]byte) interface{}
-	Size() uint32
-	// EncodeCompact() []byte
-	// DecodeCompact([]byte) interface{}
+
 	Purge()
 	Print()
 }

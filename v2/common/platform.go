@@ -1,7 +1,11 @@
 package common
 
+import "math"
+
 const (
-	ETH10_ACCOUNT_LENGTH = 40
+	MAX_DEPTH            uint8 = 12
+	SYSTEM                     = math.MaxInt32
+	ETH10_ACCOUNT_LENGTH       = 40
 )
 
 type Platform struct {
