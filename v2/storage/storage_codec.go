@@ -1,7 +1,6 @@
 package ccdb
 
 import (
-	"github.com/arcology-network/common-lib/codec"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 	commutative "github.com/arcology-network/concurrenturl/v2/commutative"
 	noncommutative "github.com/arcology-network/concurrenturl/v2/noncommutative"
@@ -12,7 +11,7 @@ func ToBytes(value interface{}) []byte {
 	if value == nil {
 		return []byte{} // Deletion
 	}
-	encoded := value.(ccurlcommon.TypeInterface).Value().(codec.Encodeable).Encode()
+	encoded := value.(ccurlcommon.TypeInterface).Encode()
 	encoded = append(encoded, value.(ccurlcommon.TypeInterface).TypeID())
 	return encoded
 }
@@ -32,27 +31,27 @@ func (Decoder) DecodeCompact(bytes []byte, vType uint8) interface{} {
 	}
 
 	switch vType {
-	case ccurlcommon.NonCommutative{}.String(): // delta big int
+	case noncommutative.STRING: // delta big int
 		stringer := noncommutative.String("")
 		return stringer.DecodeCompact(bytes)
 
-	case ccurlcommon.NonCommutative{}.Int64():
+	case noncommutative.INT64:
 		i64 := noncommutative.Int64(0)
 		return i64.DecodeCompact(bytes)
 
-	case ccurlcommon.NonCommutative{}.Bigint(): // big int pointer
+	case noncommutative.BIGINT: // big int pointer
 		return (&noncommutative.Bigint{}).DecodeCompact(bytes)
 
-	case ccurlcommon.NonCommutative{}.Bytes(): // big int pointer
+	case noncommutative.BYTES: // big int pointer
 		return (&noncommutative.Bytes{}).DecodeCompact(bytes)
 
-	case ccurlcommon.Commutative{}.Path(): // Path
-		return (&commutative.Path{}).DecodeCompact(bytes)
+	case commutative.PATH: // Path
+		return (&commutative.Path{}).Decode(bytes)
 
-	case ccurlcommon.Commutative{}.Uint256(): // delta big int
+	case commutative.UINT256: // delta big int
 		return (&commutative.U256{}).DecodeCompact(bytes)
 
-	case ccurlcommon.Commutative{}.Int64(): // delta int 64
+	case commutative.INT64: // delta int 64
 		return (&commutative.Int64{}).DecodeCompact(bytes)
 	}
 
@@ -65,30 +64,30 @@ func (Decoder) Decode(bytes []byte, vType uint8) interface{} {
 	}
 
 	switch vType {
-	case ccurlcommon.NonCommutative{}.String(): // delta big int
+	case noncommutative.STRING: // delta big int
 		stringer := noncommutative.String("")
 		return stringer.Decode(bytes)
 
-	case ccurlcommon.NonCommutative{}.Int64():
+	case noncommutative.INT64:
 		i64 := noncommutative.Int64(0)
 		return i64.Decode(bytes)
 
-	case ccurlcommon.NonCommutative{}.Bigint(): // big int pointer
+	case noncommutative.BIGINT: // big int pointer
 		return (&noncommutative.Bigint{}).Decode(bytes)
 
-	case ccurlcommon.NonCommutative{}.Bytes(): // big int pointer
+	case noncommutative.BYTES: // big int pointer
 		return (&noncommutative.Bytes{}).Decode(bytes)
 
-	case ccurlcommon.Commutative{}.Path(): // Path
+	case commutative.PATH: // Path
 		return (&commutative.Path{}).Decode(bytes)
 
-	case ccurlcommon.Commutative{}.Uint256(): // delta big int
+	case commutative.UINT256: // delta big int
 		return (&commutative.U256{}).Decode(bytes)
 
-	case ccurlcommon.Commutative{}.Uint64(): // delta int 64
+	case commutative.UINT64: // delta int 64
 		return (&commutative.Uint64{}).Decode(bytes)
 
-	case ccurlcommon.Commutative{}.Int64(): // delta int 64
+	case commutative.INT64: // delta int 64
 		return (&commutative.Int64{}).Decode(bytes)
 	}
 

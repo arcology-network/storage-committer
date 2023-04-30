@@ -81,7 +81,7 @@ func TestAuxTrans(t *testing.T) {
 	}
 
 	_, transitions := url.Export(ccurlcommon.Sorter)
-	if !reflect.DeepEqual(transitions[0].Value().(*commutative.Path).PeekAdded(), []string{"elem-000"}) {
+	if !reflect.DeepEqual(transitions[0].Value().(ccurlcommon.TypeInterface).Delta().(*commutative.PathDelta).Added(), []string{"elem-000"}) {
 		t.Error("keys don't match")
 	}
 

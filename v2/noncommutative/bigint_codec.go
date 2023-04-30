@@ -6,12 +6,17 @@ import (
 	codec "github.com/arcology-network/common-lib/codec"
 )
 
-func (this *Bigint) Encode() []byte {
+func (this *Bigint) Size(...bool) uint32 {
+	v := codec.Bigint(*this)
+	return v.Size()
+}
+
+func (this *Bigint) Encode(...bool) []byte {
 	v := codec.Bigint(*this)
 	return v.Encode()
 }
 
-func (this *Bigint) EncodeToBuffer(buffer []byte) int {
+func (this *Bigint) EncodeToBuffer(buffer []byte, _ ...bool) int {
 	v := codec.Bigint(*this)
 	return v.EncodeToBuffer(buffer)
 }

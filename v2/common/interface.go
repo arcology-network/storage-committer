@@ -15,7 +15,6 @@ type TypeInterface interface { // value type
 	Equal(interface{}) bool
 	Clone() interface{}
 
-	Latest() interface{}
 	Value() interface{} // Get() - read/write count
 	Delta() interface{}
 
@@ -26,7 +25,9 @@ type TypeInterface interface { // value type
 	IsSelf(interface{}) bool
 	Hash(func([]byte) []byte) []byte
 
-	Size(...bool) uint32
+	MemSize() uint32 // Size in memory
+
+	Size(...bool) uint32 // Encoded size
 	Encode(...bool) []byte
 	EncodeToBuffer([]byte, ...bool) int
 	Decode([]byte) interface{}
@@ -82,7 +83,7 @@ type IndexerInterface interface {
 	Buffer() *map[string]UnivalueInterface
 	Store() *DatastoreInterface
 
-	Platform() *Platform
+	//Platform() *Platform
 }
 
 type FilterTransitionsInterface interface {

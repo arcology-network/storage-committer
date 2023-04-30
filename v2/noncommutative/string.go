@@ -12,9 +12,9 @@ func NewString(v string) interface{} {
 }
 
 func (this *String) IsSelf(key interface{}) bool { return true }
-func (this *String) TypeID() uint8               { return uint8(ccurlcommon.NonCommutative{}.String()) }
+func (this *String) TypeID() uint8               { return STRING }
 
-func (this *String) Latest() interface{}          { return this.Value() }
+func (this *String) MemSize() uint32              { return uint32(len(*this)) }
 func (this *String) Value() interface{}           { return this }
 func (this *String) Delta() interface{}           { return this }
 func (this *String) Equal(other interface{}) bool { return *this == *(other.(*String)) }

@@ -62,5 +62,5 @@ func (this *PathDelta) delKeys(subkey string, value interface{}, preexists bool)
 	return this.addDict.Delete(subkey) // Leave out the entry if it is in the added buffer
 }
 
-func (this *PathDelta) Added() interface{}   { return this.addDict.Keys() }
-func (this *PathDelta) Removed() interface{} { return this.delDict.Keys() }
+func (this *PathDelta) Added() []string   { return this.addDict.Keys() }
+func (this *PathDelta) Removed() []string { return this.delDict.Keys() }

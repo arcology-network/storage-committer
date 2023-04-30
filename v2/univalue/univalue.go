@@ -40,7 +40,6 @@ func (this *Univalue) Meta() interface{}             { return &this.Unimeta }
 func (this *Univalue) ClearCache()                   { this.cache = this.cache[:0] }
 func (this *Univalue) Value() interface{}            { return this.value }
 func (this *Univalue) SetValue(newValue interface{}) { this.value = newValue }
-func (this *Univalue) IsReadOnly() bool              { return this.Writes() == 0 && this.DeltaWrites() == 0 }
 
 func (this *Univalue) Init(tx uint32, key string, reads, writes uint32, v interface{}, args ...interface{}) {
 	this.vType = (&Univalue{}).GetTypeID(v)
@@ -123,7 +122,7 @@ func (this *Univalue) ApplyDelta(tx uint32, v interface{}) error {
 }
 
 func (this *Univalue) IsConcurrentWritable() bool { // Call this before setting the value attribute to nil
-	return (this.value != nil && this.reads == 0 && this.writes == 0)
+	return (this.value != nil && this.IsReadOnly())
 }
 
 func (this *Univalue) PrecheckAttributes(other *Univalue) {
@@ -154,7 +153,7 @@ func (this *Univalue) PrecheckAttributes(other *Univalue) {
 func (this *Univalue) Clone() interface{} {
 	v := &Univalue{
 		this.Unimeta.Clone(),
-		common.IfThen(this.value != nil, this.value.(ccurlcommon.TypeInterface).Clone(), nil),
+		common.IfThenDo1st(this.value != nil, func() interface{} { return this.value.(ccurlcommon.TypeInterface).Clone() }, nil),
 		codec.Bytes(this.cache).Clone(),
 	}
 	return v

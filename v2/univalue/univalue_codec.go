@@ -17,12 +17,12 @@ func (this *Univalue) HeaderSize() uint32 {
 	return uint32(4 * codec.UINT32_LEN)
 }
 
-func (this *Univalue) Sizes() []int {
-	return []int{
-		int(this.HeaderSize()),
-		int(this.Unimeta.Size()),
-		int(this.value.(ccurlcommon.TypeInterface).Size()),
-		int(codec.Bytes(this.cache).Size()),
+func (this *Univalue) Sizes() []uint32 {
+	return []uint32{
+		this.HeaderSize(),
+		this.Unimeta.Size(),
+		this.value.(ccurlcommon.TypeInterface).Size(),
+		codec.Bytes(this.cache).Size(),
 	}
 }
 

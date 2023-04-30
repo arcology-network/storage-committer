@@ -18,6 +18,7 @@ import (
 	commutative "github.com/arcology-network/concurrenturl/v2/commutative"
 	indexer "github.com/arcology-network/concurrenturl/v2/indexer"
 	"github.com/arcology-network/concurrenturl/v2/noncommutative"
+	state "github.com/arcology-network/concurrenturl/v2/state"
 	univalue "github.com/arcology-network/concurrenturl/v2/univalue"
 )
 
@@ -355,8 +356,8 @@ func (this *ConcurrentUrl) Export(sorter func([]ccurlcommon.UnivalueInterface) i
 
 	this.transitBuf = common.Clone(this.buffer)
 	common.RemoveIf(&this.transitBuf,
-		TransitionFilter{}.ReadOnly,
-		TransitionFilter{}.DelNonExist,
+		state.TransitionFilter{}.ReadOnly,
+		state.TransitionFilter{}.DelNonExist,
 	)
 
 	common.CastTo(this.transitBuf, func(v ccurlcommon.UnivalueInterface) codec.Encodeable {
@@ -392,7 +393,7 @@ func (this *ConcurrentUrl) Export2(sorter func([]ccurlcommon.UnivalueInterface) 
 	})
 
 	transits := common.CastTo(
-		common.RemoveIf(&this.buffer, TransitionFilter{}.ReadOnly, TransitionFilter{}.DelNonExist),
+		common.RemoveIf(&this.buffer, state.TransitionFilter{}.ReadOnly, state.TransitionFilter{}.DelNonExist),
 		func(v ccurlcommon.UnivalueInterface) codec.Encodeable {
 			return v.(codec.Encodeable)
 		})

@@ -213,7 +213,7 @@ func TestBasic(t *testing.T) {
 
 	_, transitions := url.Export(ccurlcommon.Sorter)
 
-	if !reflect.DeepEqual(transitions[0].Value().(*commutative.Path).PeekAdded(), []string{"elem-000", "elem-111"}) {
+	if !reflect.DeepEqual(transitions[0].Value().(ccurlcommon.TypeInterface).Delta().(*commutative.PathDelta).Added(), []string{"elem-000", "elem-111"}) {
 		t.Error("Error: keys are missing from the added buffer!")
 	}
 
@@ -395,7 +395,7 @@ func TestUrl1(t *testing.T) {
 		t.Error("Error: keys don't match")
 	}
 
-	if !reflect.DeepEqual(ccurlcommon.SortString(transitions[1].Value().(*commutative.Path).PeekAdded()), []string{"elem-000", "elem-001", "elem-002"}) {
+	if !reflect.DeepEqual(ccurlcommon.SortString(transitions[1].Value().(ccurlcommon.TypeInterface).Delta().(*commutative.PathDelta).Added()), []string{"elem-000", "elem-001", "elem-002"}) {
 		t.Error("Error: keys don't match")
 	}
 

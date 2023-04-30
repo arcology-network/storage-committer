@@ -27,8 +27,9 @@ func (this *Bytes) Assign(v []byte) {
 	this.value = v
 }
 
+func (this *Bytes) MemSize() uint32             { return uint32(1 + len(this.value)) }
 func (this *Bytes) IsSelf(key interface{}) bool { return true }
-func (this *Bytes) TypeID() uint8               { return ccurlcommon.NonCommutative{}.Bytes() }
+func (this *Bytes) TypeID() uint8               { return BYTES }
 
 func (this *Bytes) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
 	return v, 0, 1, 0
@@ -50,8 +51,7 @@ func (this *Bytes) Get() (interface{}, uint32, uint32) {
 	return this, 1, 0
 }
 
-func (this *Bytes) Latest() interface{} { return this.Value() }
-func (this *Bytes) Value() interface{}  { return this }
+func (this *Bytes) Value() interface{} { return this }
 func (this *Bytes) Delta() interface{} {
 	return this
 }

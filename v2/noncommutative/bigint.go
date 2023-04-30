@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"math/big"
 
-	codec "github.com/arcology-network/common-lib/codec"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 )
 
@@ -17,10 +16,10 @@ func NewBigint(v int64) interface{} {
 	return &this
 }
 
+func (this *Bigint) MemSize() uint32             { return uint32((*big.Int)(this).BitLen()) }
 func (this *Bigint) IsSelf(key interface{}) bool { return true }
-func (this *Bigint) TypeID() uint8               { return uint8(ccurlcommon.NonCommutative{}.Bigint()) }
+func (this *Bigint) TypeID() uint8               { return BIGINT }
 
-// func (this *Bigint) Latest() interface{}         { return this }
 func (this *Bigint) Equal(other interface{}) bool {
 	return bytes.Equal((*big.Int)(this).Bytes(), (*big.Int)(other.(*Bigint)).Bytes())
 }
@@ -34,18 +33,12 @@ func (this *Bigint) Clone() interface{} {
 	return Bigint(*new(big.Int).Set(&v))
 }
 
-func (this *Bigint) Size() uint32 {
-	v := codec.Bigint(*this)
-	return v.Size()
-}
-
 func (this *Bigint) Get() (interface{}, uint32, uint32) {
 	return this, 1, 0
 }
 
-func (this *Bigint) Latest() interface{} { return this.Value() }
-func (this *Bigint) Value() interface{}  { return this }
-func (this *Bigint) Delta() interface{}  { return this }
+func (this *Bigint) Value() interface{} { return this }
+func (this *Bigint) Delta() interface{} { return this }
 
 func (this *Bigint) Set(value interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
 	if value != nil {

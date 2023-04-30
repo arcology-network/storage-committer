@@ -22,6 +22,10 @@ func (this *PathDelta) EncodeToBuffer(buffer []byte) int {
 }
 
 func (this *PathDelta) Decode(buffer []byte) interface{} {
+	if len(buffer) == 0 {
+		return this
+	}
+
 	fields := codec.Stringset{}.Decode(buffer).(codec.Stringset)
 	this = &PathDelta{
 		addDict: orderedset.NewOrderedSet(fields[0]),

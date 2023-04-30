@@ -1,4 +1,4 @@
-package concurrenturl
+package state
 
 import (
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
@@ -16,14 +16,3 @@ func (TransitionFilter) ReadOnly(v ccurlcommon.UnivalueInterface) bool { return 
 func (TransitionFilter) DelNonExist(v ccurlcommon.UnivalueInterface) bool {
 	return v.Value() == nil && !v.Preexist()
 }
-
-type ValueFilter struct{}
-
-// func (TransitionFilter) ReadOnly(v ccurlcommon.UnivalueInterface) bool { return v.IsReadOnly() }
-// func (TransitionFilter) DelNonExist(v ccurlcommon.UnivalueInterface) bool {
-// 	return v.Value() == nil && !v.Preexist()
-// }
-
-// // func To() {
-// 	common.To()
-// }

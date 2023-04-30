@@ -27,7 +27,7 @@ func NewInt64(min, max int64) interface{} {
 }
 
 func NewInt64Delta(delta int64) interface{}     { return &Int64{delta: codec.Int64(delta)} }
-func (this *Int64) TypeID() uint8               { return ccurlcommon.Commutative{}.Int64() }
+func (this *Int64) TypeID() uint8               { return INT64 }
 func (this *Int64) IsSelf(key interface{}) bool { return true }
 
 func (this *Int64) Equal(other interface{}) bool {
@@ -51,9 +51,9 @@ func (this *Int64) Get() (interface{}, uint32, uint32) {
 	return int64(this.value + this.delta), 1, common.IfThen(this.delta == 0, uint32(0), uint32(1))
 }
 
-func (this *Int64) Latest() interface{} { return this.value }
-func (this *Int64) Value() interface{}  { return this }
-func (this *Int64) Delta() interface{}  { return codec.Int64(this.delta) }
+func (this *Int64) MemSize() uint32    { return 5 * 8 }
+func (this *Int64) Value() interface{} { return this }
+func (this *Int64) Delta() interface{} { return codec.Int64(this.delta) }
 
 func (this *Int64) Set(v interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
 	if this.isUnderflow(int64(v.(*Int64).delta)) || this.isOverflow(int64(v.(*Int64).delta)) {

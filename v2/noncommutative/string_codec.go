@@ -7,15 +7,15 @@ import (
 	"github.com/arcology-network/common-lib/codec"
 )
 
-func (this *String) Size() uint32 {
+func (this *String) Size(...bool) uint32 {
 	return uint32(len(*this))
 }
 
-func (this *String) Encode() []byte {
+func (this *String) Encode(...bool) []byte {
 	return codec.String(string(*this)).Encode()
 }
 
-func (this *String) EncodeToBuffer(buffer []byte) int {
+func (this *String) EncodeToBuffer(buffer []byte, _ ...bool) int {
 	return codec.String(*this).EncodeToBuffer(buffer)
 }
 

@@ -218,6 +218,8 @@ func TestStateUpdate(t *testing.T) {
 		t.Error(errs)
 	}
 
+	//need to encode delta only now it encodes everything
+
 	if err := CheckPaths(alice, url); err != nil {
 		t.Error(err)
 	}

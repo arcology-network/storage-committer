@@ -39,6 +39,7 @@ func (this *Unimeta) TypeID() uint8        { return this.vType }
 func (this *Unimeta) Reads() uint32       { return this.reads }
 func (this *Unimeta) Writes() uint32      { return this.writes } // Exist in cache as a failed read
 func (this *Unimeta) DeltaWrites() uint32 { return this.deltaWrites }
+func (this *Univalue) IsReadOnly() bool   { return this.Writes() == 0 && this.DeltaWrites() == 0 }
 
 func (this *Unimeta) Preexist() bool { return this.preexists } // Exist in cache as a failed read
 

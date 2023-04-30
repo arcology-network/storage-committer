@@ -40,8 +40,9 @@ func NewU256(value, min, max *uint256.Int) interface{} {
 	}
 }
 
+func (this *U256) MemSize() uint32             { return 32*4 + 1 }
 func (this *U256) IsSelf(key interface{}) bool { return true }
-func (this *U256) TypeID() uint8               { return ccurlcommon.Commutative{}.Uint256() }
+func (this *U256) TypeID() uint8               { return UINT256 }
 func (this *U256) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
 	return v, 0, 1, 0
 }
@@ -104,8 +105,7 @@ func (this *U256) Equal(other interface{}) bool {
 		this.deltaPositive == other.(*U256).deltaPositive
 }
 
-func (this *U256) Latest() interface{} { return this.value }
-func (this *U256) Value() interface{}  { return this }
+func (this *U256) Value() interface{} { return this }
 func (this *U256) Get() (interface{}, uint32, uint32) {
 	if this.delta.Eq(UINT256ZERO) {
 		return this.value, 1, 0
