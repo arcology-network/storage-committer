@@ -122,7 +122,7 @@ func (this *Univalue) ApplyDelta(tx uint32, v interface{}) error {
 }
 
 func (this *Univalue) IsConcurrentWritable() bool { // Call this before setting the value attribute to nil
-	return (this.value != nil && this.IsReadOnly())
+	return (this.value != nil && this.Writes() == 0 && this.DeltaWrites() == 0)
 }
 
 func (this *Univalue) PrecheckAttributes(other *Univalue) {

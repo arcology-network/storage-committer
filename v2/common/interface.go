@@ -2,8 +2,20 @@ package common
 
 import (
 	"bytes"
+	"math"
 	"sort"
 )
+
+const (
+	MAX_DEPTH            uint8 = 12
+	SYSTEM                     = math.MaxInt32
+	ETH10_ACCOUNT_LENGTH       = 40
+)
+
+type PlatformInterface interface { // value type
+	IsSysPath(string) bool
+	Eth10Account() string
+}
 
 type TransitionInterface interface { // value type
 	Added() interface{}
@@ -27,9 +39,9 @@ type TypeInterface interface { // value type
 
 	MemSize() uint32 // Size in memory
 
-	Size(...bool) uint32 // Encoded size
-	Encode(...bool) []byte
-	EncodeToBuffer([]byte, ...bool) int
+	Size(...interface{}) uint32 // Encoded size
+	Encode(...interface{}) []byte
+	EncodeToBuffer([]byte, ...interface{}) int
 	Decode([]byte) interface{}
 
 	Purge()
@@ -63,9 +75,9 @@ type UnivalueInterface interface { // value type
 	Clone() interface{}
 	// Export(interface{}) (interface{}, interface{})
 	GetEncoded() []byte
-	Size() uint32
-	Encode() []byte
-	EncodeToBuffer([]byte) int
+	Size(...interface{}) uint32
+	Encode(...interface{}) []byte
+	EncodeToBuffer([]byte, ...interface{}) int
 	Decode([]byte) interface{}
 	ClearCache()
 

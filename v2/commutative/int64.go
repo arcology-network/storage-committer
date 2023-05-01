@@ -116,5 +116,5 @@ func (this *Int64) Purge() {
 }
 
 func (this *Int64) Hash(hasher func([]byte) []byte) []byte {
-	return hasher(this.EncodeCompact())
+	return hasher(this.Encode())
 }

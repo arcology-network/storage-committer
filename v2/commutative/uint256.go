@@ -105,7 +105,11 @@ func (this *U256) Equal(other interface{}) bool {
 		this.deltaPositive == other.(*U256).deltaPositive
 }
 
-func (this *U256) Value() interface{} { return this }
+func (this *U256) Value() interface{} {
+	v, _, _ := this.Get()
+	return v
+}
+
 func (this *U256) Get() (interface{}, uint32, uint32) {
 	if this.delta.Eq(UINT256ZERO) {
 		return this.value, 1, 0
@@ -202,7 +206,7 @@ func (this *U256) Purge() {
 }
 
 func (this *U256) Hash(hasher func([]byte) []byte) []byte {
-	return hasher(this.EncodeCompact())
+	return hasher(this.Encode())
 }
 
 func (this *U256) Print() {

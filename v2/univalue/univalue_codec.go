@@ -7,14 +7,14 @@ import (
 	storage "github.com/arcology-network/concurrenturl/v2/storage"
 )
 
-func (this *Univalue) Encode() []byte {
+func (this *Univalue) Encode(selectors ...interface{}) []byte {
 	buffer := make([]byte, this.Size())
-	this.EncodeToBuffer(buffer)
+	this.EncodeToBuffer(buffer, selectors...)
 	return buffer
 }
 
 func (this *Univalue) HeaderSize() uint32 {
-	return uint32(4 * codec.UINT32_LEN)
+	return uint32(3 * codec.UINT32_LEN)
 }
 
 func (this *Univalue) Sizes() []uint32 {
@@ -22,14 +22,13 @@ func (this *Univalue) Sizes() []uint32 {
 		this.HeaderSize(),
 		this.Unimeta.Size(),
 		this.value.(ccurlcommon.TypeInterface).Size(),
-		codec.Bytes(this.cache).Size(),
 	}
 }
 
-func (this *Univalue) Size() uint32 {
-	return this.HeaderSize() + this.Unimeta.Size() +
-		common.IfThenDo1st(this.value != nil, func() uint32 { return this.value.(ccurlcommon.TypeInterface).Size() }, 0) +
-		codec.Bytes(this.cache).Size()
+func (this *Univalue) Size(selectors ...interface{}) uint32 {
+	return this.HeaderSize() +
+		this.Unimeta.Size() +
+		common.IfThenDo1st(this.value != nil, func() uint32 { return this.value.(ccurlcommon.TypeInterface).Size() }, 0)
 }
 
 func (this *Univalue) FillHeader(buffer []byte) int {
@@ -38,19 +37,17 @@ func (this *Univalue) FillHeader(buffer []byte) int {
 		[]uint32{
 			this.Unimeta.Size(),
 			common.IfThenDo1st(this.value != nil, func() uint32 { return this.value.(ccurlcommon.TypeInterface).Size() }, 0),
-			codec.Bytes(this.cache).Size(),
 		},
 	)
 }
 
-func (this *Univalue) EncodeToBuffer(buffer []byte) int {
+func (this *Univalue) EncodeToBuffer(buffer []byte, selectors ...interface{}) int {
 	offset := this.FillHeader(buffer)
 
 	offset += this.Unimeta.EncodeToBuffer(buffer[offset:])
 	offset += common.IfThenDo1st(this.value != nil, func() int {
 		return codec.Bytes(this.value.(ccurlcommon.TypeInterface).Encode()).EncodeToBuffer(buffer[offset:])
 	}, 0)
-	offset += codec.Bytes{}.EncodeToBuffer(buffer[offset:])
 
 	return offset
 }
@@ -58,13 +55,11 @@ func (this *Univalue) EncodeToBuffer(buffer []byte) int {
 func (this *Univalue) Decode(buffer []byte) interface{} {
 	fields := codec.Byteset{}.Decode(buffer).(codec.Byteset)
 	unimeta := (&Unimeta{}).Decode(fields[0]).(*Unimeta)
-
+	v := (&storage.Decoder{}).Decode(fields[1], unimeta.vType)
 	return &Univalue{
 		*unimeta,
-		common.IfThenDo1st(len(fields) > 1, func() interface{} {
-			return (&storage.Decoder{}).Decode(fields[1], unimeta.vType)
-		}, nil),
-		(&codec.Bytes{}).Decode(fields[2]).(codec.Bytes),
+		v,
+		fields[1],
 	}
 }
 

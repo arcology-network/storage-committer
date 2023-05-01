@@ -18,12 +18,12 @@ const (
 type AccountMerkle struct {
 	branches   uint32
 	merkles    map[string]*merkle.Merkle
-	platform   *ccurlcommon.Platform
+	platform   ccurlcommon.PlatformInterface
 	nodePool   *mempool.Mempool
 	merklePool *mempool.Mempool
 }
 
-func NewAccountMerkle(platform *ccurlcommon.Platform) *AccountMerkle {
+func NewAccountMerkle(platform ccurlcommon.PlatformInterface) *AccountMerkle {
 	am := &AccountMerkle{
 		branches: 16,
 		merkles:  make(map[string]*merkle.Merkle),
@@ -114,8 +114,8 @@ func (this *AccountMerkle) MarkAccountRange(paths []string) ([]int, []*string) {
 	positions = append(positions, 0)
 	current := paths[0]
 	for i := 1; i < len(paths); i++ {
-		p0 := current[:len((&ccurlcommon.Platform{}).Eth10Account())+ccurlcommon.ETH10_ACCOUNT_LENGTH]
-		p1 := paths[i][:len((&ccurlcommon.Platform{}).Eth10Account())+ccurlcommon.ETH10_ACCOUNT_LENGTH]
+		p0 := current[:len(this.platform.Eth10Account())+ccurlcommon.ETH10_ACCOUNT_LENGTH]
+		p1 := paths[i][:len(this.platform.Eth10Account())+ccurlcommon.ETH10_ACCOUNT_LENGTH]
 		if p0 != p1 {
 			current = paths[i]
 			positions = append(positions, i)

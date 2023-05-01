@@ -21,7 +21,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	url := ccurl.NewConcurrentUrl(store)
 
 	meta := commutative.NewPath()
-	url.Write(ccurlcommon.SYSTEM, ccurlcommon.NewPlatform().Eth10Account(), meta)
+	url.Write(ccurlcommon.SYSTEM, ccurl.NewPlatform().Eth10Account(), meta)
 	_, trans := url.Export(nil)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 
@@ -62,7 +62,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	url := ccurl.NewConcurrentUrl(store)
 
 	meta := commutative.NewPath()
-	url.Write(ccurlcommon.SYSTEM, ccurlcommon.NewPlatform().Eth10Account(), meta)
+	url.Write(ccurlcommon.SYSTEM, ccurl.NewPlatform().Eth10Account(), meta)
 	_, trans := url.Export(nil)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 	url.PostImport()
@@ -101,7 +101,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 		t.Error(err)
 	}
 
-	// url.Write(ccurlcommon.SYSTEM, ccurlcommon.NewPlatform().Eth10Account(), commutative.NewPath())
+	// url.Write(ccurlcommon.SYSTEM, ccurl.NewPlatform().Eth10Account(), commutative.NewPath())
 	_, acctTrans := url.Export(ccurlcommon.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()

@@ -26,7 +26,7 @@ type ConcurrentUrl struct {
 	indexer    *indexer.Indexer
 	invIndexer *indexer.Indexer
 
-	Platform *ccurlcommon.Platform
+	Platform *Platform
 	// Buf for Export.
 	buffer        []ccurlcommon.UnivalueInterface // Transition + access record buffer
 	accesseBuf    []ccurlcommon.UnivalueInterface // Access records
@@ -36,7 +36,7 @@ type ConcurrentUrl struct {
 }
 
 func NewConcurrentUrl(store ccurlcommon.DatastoreInterface, args ...interface{}) *ConcurrentUrl {
-	platform := ccurlcommon.NewPlatform()
+	platform := NewPlatform()
 	return &ConcurrentUrl{
 		indexer:    indexer.NewIndexer(store, platform),
 		invIndexer: indexer.NewIndexer(store, platform),
@@ -94,22 +94,22 @@ func (this *ConcurrentUrl) CreateAccount(tx uint32, platform string, acct string
 	for i, path := range paths {
 		var v interface{}
 		switch typeids[i] {
-		case ccurlcommon.Commutative{}.Path(): // Path
+		case commutative.PATH: // Path
 			v = commutative.NewPath()
 
-		case uint8(reflect.Kind(ccurlcommon.NonCommutative{}.String())): // delta big int
+		case uint8(reflect.Kind(noncommutative.STRING)): // delta big int
 			v = noncommutative.NewString("")
 
-		case uint8(reflect.Kind(ccurlcommon.Commutative{}.Uint256())): // delta big int
+		case uint8(reflect.Kind(commutative.UINT256)): // delta big int
 			v = commutative.NewU256(uint256.NewInt(0), commutative.U256MIN, commutative.U256MAX)
 
-		case uint8(reflect.Kind(ccurlcommon.Commutative{}.Uint64())):
+		case uint8(reflect.Kind(commutative.UINT64)):
 			v = commutative.NewUint64(0, math.MaxUint64)
 
-		case uint8(reflect.Kind(ccurlcommon.NonCommutative{}.Int64())):
+		case uint8(reflect.Kind(noncommutative.INT64)):
 			v = noncommutative.NewInt64(0)
 
-		case uint8(reflect.Kind(ccurlcommon.NonCommutative{}.Bytes())):
+		case uint8(reflect.Kind(noncommutative.BYTES)):
 			v = noncommutative.NewBytes([]byte{})
 		}
 
@@ -348,6 +348,14 @@ func (this *ConcurrentUrl) AllInOneCommit(transitions []ccurlcommon.UnivalueInte
 	return []error{}
 }
 
+func (this *ConcurrentUrl) Export3(sorter func([]ccurlcommon.UnivalueInterface) interface{}) []ccurlcommon.UnivalueInterface {
+	this.indexer.Vectorize(this.indexer.Buffer(), &this.buffer, false) // Export records
+	if sorter != nil {                                                 // Sort by path, debug only
+		ccurlcommon.Sorter(this.buffer)
+	}
+	return this.buffer
+}
+
 func (this *ConcurrentUrl) Export(sorter func([]ccurlcommon.UnivalueInterface) interface{}) ([]ccurlcommon.UnivalueInterface, []ccurlcommon.UnivalueInterface) {
 	this.indexer.Vectorize(this.indexer.Buffer(), &this.buffer, false) // Export records
 	if sorter != nil {                                                 // Sort by path, debug only
@@ -366,7 +374,7 @@ func (this *ConcurrentUrl) Export(sorter func([]ccurlcommon.UnivalueInterface) i
 				v.DeltaWrites() > 0 &&
 				v.Reads() == 0 &&
 				v.Writes() == 0 &&
-				v.TypeID() != ccurlcommon.Commutative{}.Path(),
+				v.TypeID() != commutative.PATH,
 			func() codec.Encodeable { return v.Value().(codec.Encodeable) },
 			v.Meta().(codec.Encodeable))
 	})
@@ -387,7 +395,7 @@ func (this *ConcurrentUrl) Export2(sorter func([]ccurlcommon.UnivalueInterface) 
 				v.DeltaWrites() > 0 &&
 				v.Reads() == 0 &&
 				v.Writes() == 0 &&
-				v.TypeID() != ccurlcommon.Commutative{}.Path(),
+				v.TypeID() != commutative.PATH,
 			func() codec.Encodeable { return v.Value().(codec.Encodeable) },
 			v.Meta().(codec.Encodeable))
 	})

@@ -11,11 +11,11 @@ func (this *Bytes) HeaderSize() uint32 {
 	return 3 * codec.UINT32_LEN
 }
 
-func (this *Bytes) Size(...bool) uint32 {
+func (this *Bytes) Size(...interface{}) uint32 {
 	return this.HeaderSize() + this.MemSize()
 }
 
-func (this *Bytes) Encode(...bool) []byte {
+func (this *Bytes) Encode(...interface{}) []byte {
 	byteset := [][]byte{
 		codec.Bool(this.placeholder).Encode(),
 		this.value,
@@ -23,7 +23,7 @@ func (this *Bytes) Encode(...bool) []byte {
 	return codec.Byteset(byteset).Encode()
 }
 
-func (this *Bytes) EncodeToBuffer(buffer []byte, _ ...bool) int {
+func (this *Bytes) EncodeToBuffer(buffer []byte, _ ...interface{}) int {
 	offset := codec.Bool(this.placeholder).EncodeToBuffer(buffer)
 	return offset + codec.Bytes(this.value).EncodeToBuffer(buffer[offset:])
 }
@@ -36,18 +36,18 @@ func (*Bytes) Decode(buffer []byte) interface{} {
 	}
 }
 
-func (this *Bytes) EncodeCompact() []byte {
-	return this.Encode()
-}
+// func (this *Bytes) Encode() []byte {
+// 	return this.Encode()
+// }
 
-func (this *Bytes) DecodeCompact(bytes []byte) interface{} {
-	return this.Decode(bytes)
-}
+// func (this *Bytes) DecodeCompact(bytes []byte) interface{} {
+// 	return this.Decode(bytes)
+// }
 
 func (this *Bytes) Purge() {}
 
 func (this *Bytes) Hash(hasher func([]byte) []byte) []byte {
-	return hasher(this.EncodeCompact())
+	return hasher(this.Encode())
 }
 
 func (this *Bytes) Print() {

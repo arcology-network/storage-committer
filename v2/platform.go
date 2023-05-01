@@ -1,6 +1,11 @@
-package common
+package concurrenturl
 
-import "math"
+import (
+	"math"
+
+	commutative "github.com/arcology-network/concurrenturl/v2/commutative"
+	noncommutative "github.com/arcology-network/concurrenturl/v2/noncommutative"
+)
 
 const (
 	MAX_DEPTH            uint8 = 12
@@ -15,13 +20,13 @@ type Platform struct {
 func NewPlatform() *Platform {
 	return &Platform{
 		map[string]uint8{
-			"/":                    Commutative{}.Path(),
-			"/code":                NonCommutative{}.Bytes(),
-			"/nonce":               Commutative{}.Uint64(),
-			"/balance":             Commutative{}.Uint256(),
-			"/storage/":            Commutative{}.Path(),
-			"/storage/containers/": Commutative{}.Path(),
-			"/storage/native/":     Commutative{}.Path(),
+			"/":                    commutative.PATH,
+			"/code":                noncommutative.BYTES,
+			"/nonce":               commutative.UINT64,
+			"/balance":             commutative.UINT256,
+			"/storage/":            commutative.PATH,
+			"/storage/containers/": commutative.PATH,
+			"/storage/native/":     commutative.PATH,
 		},
 	}
 }

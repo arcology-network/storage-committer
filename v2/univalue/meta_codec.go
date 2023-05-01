@@ -7,7 +7,7 @@ import (
 	codec "github.com/arcology-network/common-lib/codec"
 )
 
-func (this *Unimeta) Encode() []byte {
+func (this *Unimeta) Encode(...interface{}) []byte {
 	buffer := make([]byte, this.Size())
 	this.EncodeToBuffer(buffer)
 	return buffer
@@ -17,7 +17,7 @@ func (this *Unimeta) HeaderSize() uint32 {
 	return uint32(8 * codec.UINT32_LEN)
 }
 
-func (this *Unimeta) Size() uint32 {
+func (this *Unimeta) Size(...interface{}) uint32 {
 	return this.HeaderSize() + // uint32(9*codec.UINT32_LEN) +
 		uint32(1) + // codec.Uint8(this.vType).Size() +
 		uint32(4) + // codec.Uint32(uint32(this.tx)).Size() +
@@ -43,7 +43,7 @@ func (this *Unimeta) FillHeader(buffer []byte) int {
 	)
 }
 
-func (this *Unimeta) EncodeToBuffer(buffer []byte) int {
+func (this *Unimeta) EncodeToBuffer(buffer []byte, _ ...interface{}) int {
 	offset := this.FillHeader(buffer)
 	offset += codec.Uint8(this.vType).EncodeToBuffer(buffer[offset:])
 	offset += codec.Uint32(this.tx).EncodeToBuffer(buffer[offset:])
@@ -79,11 +79,11 @@ func (this *Unimeta) Decode(buffer []byte) interface{} {
 // 	}
 
 // 	if this.IsCommutative() {
-// 		return this.value.(ccurlcommon.TypeInterface).EncodeCompact()
+// 		return this.value.(ccurlcommon.TypeInterface).Encode()
 // 	}
 
 // 	if this.reserved == nil {
-// 		return this.value.(ccurlcommon.TypeInterface).EncodeCompact()
+// 		return this.value.(ccurlcommon.TypeInterface).Encode()
 // 	}
 // 	return this.reserved.([]byte)
 // }

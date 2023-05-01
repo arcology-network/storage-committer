@@ -21,14 +21,14 @@ type Indexer struct {
 	byTx       map[uint32][]ccurlcommon.UnivalueInterface
 	byPath     *ccmap.ConcurrentMap
 
-	platform      *ccurlcommon.Platform
+	platform      ccurlcommon.PlatformInterface
 	updatedKeys   []string      // Keys updated in the circle
 	updatedValues []interface{} // Value updated in the circle
 	seqPool       *mempool.Mempool
 	uniPool       *mempool.Mempool
 }
 
-func NewIndexer(store ccurlcommon.DatastoreInterface, platform *ccurlcommon.Platform, args ...interface{}) *Indexer {
+func NewIndexer(store ccurlcommon.DatastoreInterface, platform ccurlcommon.PlatformInterface, args ...interface{}) *Indexer {
 	var indexer Indexer
 	indexer.numThreads = 8
 	indexer.store = store
@@ -47,7 +47,7 @@ func NewIndexer(store ccurlcommon.DatastoreInterface, platform *ccurlcommon.Plat
 	return &indexer
 }
 
-func (this *Indexer) Platform() *ccurlcommon.Platform { return this.platform }
+// func (this *Indexer) Platform() *ccurlcommon.Platform { return this.platform }
 
 // Merge two indexers
 func (this *Indexer) MergeFrom(other *Indexer) {
@@ -236,7 +236,7 @@ func (this *Indexer) SortTransitions() {
 			// 	typeValue = deltaSeq.(*DeltaSequence).values[0]
 			// }
 
-			// if typeValue.Value().(ccurlcommon.TypeInterface).TypeID() == ccurlcommon.Commutative{}.Path() {
+			// if typeValue.Value().(ccurlcommon.TypeInterface).TypeID() == commutative.Path() {
 			deltaSeq.(*DeltaSequence).Sort() // Sort the transitions in the sequence
 			// }
 		}

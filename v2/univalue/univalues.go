@@ -29,3 +29,12 @@ func (this Univalues) Keys() []string {
 func (this Univalues) Checksum() [32]byte {
 	return sha256.Sum256(this.Encode())
 }
+
+func (this Univalues) Equal(other Univalues) bool {
+	for i, v := range this {
+		if !v.Equal(other[i]) {
+			return false
+		}
+	}
+	return true
+}

@@ -67,21 +67,21 @@ func (*Unimeta) GetTypeID(value interface{}) uint8 {
 	if value != nil {
 		switch value.(type) {
 		case *noncommutative.Bigint:
-			return ccurlcommon.NonCommutative{}.Bigint()
+			return noncommutative.BIGINT
 		case *noncommutative.Int64:
-			return ccurlcommon.NonCommutative{}.Int64()
+			return noncommutative.INT64
 		case *noncommutative.String:
-			return ccurlcommon.NonCommutative{}.String()
+			return noncommutative.STRING
 		case *noncommutative.Bytes:
-			return ccurlcommon.NonCommutative{}.Bytes()
+			return noncommutative.BYTES
 		case *commutative.Path:
-			return ccurlcommon.Commutative{}.Path()
+			return commutative.PATH
 		case *commutative.U256: /* Commutatives */
-			return ccurlcommon.Commutative{}.Uint256()
+			return commutative.UINT256
 		case *commutative.Int64:
-			return ccurlcommon.Commutative{}.Int64()
+			return commutative.INT64
 		case *commutative.Uint64:
-			return ccurlcommon.Commutative{}.Uint64()
+			return commutative.UINT64
 		}
 	}
 	return uint8(reflect.Invalid)

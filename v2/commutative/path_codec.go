@@ -14,27 +14,27 @@ func (this *Path) HeaderSize() uint32 {
 	return 3 * codec.UINT32_LEN // number of fields + 1
 }
 
-func (this *Path) Size(selectors ...bool) uint32 {
+func (this *Path) Size(selectors ...interface{}) uint32 {
 	return this.HeaderSize() +
-		common.IfThenDo1st(len(selectors) == 0 || selectors[0], func() uint32 { return this.value.Size() }, 0) +
-		common.IfThenDo1st(len(selectors) == 0 || selectors[1], func() uint32 { return this.delta.Size() }, 0)
+		common.IfThenDo1st(len(selectors) == 0 || selectors[0].(bool), func() uint32 { return this.value.Size() }, 0) +
+		common.IfThenDo1st(len(selectors) == 0 || selectors[1].(bool), func() uint32 { return this.delta.Size() }, 0)
 }
 
-func (this *Path) Encode(selectors ...bool) []byte {
+func (this *Path) Encode(selectors ...interface{}) []byte {
 	buffer := make([]byte, this.Size(selectors...)) //  no need to send the committed keys
 	offset := codec.Encoder{}.FillHeader(buffer,
 		[]uint32{
-			common.IfThen(len(selectors) == 0 || selectors[0], this.value.Size(), 0),
-			common.IfThen(len(selectors) == 0 || selectors[0], this.delta.Size(), 0),
+			common.IfThen(len(selectors) == 0 || selectors[0].(bool), this.value.Size(), 0),
+			common.IfThen(len(selectors) == 0 || selectors[0].(bool), this.delta.Size(), 0),
 		},
 	)
 	this.EncodeToBuffer(buffer[offset:], selectors...)
 	return buffer
 }
 
-func (this *Path) EncodeToBuffer(buffer []byte, selectors ...bool) int {
-	offset := common.IfThen(len(selectors) == 0 || selectors[0], this.value.EncodeToBuffer(buffer), 0)
-	offset += common.IfThenDo1st(len(selectors) == 0 || selectors[1], func() int { return this.delta.EncodeToBuffer(buffer[offset:]) }, 0)
+func (this *Path) EncodeToBuffer(buffer []byte, selectors ...interface{}) int {
+	offset := common.IfThen(len(selectors) == 0 || selectors[0].(bool), this.value.EncodeToBuffer(buffer), 0)
+	offset += common.IfThenDo1st(len(selectors) == 0 || selectors[1].(bool), func() int { return this.delta.EncodeToBuffer(buffer[offset:]) }, 0)
 	return offset
 }
 

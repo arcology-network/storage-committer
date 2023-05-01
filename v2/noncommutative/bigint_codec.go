@@ -6,17 +6,17 @@ import (
 	codec "github.com/arcology-network/common-lib/codec"
 )
 
-func (this *Bigint) Size(...bool) uint32 {
+func (this *Bigint) Size(...interface{}) uint32 {
 	v := codec.Bigint(*this)
 	return v.Size()
 }
 
-func (this *Bigint) Encode(...bool) []byte {
+func (this *Bigint) Encode(...interface{}) []byte {
 	v := codec.Bigint(*this)
 	return v.Encode()
 }
 
-func (this *Bigint) EncodeToBuffer(buffer []byte, _ ...bool) int {
+func (this *Bigint) EncodeToBuffer(buffer []byte, _ ...interface{}) int {
 	v := codec.Bigint(*this)
 	return v.EncodeToBuffer(buffer)
 }
@@ -26,18 +26,18 @@ func (this *Bigint) Decode(bytes []byte) interface{} {
 	return this
 }
 
-func (this *Bigint) EncodeCompact() []byte {
-	return this.Encode()
-}
+// func (this *Bigint) Encode() []byte {
+// 	return this.Encode()
+// }
 
-func (this *Bigint) DecodeCompact(bytes []byte) interface{} {
-	return this.Decode(bytes)
-}
+// func (this *Bigint) DecodeCompact(bytes []byte) interface{} {
+// 	return this.Decode(bytes)
+// }
 
 func (this *Bigint) Purge() {}
 
 func (this *Bigint) Hash(hasher func([]byte) []byte) []byte {
-	return hasher(this.EncodeCompact())
+	return hasher(this.Encode())
 }
 
 func (this *Bigint) Print() {

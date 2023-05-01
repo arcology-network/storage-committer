@@ -5,7 +5,6 @@ import (
 	"math/big"
 	"reflect"
 	"testing"
-	"unsafe"
 
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
 	"github.com/arcology-network/common-lib/codec"
@@ -29,11 +28,20 @@ func TestSize(t *testing.T) {
 
 	_, acctTrans := url.Export(ccurlcommon.Sorter)
 
-	buf := univalue.Univalues(acctTrans).Encode()
-	url.Import(univalue.Univalues{}.Decode(buf).(univalue.Univalues))
+	// buffer := univalue.Univalues(acctTrans).Filter(
+	// 	state.TransitionFilter{}.ReadOnly,
+	// 	state.TransitionFilter{}.DelNonExist,
+	// ).Encode()
 
-	fmt.Println(univalue.Univalues(acctTrans).Sizes())
-	fmt.Println(unsafe.Sizeof(map[string]int{}))
+	buffer := univalue.AccessEncoder(acctTrans).Encode()
+
+	univalue.Univalues{}.Decode(buffer)
+
+	// buf := univalue.Univalues(acctTrans).Encode()
+	url.Import(acctTrans)
+
+	// fmt.Println(univalue.Univalues(acctTrans).Sizes())
+	// fmt.Println(unsafe.Sizeof(map[string]int{}))
 
 	original := []int{1, 2, 3, 4}
 	original = append([]int{}, (original)...)
@@ -52,10 +60,16 @@ func TestAddThenDeletePath(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, acctTrans := url.Export(ccurlcommon.Sorter)
+	acctTrans := url.Export3(ccurlcommon.Sorter)
+
+	buffer := univalue.AccessEncoder(acctTrans).Encode()
+	out := univalue.Univalues{}.Decode(buffer).(univalue.Univalues)
+
+	url.Import(out)
+	// out.Equal()
 
 	//values := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).([]ccurlcommon.UnivalueInterface)
-	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
+	// url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
