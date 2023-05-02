@@ -8,18 +8,18 @@ import (
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 )
 
-func (this Univalues) Size(selectors ...interface{}) int {
+func (this Univalues) Size() int {
 	size := (len(this) + 1) * codec.UINT32_LEN
 	for _, v := range this {
-		size += int(v.Size(selectors...))
+		size += int(v.Size())
 	}
 	return size
 }
 
-func (this Univalues) Sizes(selectors ...interface{}) []int {
+func (this Univalues) Sizes() []int {
 	sizes := make([]int, len(this))
 	for i, v := range this {
-		sizes[i] = common.IfThenDo1st(v != nil, func() int { return int(v.Size(selectors...)) }, 0)
+		sizes[i] = common.IfThenDo1st(v != nil, func() int { return int(v.Size()) }, 0)
 	}
 	return sizes
 }
@@ -29,7 +29,7 @@ func (this Univalues) Encode(selector ...interface{}) []byte {
 	worker := func(start, end, index int, args ...interface{}) {
 		for i := start; i < end; i++ {
 			if this[i] != nil {
-				lengths[i] = this[i].(ccurlcommon.UnivalueInterface).Size(selector...)
+				lengths[i] = this[i].(ccurlcommon.UnivalueInterface).Size()
 			}
 		}
 	}

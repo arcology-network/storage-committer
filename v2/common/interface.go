@@ -29,21 +29,24 @@ type TypeInterface interface { // value type
 
 	Value() interface{} // Get() - read/write count
 	Delta() interface{}
+	Sign() interface{}
+	Min() interface{}
+	Max() interface{}
+	New(interface{}, interface{}, interface{}, interface{}, interface{}) interface{}
 
 	Get() (interface{}, uint32, uint32)
 	Set(interface{}, interface{}) (interface{}, uint32, uint32, uint32, error)
 	CopyTo(interface{}) (interface{}, uint32, uint32, uint32)
 	ApplyDelta(interface{}) TypeInterface
 	IsSelf(interface{}) bool
-	Hash(func([]byte) []byte) []byte
 
 	MemSize() uint32 // Size in memory
-
-	Size(...interface{}) uint32 // Encoded size
-	Encode(...interface{}) []byte
-	EncodeToBuffer([]byte, ...interface{}) int
+	Size() uint32    // Encoded size
+	Encode() []byte
+	EncodeToBuffer([]byte) int
 	Decode([]byte) interface{}
 
+	Hash(func([]byte) []byte) []byte
 	Purge()
 	Print()
 }
@@ -75,9 +78,9 @@ type UnivalueInterface interface { // value type
 	Clone() interface{}
 	// Export(interface{}) (interface{}, interface{})
 	GetEncoded() []byte
-	Size(...interface{}) uint32
-	Encode(...interface{}) []byte
-	EncodeToBuffer([]byte, ...interface{}) int
+	Size() uint32
+	Encode() []byte
+	EncodeToBuffer([]byte) int
 	Decode([]byte) interface{}
 	ClearCache()
 

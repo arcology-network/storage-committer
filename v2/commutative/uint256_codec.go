@@ -10,37 +10,37 @@ func (this *U256) HeaderSize() uint32 {
 	return (1 + 5) * codec.UINT32_LEN // Total number of fields + offsets of these fields
 }
 
-func (this *U256) Size(selectors ...interface{}) uint32 {
+func (this *U256) Size() uint32 {
 	return this.HeaderSize() +
-		common.IfThen(len(selectors) == 0 || selectors[0].(bool), uint32(32), 0) + // Values
-		common.IfThen(len(selectors) == 0 || selectors[1].(bool), uint32(32), 0) + // delta
-		common.IfThen(len(selectors) == 0 || selectors[1].(bool), uint32(1), 0) + // delta sign
-		common.IfThen(len(selectors) == 0 || selectors[2].(bool), uint32(32), 0) + // Min
-		common.IfThen(len(selectors) == 0 || selectors[3].(bool), uint32(32), 0) // Max
+		common.IfThen(this.value != nil, uint32(32), 0) + // Values
+		common.IfThen(this.delta != nil, uint32(32), 0) + // delta
+		common.IfThen(this.delta != nil, uint32(1), 0) + // delta sign
+		common.IfThen(this.min != nil, uint32(32), 0) + // Min
+		common.IfThen(this.max != nil, uint32(32), 0) // Max
 }
 
-func (this *U256) Encode(selectors ...interface{}) []byte {
-	buffer := make([]byte, this.Size(selectors...))
+func (this *U256) Encode() []byte {
+	buffer := make([]byte, this.Size())
 	offset := codec.Encoder{}.FillHeader(
 		buffer,
 		[]uint32{
-			common.IfThen(len(selectors) == 0 || selectors[0].(bool), uint32(32), 0),
-			common.IfThen(len(selectors) == 0 || selectors[1].(bool), uint32(32), 0),
-			common.IfThen(len(selectors) == 0 || selectors[1].(bool), uint32(1), 0),
-			common.IfThen(len(selectors) == 0 || selectors[2].(bool), uint32(32), 0),
-			common.IfThen(len(selectors) == 0 || selectors[3].(bool), uint32(32), 0),
+			common.IfThen(this.value != nil, uint32(32), 0),
+			common.IfThen(this.delta != nil, uint32(32), 0),
+			common.IfThen(this.delta != nil, uint32(1), 0),
+			common.IfThen(this.min != nil, uint32(32), 0),
+			common.IfThen(this.max != nil, uint32(32), 0),
 		},
 	)
-	this.EncodeToBuffer(buffer[offset:], selectors...)
+	this.EncodeToBuffer(buffer[offset:])
 	return buffer
 }
 
-func (this *U256) EncodeToBuffer(buffer []byte, selectors ...interface{}) int {
-	offset := common.IfThenDo1st(len(selectors) == 0 || selectors[0].(bool), func() int { return codec.Uint64s(this.value[:]).EncodeToBuffer(buffer) }, 0)
-	offset += common.IfThenDo1st(len(selectors) == 0 || selectors[1].(bool), func() int { return codec.Uint64s(this.delta[:]).EncodeToBuffer(buffer[offset:]) }, 0)
-	offset += common.IfThenDo1st(len(selectors) == 0 || selectors[1].(bool), func() int { return codec.Bool(this.deltaPositive).EncodeToBuffer(buffer[offset:]) }, 0)
-	offset += common.IfThenDo1st(len(selectors) == 0 || selectors[2].(bool), func() int { return codec.Uint64s(this.min[:]).EncodeToBuffer(buffer[offset:]) }, 0)
-	offset += common.IfThenDo1st(len(selectors) == 0 || selectors[3].(bool), func() int { return codec.Uint64s(this.max[:]).EncodeToBuffer(buffer[offset:]) }, 0)
+func (this *U256) EncodeToBuffer(buffer []byte) int {
+	offset := common.IfThenDo1st(this.value != nil, func() int { return codec.Uint64s(this.value[:]).EncodeToBuffer(buffer) }, 0)
+	offset += common.IfThenDo1st(this.delta != nil, func() int { return codec.Uint64s(this.delta[:]).EncodeToBuffer(buffer[offset:]) }, 0)
+	offset += common.IfThenDo1st(this.delta != nil, func() int { return codec.Bool(this.deltaPositive).EncodeToBuffer(buffer[offset:]) }, 0)
+	offset += common.IfThenDo1st(this.min != nil, func() int { return codec.Uint64s(this.min[:]).EncodeToBuffer(buffer[offset:]) }, 0)
+	offset += common.IfThenDo1st(this.max != nil, func() int { return codec.Uint64s(this.max[:]).EncodeToBuffer(buffer[offset:]) }, 0)
 	return offset
 }
 
@@ -66,7 +66,7 @@ func (this *U256) Decode(buffer []byte) interface{} {
 
 // func (this *U256) Encode() []byte {
 // 	totalLen := 32
-// 	if this.min != nil {
+// 	if this.min != nil, {
 // 		totalLen += 32
 // 	}
 
@@ -77,7 +77,7 @@ func (this *U256) Decode(buffer []byte) interface{} {
 // 	buffer := make([]byte, 2+totalLen) // labels + actual length
 
 // 	offset := codec.Uint64s(this.value[:]).EncodeToBuffer(buffer[2:])
-// 	if this.min != nil {
+// 	if this.min != nil, {
 // 		buffer[0] = 1
 // 		offset += codec.Uint64s(this.min[:]).EncodeToBuffer(buffer[offset+2:])
 // 	}

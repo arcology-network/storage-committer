@@ -37,8 +37,12 @@ func (this *Bigint) Get() (interface{}, uint32, uint32) {
 	return this, 1, 0
 }
 
-func (this *Bigint) Value() interface{} { return this }
-func (this *Bigint) Delta() interface{} { return this }
+func (this *Bigint) Value() interface{}                        { return this }
+func (this *Bigint) Delta() interface{}                        { return this }
+func (this *Bigint) Sign() interface{}                         { return nil } // delta sign
+func (this *Bigint) Min() interface{}                          { return nil }
+func (this *Bigint) Max() interface{}                          { return nil }
+func (this *Bigint) New(_, _, _, _, _ interface{}) interface{} { return this }
 
 func (this *Bigint) Set(value interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
 	if value != nil {

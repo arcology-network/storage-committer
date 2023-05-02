@@ -9,21 +9,21 @@ import (
 	"github.com/arcology-network/common-lib/datacompression"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 	commutative "github.com/arcology-network/concurrenturl/v2/commutative"
+
 	"github.com/holiman/uint256"
 )
 
+/* Commutative Int64 Test */
 func TestUnivaluesCodecUint64(t *testing.T) {
-	/* Commutative Int64 Test */
 	alice := datacompression.RandomAccount()
 
-	// meta:= commutative.NewPath()
 	u64 := commutative.NewUint64(0, 100)
 	in0 := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/u64-000", 3, 4, 0, u64)
 	in0.reads = 1
 	in0.writes = 2
 	in0.deltaWrites = 3
 
-	u256 := commutative.NewU256(uint256.NewInt(100), uint256.NewInt(0), uint256.NewInt(100))
+	u256 := commutative.NewU256(uint256.NewInt(0), uint256.NewInt(100))
 	in1 := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/u256-000", 3, 4, 0, u256)
 	in1.reads = 4
 	in1.writes = 5
@@ -34,10 +34,24 @@ func TestUnivaluesCodecUint64(t *testing.T) {
 	meta.(*commutative.Path).SetAdded([]string{"+01", "+001", "+002", "+002"})
 	meta.(*commutative.Path).SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
 
-	in := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 11, meta)
-	in.reads = 7
-	in.writes = 8
-	in.deltaWrites = 9
+	in2 := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 11, meta)
+	in2.reads = 7
+	in2.writes = 8
+	in2.deltaWrites = 9
+
+	in := []ccurlcommon.UnivalueInterface{in0, in1, in2}
+	buffer := Univalues([]ccurlcommon.UnivalueInterface{in0, in1, in2}).Encode()
+	out := Univalues{}.Decode(buffer).(Univalues)
+
+	if !Univalues(in).Equal(out) {
+		t.Error("Error")
+	}
+
+	buffer = AccessEncoder(in).Encode()
+	out2 := Univalues{}.Decode(buffer).(Univalues)
+	if !Univalues(in).Equal(out2) {
+		t.Error("Error")
+	}
 
 }
 
@@ -45,7 +59,7 @@ func TestUnivaluesCodecU256(t *testing.T) {
 	alice := datacompression.RandomAccount() /* Commutative Int64 Test */
 
 	// meta:= commutative.NewPath()
-	u256 := commutative.NewU256(uint256.NewInt(100), uint256.NewInt(0), uint256.NewInt(100))
+	u256 := commutative.NewU256(uint256.NewInt(0), uint256.NewInt(100))
 	in := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, u256)
 	in.reads = 1
 	in.writes = 2

@@ -1,11 +1,11 @@
 package commutative
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"math/big"
 
+	"github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 	uint256 "github.com/holiman/uint256"
 )
@@ -26,29 +26,22 @@ type U256 struct {
 	deltaPositive bool
 }
 
-func NewU256(value, min, max *uint256.Int) interface{} {
-	if value.Cmp(min) == -1 || value.Cmp(max) == 1 || max.Cmp(min) == -1 {
-		return nil
-	}
-
+func NewU256(min, max *uint256.Int) interface{} {
 	return &U256{
-		value:         value,
+		value:         uint256.NewInt(0),
 		delta:         uint256.NewInt(0),
-		min:           min,
-		max:           max,
+		min:           common.IfThen(min != nil, min, U256MIN),
+		max:           common.IfThen(max != nil, max, U256MAX),
 		deltaPositive: true, // positive delta by default
 	}
 }
 
-func (this *U256) MemSize() uint32             { return 32*4 + 1 }
-func (this *U256) IsSelf(key interface{}) bool { return true }
-func (this *U256) TypeID() uint8               { return UINT256 }
-func (this *U256) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
-	return v, 0, 1, 0
-}
-
 func NewU256FromBytes(value []byte, min, max []byte) interface{} {
-	this := &U256{} // positive delta by default
+	this := &U256{
+		value:         uint256.NewInt(0),
+		delta:         uint256.NewInt(0),
+		deltaPositive: true,
+	}
 	this.FromBytes(value, min, max)
 	return this
 }
@@ -71,10 +64,34 @@ func NewU256DeltaFromBigInt(delta *big.Int) (interface{}, bool) {
 	}
 
 	return &U256{
+		value:         nil,
+		min:           nil,
+		max:           nil,
 		delta:         deltaV,
 		deltaPositive: sign != -1, // >= 0
 	}, true
 }
+
+func (this *U256) New(value, delta, sign, min, max interface{}) interface{} {
+	return &U256{
+		value:         common.IfThenDo1st(value != nil, func() *uint256.Int { return value.(*uint256.Int) }, nil),
+		delta:         common.IfThenDo1st(delta != nil, func() *uint256.Int { return delta.(*uint256.Int) }, nil),
+		deltaPositive: common.IfThenDo1st(max != nil, func() bool { return sign.(bool) }, true),
+		min:           common.IfThenDo1st(min != nil, func() *uint256.Int { return min.(*uint256.Int) }, nil),
+		max:           common.IfThenDo1st(max != nil, func() *uint256.Int { return max.(*uint256.Int) }, nil),
+	}
+}
+
+func (this *U256) Value() interface{} { return this.value }
+func (this *U256) Delta() interface{} { return this.delta }
+func (this *U256) Sign() interface{}  { return this.delta.Cmp(UINT256ZERO) >= 0 }
+func (this *U256) Min() interface{}   { return this.min }
+func (this *U256) Max() interface{}   { return this.max }
+
+func (this *U256) MemSize() uint32                                            { return 32*4 + 1 }
+func (this *U256) IsSelf(key interface{}) bool                                { return true }
+func (this *U256) TypeID() uint8                                              { return UINT256 }
+func (this *U256) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }
 
 func (this *U256) FromBytes(value []byte, min, max []byte) {
 	this.value.SetBytes(value)
@@ -89,25 +106,20 @@ func (this *U256) HasCustomizedLimit() bool {
 
 func (this *U256) Clone() interface{} {
 	return &U256{
-		value:         this.value.Clone(),
-		delta:         this.delta.Clone(),
-		min:           this.min.Clone(),
-		max:           this.max.Clone(),
+		value:         common.IfThenDo1st(this.value != nil, func() *uint256.Int { return this.value.Clone() }, nil),
+		delta:         common.IfThenDo1st(this.delta != nil, func() *uint256.Int { return this.delta.Clone() }, nil),
+		min:           common.IfThenDo1st(this.min != nil, func() *uint256.Int { return this.min.Clone() }, nil),
+		max:           common.IfThenDo1st(this.max != nil, func() *uint256.Int { return this.max.Clone() }, nil),
 		deltaPositive: this.deltaPositive,
 	}
 }
 
 func (this *U256) Equal(other interface{}) bool {
-	return bytes.Equal(this.value.Bytes(), other.(*U256).value.Bytes()) &&
-		bytes.Equal(this.delta.Bytes(), other.(*U256).delta.Bytes()) &&
-		bytes.Equal(this.min.Bytes(), other.(*U256).min.Bytes()) &&
-		bytes.Equal(this.max.Bytes(), other.(*U256).max.Bytes()) &&
+	return this.value.Eq(other.(*U256).value) &&
+		this.delta.Eq(other.(*U256).delta) &&
+		this.min.Eq(other.(*U256).min) &&
+		this.max.Eq(other.(*U256).max) &&
 		this.deltaPositive == other.(*U256).deltaPositive
-}
-
-func (this *U256) Value() interface{} {
-	v, _, _ := this.Get()
-	return v
 }
 
 func (this *U256) Get() (interface{}, uint32, uint32) {
@@ -116,22 +128,6 @@ func (this *U256) Get() (interface{}, uint32, uint32) {
 	}
 	return new(uint256.Int).Add(this.value.Clone(), this.delta), 1, 1
 }
-
-// func (this *U256) Value() interface{} {
-// 	v := &U256{
-// 		delta:         this.delta.Clone(),
-// 		deltaPositive: this.deltaPositive,
-// 	}
-
-// 	if this.deltaPositive {
-// 		v.value = this.value.Clone().Abs(this.delta)
-// 	} else {
-// 		v.value = this.value.Clone().Sub(this.value, this.delta)
-// 	}
-// 	return this.value
-// }
-
-func (this *U256) Delta() interface{} { return this.delta }
 
 func (this *U256) isOverflowed(v0 *uint256.Int, signV0 bool, v1 *uint256.Int, signV1 bool) (*uint256.Int, bool) {
 	if signV0 == signV1 { // Both positive or negative

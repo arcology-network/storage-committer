@@ -115,7 +115,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 	}
 
 	_, trans := url.Export2(ccurlcommon.Sorter)
-	acctTrans := (&univalue.Univalues{}).Decode(codec.Encodeables(trans).Encode()).(univalue.Univalues)
+	acctTrans := (&univalue.Univalues{}).Decode(codec.Encodables(trans).Encode()).(univalue.Univalues)
 
 	//values := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).([]ccurlcommon.UnivalueInterface)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
@@ -130,7 +130,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 	}
 
 	_, transitions := url.Export2(ccurlcommon.Sorter)
-	url.Import((&univalue.Univalues{}).Decode(codec.Encodeables(transitions).Encode()).(univalue.Univalues))
+	url.Import((&univalue.Univalues{}).Decode(codec.Encodables(transitions).Encode()).(univalue.Univalues))
 
 	url.PostImport()
 	url.Commit([]uint32{1})
@@ -146,7 +146,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 	}
 
 	_, trans = url.Export2(ccurlcommon.Sorter)
-	url.Import((&univalue.Univalues{}).Decode(codec.Encodeables(trans).Encode()).(univalue.Univalues))
+	url.Import((&univalue.Univalues{}).Decode(codec.Encodables(trans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{1})
 
@@ -667,18 +667,27 @@ func TestCommutative(t *testing.T) {
 	}
 
 	// -------------------Create a commutative UINT256 ------------------------------
-	comtVInit := commutative.NewU256(uint256.NewInt(300), commutative.U256MIN, commutative.U256MAX)
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", comtVInit); err != nil {
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256(commutative.U256MIN, commutative.U256MAX)); err != nil { // 0
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0",
-		commutative.NewU256(uint256.NewInt(300), commutative.U256MIN, commutative.U256MAX)); err != nil {
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256Delta(uint256.NewInt(300), true)); err != nil { // 300
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0",
-		commutative.NewU256(uint256.NewInt(300), commutative.U256MIN, commutative.U256MAX)); err != nil {
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256(commutative.U256MIN, commutative.U256MAX)); err != nil { // still 300
+		t.Error(err, " Failed to Write: "+"/elem-0")
+	}
+
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256Delta(uint256.NewInt(300), true)); err != nil { //  600
+		t.Error(err, " Failed to Write: "+"/elem-0")
+	}
+
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256(commutative.U256MIN, commutative.U256MAX)); err != nil { // still 300
+		t.Error(err, " Failed to Write: "+"/elem-0")
+	}
+
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256Delta(uint256.NewInt(300), false)); err != nil { // 600 - 300 = 300
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
@@ -689,7 +698,7 @@ func TestCommutative(t *testing.T) {
 
 	// ----------------------------U256 ---------------------------------------------------
 	if err := url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/balance",
-		commutative.NewU256(uint256.NewInt(0), commutative.U256MIN, commutative.U256MAX)); err != nil { //initialization
+		commutative.NewU256(commutative.U256MIN, commutative.U256MAX)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
@@ -825,11 +834,11 @@ func TestNestedPath(t *testing.T) {
 }
 
 // func DeltaEncoder(typed ccurlcommon.TypeInterface) []byte {
-// 	return typed.Delta().(codec.Encodeable).Encode()
+// 	return typed.Delta().(codec.Encodable).Encode()
 // }
 
 // func ValueEncoder(typed ccurlcommon.TypeInterface) []byte {
-// 	return typed.Value().(codec.Encodeable).Encode()
+// 	return typed.Value().(codec.Encodable).Encode()
 // }
 
 func TestMetaEncodeSelector(t *testing.T) {

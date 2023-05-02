@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	common "github.com/arcology-network/common-lib/common"
+	orderedset "github.com/arcology-network/common-lib/container/set"
 )
 
 func TestMeta(t *testing.T) {
@@ -19,7 +20,7 @@ func TestMeta(t *testing.T) {
 
 	meta, _, _ = inPath.Get()
 
-	if !common.EqualArray(inPath.Value().([]string), []string{"e-01", "e-001", "e-002", "e-002"}) {
+	if !common.EqualArray(inPath.Value().(*orderedset.OrderedSet).Keys(), []string{"e-01", "e-001", "e-002", "e-002"}) {
 		t.Error("Error: Don't match!!")
 	}
 
@@ -35,17 +36,16 @@ func TestMeta(t *testing.T) {
 }
 
 func TestCodecPathMeta(t *testing.T) {
-	// /* Commutative Int64 Test */
-	in := NewPath()
+	in := NewPath().(*Path)
 
-	in.(*Path).SetSubs([]string{"e-01", "e-001", "e-002", "e-002"})
-	in.(*Path).SetAdded([]string{"+01", "+001", "+002", "+002"})
-	in.(*Path).SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
+	in.SetSubs([]string{"e-01", "e-001", "e-002", "e-002"})
+	in.SetAdded([]string{"+01", "+001", "+002", "+002"})
+	in.SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
 
-	buffer := in.(*Path).Encode()
+	buffer := in.Encode()
 	out := (&Path{}).Decode(buffer).(*Path)
 
-	if !common.EqualArray(out.Value().([]string), []string{"e-01", "e-001", "e-002", "e-002"}) {
+	if !common.EqualArray(out.Value().(*orderedset.OrderedSet).Keys(), []string{"e-01", "e-001", "e-002", "e-002"}) {
 		t.Error("Error: Don't match!!")
 	}
 
@@ -57,10 +57,10 @@ func TestCodecPathMeta(t *testing.T) {
 		t.Error("Error: Don't match!!", out.Delta().(*PathDelta).Removed())
 	}
 
-	buffer = in.(*Path).Encode(true, true)
+	buffer = in.Encode()
 	out = (&Path{}).Decode(buffer).(*Path)
 
-	if !common.EqualArray(out.Value().([]string), []string{"e-01", "e-001", "e-002", "e-002"}) {
+	if !common.EqualArray(out.Value().(*orderedset.OrderedSet).Keys(), []string{"e-01", "e-001", "e-002", "e-002"}) {
 		t.Error("Error: Don't match!! Error: Should have gone!")
 	}
 
@@ -72,10 +72,11 @@ func TestCodecPathMeta(t *testing.T) {
 		t.Error("Error: Don't match!!", out.Delta().(*PathDelta).Removed())
 	}
 
-	buffer = in.(*Path).Encode(true, false)
+	in = in.New(in.Value(), nil, nil, nil, nil).(*Path)
+	buffer = in.Encode()
 	out = (&Path{}).Decode(buffer).(*Path)
 
-	if !common.EqualArray(out.Value().([]string), []string{"e-01", "e-001", "e-002", "e-002"}) {
+	if !common.EqualArray(out.Value().(*orderedset.OrderedSet).Keys(), []string{"e-01", "e-001", "e-002", "e-002"}) {
 		t.Error("Error: Don't match!! Error: Should have gone!")
 	}
 
@@ -92,11 +93,11 @@ func TestCodecPathMeta(t *testing.T) {
 // 	// /* Commutative Int64 Test */
 // 	in := NewPath()
 
-// 	in.(*Path).SetSubs([]string{"e-01", "e-001", "e-002", "e-002"})
-// 	in.(*Path).SetAdded([]string{"+01", "+001", "+002", "+002"})
-// 	in.(*Path).SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
+// 	in.SetSubs([]string{"e-01", "e-001", "e-002", "e-002"})
+// 	in.SetAdded([]string{"+01", "+001", "+002", "+002"})
+// 	in.SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
 
-// 	buffer := in.(codec.Encodeable).Encode()
+// 	buffer := in.(codec.Encodable).Encode()
 // 	out := (&Path{}).Decode(buffer).(*Path)
 
 // 	if !common.EqualArray(out.Value().([]string), []string{"e-01", "e-001", "e-002", "e-002"}) {

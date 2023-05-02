@@ -4,21 +4,28 @@ import (
 	"fmt"
 
 	codec "github.com/arcology-network/common-lib/codec"
+	"github.com/arcology-network/common-lib/common"
 	orderedset "github.com/arcology-network/common-lib/container/set"
 )
 
-func (this *PathDelta) Encode(...interface{}) []byte {
+func (this *PathDelta) Encode() []byte {
 	buffer := make([]byte, this.Size()) //  no need to send the committed keys
 	this.EncodeToBuffer(buffer)
 	return buffer
 }
 
-func (this *PathDelta) Size(...interface{}) uint32 {
-	return codec.Stringset([][]string{this.addDict.Keys(), this.delDict.Keys()}).Size()
+func (this *PathDelta) Size() uint32 {
+	return codec.Stringset([][]string{
+		common.IfThenDo1st(this.addDict != nil, func() []string { return this.addDict.Keys() }, []string{}),
+		common.IfThenDo1st(this.delDict != nil, func() []string { return this.delDict.Keys() }, []string{}),
+	}).Size()
 }
 
-func (this *PathDelta) EncodeToBuffer(buffer []byte, _ ...interface{}) int {
-	return codec.Stringset([][]string{this.addDict.Keys(), this.delDict.Keys()}).EncodeToBuffer(buffer)
+func (this *PathDelta) EncodeToBuffer(buffer []byte) int {
+	return codec.Stringset([][]string{
+		common.IfThenDo1st(this.addDict != nil, func() []string { return this.addDict.Keys() }, []string{}),
+		common.IfThenDo1st(this.delDict != nil, func() []string { return this.delDict.Keys() }, []string{}),
+	}).EncodeToBuffer(buffer)
 }
 
 func (this *PathDelta) Decode(buffer []byte) interface{} {

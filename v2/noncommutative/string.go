@@ -11,13 +11,17 @@ func NewString(v string) interface{} {
 	return &this
 }
 
-func (this *String) IsSelf(key interface{}) bool { return true }
-func (this *String) TypeID() uint8               { return STRING }
-
 func (this *String) MemSize() uint32              { return uint32(len(*this)) }
-func (this *String) Value() interface{}           { return this }
-func (this *String) Delta() interface{}           { return this }
+func (this *String) IsSelf(key interface{}) bool  { return true }
+func (this *String) TypeID() uint8                { return STRING }
 func (this *String) Equal(other interface{}) bool { return *this == *(other.(*String)) }
+
+func (this *String) Value() interface{}                        { return this }
+func (this *String) Delta() interface{}                        { return this }
+func (this *String) Sign() interface{}                         { return nil } // delta sign
+func (this *String) Min() interface{}                          { return nil }
+func (this *String) Max() interface{}                          { return nil }
+func (this *String) New(_, _, _, _, _ interface{}) interface{} { return this }
 
 func (this *String) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
 	return v, 0, 1, 0

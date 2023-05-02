@@ -11,7 +11,6 @@ import (
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	"github.com/holiman/uint256"
 
 	// performance "github.com/arcology-network/common-lib/mhasher"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
@@ -101,7 +100,7 @@ func (this *ConcurrentUrl) CreateAccount(tx uint32, platform string, acct string
 			v = noncommutative.NewString("")
 
 		case uint8(reflect.Kind(commutative.UINT256)): // delta big int
-			v = commutative.NewU256(uint256.NewInt(0), commutative.U256MIN, commutative.U256MAX)
+			v = commutative.NewU256(commutative.U256MIN, commutative.U256MAX)
 
 		case uint8(reflect.Kind(commutative.UINT64)):
 			v = commutative.NewUint64(0, math.MaxUint64)
@@ -368,42 +367,42 @@ func (this *ConcurrentUrl) Export(sorter func([]ccurlcommon.UnivalueInterface) i
 		state.TransitionFilter{}.DelNonExist,
 	)
 
-	common.CastTo(this.transitBuf, func(v ccurlcommon.UnivalueInterface) codec.Encodeable {
+	common.CastTo(this.transitBuf, func(v ccurlcommon.UnivalueInterface) codec.Encodable {
 		return common.IfThenDo1st(
 			v.Value() != nil &&
 				v.DeltaWrites() > 0 &&
 				v.Reads() == 0 &&
 				v.Writes() == 0 &&
 				v.TypeID() != commutative.PATH,
-			func() codec.Encodeable { return v.Value().(codec.Encodeable) },
-			v.Meta().(codec.Encodeable))
+			func() codec.Encodable { return v.Value().(codec.Encodable) },
+			v.Meta().(codec.Encodable))
 	})
 
 	this.accesseBuf = this.buffer
 	return this.accesseBuf, this.transitBuf
 }
 
-func (this *ConcurrentUrl) Export2(sorter func([]ccurlcommon.UnivalueInterface) interface{}) ([]codec.Encodeable, []codec.Encodeable) {
+func (this *ConcurrentUrl) Export2(sorter func([]ccurlcommon.UnivalueInterface) interface{}) ([]codec.Encodable, []codec.Encodable) {
 	this.indexer.Vectorize(this.indexer.Buffer(), &this.buffer, false) // Export records
 	if sorter != nil {                                                 // Sort by path, debug only
 		ccurlcommon.Sorter(this.buffer)
 	}
 
-	accesseBuf := common.CastTo(this.buffer, func(v ccurlcommon.UnivalueInterface) codec.Encodeable {
+	accesseBuf := common.CastTo(this.buffer, func(v ccurlcommon.UnivalueInterface) codec.Encodable {
 		return common.IfThenDo1st(
 			v.Value() != nil &&
 				v.DeltaWrites() > 0 &&
 				v.Reads() == 0 &&
 				v.Writes() == 0 &&
 				v.TypeID() != commutative.PATH,
-			func() codec.Encodeable { return v.Value().(codec.Encodeable) },
-			v.Meta().(codec.Encodeable))
+			func() codec.Encodable { return v.Value().(codec.Encodable) },
+			v.Meta().(codec.Encodable))
 	})
 
 	transits := common.CastTo(
 		common.RemoveIf(&this.buffer, state.TransitionFilter{}.ReadOnly, state.TransitionFilter{}.DelNonExist),
-		func(v ccurlcommon.UnivalueInterface) codec.Encodeable {
-			return v.(codec.Encodeable)
+		func(v ccurlcommon.UnivalueInterface) codec.Encodable {
+			return v.(codec.Encodable)
 		})
 
 	return accesseBuf, transits

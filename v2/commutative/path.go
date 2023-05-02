@@ -57,11 +57,18 @@ func (this *Path) MemSize() uint32 {
 	return codec.Strings(this.value.Keys()).Size() * 2 // Just an estimate, need to update on fly instead of calculating everytime
 }
 
-func (this *Path) Delta() interface{} { return this.delta }
-func (this *Path) Value() interface{} {
-	v, _, _ := this.Get()
-	return v.([]string)
+func (this *Path) New(value, delta, sign, min, max interface{}) interface{} {
+	return &Path{
+		value: common.IfThenDo1st(value != nil, func() *orderedset.OrderedSet { return value.(*orderedset.OrderedSet) }, nil),
+		delta: common.IfThenDo1st(delta != nil, func() *PathDelta { return delta.(*PathDelta) }, nil),
+	}
 }
+
+func (this *Path) Value() interface{} { return this.value }
+func (this *Path) Delta() interface{} { return this.delta }
+func (this *Path) Sign() interface{}  { return true }
+func (this *Path) Min() interface{}   { return nil }
+func (this *Path) Max() interface{}   { return nil }
 
 func (this *Path) ApplyDelta(v interface{}) ccurlcommon.TypeInterface { // Apply the transitions to the original value
 	keys := append(this.value.Keys(), this.delta.addDict.Keys()...) // The value should only contain committed keys

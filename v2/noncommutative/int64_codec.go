@@ -6,14 +6,14 @@ import (
 	"github.com/arcology-network/common-lib/codec"
 )
 
-func (this *Int64) Size(...interface{}) uint32 {
+func (this *Int64) Size() uint32 {
 	return 8 // 8 bytes
 }
-func (this *Int64) Encode(...interface{}) []byte {
+func (this *Int64) Encode() []byte {
 	return codec.Int64(int64(*this)).Encode()
 }
 
-func (this *Int64) EncodeToBuffer(buffer []byte, _ ...interface{}) int {
+func (this *Int64) EncodeToBuffer(buffer []byte) int {
 	return codec.Int64(*this).EncodeToBuffer(buffer)
 }
 

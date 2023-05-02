@@ -36,7 +36,8 @@ func TestUnivalueCodecU256(t *testing.T) {
 	alice := datacompression.RandomAccount() /* Commutative Int64 Test */
 
 	// meta:= commutative.NewPath()
-	u256 := commutative.NewU256(uint256.NewInt(100), uint256.NewInt(0), uint256.NewInt(100))
+	u256 := commutative.NewU256(uint256.NewInt(0), uint256.NewInt(100))
+
 	in := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, u256)
 	in.reads = 1
 	in.writes = 2

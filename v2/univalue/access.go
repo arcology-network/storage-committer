@@ -3,7 +3,6 @@ package univalue
 import (
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	commutative "github.com/arcology-network/concurrenturl/v2/commutative"
 	"github.com/arcology-network/concurrenturl/v2/state"
 )
 
@@ -17,15 +16,14 @@ func (this AccessEncoder) Encode() []byte {
 	)
 
 	buffers := make([][]byte, len(this))
-
 	for i, v := range this {
-		var flags []interface{}
-		if v.DeltaWrites() > 0 && v.Reads() == 0 && v.Writes() == 0 && v.TypeID() != commutative.PATH {
-			flags = []interface{}{true, true, true, true}
-		} else {
-			flags = []interface{}{false, false, false, false}
-		}
-		buffers[i] = v.Encode(flags...)
+
+		// if v.DeltaWrites() > 0 && v.Reads() == 0 && v.Writes() == 0 && v.TypeID() != commutative.PATH {
+		// 	flags = []interface{}{true, true, true, true}
+		// } else {
+		// 	flags = []interface{}{false, false, false, false}
+		// }
+		buffers[i] = v.Encode()
 	}
 	return codec.Byteset(buffers).Encode()
 }

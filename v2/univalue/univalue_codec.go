@@ -7,9 +7,9 @@ import (
 	storage "github.com/arcology-network/concurrenturl/v2/storage"
 )
 
-func (this *Univalue) Encode(selectors ...interface{}) []byte {
+func (this *Univalue) Encode() []byte {
 	buffer := make([]byte, this.Size())
-	this.EncodeToBuffer(buffer, selectors...)
+	this.EncodeToBuffer(buffer)
 	return buffer
 }
 
@@ -25,7 +25,7 @@ func (this *Univalue) Sizes() []uint32 {
 	}
 }
 
-func (this *Univalue) Size(selectors ...interface{}) uint32 {
+func (this *Univalue) Size() uint32 {
 	return this.HeaderSize() +
 		this.Unimeta.Size() +
 		common.IfThenDo1st(this.value != nil, func() uint32 { return this.value.(ccurlcommon.TypeInterface).Size() }, 0)
@@ -41,7 +41,7 @@ func (this *Univalue) FillHeader(buffer []byte) int {
 	)
 }
 
-func (this *Univalue) EncodeToBuffer(buffer []byte, selectors ...interface{}) int {
+func (this *Univalue) EncodeToBuffer(buffer []byte) int {
 	offset := this.FillHeader(buffer)
 
 	offset += this.Unimeta.EncodeToBuffer(buffer[offset:])
@@ -69,11 +69,11 @@ func (this *Univalue) GetEncoded() []byte {
 	}
 
 	if this.IsCommutative(this) {
-		return this.value.(ccurlcommon.TypeInterface).Value().(codec.Encodeable).Encode()
+		return this.value.(ccurlcommon.TypeInterface).Value().(codec.Encodable).Encode()
 	}
 
 	if len(this.cache) > 0 {
-		return this.value.(ccurlcommon.TypeInterface).Value().(codec.Encodeable).Encode()
+		return this.value.(ccurlcommon.TypeInterface).Value().(codec.Encodable).Encode()
 	}
 	return this.cache
 }
