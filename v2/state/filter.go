@@ -34,3 +34,8 @@ func (AccessFilter) AccessMetaSelector(v ccurlcommon.UnivalueInterface, _ ...int
 		[]interface{}{false, false, false, false},
 	)
 }
+
+func ReadOnly(v ccurlcommon.UnivalueInterface) bool { return v.IsReadOnly() }
+func DelNonExist(v ccurlcommon.UnivalueInterface) bool {
+	return v.Value() == nil && !v.Preexist()
+}

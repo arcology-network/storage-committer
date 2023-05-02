@@ -27,7 +27,7 @@ func SimulatedTx0(account string, store *cachedstorage.DataStore) ([]byte, error
 		return []byte{}, err
 	}
 
-	_, transitions := url.Export(ccurlcommon.Sorter)
+	_, transitions := url.Export3(ccurlcommon.Sorter)
 	return univalue.Univalues(transitions).Encode(), nil
 }
 
@@ -46,7 +46,7 @@ func SimulatedTx1(account string, store *cachedstorage.DataStore) ([]byte, error
 		return []byte{}, err
 	}
 
-	_, transitions := url.Export(ccurlcommon.Sorter)
+	_, transitions := url.Export3(ccurlcommon.Sorter)
 	return univalue.Univalues(transitions).Encode(), nil
 }
 

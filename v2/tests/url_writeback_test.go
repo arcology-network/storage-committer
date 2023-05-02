@@ -22,7 +22,7 @@ func TestAddAndDelete(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, acctTrans := url.Export(ccurlcommon.Sorter)
+	_, acctTrans := url.Export3(ccurlcommon.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -31,7 +31,7 @@ func TestAddAndDelete(t *testing.T) {
 	path := commutative.NewPath()
 	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
 
-	_, acctTrans = url.Export(ccurlcommon.Sorter)
+	_, acctTrans = url.Export3(ccurlcommon.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{1})
@@ -39,7 +39,7 @@ func TestAddAndDelete(t *testing.T) {
 	url.Init(store)
 	_ = url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/4", nil) // Delete an non-existing entry, should NOT appear in the transitions
 
-	if _, acctTrans := url.Export(ccurlcommon.Sorter); len(acctTrans) != 0 {
+	if _, acctTrans := url.Export3(ccurlcommon.Sorter); len(acctTrans) != 0 {
 		t.Error("Error: Wrong number of transitions")
 	}
 }
@@ -211,7 +211,6 @@ func TestStateUpdate(t *testing.T) {
 
 	// url.Import(url.Decode(univalue.Univalues(append(tx0Out, tx1Out...)).Encode()))
 	url.Import((append(tx0Out, tx1Out...)))
-
 	url.PostImport()
 	errs := url.Commit([]uint32{0, 1})
 	if len(errs) != 0 {

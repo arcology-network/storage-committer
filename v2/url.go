@@ -347,12 +347,23 @@ func (this *ConcurrentUrl) AllInOneCommit(transitions []ccurlcommon.UnivalueInte
 	return []error{}
 }
 
-func (this *ConcurrentUrl) Export3(sorter func([]ccurlcommon.UnivalueInterface) interface{}) []ccurlcommon.UnivalueInterface {
+func (this *ConcurrentUrl) Export3(sorter func([]ccurlcommon.UnivalueInterface) interface{}) ([]ccurlcommon.UnivalueInterface, []ccurlcommon.UnivalueInterface) {
 	this.indexer.Vectorize(this.indexer.Buffer(), &this.buffer, false) // Export records
 	if sorter != nil {                                                 // Sort by path, debug only
 		ccurlcommon.Sorter(this.buffer)
 	}
-	return this.buffer
+
+	transitions := make([]ccurlcommon.UnivalueInterface, len(this.buffer))
+	for i := 0; i < len(this.buffer); i++ {
+		transitions[i] = this.buffer[i].Delta()
+	}
+	common.RemoveIf(&transitions, func(v ccurlcommon.UnivalueInterface) bool { return v == nil })
+
+	accesses := make([]ccurlcommon.UnivalueInterface, len(this.buffer))
+	for i := 0; i < len(this.buffer); i++ {
+		accesses[i] = this.buffer[i].Meta() // Get access meta
+	}
+	return accesses, transitions
 }
 
 func (this *ConcurrentUrl) Export(sorter func([]ccurlcommon.UnivalueInterface) interface{}) ([]ccurlcommon.UnivalueInterface, []ccurlcommon.UnivalueInterface) {

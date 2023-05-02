@@ -11,6 +11,8 @@ import (
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
+	"github.com/arcology-network/concurrenturl/v2/commutative"
+	state "github.com/arcology-network/concurrenturl/v2/state"
 )
 
 type Univalue struct {
@@ -20,7 +22,7 @@ type Univalue struct {
 }
 
 func NewUnivalue(tx uint32, key string, reads, writes uint32, deltaWrites uint32, args ...interface{}) *Univalue {
-	v := Univalue{
+	return &Univalue{
 		Unimeta{
 			vType:       (&Univalue{}).GetTypeID(args[0]),
 			tx:          tx,
@@ -33,13 +35,49 @@ func NewUnivalue(tx uint32, key string, reads, writes uint32, deltaWrites uint32
 		args[0],
 		[]byte{},
 	}
-	return &v
 }
 
-func (this *Univalue) Meta() interface{}             { return &this.Unimeta }
 func (this *Univalue) ClearCache()                   { this.cache = this.cache[:0] }
 func (this *Univalue) Value() interface{}            { return this.value }
 func (this *Univalue) SetValue(newValue interface{}) { this.value = newValue }
+
+func (this *Univalue) Meta() ccurlcommon.UnivalueInterface {
+	var v interface{}
+	if this.value != nil {
+		value := this.value.(ccurlcommon.TypeInterface)
+		if this.deltaWrites > 0 && this.reads == 0 && this.writes == 0 && this.TypeID() != commutative.PATH {
+			v = this.value.(ccurlcommon.TypeInterface).New(nil, value.Delta(), value.Sign(), value.Min(), value.Max())
+		}
+	}
+
+	return &Univalue{
+		this.Unimeta,
+		v,
+		[]byte{},
+	}
+}
+
+func (this *Univalue) Delta() ccurlcommon.UnivalueInterface {
+	var v interface{}
+	if !state.ReadOnly(this) && !state.DelNonExist(this) {
+		if this.value != nil {
+			value := this.value.(ccurlcommon.TypeInterface)
+			if !this.preexists {
+				v = this.value.(ccurlcommon.TypeInterface).New(nil, value.Delta(), value.Sign(), value.Min(), value.Max())
+			} else {
+				v = this.value.(ccurlcommon.TypeInterface).New(nil, value.Delta(), value.Sign(), nil, nil)
+			}
+		}
+	} else {
+		return nil
+	}
+
+	return &Univalue{
+		this.Unimeta,
+		v,
+		[]byte{},
+	}
+}
 
 func (this *Univalue) Init(tx uint32, key string, reads, writes uint32, v interface{}, args ...interface{}) {
 	this.vType = (&Univalue{}).GetTypeID(v)

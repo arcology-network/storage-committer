@@ -33,7 +33,7 @@ func (this *Path) Encode() []byte {
 }
 
 func (this *Path) EncodeToBuffer(buffer []byte) int {
-	offset := common.IfThen(this.value != nil, this.value.EncodeToBuffer(buffer), 0)
+	offset := common.IfThenDo1st(this.value != nil, func() int { return this.value.EncodeToBuffer(buffer) }, 0)
 	offset += common.IfThenDo1st(this.delta != nil, func() int { return this.delta.EncodeToBuffer(buffer[offset:]) }, 0)
 	return offset
 }

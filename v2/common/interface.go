@@ -57,7 +57,8 @@ type UnivalueInterface interface { // value type
 	Writes() uint32
 	DeltaWrites() uint32
 
-	Meta() interface{}
+	Delta() UnivalueInterface
+	Meta() UnivalueInterface
 
 	IncrementReads(uint32)
 	IncrementWrites(uint32)
