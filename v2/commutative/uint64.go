@@ -2,6 +2,7 @@ package commutative
 
 import (
 	"errors"
+	"math"
 
 	codec "github.com/arcology-network/common-lib/codec"
 	common "github.com/arcology-network/common-lib/common"
@@ -48,13 +49,15 @@ func (this *Uint64) New(value, delta, sign, min, max interface{}) interface{} {
 	}
 }
 
-func (this *Uint64) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }
-
 func (this *Uint64) Equal(other interface{}) bool {
-	return *this.value == *other.(*Uint64).value &&
-		*this.delta == *other.(*Uint64).delta &&
-		*this.min == *other.(*Uint64).min &&
-		*this.max == *other.(*Uint64).max
+	return common.Equal(this.value, other.(*Uint64).value, func(v *codec.Uint64) bool { return *v == 0 }) &&
+		common.Equal(this.delta, other.(*Uint64).delta, func(v *codec.Uint64) bool { return *v == 0 }) &&
+		common.Equal(this.min, other.(*Uint64).min, func(v *codec.Uint64) bool { return *v == 0 }) &&
+		common.Equal(this.max, other.(*Uint64).max, func(v *codec.Uint64) bool { return *v == math.MaxUint64 })
+}
+
+func (this *Uint64) NilEquivalent(lhv *codec.Uint64, rhv *codec.Uint64, equal func(v *codec.Uint64) bool) bool {
+	return (lhv == rhv) || ((lhv == nil || rhv == nil) && lhv != rhv && (lhv != nil && equal(lhv)) || (rhv != nil && equal(rhv)))
 }
 
 func (this *Uint64) MemSize() uint32 { return 5 * 8 }
@@ -65,8 +68,9 @@ func (this *Uint64) Sign() interface{}  { return true }
 func (this *Uint64) Min() interface{}   { return this.min }
 func (this *Uint64) Max() interface{}   { return this.max }
 
-func (this *Uint64) TypeID() uint8               { return UINT64 }
-func (this *Uint64) IsSelf(key interface{}) bool { return true }
+func (this *Uint64) TypeID() uint8                                              { return UINT64 }
+func (this *Uint64) IsSelf(key interface{}) bool                                { return true }
+func (this *Uint64) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }
 
 func (this *Uint64) Clone() interface{} {
 	return &Uint64{

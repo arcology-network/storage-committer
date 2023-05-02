@@ -22,20 +22,17 @@ func NewPath() interface{} {
 	return this
 }
 
-func (this *Path) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
-	return v, 0, 1, 0
-}
+func (this *Path) View() *orderedset.OrderedSet                               { return this.value }
+func (this *Path) MemSize() uint32                                            { return codec.Strings(this.value.Keys()).Size() * 2 } // Just an estimate, need to update on fly instead of calculating everytime
+func (this *Path) TypeID() uint8                                              { return PATH }
+func (this *Path) IsSelf(key interface{}) bool                                { return ccurlcommon.IsPath(key.(string)) }
+func (this *Path) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }
 
-func (this *Path) View() *orderedset.OrderedSet { return this.value }
-func (this *Path) IsSelf(key interface{}) bool  { return ccurlcommon.IsPath(key.(string)) }
-func (this *Path) TypeID() uint8                { return PATH }
-func (this *Path) CommittedLength() int         { return len(this.value.Keys()) }
-func (this *Path) Length() int {
-	return int(this.value.Len())
-}
-
-// For linear access
-// func (this *Path) At(idx uint64) {}
+func (this *Path) Value() interface{} { return this.value }
+func (this *Path) Delta() interface{} { return this.delta }
+func (this *Path) Sign() interface{}  { return true }
+func (this *Path) Min() interface{}   { return nil }
+func (this *Path) Max() interface{}   { return nil }
 
 func (this *Path) Clone() interface{} {
 	meta := &Path{
@@ -46,15 +43,12 @@ func (this *Path) Clone() interface{} {
 }
 
 func (this *Path) Equal(other interface{}) bool {
-	return this.value.Equal(other.(*Path).value) && this.delta.Equal(other.(*Path).delta)
+	return common.EqualIf(this.value, other.(*Path).value, func(v0, v1 *orderedset.OrderedSet) bool { return v0.Equal(v1) }, func(v *orderedset.OrderedSet) bool { return len(v.Keys()) == 0 }) &&
+		common.EqualIf(this.delta, other.(*Path).delta, func(v0, v1 *PathDelta) bool { return v0.Equal(v1) }, func(v *PathDelta) bool { return len(v.Added()) == 0 && len(v.Removed()) == 0 })
 }
 
 func (this *Path) Get() (interface{}, uint32, uint32) {
 	return this.value.Keys(), 1, common.IfThen(!this.value.Touched(), uint32(0), uint32(1))
-}
-
-func (this *Path) MemSize() uint32 {
-	return codec.Strings(this.value.Keys()).Size() * 2 // Just an estimate, need to update on fly instead of calculating everytime
 }
 
 func (this *Path) New(value, delta, sign, min, max interface{}) interface{} {
@@ -63,12 +57,6 @@ func (this *Path) New(value, delta, sign, min, max interface{}) interface{} {
 		delta: common.IfThenDo1st(delta != nil, func() *PathDelta { return delta.(*PathDelta) }, nil),
 	}
 }
-
-func (this *Path) Value() interface{} { return this.value }
-func (this *Path) Delta() interface{} { return this.delta }
-func (this *Path) Sign() interface{}  { return true }
-func (this *Path) Min() interface{}   { return nil }
-func (this *Path) Max() interface{}   { return nil }
 
 func (this *Path) ApplyDelta(v interface{}) ccurlcommon.TypeInterface { // Apply the transitions to the original value
 	keys := append(this.value.Keys(), this.delta.addDict.Keys()...) // The value should only contain committed keys

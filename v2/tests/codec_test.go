@@ -67,7 +67,7 @@ func TestUnivalueCodec(t *testing.T) {
 
 	url := ccurl.NewConcurrentUrl(store)
 	url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), fmt.Sprint("rand.Int()"))
-	_, transVec := url.Export(nil)
+	_, transVec := url.Export3(ccurlcommon.Sorter)
 	transitions = append(transitions, transVec...)
 
 	for i := 0; i < len(transitions); i++ {

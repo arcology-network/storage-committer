@@ -58,18 +58,18 @@ func (this *Univalue) Meta() ccurlcommon.UnivalueInterface {
 }
 
 func (this *Univalue) Delta() ccurlcommon.UnivalueInterface {
+	if state.ReadOnly(this) || state.DelNonExist(this) {
+		return nil // Not a transition at all
+	}
+
 	var v interface{}
-	if !state.ReadOnly(this) && !state.DelNonExist(this) {
-		if this.value != nil {
-			value := this.value.(ccurlcommon.TypeInterface)
-			if !this.preexists {
-				v = this.value.(ccurlcommon.TypeInterface).New(nil, value.Delta(), value.Sign(), value.Min(), value.Max())
-			} else {
-				v = this.value.(ccurlcommon.TypeInterface).New(nil, value.Delta(), value.Sign(), nil, nil)
-			}
+	if this.value != nil {
+		value := this.value.(ccurlcommon.TypeInterface)
+		if !this.preexists {
+			v = this.value.(ccurlcommon.TypeInterface).New(nil, value.Delta(), value.Sign(), value.Min(), value.Max())
+		} else {
+			v = this.value.(ccurlcommon.TypeInterface).New(nil, value.Delta(), value.Sign(), nil, nil)
 		}
-	} else {
-		return nil
 	}
 
 	return &Univalue{

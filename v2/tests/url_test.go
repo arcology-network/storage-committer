@@ -26,7 +26,7 @@ func TestSize(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, acctTrans := url.Export(ccurlcommon.Sorter)
+	_, acctTrans := url.Export3(ccurlcommon.Sorter)
 
 	buffer := univalue.AccessEncoder(acctTrans).Encode()
 
@@ -66,7 +66,7 @@ func TestAddThenDeletePath(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, transitions := url.Export(ccurlcommon.Sorter)
+	_, transitions := url.Export3(ccurlcommon.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{1})
@@ -81,7 +81,7 @@ func TestAddThenDeletePath(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, acctTrans = url.Export(ccurlcommon.Sorter)
+	_, acctTrans = url.Export3(ccurlcommon.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{1})
@@ -149,7 +149,7 @@ func TestBasic(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, acctTrans := url.Export(ccurlcommon.Sorter)
+	_, acctTrans := url.Export3(ccurlcommon.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -211,7 +211,7 @@ func TestBasic(t *testing.T) {
 		}
 	}
 
-	_, transitions := url.Export(ccurlcommon.Sorter)
+	_, transitions := url.Export3(ccurlcommon.Sorter)
 
 	if !reflect.DeepEqual(transitions[0].Value().(ccurlcommon.TypeInterface).Delta().(*commutative.PathDelta).Added(), []string{"elem-000", "elem-111"}) {
 		t.Error("Error: keys are missing from the added buffer!")

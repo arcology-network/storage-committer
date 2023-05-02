@@ -115,11 +115,10 @@ func (this *U256) Clone() interface{} {
 }
 
 func (this *U256) Equal(other interface{}) bool {
-	return this.value.Eq(other.(*U256).value) &&
-		this.delta.Eq(other.(*U256).delta) &&
-		this.min.Eq(other.(*U256).min) &&
-		this.max.Eq(other.(*U256).max) &&
-		this.deltaPositive == other.(*U256).deltaPositive
+	return common.Equal(this.value, other.(*U256).value, func(v *uint256.Int) bool { return v.Eq(UINT256ZERO) }) &&
+		common.Equal(this.delta, other.(*U256).delta, func(v *uint256.Int) bool { return v.Eq(UINT256ZERO) }) &&
+		common.Equal(this.min, other.(*U256).min, func(v *uint256.Int) bool { return v.Eq(UINT256ZERO) }) &&
+		common.Equal(this.max, other.(*U256).max, func(v *uint256.Int) bool { return v.Eq(U256MAX) })
 }
 
 func (this *U256) Get() (interface{}, uint32, uint32) {

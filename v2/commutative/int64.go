@@ -2,6 +2,7 @@ package commutative
 
 import (
 	"errors"
+	"math"
 
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
@@ -51,18 +52,17 @@ func (this *Int64) Sign() interface{}  { return *this.delta >= 0 }
 func (this *Int64) Min() interface{}   { return this.min }
 func (this *Int64) Max() interface{}   { return this.max }
 
-func (this *Int64) MemSize() uint32             { return 5 * 8 }
-func (this *Int64) TypeID() uint8               { return INT64 }
-func (this *Int64) IsSelf(key interface{}) bool { return true }
+func (this *Int64) MemSize() uint32                                            { return 5 * 8 }
+func (this *Int64) TypeID() uint8                                              { return INT64 }
+func (this *Int64) IsSelf(key interface{}) bool                                { return true }
+func (this *Int64) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }
 
 func (this *Int64) Equal(other interface{}) bool {
-	return *this.value == *other.(*Int64).value &&
-		*this.delta == *other.(*Int64).delta &&
-		*this.min == *other.(*Int64).min &&
-		*this.max == *other.(*Int64).max
+	return common.Equal(this.value, other.(*Int64).value, func(v *codec.Int64) bool { return *v == 0 }) &&
+		common.Equal(this.delta, other.(*Int64).delta, func(v *codec.Int64) bool { return *v == 0 }) &&
+		common.Equal(this.min, other.(*Int64).min, func(v *codec.Int64) bool { return *v == math.MinInt64 }) &&
+		common.Equal(this.max, other.(*Int64).max, func(v *codec.Int64) bool { return *v == math.MaxInt64 })
 }
-
-func (this *Int64) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }
 
 func (this *Int64) Clone() interface{} {
 	return &Int64{

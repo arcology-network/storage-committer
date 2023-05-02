@@ -88,19 +88,3 @@ func TestCodecPathMeta(t *testing.T) {
 		t.Error("Error: Don't match!!", out.Delta().(*PathDelta).Removed())
 	}
 }
-
-// func TestCodecPathMetaEncodeable(t *testing.T) {
-// 	// /* Commutative Int64 Test */
-// 	in := NewPath()
-
-// 	in.SetSubs([]string{"e-01", "e-001", "e-002", "e-002"})
-// 	in.SetAdded([]string{"+01", "+001", "+002", "+002"})
-// 	in.SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
-
-// 	buffer := in.(codec.Encodable).Encode()
-// 	out := (&Path{}).Decode(buffer).(*Path)
-
-// 	if !common.EqualArray(out.Value().([]string), []string{"e-01", "e-001", "e-002", "e-002"}) {
-// 		t.Error("Error: Don't match!!")
-// 	}
-// }
