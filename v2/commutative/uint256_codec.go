@@ -3,7 +3,6 @@ package commutative
 import (
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	uint256 "github.com/holiman/uint256"
 )
 
 func (this *U256) HeaderSize() uint32 {
@@ -48,11 +47,11 @@ func (this *U256) Decode(buffer []byte) interface{} {
 	fields := codec.Byteset{}.Decode(buffer).(codec.Byteset)
 
 	this = &U256{
-		value:         uint256.NewInt(0),
-		delta:         uint256.NewInt(0),
+		value:         (&codec.Uint256{}).NewInt(0),
+		delta:         (&codec.Uint256{}).NewInt(0),
 		deltaPositive: true,
-		min:           uint256.NewInt(0),
-		max:           U256_MAX.Clone(),
+		min:           (&codec.Uint256{}).NewInt(0),
+		max:           (*codec.Uint256)(U256_MAX.Clone()),
 	}
 
 	copy(this.value[:], codec.Uint64s{}.Decode(fields[0]).(codec.Uint64s))

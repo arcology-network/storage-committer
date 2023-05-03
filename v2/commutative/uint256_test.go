@@ -3,6 +3,7 @@ package commutative
 import (
 	"testing"
 
+	"github.com/arcology-network/common-lib/codec"
 	"github.com/holiman/uint256"
 )
 
@@ -101,14 +102,12 @@ func TestCodec(t *testing.T) {
 
 	in = NewU256(U256_MIN, U256_MAX).(*U256)
 
-	in = (&U256{}).New(nil, in.delta, true, nil, nil).(*U256)
-	buffer = in.Encode()
+	buffer = (&U256{}).New(nil, in.delta, true, nil, nil).(*U256).Encode()
 	out = (&(U256{})).Decode(buffer).(*U256)
-	if !out.value.Eq(U256_ZERO) ||
-
+	if !out.value.Eq((*codec.Uint256)(U256_ZERO)) ||
 		!out.delta.Eq(in.delta) ||
-		!out.min.Eq(U256_MIN) ||
-		!out.max.Eq(U256_MAX) {
+		!out.min.Eq((*codec.Uint256)(U256_MIN)) ||
+		!out.max.Eq((*codec.Uint256)(U256_MAX)) {
 		t.Error("Error: Out of range, should have failed")
 	}
 }

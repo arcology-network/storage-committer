@@ -66,11 +66,11 @@ func (this *Int64) Equal(other interface{}) bool {
 		common.Equal(this.max, other.(*Int64).max, func(v *codec.Int64) bool { return *v == math.MaxInt64 })
 }
 
-func (this *Int64) Value() interface{} { return this.value }
-func (this *Int64) Delta() interface{} { return this.delta }
+func (this *Int64) Value() interface{} { return (this.value) }
+func (this *Int64) Delta() interface{} { return (this.delta) }
 func (this *Int64) Sign() bool         { return *this.delta >= 0 }
-func (this *Int64) Min() interface{}   { return this.min }
-func (this *Int64) Max() interface{}   { return this.max }
+func (this *Int64) Min() interface{}   { return (this.min) }
+func (this *Int64) Max() interface{}   { return (this.max) }
 
 func (this *Int64) MemSize() uint32                                            { return 5 * 8 }
 func (this *Int64) TypeID() uint8                                              { return INT64 }

@@ -28,7 +28,7 @@ func (this *U256Delta) isOverflowed(v0 *uint256.Int, signV0 bool, v1 *uint256.In
 }
 
 func (this *U256Delta) Add(newDelta interface{}, sign bool) (interface{}, error) {
-	accumDelta, deltaSign := this.isOverflowed(this.value.Clone(), this.deltaPositive, newDelta.(*U256).value, newDelta.(*U256).deltaPositive)
+	accumDelta, deltaSign := this.isOverflowed(this.value.Clone(), this.deltaPositive, (*uint256.Int)(newDelta.(*U256).value), newDelta.(*U256).deltaPositive)
 	if accumDelta == nil {
 		return this, errors.New("Error: Value out of range")
 	}

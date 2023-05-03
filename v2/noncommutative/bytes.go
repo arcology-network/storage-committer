@@ -3,6 +3,7 @@ package noncommutative
 import (
 	"bytes"
 
+	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 )
@@ -11,7 +12,7 @@ import (
 
 type Bytes struct {
 	placeholder bool //
-	value       []byte
+	value       codec.Bytes
 }
 
 func NewBytes(v []byte) interface{} {
@@ -48,14 +49,18 @@ func (this *Bytes) Equal(other interface{}) bool {
 }
 
 func (this *Bytes) ReInit()                            {}
-func (this *Bytes) Value() interface{}                 { return this }
-func (this *Bytes) Delta() interface{}                 { return this }
+func (this *Bytes) Value() interface{}                 { return this.value }
+func (this *Bytes) Delta() interface{}                 { return this.value }
 func (this *Bytes) Sign() bool                         { return true } // delta sign
 func (this *Bytes) Min() interface{}                   { return nil }
 func (this *Bytes) Max() interface{}                   { return nil }
 func (this *Bytes) Get() (interface{}, uint32, uint32) { return this.value, 1, 0 }
 func (this *Bytes) New(_, delta, _, _, _ interface{}) interface{} {
-	return common.IfThenDo1st(delta != nil && delta.(*Bytes) != nil, func() interface{} { return delta.(*Bytes).Clone() }, interface{}(this))
+	v := common.IfThenDo1st(delta != nil && delta.(codec.Bytes) != nil, func() codec.Bytes { return delta.(codec.Bytes).Clone().(codec.Bytes) }, this.value)
+	return &Bytes{
+		true,
+		v,
+	}
 }
 
 func (this *Bytes) Set(value interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {

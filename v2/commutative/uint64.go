@@ -70,11 +70,11 @@ func (this *Uint64) Equal(other interface{}) bool {
 
 func (this *Uint64) MemSize() uint32 { return 5 * 8 }
 
-func (this *Uint64) Value() interface{} { return this.value }
-func (this *Uint64) Delta() interface{} { return this.delta }
+func (this *Uint64) Value() interface{} { return (this.value) }
+func (this *Uint64) Delta() interface{} { return (this.delta) }
 func (this *Uint64) Sign() bool         { return true }
-func (this *Uint64) Min() interface{}   { return this.min }
-func (this *Uint64) Max() interface{}   { return this.max }
+func (this *Uint64) Min() interface{}   { return (this.min) }
+func (this *Uint64) Max() interface{}   { return (this.max) }
 
 func (this *Uint64) TypeID() uint8                                              { return UINT64 }
 func (this *Uint64) IsSelf(key interface{}) bool                                { return true }

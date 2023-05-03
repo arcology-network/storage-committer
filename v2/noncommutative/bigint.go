@@ -29,12 +29,12 @@ func (this *Bigint) Equal(other interface{}) bool {
 
 func (this *Bigint) Clone() interface{} {
 	v := big.Int(*this)
-	return Bigint(*new(big.Int).Set(&v))
+	return (*Bigint)(new(big.Int).Set(&v))
 }
 
 func (this *Bigint) ReInit()            {}
-func (this *Bigint) Value() interface{} { return this }
-func (this *Bigint) Delta() interface{} { return this }
+func (this *Bigint) Value() interface{} { return (this) }
+func (this *Bigint) Delta() interface{} { return (this) }
 func (this *Bigint) Sign() bool         { return true } // delta sign
 func (this *Bigint) Min() interface{}   { return nil }
 func (this *Bigint) Max() interface{}   { return nil }

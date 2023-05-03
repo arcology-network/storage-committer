@@ -82,15 +82,15 @@ func (this *Univalue) Delta() ccurlcommon.UnivalueInterface {
 	var v interface{}
 	if this.value != nil {
 		value := this.value.(ccurlcommon.TypeInterface)
-		common.IfThenDo1st(value.Delta() != nil, func() interface{} { return value.Delta() }, value.Delta())
+		common.IfThenDo1st(value.Delta() != nil, func() interface{} { return value.Delta().(Cloneable).Clone() }, nil)
 
 		if !this.preexists || (this.deltaWrites > 0 && this.TypeID() != commutative.PATH) { // commutative but not meta, for the accumulator
 			v = this.value.(ccurlcommon.TypeInterface).New(
 				nil,
-				common.IfThenDo1st(value.Delta() != nil, func() interface{} { return value.Delta() }, value.Delta()),
+				common.IfThenDo1st(value.Delta() != nil, func() interface{} { return value.Delta().(Cloneable).Clone() }, nil),
 				value.Sign(),
-				common.IfThenDo1st(value.Min() != nil, func() interface{} { return value.Min() }, value.Min()),
-				common.IfThenDo1st(value.Max() != nil, func() interface{} { return value.Max() }, value.Max()),
+				common.IfThenDo1st(value.Min() != nil, func() interface{} { return value.Min().(Cloneable).Clone() }, nil),
+				common.IfThenDo1st(value.Max() != nil, func() interface{} { return value.Max().(Cloneable).Clone() }, nil),
 			)
 
 		} else {
@@ -98,7 +98,7 @@ func (this *Univalue) Delta() ccurlcommon.UnivalueInterface {
 		}
 	}
 
-	// common.IfThenDo(value.Delta() != nil, func() interface{} { return value.Delta() }, value.Delta())
+	// common.IfThenDo(value.Delta() != nil, func() interface{} { return value.Delta().(Cloneable).Clone() }, value.Delta())
 
 	return &Univalue{
 		this.Unimeta,
@@ -220,7 +220,7 @@ func (this *Univalue) Clone() interface{} {
 	v := &Univalue{
 		this.Unimeta.Clone(),
 		common.IfThenDo1st(this.value != nil, func() interface{} { return this.value.(ccurlcommon.TypeInterface).Clone() }, nil),
-		codec.Bytes(this.cache).Clone(),
+		codec.Bytes(this.cache).Clone().([]byte),
 	}
 	return v
 }

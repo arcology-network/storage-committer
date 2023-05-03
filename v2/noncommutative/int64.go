@@ -22,8 +22,8 @@ func (this *Int64) Equal(other interface{}) bool                               {
 func (this *Int64) Get() (interface{}, uint32, uint32)                         { return int64(*this), 1, 0 }
 
 func (this *Int64) ReInit()            {}
-func (this *Int64) Value() interface{} { return this }
-func (this *Int64) Delta() interface{} { return this }
+func (this *Int64) Value() interface{} { return (this) }
+func (this *Int64) Delta() interface{} { return (this) }
 func (this *Int64) Sign() bool         { return true } // delta sign
 func (this *Int64) Min() interface{}   { return nil }
 func (this *Int64) Max() interface{}   { return nil }

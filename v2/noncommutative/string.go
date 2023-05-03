@@ -23,8 +23,8 @@ func (this *String) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) 
 func (this *String) Get() (interface{}, uint32, uint32)                         { return string(*this), 1, 0 }
 
 func (this *String) ReInit()            {}
-func (this *String) Value() interface{} { return this }
-func (this *String) Delta() interface{} { return this }
+func (this *String) Value() interface{} { return (this) }
+func (this *String) Delta() interface{} { return (this) }
 func (this *String) Sign() bool         { return true } // delta sign
 func (this *String) Min() interface{}   { return nil }
 func (this *String) Max() interface{}   { return nil }
