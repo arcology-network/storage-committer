@@ -24,7 +24,7 @@ func TestSimpleBalance(t *testing.T) {
 	}
 
 	if err := url.Write(0, "blcc://eth1.0/account/"+alice+"/balance",
-		commutative.NewU256(commutative.U256MIN, commutative.U256MAX)); err != nil { //initialization
+		commutative.NewU256(commutative.U256_MIN, commutative.U256_MAX)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
@@ -101,13 +101,13 @@ func TestBalance(t *testing.T) {
 	}
 
 	v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0")
-	outV := (*big.Int)(v.(*noncommutative.Bigint))
+	outV := v.(*big.Int)
 	if outV.Cmp(value) != 0 {
 		t.Error("Failed to read: blcc://eth1.0/account/alice/storage/ctrn-0/elem-0")
 	}
 
 	// -------------------Create another commutative bigint ------------------------------
-	comtVInit := commutative.NewU256(commutative.U256MIN, commutative.U256MAX)
+	comtVInit := commutative.NewU256(commutative.U256_MIN, commutative.U256_MAX)
 	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", comtVInit); err != nil {
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
@@ -193,7 +193,7 @@ func TestNonce(t *testing.T) {
 		t.Error("Error: blcc://eth1.0/account/alice/nonce should be ", 6)
 	}
 
-	_, trans := url1.Export(nil)
+	_, trans := url1.Export(ccurlcommon.Sorter)
 	url1.Import(trans)
 	url1.PostImport()
 	url1.Commit([]uint32{0})
@@ -209,7 +209,7 @@ func TestMultipleNonces(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 
 	url0 := ccurl.NewConcurrentUrl(store)
-	alice := RandomAccount()
+	alice := AliceAccount()
 	if err := url0.CreateAccount(ccurlcommon.SYSTEM, url0.Platform.Eth10(), alice); err != nil { // CreateAccount account structure {
 		t.Error(err)
 	}
@@ -223,35 +223,60 @@ func TestMultipleNonces(t *testing.T) {
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
-	_, trans0 := url0.Export(nil)
+	_, trans0 := url0.Export(ccurlcommon.Sorter)
 	// ccurltype.SetInvariate(trans0, "nonce")
 
 	url1 := ccurl.NewConcurrentUrl(store)
-	bob := RandomAccount()
+	bob := BobAccount()
 	if err := url1.CreateAccount(ccurlcommon.SYSTEM, url1.Platform.Eth10(), bob); err != nil { // CreateAccount account structure {
 		t.Error(err)
 	}
 
 	url0.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64(0, math.MaxInt64))
-	if err := url1.Write(0, "blcc://eth1.0/account/"+bob+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
-		t.Error(err, "blcc://eth1.0/account/"+bob+"/balance")
-	}
 
 	if err := url1.Write(0, "blcc://eth1.0/account/"+bob+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+bob+"/balance")
 	}
 
-	_, trans1 := url1.Export(nil)
+	if err := url1.Write(0, "blcc://eth1.0/account/"+bob+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
+		t.Error(err, "blcc://eth1.0/account/"+bob+"/balance")
+	}
+
+	nonce, _ := url1.Read(0, "blcc://eth1.0/account/"+bob+"/nonce")
+	bobNonce := nonce.(uint64)
+	if bobNonce != 2 {
+		t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
+	}
+
+	_, trans1 := url1.Export(ccurlcommon.Sorter)
 	// ccurltype.SetInvariate(trans1, "nonce")
+
+	nonce, _ = url1.Read(0, "blcc://eth1.0/account/"+bob+"/nonce")
+	bobNonce = nonce.(uint64)
+	if bobNonce != 2 {
+		t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
+	}
 
 	url0.Import(trans0)
 	url0.Import(trans1)
 
+	nonce, _ = url1.Read(0, "blcc://eth1.0/account/"+bob+"/nonce")
+	bobNonce = nonce.(uint64)
+	if bobNonce != 2 {
+		t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
+	}
+
 	url0.PostImport()
 	url0.Commit([]uint32{0})
 
-	nonce, _ := url1.Read(0, "blcc://eth1.0/account/"+bob+"/nonce")
-	bobNonce := nonce.(uint64)
+	nonce, _ = url1.Read(0, "blcc://eth1.0/account/"+bob+"/nonce")
+	bobNonce = nonce.(uint64)
+	if bobNonce != 2 {
+		t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
+	}
+
+	nonce, _ = url0.Read(0, "blcc://eth1.0/account/"+bob+"/nonce")
+	bobNonce = nonce.(uint64)
 	if bobNonce != 2 {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
 	}

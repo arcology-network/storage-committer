@@ -16,13 +16,13 @@ func NewPathDelta(add []string, del []string) *PathDelta {
 	}
 }
 
-func (this *PathDelta) Clone() *PathDelta {
+func (this *PathDelta) Clone() interface{} {
 	if this == nil {
 		return this
 	}
 	return &PathDelta{
-		this.addDict.Clone(),
-		this.delDict.Clone(),
+		this.addDict.Clone().(*orderedset.OrderedSet),
+		this.delDict.Clone().(*orderedset.OrderedSet),
 	}
 }
 
@@ -64,3 +64,4 @@ func (this *PathDelta) delKeys(subkey string, value interface{}, preexists bool)
 
 func (this *PathDelta) Added() []string   { return this.addDict.Keys() }
 func (this *PathDelta) Removed() []string { return this.delDict.Keys() }
+func (this *PathDelta) Touched() bool     { return len(this.Added()) > 0 || len(this.Removed()) > 0 }

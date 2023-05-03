@@ -27,7 +27,7 @@ func SimulatedTx0(account string, store *cachedstorage.DataStore) ([]byte, error
 		return []byte{}, err
 	}
 
-	_, transitions := url.Export3(ccurlcommon.Sorter)
+	_, transitions := url.Export(ccurlcommon.Sorter)
 	return univalue.Univalues(transitions).Encode(), nil
 }
 
@@ -46,28 +46,28 @@ func SimulatedTx1(account string, store *cachedstorage.DataStore) ([]byte, error
 		return []byte{}, err
 	}
 
-	_, transitions := url.Export3(ccurlcommon.Sorter)
+	_, transitions := url.Export(ccurlcommon.Sorter)
 	return univalue.Univalues(transitions).Encode(), nil
 }
 
 func CheckPaths(account string, url *ccurl.ConcurrentUrl) error {
 	v, _ := url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-00")
-	if *v.(*noncommutative.String) != "tx0-elem-00" {
+	if v.(string) != "tx0-elem-00" {
 		return errors.New("Error: Not match")
 	}
 
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-01")
-	if *v.(*noncommutative.String) != "tx0-elem-01" {
+	if v.(string) != "tx0-elem-01" {
 		return errors.New("Error: Not match")
 	}
 
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/elem-00")
-	if *v.(*noncommutative.String) != "tx1-elem-00" {
+	if v.(string) != "tx1-elem-00" {
 		return errors.New("Error: Not match")
 	}
 
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/elem-01")
-	if *v.(*noncommutative.String) != "tx1-elem-00" {
+	if v.(string) != "tx1-elem-00" {
 		return errors.New("Error: Not match")
 	}
 

@@ -1,10 +1,12 @@
 package noncommutative
 
 import (
+	"github.com/arcology-network/common-lib/codec"
+	"github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 )
 
-type Int64 int64
+type Int64 codec.Int64
 
 func NewInt64(v int64) interface{} {
 	var this Int64 = Int64(v)
@@ -15,24 +17,18 @@ func (this *Int64) MemSize() uint32                                            {
 func (this *Int64) IsSelf(key interface{}) bool                                { return true }
 func (this *Int64) TypeID() uint8                                              { return INT64 }
 func (this *Int64) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }
+func (this *Int64) Clone() interface{}                                         { return common.New(*this) }
+func (this *Int64) Equal(other interface{}) bool                               { return *this == *(other.(*Int64)) }
+func (this *Int64) Get() (interface{}, uint32, uint32)                         { return int64(*this), 1, 0 }
 
-func (this *Int64) Value() interface{}                        { return this }
-func (this *Int64) Delta() interface{}                        { return this }
-func (this *Int64) Sign() interface{}                         { return nil } // delta sign
-func (this *Int64) Min() interface{}                          { return nil }
-func (this *Int64) Max() interface{}                          { return nil }
-func (this *Int64) New(_, _, _, _, _ interface{}) interface{} { return this }
-
-// create a new path
-func (this *Int64) Clone() interface{} {
-	value := *this
-	return (*Int64)(&value)
-}
-
-func (this *Int64) Equal(other interface{}) bool { return *this == *(other.(*Int64)) }
-
-func (this *Int64) Get() (interface{}, uint32, uint32) {
-	return this, 1, 0
+func (this *Int64) ReInit()            {}
+func (this *Int64) Value() interface{} { return this }
+func (this *Int64) Delta() interface{} { return this }
+func (this *Int64) Sign() bool         { return true } // delta sign
+func (this *Int64) Min() interface{}   { return nil }
+func (this *Int64) Max() interface{}   { return nil }
+func (this *Int64) New(_, delta, _, _, _ interface{}) interface{} {
+	return common.IfThenDo1st(delta != nil && delta.(*Int64) != nil, func() interface{} { return delta.(*Int64).Clone() }, interface{}(this))
 }
 
 func (this *Int64) Set(value interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {

@@ -10,21 +10,21 @@ import (
 )
 
 type DeltaSequence struct {
-	key    string
-	values []ccurlcommon.UnivalueInterface
-	base   ccurlcommon.UnivalueInterface
-	lock   sync.RWMutex
+	key         string
+	transitions []ccurlcommon.UnivalueInterface
+	base        ccurlcommon.UnivalueInterface
+	lock        sync.RWMutex
 }
 
 func NewDeltaSequence() *DeltaSequence {
 	return &DeltaSequence{
-		values: make([]ccurlcommon.UnivalueInterface, 0, 16),
+		transitions: make([]ccurlcommon.UnivalueInterface, 0, 16),
 	}
 }
 
 func (this *DeltaSequence) Reset(key string, indexer *Indexer, mempool *mempool.Mempool) {
 	this.key = key
-	this.values = this.values[:0]
+	this.transitions = this.transitions[:0]
 	this.base = nil
 }
 
@@ -32,7 +32,7 @@ func (this *DeltaSequence) Init(key string, indexer *Indexer, mempool *mempool.M
 	if initialState := indexer.RetriveShallow(key); initialState != nil {
 		nVal := mempool.Get().(*univalue.Univalue)
 		nVal.Init(ccurlcommon.SYSTEM, key, 0, 0, initialState.(ccurlcommon.TypeInterface).Clone(), indexer)
-		this.values = append(this.values, nVal) //Transitions are ordered by Tx, -1 will guarantee the initial state is always the first one
+		this.transitions = append(this.transitions, nVal) //Transitions are ordered by Tx, -1 will guarantee the initial state is always the first one
 	}
 }
 
@@ -42,41 +42,41 @@ func (this *DeltaSequence) Value() interface{} {
 
 func (this *DeltaSequence) Insert(v ccurlcommon.UnivalueInterface) {
 	this.lock.Lock()
-	this.values = append(this.values, v.(*univalue.Univalue))
+	this.transitions = append(this.transitions, v.(*univalue.Univalue))
 	this.lock.Unlock()
 }
 
 func (this *DeltaSequence) Sort() {
-	if len(this.values) <= 1 {
+	if len(this.transitions) <= 1 {
 		return
 	}
 
-	if len(this.values) == 2 && this.values[0].GetTx() == ccurlcommon.SYSTEM {
+	if len(this.transitions) == 2 && this.transitions[0].GetTx() == ccurlcommon.SYSTEM {
 		return
 	}
 
-	sort.SliceStable(this.values, func(i, j int) bool {
-		if this.values[i].GetTx() == ccurlcommon.SYSTEM {
+	sort.SliceStable(this.transitions, func(i, j int) bool {
+		if this.transitions[i].GetTx() == ccurlcommon.SYSTEM {
 			return true
 		}
 
-		if this.values[j].GetTx() == ccurlcommon.SYSTEM {
+		if this.transitions[j].GetTx() == ccurlcommon.SYSTEM {
 			return false
 		}
 
-		return this.values[i].GetTx() < this.values[j].GetTx()
+		return this.transitions[i].GetTx() < this.transitions[j].GetTx()
 	})
 }
 
 func (this *DeltaSequence) Finalize() {
-	if len(this.values) == 0 {
+	if len(this.transitions) == 0 {
 		return
 	}
 
 	i := 0
-	for ; i < len(this.values); i++ { // Find th first non nil value, where transitions will be applied on
-		if this.values[i].GetPath() != nil {
-			this.base = this.values[i]
+	for ; i < len(this.transitions); i++ { // Find th first non nil value, where transitions will be applied on
+		if this.transitions[i].GetPath() != nil {
+			this.base = this.transitions[i]
 			break
 		}
 	}
@@ -85,7 +85,7 @@ func (this *DeltaSequence) Finalize() {
 		return
 	}
 
-	if err := this.base.ApplyDelta(ccurlcommon.SYSTEM, this.values[i+1:]); err != nil {
+	if err := this.base.ApplyDelta(ccurlcommon.SYSTEM, this.transitions[i+1:]); err != nil {
 		panic(err)
 	}
 
@@ -95,7 +95,7 @@ func (this *DeltaSequence) Finalize() {
 }
 
 func (this *DeltaSequence) Reclaim() {
-	for i := range this.values {
-		this.values[i] = nil
+	for i := range this.transitions {
+		this.transitions[i] = nil
 	}
 }

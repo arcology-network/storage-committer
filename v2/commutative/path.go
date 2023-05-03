@@ -30,16 +30,21 @@ func (this *Path) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { 
 
 func (this *Path) Value() interface{} { return this.value }
 func (this *Path) Delta() interface{} { return this.delta }
-func (this *Path) Sign() interface{}  { return true }
+func (this *Path) Sign() bool         { return true }
 func (this *Path) Min() interface{}   { return nil }
 func (this *Path) Max() interface{}   { return nil }
 
 func (this *Path) Clone() interface{} {
 	meta := &Path{
-		value: this.value.Clone(),
-		delta: this.delta.Clone(),
+		value: this.value.Clone().(*orderedset.OrderedSet),
+		delta: this.delta.Clone().(*PathDelta),
 	}
 	return meta
+}
+
+func (this *Path) ReInit() {
+	this.value = common.IfThen(this.value == nil, orderedset.NewOrderedSet([]string{}), this.value)
+	this.delta = common.IfThen(this.delta == nil, NewPathDelta([]string{}, []string{}), this.delta)
 }
 
 func (this *Path) Equal(other interface{}) bool {
@@ -51,14 +56,16 @@ func (this *Path) Get() (interface{}, uint32, uint32) {
 	return this.value.Keys(), 1, common.IfThen(!this.value.Touched(), uint32(0), uint32(1))
 }
 
+// For the codec only
 func (this *Path) New(value, delta, sign, min, max interface{}) interface{} {
 	return &Path{
-		value: common.IfThenDo1st(value != nil, func() *orderedset.OrderedSet { return value.(*orderedset.OrderedSet) }, nil),
-		delta: common.IfThenDo1st(delta != nil, func() *PathDelta { return delta.(*PathDelta) }, nil),
+		value: common.IfThenDo1st(value != nil && value.(*orderedset.OrderedSet) != nil && len(value.(*orderedset.OrderedSet).Keys()) > 0, func() *orderedset.OrderedSet { return value.(*orderedset.OrderedSet) }, nil),
+		delta: common.IfThenDo1st(delta != nil && delta.(*PathDelta) != nil && delta.(*PathDelta).Touched(), func() *PathDelta { return delta.(*PathDelta) }, nil),
 	}
 }
 
 func (this *Path) ApplyDelta(v interface{}) ccurlcommon.TypeInterface { // Apply the transitions to the original value
+	this.ReInit()
 	keys := append(this.value.Keys(), this.delta.addDict.Keys()...) // The value should only contain committed keys
 	toRemove := this.delta.Removed()
 	univals := v.([]ccurlcommon.UnivalueInterface)

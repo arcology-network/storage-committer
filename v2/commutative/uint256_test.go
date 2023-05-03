@@ -79,7 +79,7 @@ func TestU256DeltaOutRange(t *testing.T) {
 }
 
 func TestCodec(t *testing.T) {
-	in := NewU256(U256MIN, U256MIN).(*U256)
+	in := NewU256(U256_MIN, U256_MIN).(*U256)
 
 	buffer := in.Encode()
 	out := (&(U256{})).Decode(buffer).(*U256)
@@ -99,16 +99,16 @@ func TestCodec(t *testing.T) {
 		t.Error("Error: Out of range, should have failed")
 	}
 
-	in = NewU256(U256MIN, U256MAX).(*U256)
+	in = NewU256(U256_MIN, U256_MAX).(*U256)
 
 	in = (&U256{}).New(nil, in.delta, true, nil, nil).(*U256)
 	buffer = in.Encode()
 	out = (&(U256{})).Decode(buffer).(*U256)
-	if !out.value.Eq(UINT256ZERO) ||
+	if !out.value.Eq(U256_ZERO) ||
 
 		!out.delta.Eq(in.delta) ||
-		!out.min.Eq(U256MIN) ||
-		!out.max.Eq(U256MAX) {
+		!out.min.Eq(U256_MIN) ||
+		!out.max.Eq(U256_MAX) {
 		t.Error("Error: Out of range, should have failed")
 	}
 }

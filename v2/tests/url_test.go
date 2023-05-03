@@ -26,7 +26,7 @@ func TestSize(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, acctTrans := url.Export3(ccurlcommon.Sorter)
+	_, acctTrans := url.Export(ccurlcommon.Sorter)
 
 	buffer := univalue.AccessEncoder(acctTrans).Encode()
 
@@ -50,7 +50,7 @@ func TestAddThenDeletePath(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, acctTrans := url.Export3(ccurlcommon.Sorter)
+	_, acctTrans := url.Export(ccurlcommon.Sorter)
 
 	buffer := univalue.Univalues(acctTrans).Encode()
 	out := univalue.Univalues{}.Decode(buffer).(univalue.Univalues)
@@ -66,7 +66,7 @@ func TestAddThenDeletePath(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, transitions := url.Export3(ccurlcommon.Sorter)
+	_, transitions := url.Export(ccurlcommon.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{1})
@@ -81,7 +81,7 @@ func TestAddThenDeletePath(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, acctTrans = url.Export3(ccurlcommon.Sorter)
+	_, acctTrans = url.Export(ccurlcommon.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{1})
@@ -100,7 +100,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, trans := url.Export3(ccurlcommon.Sorter)
+	_, trans := url.Export(ccurlcommon.Sorter)
 	acctTrans := (&univalue.Univalues{}).Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues)
 
 	//values := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).([]ccurlcommon.UnivalueInterface)
@@ -131,7 +131,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, trans = url.Export3(ccurlcommon.Sorter)
+	_, trans = url.Export(ccurlcommon.Sorter)
 	url.Import((&univalue.Univalues{}).Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{1})
@@ -149,7 +149,7 @@ func TestBasic(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, acctTrans := url.Export3(ccurlcommon.Sorter)
+	_, acctTrans := url.Export(ccurlcommon.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -197,7 +197,7 @@ func TestBasic(t *testing.T) {
 	}
 
 	// Read the entry back
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"); (*value.(*noncommutative.Int64)) != 1111 {
+	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"); value.(int64) != 1111 {
 		t.Error("Error: Shouldn't be not found")
 	}
 
@@ -211,14 +211,14 @@ func TestBasic(t *testing.T) {
 		}
 	}
 
-	_, transitions := url.Export3(ccurlcommon.Sorter)
+	_, transitions := url.Export(ccurlcommon.Sorter)
 
 	if !reflect.DeepEqual(transitions[0].Value().(ccurlcommon.TypeInterface).Delta().(*commutative.PathDelta).Added(), []string{"elem-000", "elem-111"}) {
 		t.Error("Error: keys are missing from the added buffer!")
 	}
 
 	value := transitions[1].Value()
-	if *(value.(*noncommutative.Int64)) != 1111 {
+	if *value.(*noncommutative.Int64) != 1111 {
 		t.Error("Error: keys don't match")
 	}
 
@@ -247,7 +247,7 @@ func TestPathAddThenDelete(t *testing.T) {
 		fmt.Println(err)
 	}
 
-	_, acctTrans := url.Export3(ccurlcommon.Sorter)
+	_, acctTrans := url.Export(ccurlcommon.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	url.PostImport()
@@ -328,7 +328,7 @@ func TestUrl1(t *testing.T) {
 		fmt.Println(err)
 	}
 
-	_, acctTrans := url.Export3(ccurlcommon.Sorter)
+	_, acctTrans := url.Export(ccurlcommon.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	url.PostImport()
@@ -373,15 +373,15 @@ func TestUrl1(t *testing.T) {
 		t.Error(err)
 	}
 
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"); value == nil || (*value.(*noncommutative.Int64)) != 5555 {
+	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"); value == nil || value.(int64) != 5555 {
 		t.Error("Error: Wrong value")
 	}
 
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001"); value == nil || (*value.(*noncommutative.Int64)) != 6666 {
+	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001"); value == nil || value.(int64) != 6666 {
 		t.Error("Error: Wrong value")
 	}
 
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-002"); value == nil || (*value.(*noncommutative.Int64)) != 7777 {
+	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-002"); value == nil || value.(int64) != 7777 {
 		t.Error("Error: Wrong value")
 	}
 
@@ -390,7 +390,7 @@ func TestUrl1(t *testing.T) {
 	}
 
 	// Export all access records and state transitions
-	_, transitions := url.Export3(ccurlcommon.Sorter)
+	_, transitions := url.Export(ccurlcommon.Sorter)
 	if (*transitions[0].Value().(*noncommutative.String)) != "ctrn-0" {
 		t.Error("Error: keys don't match")
 	}
@@ -412,7 +412,7 @@ func TestUrl2(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, acctTrans := url.Export3(ccurlcommon.Sorter)
+	_, acctTrans := url.Export(ccurlcommon.Sorter)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -454,7 +454,7 @@ func TestUrl2(t *testing.T) {
 	}
 
 	// Add the first element
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"); value == nil || (*value.(*noncommutative.Int64)) != 1111 {
+	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"); value == nil || value.(int64) != 1111 {
 		t.Error("Error: Failed to Read: " + "/ctrn-0/elem-000")
 	}
 
@@ -494,7 +494,7 @@ func TestUrl2(t *testing.T) {
 	}
 
 	// Check elem-00's value
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001"); (*value.(*noncommutative.Int64)) != 2222 {
+	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001"); value.(int64) != 2222 {
 		t.Error("Error: The element wasn't found")
 	}
 
@@ -510,7 +510,7 @@ func TestUrl2(t *testing.T) {
 	}
 
 	// Check elem-00's value
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"); (*value.(*noncommutative.Int64)) != 9999 {
+	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"); value.(int64) != 9999 {
 		t.Error("Error: The element wasn't successfully deleted")
 	}
 
@@ -549,7 +549,7 @@ func TestUrl2(t *testing.T) {
 	}
 
 	/*  Export all */
-	accessRecords, transitions := url.Export3(ccurlcommon.Sorter)
+	accessRecords, transitions := url.Export(ccurlcommon.Sorter)
 
 	// 3 writes + 1 affiliated write
 	value := univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, nil)
@@ -611,7 +611,7 @@ func TestUnivaluesBatchCodec(t *testing.T) {
 	// 	t.Error("Error: Bigint values don't match")
 	// }
 
-	accessRecords, _ := url.Export3(ccurlcommon.Sorter)
+	accessRecords, _ := url.Export(ccurlcommon.Sorter)
 	in := univalue.Univalues(accessRecords).Encode()
 
 	// uint256delta isn't inthe encoder !!!
@@ -647,13 +647,13 @@ func TestCommutative(t *testing.T) {
 	}
 
 	v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0")
-	outV := (*big.Int)(v.(*noncommutative.Bigint))
+	outV := (*big.Int)(v.(*big.Int))
 	if outV.Cmp(value) != 0 {
 		t.Error("Error: Failed to read: blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-0")
 	}
 
 	// -------------------Create a commutative UINT256 ------------------------------
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256(commutative.U256MIN, commutative.U256MAX)); err != nil { // 0
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256(commutative.U256_MIN, commutative.U256_MAX)); err != nil { // 0
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
@@ -661,7 +661,7 @@ func TestCommutative(t *testing.T) {
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256(commutative.U256MIN, commutative.U256MAX)); err != nil { // still 300
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256(commutative.U256_MIN, commutative.U256_MAX)); err != nil { // still 300
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
@@ -669,7 +669,7 @@ func TestCommutative(t *testing.T) {
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256(commutative.U256MIN, commutative.U256MAX)); err != nil { // still 300
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256(commutative.U256_MIN, commutative.U256_MAX)); err != nil { // still 300
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
@@ -684,7 +684,7 @@ func TestCommutative(t *testing.T) {
 
 	// ----------------------------U256 ---------------------------------------------------
 	if err := url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/balance",
-		commutative.NewU256(commutative.U256MIN, commutative.U256MAX)); err != nil { //initialization
+		commutative.NewU256(commutative.U256_MIN, commutative.U256_MAX)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
@@ -797,7 +797,7 @@ func TestNestedPath(t *testing.T) {
 		t.Error("Error: Error:  Path should been deleted already !")
 	}
 
-	accessRecords, transitions := url.Export3(ccurlcommon.Sorter)
+	accessRecords, transitions := url.Export(ccurlcommon.Sorter)
 	in := univalue.Univalues(accessRecords).Encode()
 	out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
 	for i := range accessRecords {

@@ -1,10 +1,14 @@
 package noncommutative
 
 import (
+	"strings"
+
+	codec "github.com/arcology-network/common-lib/codec"
+	"github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 )
 
-type String string
+type String codec.String
 
 func NewString(v string) interface{} {
 	var this String = String(v)
@@ -16,21 +20,21 @@ func (this *String) IsSelf(key interface{}) bool                                
 func (this *String) TypeID() uint8                                              { return STRING }
 func (this *String) Equal(other interface{}) bool                               { return *this == *(other.(*String)) }
 func (this *String) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }
+func (this *String) Get() (interface{}, uint32, uint32)                         { return string(*this), 1, 0 }
 
-func (this *String) Value() interface{}                        { return this }
-func (this *String) Delta() interface{}                        { return this }
-func (this *String) Sign() interface{}                         { return nil } // delta sign
-func (this *String) Min() interface{}                          { return nil }
-func (this *String) Max() interface{}                          { return nil }
-func (this *String) New(_, _, _, _, _ interface{}) interface{} { return this }
-
-func (this *String) Clone() interface{} {
-	value := *this
-	return (*String)(&value)
+func (this *String) ReInit()            {}
+func (this *String) Value() interface{} { return this }
+func (this *String) Delta() interface{} { return this }
+func (this *String) Sign() bool         { return true } // delta sign
+func (this *String) Min() interface{}   { return nil }
+func (this *String) Max() interface{}   { return nil }
+func (this *String) New(_, delta, _, _, _ interface{}) interface{} {
+	return common.IfThenDo1st(delta != nil && delta.(*String) != nil, func() interface{} { return delta.(*String).Clone() }, interface{}(this))
 }
 
-func (this *String) Get() (interface{}, uint32, uint32) {
-	return this, 1, 0
+func (this *String) Clone() interface{} {
+	value := strings.Clone(string(*this))
+	return (*String)(&value)
 }
 
 func (this *String) Set(value interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {

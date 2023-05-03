@@ -21,6 +21,8 @@ type Univalue struct {
 	cache []byte
 }
 
+// func NewUnivalue
+
 func NewUnivalue(tx uint32, key string, reads, writes uint32, deltaWrites uint32, args ...interface{}) *Univalue {
 	return &Univalue{
 		Unimeta{
@@ -37,9 +39,24 @@ func NewUnivalue(tx uint32, key string, reads, writes uint32, deltaWrites uint32
 	}
 }
 
+func (*Univalue) New(meta, value, cache interface{}) interface{} {
+	return &Univalue{
+		meta.(Unimeta),
+		value,
+		cache.([]byte),
+	}
+}
+
 func (this *Univalue) ClearCache()                   { this.cache = this.cache[:0] }
 func (this *Univalue) Value() interface{}            { return this.value }
 func (this *Univalue) SetValue(newValue interface{}) { this.value = newValue }
+
+func (this *Univalue) GetUnimeta() interface{} { return this.Unimeta }
+func (this *Univalue) GetCache() interface{}   { return this.cache }
+
+type Cloneable interface {
+	Clone() interface{}
+}
 
 func (this *Univalue) Meta() ccurlcommon.UnivalueInterface {
 	var v interface{}
@@ -65,12 +82,23 @@ func (this *Univalue) Delta() ccurlcommon.UnivalueInterface {
 	var v interface{}
 	if this.value != nil {
 		value := this.value.(ccurlcommon.TypeInterface)
-		if !this.preexists {
-			v = this.value.(ccurlcommon.TypeInterface).New(nil, value.Delta(), value.Sign(), value.Min(), value.Max())
+		common.IfThenDo1st(value.Delta() != nil, func() interface{} { return value.Delta() }, value.Delta())
+
+		if !this.preexists || (this.deltaWrites > 0 && this.TypeID() != commutative.PATH) { // commutative but not meta, for the accumulator
+			v = this.value.(ccurlcommon.TypeInterface).New(
+				nil,
+				common.IfThenDo1st(value.Delta() != nil, func() interface{} { return value.Delta() }, value.Delta()),
+				value.Sign(),
+				common.IfThenDo1st(value.Min() != nil, func() interface{} { return value.Min() }, value.Min()),
+				common.IfThenDo1st(value.Max() != nil, func() interface{} { return value.Max() }, value.Max()),
+			)
+
 		} else {
 			v = this.value.(ccurlcommon.TypeInterface).New(nil, value.Delta(), value.Sign(), nil, nil)
 		}
 	}
+
+	// common.IfThenDo(value.Delta() != nil, func() interface{} { return value.Delta() }, value.Delta())
 
 	return &Univalue{
 		this.Unimeta,

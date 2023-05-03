@@ -29,10 +29,11 @@ type TypeInterface interface { // value type
 
 	Value() interface{} // Get() - read/write count
 	Delta() interface{}
-	Sign() interface{}
+	Sign() bool
 	Min() interface{}
 	Max() interface{}
 	New(interface{}, interface{}, interface{}, interface{}, interface{}) interface{}
+	ReInit()
 
 	Get() (interface{}, uint32, uint32)
 	Set(interface{}, interface{}) (interface{}, uint32, uint32, uint32, error)
@@ -72,12 +73,16 @@ type UnivalueInterface interface { // value type
 	Value() interface{}
 	SetValue(interface{})
 
+	GetUnimeta() interface{}
+	GetCache() interface{}
+	New(interface{}, interface{}, interface{}) interface{}
+
 	ApplyDelta(uint32, interface{}) error
 	Preexist() bool
 	IsReadOnly() bool
 	IsConcurrentWritable() bool
-	Clone() interface{}
-	// Export(interface{}) (interface{}, interface{})
+	// Clone() interface{}
+
 	GetEncoded() []byte
 	Size() uint32
 	Encode() []byte

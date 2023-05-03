@@ -169,7 +169,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	url.Commit(toCommit)
 
 	v, err := url3.Read(3, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1")
-	if err != nil || string(*(v.(*noncommutative.String))) != "url3-1-by-tx-3" {
+	if err != nil || v.(string) != "url3-1-by-tx-3" {
 		t.Error("Error: Wrong value")
 	}
 }

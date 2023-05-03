@@ -47,16 +47,16 @@ func (this *Bytes) Equal(other interface{}) bool {
 	return bytes.Equal(this.value, other.(*Bytes).value)
 }
 
-func (this *Bytes) Get() (interface{}, uint32, uint32) {
-	return this, 1, 0
+func (this *Bytes) ReInit()                            {}
+func (this *Bytes) Value() interface{}                 { return this }
+func (this *Bytes) Delta() interface{}                 { return this }
+func (this *Bytes) Sign() bool                         { return true } // delta sign
+func (this *Bytes) Min() interface{}                   { return nil }
+func (this *Bytes) Max() interface{}                   { return nil }
+func (this *Bytes) Get() (interface{}, uint32, uint32) { return this.value, 1, 0 }
+func (this *Bytes) New(_, delta, _, _, _ interface{}) interface{} {
+	return common.IfThenDo1st(delta != nil && delta.(*Bytes) != nil, func() interface{} { return delta.(*Bytes).Clone() }, interface{}(this))
 }
-
-func (this *Bytes) Value() interface{}                        { return this }
-func (this *Bytes) Delta() interface{}                        { return this }
-func (this *Bytes) Sign() interface{}                         { return nil } // delta sign
-func (this *Bytes) Min() interface{}                          { return nil }
-func (this *Bytes) Max() interface{}                          { return nil }
-func (this *Bytes) New(_, _, _, _, _ interface{}) interface{} { return this }
 
 func (this *Bytes) Set(value interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
 	if value != nil && this != value { // Avoid self copy.

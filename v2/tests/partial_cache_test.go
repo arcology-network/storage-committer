@@ -60,7 +60,7 @@ func TestPartialCache(t *testing.T) {
 	if v, _ := url.Read(2, "blcc://eth1.0/account/"+alice+"/storage/1234"); v == nil {
 		t.Error("Error: The entry shouldn't be in the DB !")
 	} else {
-		if string(*(v.(*noncommutative.String))) != "9999" {
+		if v.(string) != "9999" {
 			t.Error("Error: The entry should have been changed !")
 		}
 	}
@@ -101,7 +101,7 @@ func TestPartialCacheWithFilter(t *testing.T) {
 	if v, _ := url.Read(2, "blcc://eth1.0/account/"+alice+"/storage/1234"); v == nil {
 		t.Error("Error: The entry shouldn't be in the DB as the persistent DB has been excluded !")
 	} else {
-		if string(*(v.(*noncommutative.String))) != "9999" {
+		if v.(string) != "9999" {
 			t.Error("Error: The entry shouldn't changed !")
 		}
 	}

@@ -8,7 +8,7 @@ require (
 	github.com/arcology-network/common-lib v1.7.1
 	github.com/elliotchance/orderedmap v1.5.0
 	github.com/google/btree v1.1.2
-	github.com/holiman/uint256 v1.2.1
+	github.com/holiman/uint256 v1.2.2
 	github.com/petar/GoLLRB v0.0.0-20210522233825-ae3b015fd3e9
 	github.com/segmentio/fasthash v1.0.3
 	github.com/spaolacci/murmur3 v1.1.0
@@ -23,7 +23,6 @@ require (
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/google/uuid v1.3.0 // indirect
-	github.com/holiman/uint256 v1.2.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	golang.org/x/crypto v0.2.0 // indirect
 	golang.org/x/exp v0.0.0-20221109205753-fc8884afc316 // indirect

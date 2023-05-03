@@ -67,7 +67,7 @@ func TestAuxTrans(t *testing.T) {
 	}
 
 	// Read the entry back
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"); (*value.(*noncommutative.Int64)) != 1111 {
+	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"); value.(int64) != 1111 {
 		t.Error("Shouldn't be not found")
 	}
 
