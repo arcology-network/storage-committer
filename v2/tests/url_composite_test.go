@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
+	"github.com/arcology-network/common-lib/common"
 	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl/v2"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
@@ -22,8 +23,10 @@ func TestAuxTrans(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, trans00 := url.Export(ccurlcommon.Sorter)
-	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans00).Encode()).(univalue.Univalues))
+	// _, trans00 := url.Export(ccurlcommon.Sorter)
+	acctTrans := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
+
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM}) // Commit
@@ -80,7 +83,7 @@ func TestAuxTrans(t *testing.T) {
 		}
 	}
 
-	_, transitions := url.Export(ccurlcommon.Sorter)
+	transitions := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 	if !reflect.DeepEqual(transitions[0].Value().(ccurlcommon.TypeInterface).Delta().(*commutative.PathDelta).Added(), []string{"elem-000"}) {
 		t.Error("keys don't match")
 	}
@@ -111,7 +114,9 @@ func TestCheckAccessRecords(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, trans00 := url.Export(ccurlcommon.Sorter)
+	// _, trans00 := url.Export(ccurlcommon.Sorter)
+	trans00 := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
+
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans00).Encode()).(univalue.Univalues))
 
 	url.PostImport()
@@ -123,7 +128,9 @@ func TestCheckAccessRecords(t *testing.T) {
 		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/") // create a path
 	}
 
-	_, trans10 := url.Export(ccurlcommon.Sorter)
+	// _, trans10 := url.Export(ccurlcommon.Sorter)
+	trans10 := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
+
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans10).Encode()).(univalue.Univalues))
 
 	url.PostImport()

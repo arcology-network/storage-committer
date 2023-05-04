@@ -130,7 +130,7 @@ type DatastoreInterface interface {
 
 type Hasher func(TypeInterface) []byte
 
-func Sorter(univals []UnivalueInterface) interface{} {
+func Sorter(univals []UnivalueInterface) []UnivalueInterface {
 	sort.SliceStable(univals, func(i, j int) bool {
 		lhs := (*(univals[i].GetPath()))
 		rhs := (*(univals[j].GetPath()))

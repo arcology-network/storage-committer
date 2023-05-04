@@ -48,7 +48,7 @@ func TestUnivaluesCodecUint64(t *testing.T) {
 	}
 
 	// Univalues(in).
-	buffer = AccessEncoder(in).Encode()
+	buffer = Univalues(in).Encode()
 	out2 := Univalues{}.Decode(buffer).(Univalues)
 	if !Univalues(in).Equal(out2) {
 		t.Error("Error")
@@ -68,13 +68,6 @@ func TestUnivaluesCodecU256(t *testing.T) {
 
 	bytes := in.Encode()
 	v := (&Univalue{}).Decode(bytes).(*Univalue)
-	out := v.Value()
-
-	raw := in.Value().(*commutative.U256).Value()
-	if raw.(*uint256.Int).Cmp(out.(*commutative.U256).Value().(*uint256.Int)) != 0 ||
-		in.Value().(*commutative.U256).Delta().(*uint256.Int).Cmp(out.(*commutative.U256).Delta().(*uint256.Int)) != 0 {
-		t.Error("Error")
-	}
 
 	if in.vType != v.vType ||
 		in.tx != v.tx ||

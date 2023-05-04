@@ -345,25 +345,15 @@ func (this *ConcurrentUrl) AllInOneCommit(transitions []ccurlcommon.UnivalueInte
 	return []error{}
 }
 
-func (this *ConcurrentUrl) Export(sorter func([]ccurlcommon.UnivalueInterface) interface{}) ([]ccurlcommon.UnivalueInterface, []ccurlcommon.UnivalueInterface) {
+func (this *ConcurrentUrl) Export(preprocessors ...func([]ccurlcommon.UnivalueInterface) []ccurlcommon.UnivalueInterface) []ccurlcommon.UnivalueInterface {
 	this.indexer.Vectorize(this.indexer.Buffer(), &this.buffer, false) // Export records to the buffer
-	if sorter != nil {                                                 // Sort by path, debug only
-		ccurlcommon.Sorter(this.buffer)
+
+	for _, processor := range preprocessors {
+		this.buffer = common.IfThenDo1st(processor != nil, func() []ccurlcommon.UnivalueInterface {
+			return processor(this.buffer)
+		}, this.buffer)
 	}
-
-	transitions := univalue.Univalues(common.Clone(this.buffer)).To(univalue.TransitionFilters()...)
-	accesses := univalue.Univalues(common.Clone(this.buffer)).To(univalue.AccesseFilters()...)
-
-	// for i := 0; i < len(transitions); i++ {
-	// 	transitions[i] = transitions[i].Delta()
-	// }
-	// common.RemoveIf(&transitions, func(v ccurlcommon.UnivalueInterface) bool { return v == nil })
-
-	// accesses := make([]ccurlcommon.UnivalueInterface, len(this.buffer))
-	// for i := 0; i < len(this.buffer); i++ {
-	// 	accesses[i] = this.buffer[i].Meta() // Get access meta
-	// }
-	return accesses, transitions
+	return this.buffer
 }
 
 func (this *ConcurrentUrl) Print() {

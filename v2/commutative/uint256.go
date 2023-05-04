@@ -93,15 +93,11 @@ func (this *U256) ReInit() {
 	this.max = common.IfThen(this.max == nil, (*codec.Uint256)(U256_MAX.Clone()), this.max)
 }
 
-func (this *U256) Value() interface{} {
-
-	// (this.value)
-	return this.value
-}
-func (this *U256) Delta() interface{} { return (*codec.Uint256)(this.delta) }
+func (this *U256) Value() interface{} { return this.value }
+func (this *U256) Delta() interface{} { return this.delta }
 func (this *U256) Sign() bool         { return this.delta.Cmp((*codec.Uint256)(U256_ZERO)) >= 0 }
-func (this *U256) Min() interface{}   { return (*codec.Uint256)(this.min) }
-func (this *U256) Max() interface{}   { return (*codec.Uint256)(this.max) }
+func (this *U256) Min() interface{}   { return this.min }
+func (this *U256) Max() interface{}   { return this.max }
 
 func (this *U256) MemSize() uint32                                            { return 32*4 + 1 }
 func (this *U256) IsSelf(key interface{}) bool                                { return true }

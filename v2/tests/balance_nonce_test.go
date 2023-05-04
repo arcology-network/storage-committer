@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
+	"github.com/arcology-network/common-lib/common"
 	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl/v2"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
@@ -41,7 +42,9 @@ func TestSimpleBalance(t *testing.T) {
 	}
 
 	// Export variables
-	_, in := url.Export(ccurlcommon.Sorter)
+	// _, in := url.Export(ccurlcommon.Sorter)
+	in := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
+
 	buffer := univalue.Univalues(in).Encode()
 	out := univalue.Univalues{}.Decode(buffer).(univalue.Univalues)
 	for i := range in {
@@ -68,7 +71,10 @@ func TestSimpleBalance(t *testing.T) {
 		t.Error("Error: Wrong blcc://eth1.0/account/alice/balance value")
 	}
 
-	records, trans := url2.Export(ccurlcommon.Sorter)
+	// records, trans := url2.Export(ccurlcommon.Sorter)
+	trans := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
+	records := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.AccessFilters()...)
+
 	univalue.Univalues(trans).Encode()
 	for _, v := range records {
 		if v.Writes() == v.Reads() && v.Writes() == 0 && v.DeltaWrites() == 0 {
@@ -151,7 +157,7 @@ func TestBalance(t *testing.T) {
 	}
 
 	// Export variables
-	_, transitions := url.Export(ccurlcommon.Sorter)
+	transitions := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 	// for i := range transitions {
 	trans := transitions[9]
 
@@ -193,7 +199,7 @@ func TestNonce(t *testing.T) {
 		t.Error("Error: blcc://eth1.0/account/alice/nonce should be ", 6)
 	}
 
-	_, trans := url1.Export(ccurlcommon.Sorter)
+	trans := univalue.Univalues(common.Clone(url1.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 	url1.Import(trans)
 	url1.PostImport()
 	url1.Commit([]uint32{0})
@@ -223,8 +229,9 @@ func TestMultipleNonces(t *testing.T) {
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
-	_, trans0 := url0.Export(ccurlcommon.Sorter)
+	// _, trans0 := url0.Export(ccurlcommon.Sorter)
 	// ccurltype.SetInvariate(trans0, "nonce")
+	trans0 := univalue.Univalues(common.Clone(url0.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 
 	url1 := ccurl.NewConcurrentUrl(store)
 	bob := BobAccount()
@@ -248,7 +255,7 @@ func TestMultipleNonces(t *testing.T) {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
 	}
 
-	_, trans1 := url1.Export(ccurlcommon.Sorter)
+	trans1 := univalue.Univalues(common.Clone(url1.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 	// ccurltype.SetInvariate(trans1, "nonce")
 
 	nonce, _ = url1.Read(0, "blcc://eth1.0/account/"+bob+"/nonce")

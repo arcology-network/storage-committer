@@ -6,7 +6,7 @@ import (
 	commutative "github.com/arcology-network/concurrenturl/v2/commutative"
 )
 
-func AccesseFilters() []func(ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface {
+func AccessFilters() []func(ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface {
 	return []func(ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface{
 		KeepCumulativeNumeric, // Remove all other transitions, but  Numeric Cumulative variables are neede by the accumulator
 	}

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
+	"github.com/arcology-network/common-lib/common"
 	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl/v2"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
@@ -25,11 +26,10 @@ func TestSize(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, acctTrans := url.Export(ccurlcommon.Sorter)
+	raw := url.Export(ccurlcommon.Sorter)
+	acctTrans := univalue.Univalues(common.Clone(raw)).To(univalue.TransitionFilters()...)
 
-	buffer := univalue.Univalues(acctTrans).Encode()
-
-	univalue.Univalues{}.Decode(buffer)
+	univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode())
 	url.Import(acctTrans)
 
 	original := []int{1, 2, 3, 4}
@@ -49,7 +49,9 @@ func TestAddThenDeletePath(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, acctTrans := url.Export(ccurlcommon.Sorter)
+	// _, acctTrans := url.Export(ccurlcommon.Sorter)
+
+	acctTrans := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 
 	buffer := univalue.Univalues(acctTrans).Encode()
 	out := univalue.Univalues{}.Decode(buffer).(univalue.Univalues)
@@ -65,7 +67,7 @@ func TestAddThenDeletePath(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, transitions := url.Export(ccurlcommon.Sorter)
+	transitions := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{1})
@@ -80,7 +82,7 @@ func TestAddThenDeletePath(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, acctTrans = url.Export(ccurlcommon.Sorter)
+	acctTrans = univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 	buffer = univalue.Univalues(acctTrans).Encode()
 	url.Import(univalue.Univalues{}.Decode(buffer).(univalue.Univalues))
 	url.PostImport()
@@ -116,7 +118,7 @@ func TestAddThenDeletePath(t *testing.T) {
 // 		t.Error(err)
 // 	}
 
-// 	_, transitions := url.Export(ccurlcommon.Sorter)
+// 		transitions := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 // 	url.Import((&univalue.Univalues{}).Decode(codec.Encodables(transitions).Encode()).(univalue.Univalues))
 
 // 	url.PostImport()
@@ -150,7 +152,7 @@ func TestBasic(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, acctTrans := url.Export(ccurlcommon.Sorter)
+	acctTrans := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -212,7 +214,7 @@ func TestBasic(t *testing.T) {
 		}
 	}
 
-	_, transitions := url.Export(ccurlcommon.Sorter)
+	transitions := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 
 	if !reflect.DeepEqual(transitions[0].Value().(ccurlcommon.TypeInterface).Delta().(*commutative.PathDelta).Added(), []string{"elem-000", "elem-111"}) {
 		t.Error("Error: keys are missing from the added buffer!")
@@ -248,7 +250,7 @@ func TestPathAddThenDelete(t *testing.T) {
 		fmt.Println(err)
 	}
 
-	_, acctTrans := url.Export(ccurlcommon.Sorter)
+	acctTrans := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	url.PostImport()
@@ -329,7 +331,10 @@ func TestUrl1(t *testing.T) {
 		fmt.Println(err)
 	}
 
-	_, acctTrans := url.Export(ccurlcommon.Sorter)
+	raw := url.Export(ccurlcommon.Sorter)
+	acctTrans := univalue.Univalues(common.Clone(raw)).To(univalue.TransitionFilters()...)
+	// accesses := univalue.Univalues(common.Clone(this.buffer)).To(univalue.AccessFilters()...)
+
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	url.PostImport()
@@ -391,7 +396,7 @@ func TestUrl1(t *testing.T) {
 	}
 
 	// Export all access records and state transitions
-	_, transitions := url.Export(ccurlcommon.Sorter)
+	transitions := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 	if (*transitions[0].Value().(*noncommutative.String)) != "ctrn-0" {
 		t.Error("Error: keys don't match")
 	}
@@ -413,7 +418,7 @@ func TestUrl2(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, acctTrans := url.Export(ccurlcommon.Sorter)
+	acctTrans := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.PostImport()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -550,7 +555,9 @@ func TestUrl2(t *testing.T) {
 	}
 
 	/*  Export all */
-	accessRecords, transitions := url.Export(ccurlcommon.Sorter)
+	// accessRecords, transitions := url.Export(ccurlcommon.Sorter)
+	accessRecords := univalue.Univalues(common.Clone(url.Export())).To(univalue.AccessFilters()...)
+	transitions := univalue.Univalues(common.Clone(url.Export())).To(univalue.TransitionFilters()...)
 
 	// 3 writes + 1 affiliated write
 	value := univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, nil)
@@ -612,7 +619,9 @@ func TestUnivaluesBatchCodec(t *testing.T) {
 	// 	t.Error("Error: Bigint values don't match")
 	// }
 
-	accessRecords, _ := url.Export(ccurlcommon.Sorter)
+	// accessRecords, _ := url.Export(ccurlcommon.Sorter)
+	accessRecords := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.AccessFilters()...)
+
 	in := univalue.Univalues(accessRecords).Encode()
 
 	// uint256delta isn't inthe encoder !!!
@@ -798,7 +807,10 @@ func TestNestedPath(t *testing.T) {
 		t.Error("Error: Error:  Path should been deleted already !")
 	}
 
-	accessRecords, transitions := url.Export(ccurlcommon.Sorter)
+	// accessRecords, transitions := url.Export(ccurlcommon.Sorter)
+	accessRecords := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.AccessFilters()...)
+	transitions := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
+
 	in := univalue.Univalues(accessRecords).Encode()
 	out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
 	for i := range accessRecords {
