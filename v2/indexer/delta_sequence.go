@@ -88,10 +88,6 @@ func (this *DeltaSequence) Finalize() {
 	if err := this.base.ApplyDelta(ccurlcommon.SYSTEM, this.transitions[i+1:]); err != nil {
 		panic(err)
 	}
-
-	// if this.base.Value() != nil {
-	// 	this.base.Value().(ccurlcommon.TypeInterface).Purge() // Remove non-essential attributes
-	// }
 }
 
 func (this *DeltaSequence) Reclaim() {

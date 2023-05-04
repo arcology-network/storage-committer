@@ -229,7 +229,7 @@ func TestStateUpdate(t *testing.T) {
 	// 	t.Error("Error: Wrong sub paths")
 	// }
 
-	// if !reflect.DeepEqual(v.(ccurlcommon.TypeInterface).Value().([]string), []string{"ctrn-0/", "ctrn-1/"}) {
+	// if !reflect.DeepEqual(v.([]string), []string{"ctrn-0/", "ctrn-1/"}) {
 	// 	t.Error("Error: Didn't find the subpath!")
 	// }
 

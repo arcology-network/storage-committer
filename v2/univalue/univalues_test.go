@@ -47,6 +47,7 @@ func TestUnivaluesCodecUint64(t *testing.T) {
 		t.Error("Error")
 	}
 
+	// Univalues(in).
 	buffer = AccessEncoder(in).Encode()
 	out2 := Univalues{}.Decode(buffer).(Univalues)
 	if !Univalues(in).Equal(out2) {

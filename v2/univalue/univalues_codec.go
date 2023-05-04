@@ -54,26 +54,6 @@ func (this Univalues) Encode(selector ...interface{}) []byte {
 	return buffer
 }
 
-// func (this Univalues) EncodeSimple() []byte {
-// 	byteset := make([][]byte, len(this))
-// 	worker := func(start, end, index int, args ...interface{}) {
-// 		for i := start; i < end; i++ {
-// 			byteset[i] = this[i].Encode()
-// 		}
-// 	}
-// 	common.ParallelWorker(len(this), 6, worker)
-// 	return codec.Byteset(byteset).Encode()
-// }
-
-// func (this Univalues) EncodeSimple(args interface{}) []byte {
-// 	byteset := make([][]byte, len(this))
-// 	for i := range this {
-// 		byteset[i] = this[i].Encode()
-
-// 	}
-// 	return codec.Byteset(byteset).Encode()
-// }
-
 func (Univalues) Decode(bytes []byte) interface{} {
 	if len(bytes) == 0 {
 		return nil

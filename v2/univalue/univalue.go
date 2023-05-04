@@ -12,7 +12,6 @@ import (
 	"github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/v2/common"
 	"github.com/arcology-network/concurrenturl/v2/commutative"
-	state "github.com/arcology-network/concurrenturl/v2/state"
 )
 
 type Univalue struct {
@@ -54,10 +53,6 @@ func (this *Univalue) SetValue(newValue interface{}) { this.value = newValue }
 func (this *Univalue) GetUnimeta() interface{} { return this.Unimeta }
 func (this *Univalue) GetCache() interface{}   { return this.cache }
 
-type Cloneable interface {
-	Clone() interface{}
-}
-
 func (this *Univalue) Meta() ccurlcommon.UnivalueInterface {
 	var v interface{}
 	if this.value != nil {
@@ -75,30 +70,26 @@ func (this *Univalue) Meta() ccurlcommon.UnivalueInterface {
 }
 
 func (this *Univalue) Delta() ccurlcommon.UnivalueInterface {
-	if state.ReadOnly(this) || state.DelNonExist(this) {
+	if ReadOnly(this) == nil || DelNonExist(this) == nil {
 		return nil // Not a transition at all
 	}
 
 	var v interface{}
 	if this.value != nil {
 		value := this.value.(ccurlcommon.TypeInterface)
-		common.IfThenDo1st(value.Delta() != nil, func() interface{} { return value.Delta().(Cloneable).Clone() }, nil)
-
 		if !this.preexists || (this.deltaWrites > 0 && this.TypeID() != commutative.PATH) { // commutative but not meta, for the accumulator
 			v = this.value.(ccurlcommon.TypeInterface).New(
 				nil,
-				common.IfThenDo1st(value.Delta() != nil, func() interface{} { return value.Delta().(Cloneable).Clone() }, nil),
+				common.IfThenDo1st(value.Delta() != nil, func() interface{} { return value.Delta().(codec.Encodable).Clone() }, nil),
 				value.Sign(),
-				common.IfThenDo1st(value.Min() != nil, func() interface{} { return value.Min().(Cloneable).Clone() }, nil),
-				common.IfThenDo1st(value.Max() != nil, func() interface{} { return value.Max().(Cloneable).Clone() }, nil),
+				common.IfThenDo1st(value.Min() != nil, func() interface{} { return value.Min().(codec.Encodable).Clone() }, nil),
+				common.IfThenDo1st(value.Max() != nil, func() interface{} { return value.Max().(codec.Encodable).Clone() }, nil),
 			)
 
 		} else {
 			v = this.value.(ccurlcommon.TypeInterface).New(nil, value.Delta(), value.Sign(), nil, nil)
 		}
 	}
-
-	// common.IfThenDo(value.Delta() != nil, func() interface{} { return value.Delta().(Cloneable).Clone() }, value.Delta())
 
 	return &Univalue{
 		this.Unimeta,
