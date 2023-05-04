@@ -32,7 +32,7 @@ func (this *String) Decode(buffer []byte) interface{} {
 // 	return this.Decode(bytes)
 // }
 
-func (*String) Purge() {}
+func (*String) Reset() {}
 
 func (this *String) Hash(hasher func([]byte) []byte) []byte {
 	return hasher(this.Encode())

@@ -138,7 +138,7 @@ func (this *Int64) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 	return this
 }
 
-func (this *Int64) Purge() {
+func (this *Int64) Reset() {
 	*this.delta = 0
 }
 

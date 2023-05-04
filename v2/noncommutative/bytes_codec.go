@@ -44,7 +44,7 @@ func (*Bytes) Decode(buffer []byte) interface{} {
 // 	return this.Decode(bytes)
 // }
 
-func (this *Bytes) Purge() {}
+func (this *Bytes) Reset() {}
 
 func (this *Bytes) Hash(hasher func([]byte) []byte) []byte {
 	return hasher(this.Encode())

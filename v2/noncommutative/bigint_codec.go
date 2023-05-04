@@ -34,7 +34,7 @@ func (this *Bigint) Decode(bytes []byte) interface{} {
 // 	return this.Decode(bytes)
 // }
 
-func (this *Bigint) Purge() {}
+func (this *Bigint) Reset() {}
 
 func (this *Bigint) Hash(hasher func([]byte) []byte) []byte {
 	return hasher(this.Encode())

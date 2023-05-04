@@ -30,7 +30,7 @@ func (*Int64) Decode(bytes []byte) interface{} {
 // 	return this.Decode(bytes)
 // }
 
-func (this *Int64) Purge() {}
+func (this *Int64) Reset() {}
 
 func (this *Int64) Hash(hasher func([]byte) []byte) []byte {
 	return hasher(this.Encode())

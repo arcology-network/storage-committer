@@ -48,7 +48,7 @@ type TypeInterface interface { // value type
 	Decode([]byte) interface{}
 
 	Hash(func([]byte) []byte) []byte
-	Purge()
+	Reset()
 	Print()
 }
 

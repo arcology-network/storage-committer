@@ -204,7 +204,7 @@ func (this *U256) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 	return this
 }
 
-func (this *U256) Purge() {
+func (this *U256) Reset() {
 	this.delta = (&codec.Uint256{}).NewInt(0)
 }
 

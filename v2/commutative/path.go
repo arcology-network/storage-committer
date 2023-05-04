@@ -156,7 +156,7 @@ func (this *Path) Set(value interface{}, source interface{}) (interface{}, uint3
 }
 
 // data cleaning before saving to storage
-func (this *Path) Purge() {
+func (this *Path) Reset() {
 	this.value = orderedset.NewOrderedSet([]string{})
 	this.delta = NewPathDelta([]string{}, []string{})
 }
