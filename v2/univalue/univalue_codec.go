@@ -55,7 +55,7 @@ func (this *Univalue) EncodeToBuffer(buffer []byte) int {
 func (this *Univalue) Decode(buffer []byte) interface{} {
 	fields := codec.Byteset{}.Decode(buffer).(codec.Byteset)
 	unimeta := (&Unimeta{}).Decode(fields[0]).(*Unimeta)
-	v := (&storage.Codec{}).DecodeTyped(fields[1], unimeta.vType)
+	v := (&storage.Codec{unimeta.vType}).Decode(fields[1])
 	return &Univalue{
 		*unimeta,
 		v,

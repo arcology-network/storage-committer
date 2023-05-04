@@ -28,7 +28,11 @@ func (this *Bytes) EncodeToBuffer(buffer []byte) int {
 	return offset + codec.Bytes(this.value).EncodeToBuffer(buffer[offset:])
 }
 
-func (*Bytes) Decode(buffer []byte) interface{} {
+func (this *Bytes) Decode(buffer []byte) interface{} {
+	if len(buffer) == 0 {
+		return this
+	}
+
 	fields := codec.Byteset{}.Decode(buffer).(codec.Byteset)
 	return &Bytes{
 		placeholder: bool(codec.Bool(true).Decode(fields[0]).(codec.Bool)),

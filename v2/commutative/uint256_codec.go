@@ -44,6 +44,10 @@ func (this *U256) EncodeToBuffer(buffer []byte) int {
 }
 
 func (this *U256) Decode(buffer []byte) interface{} {
+	if len(buffer) == 0 {
+		return this
+	}
+
 	fields := codec.Byteset{}.Decode(buffer).(codec.Byteset)
 
 	this = &U256{

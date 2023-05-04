@@ -20,6 +20,10 @@ func (this *String) EncodeToBuffer(buffer []byte) int {
 }
 
 func (this *String) Decode(buffer []byte) interface{} {
+	if len(buffer) == 0 {
+		return this
+	}
+
 	*this = String(codec.String("").Decode(bytes.Clone(buffer)).(codec.String))
 	return this
 }

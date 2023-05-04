@@ -21,8 +21,11 @@ func (this *Bigint) EncodeToBuffer(buffer []byte) int {
 	return v.EncodeToBuffer(buffer)
 }
 
-func (this *Bigint) Decode(bytes []byte) interface{} {
-	this = (*Bigint)((&codec.Bigint{}).Decode(bytes).(*codec.Bigint))
+func (this *Bigint) Decode(buffer []byte) interface{} {
+	if len(buffer) == 0 {
+		return this
+	}
+	this = (*Bigint)((&codec.Bigint{}).Decode(buffer).(*codec.Bigint))
 	return this
 }
 
