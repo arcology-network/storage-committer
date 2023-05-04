@@ -6,8 +6,11 @@ import (
 	noncommutative "github.com/arcology-network/concurrenturl/v2/noncommutative"
 )
 
-// Wrappers for the type encoder / decoder
-func ToBytes(value interface{}) []byte {
+type Codec struct {
+	typeId uint8
+}
+
+func (Codec) Encode(value interface{}) []byte {
 	if value == nil {
 		return []byte{} // Deletion
 	}
@@ -16,16 +19,14 @@ func ToBytes(value interface{}) []byte {
 	return encoded
 }
 
-func FromBytes(bytes []byte) interface{} {
+func (Codec) Decode(bytes []byte) interface{} {
 	if len(bytes) == 0 {
 		return nil
 	}
-	return Decoder{}.Decode(bytes[0:len(bytes)-1], bytes[len(bytes)-1])
+	return Codec{}.DecodeTyped(bytes[0:len(bytes)-1], bytes[len(bytes)-1])
 }
 
-type Decoder struct{}
-
-func (Decoder) Decode(bytes []byte, vType uint8) interface{} {
+func (this Codec) DecodeTyped(bytes []byte, vType uint8) interface{} {
 	if len(bytes) == 0 {
 		return nil
 	}

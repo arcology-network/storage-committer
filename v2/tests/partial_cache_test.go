@@ -17,7 +17,7 @@ import (
 func TestPartialCache(t *testing.T) {
 	memDB := cachedstorage.NewMemDB()
 	policy := cachedstorage.NewCachePolicy(10000000, 1.0)
-	store := cachedstorage.NewDataStore(nil, policy, memDB, storage.ToBytes, storage.FromBytes)
+	store := cachedstorage.NewDataStore(nil, policy, memDB, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
 	alice := datacompression.RandomAccount()
 	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // CreateAccount account structure {
@@ -76,7 +76,7 @@ func TestPartialCacheWithFilter(t *testing.T) {
 		return name == "*cachedstorage.MemDB"
 	}
 
-	store := cachedstorage.NewDataStore(nil, policy, memDB, storage.ToBytes, storage.FromBytes, excludeMemDB)
+	store := cachedstorage.NewDataStore(nil, policy, memDB, storage.Codec{}.Encode, storage.Codec{}.Decode, excludeMemDB)
 	url := ccurl.NewConcurrentUrl(store)
 	alice := datacompression.RandomAccount()
 	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // CreateAccount account structure {

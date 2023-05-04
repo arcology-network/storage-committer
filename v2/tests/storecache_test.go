@@ -109,12 +109,12 @@ func TestCacheWithPersistentStorage(t *testing.T) {
 	for i := 0; i < len(keys); i++ {
 		keys[i] = fmt.Sprint(i)
 		nVals[i] = univalue.NewUnivalue(uint32(i), keys[i], 1, 1, 2, noncommutative.NewInt64(int64(i)))
-		encoded[i] = storage.ToBytes(nVals[i].(ccurlcommon.UnivalueInterface).Value())
+		encoded[i] = storage.Codec{}.Encode(nVals[i].(ccurlcommon.UnivalueInterface).Value())
 	}
 	persistentDB := cachedstorage.NewMemDB()
 	persistentDB.BatchSet(keys, encoded)
 	cachePolicy := cachedstorage.NewCachePolicy(1, 0.8)
-	dataStore := cachedstorage.NewDataStore(nil, cachePolicy, persistentDB, storage.ToBytes, storage.FromBytes)
+	dataStore := cachedstorage.NewDataStore(nil, cachePolicy, persistentDB, storage.Codec{}.Encode, storage.Codec{}.Decode)
 
 	// First insertion
 	dataStore.BatchInject(keys, nVals)
