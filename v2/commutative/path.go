@@ -22,6 +22,7 @@ func NewPath() interface{} {
 	return this
 }
 
+func (this *Path) Length() int                                                { return this.value.Length() }
 func (this *Path) View() *orderedset.OrderedSet                               { return this.value }
 func (this *Path) MemSize() uint32                                            { return codec.Strings(this.value.Keys()).Size() * 2 } // Just an estimate, need to update on fly instead of calculating everytime
 func (this *Path) TypeID() uint8                                              { return PATH }
@@ -165,6 +166,17 @@ func (this *Path) Hash(hasher func([]byte) []byte) []byte {
 	return hasher(this.Encode())
 }
 
+// For Debug
 func (this *Path) SetSubs(keys []string)    { this.value = orderedset.NewOrderedSet(keys) }
 func (this *Path) SetAdded(keys []string)   { this.delta.addDict = orderedset.NewOrderedSet(keys) }
 func (this *Path) SetRemoved(keys []string) { this.delta.delDict = orderedset.NewOrderedSet(keys) }
+
+func (this *Path) Keys() []string {
+	return common.IfThenDo1st(this.value != nil, func() []string { return this.value.Keys() }, []string{})
+}
+func (this *Path) Added() []string {
+	return common.IfThenDo1st(this.value != nil, func() []string { return this.delta.Added() }, []string{})
+}
+func (this *Path) Removed() []string {
+	return common.IfThenDo1st(this.value != nil, func() []string { return this.delta.Removed() }, []string{})
+}

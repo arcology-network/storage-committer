@@ -18,16 +18,17 @@ type Uint64 struct {
 	max   *codec.Uint64
 }
 
-func NewUint64(min, max uint64) interface{} {
-	if min >= max {
+func NewUint64(limits ...uint64) interface{} {
+	limits = common.IfThen(len(limits) == 0, []uint64{0, math.MaxUint64}, limits)
+	if limits[0] > limits[1] {
 		return nil
 	}
 
 	return &Uint64{
 		common.New(codec.Uint64(0)),
 		common.New(codec.Uint64(0)),
-		common.New(codec.Uint64(min)),
-		common.New(codec.Uint64(max)),
+		common.New(codec.Uint64(limits[0])), // min
+		common.New(codec.Uint64(limits[1])), // max
 	}
 }
 

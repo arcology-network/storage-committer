@@ -27,12 +27,17 @@ type U256 struct {
 	deltaPositive bool
 }
 
-func NewU256(min, max *uint256.Int) interface{} {
+func NewU256(limits ...*uint256.Int) interface{} {
+	limits = common.IfThen(len(limits) == 0, []*uint256.Int{U256_MIN, U256_MAX}, limits)
+	if (limits[1]).Cmp(limits[0]) < 0 {
+		return nil
+	}
+
 	return &U256{
 		value:         (&codec.Uint256{}).NewInt(0),
 		delta:         (&codec.Uint256{}).NewInt(0),
-		min:           common.IfThen(min != nil, (*codec.Uint256)(min.Clone()), (*codec.Uint256)(U256_MIN.Clone())),
-		max:           common.IfThen(max != nil, (*codec.Uint256)(max.Clone()), (*codec.Uint256)(U256_MAX.Clone())),
+		min:           common.IfThen(limits[0] != nil, (*codec.Uint256)(limits[0].Clone()), (*codec.Uint256)(U256_MIN.Clone())),
+		max:           common.IfThen(limits[1] != nil, (*codec.Uint256)(limits[1].Clone()), (*codec.Uint256)(U256_MAX.Clone())),
 		deltaPositive: true, // positive delta by default
 	}
 }
@@ -145,7 +150,7 @@ func (this *U256) isOverflowed(v0 *codec.Uint256, signV0 bool, v1 *codec.Uint256
 	}
 
 	if v0.Cmp(v1) < 1 { // v0 <= v1
-		return (&codec.Uint256{}).NewInt(0).Sub(v1, v0), signV1
+		return (&codec.Uint256{}).NewInt(0).Sub(v1, v0), (*uint256.Int)(v1).Eq((*uint256.Int)(v0)) // sign is positive when then cancel each other
 	}
 	return (&codec.Uint256{}).NewInt(0).Sub(v0, v1), signV0
 }

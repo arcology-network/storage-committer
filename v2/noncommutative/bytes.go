@@ -54,7 +54,7 @@ func (this *Bytes) Delta() interface{}                 { return this.value }
 func (this *Bytes) Sign() bool                         { return true } // delta sign
 func (this *Bytes) Min() interface{}                   { return nil }
 func (this *Bytes) Max() interface{}                   { return nil }
-func (this *Bytes) Get() (interface{}, uint32, uint32) { return this.value, 1, 0 }
+func (this *Bytes) Get() (interface{}, uint32, uint32) { return []byte(this.value), 1, 0 }
 func (this *Bytes) New(_, delta, _, _, _ interface{}) interface{} {
 	v := common.IfThenDo1st(delta != nil && delta.(codec.Bytes) != nil, func() codec.Bytes { return delta.(codec.Bytes).Clone().(codec.Bytes) }, this.value)
 	return &Bytes{

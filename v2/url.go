@@ -112,6 +112,11 @@ func (this *ConcurrentUrl) CreateAccount(tx uint32, platform string, acct string
 
 		if !this.indexer.IfExists(path) {
 			err = this.indexer.Write(tx, path, v) // root path
+
+			if !this.indexer.IfExists(path) {
+				err = this.indexer.Write(tx, path, v) // root path
+				panic("Failed to create")
+			}
 		}
 	}
 	return err
@@ -150,12 +155,8 @@ func (this *ConcurrentUrl) at(tx uint32, path string, idx uint64) (interface{}, 
 		return nil, err
 	}
 
-	key, ok := meta.(*commutative.Path).View().KeyOf(idx)
-	if key == nil || !ok {
-		return nil, errors.New("Error: The element wasn't found!!!")
-	}
-
-	return path + key.(string), nil
+	keys := meta.([]string)
+	return common.IfThenDo1st(idx < uint64(len(keys)), func() interface{} { return path + keys[idx] }, nil), nil
 }
 
 // Read th Nth element under a path
@@ -173,21 +174,18 @@ func (this *ConcurrentUrl) PopBack(tx uint32, path string) (interface{}, error) 
 		return nil, errors.New("Error: Not a path!!!")
 	}
 
-	meta, err := this.Read(tx, path) // read the container meta
-	if err != nil {
-		return nil, err
+	subkeys, err := this.Read(tx, path) // read the container meta
+	if subkeys == nil || len(subkeys.([]string)) == 0 || err != nil {
+		return nil, common.IfThen(err == nil, errors.New("Error: The path is either empty or doesn't exist"), err)
 	}
 
-	if length := meta.(*commutative.Path).View().Len(); length > 0 {
-		if key, ok := meta.(*commutative.Path).View().KeyOf(length - 1); ok {
-			value, err := this.Read(tx, path+key.(string))
-			if value == nil || err != nil {
-				return value, err
-			}
-			return value, this.Write(tx, path+key.(string), nil)
-		}
+	key := path + subkeys.([]string)[len(subkeys.([]string))-1]
+
+	value, err := this.Read(tx, key)
+	if value == nil || err != nil {
+		return nil, errors.New("Error: Empty container!")
 	}
-	return nil, errors.New("Error: Empty container!")
+	return value, this.Write(tx, key, nil)
 }
 
 // Read th Nth element under a path
@@ -354,6 +352,11 @@ func (this *ConcurrentUrl) Export(preprocessors ...func([]ccurlcommon.UnivalueIn
 		}, this.buffer)
 	}
 	return this.buffer
+}
+
+func (this *ConcurrentUrl) ExportAll(preprocessors ...func([]ccurlcommon.UnivalueInterface) []ccurlcommon.UnivalueInterface) ([]ccurlcommon.UnivalueInterface, []ccurlcommon.UnivalueInterface) {
+	return univalue.Univalues(common.Clone(this.Export(ccurlcommon.Sorter))).To(univalue.AccessFilters()...),
+		univalue.Univalues(common.Clone(this.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 }
 
 func (this *ConcurrentUrl) Print() {

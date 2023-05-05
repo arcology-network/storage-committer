@@ -3,6 +3,7 @@ package concurrenturl
 import (
 	"math"
 
+	common "github.com/arcology-network/common-lib/common"
 	commutative "github.com/arcology-network/concurrenturl/v2/commutative"
 	noncommutative "github.com/arcology-network/concurrenturl/v2/noncommutative"
 )
@@ -56,13 +57,11 @@ func hex2int(c byte) int {
 
 // Get ths builtin paths
 func (this *Platform) GetBuiltins(acct string) ([]string, []uint8) {
-	paths := make([]string, len(this.syspaths))
-	typeIds := make([]uint8, len(this.syspaths))
-	i := 0
-	for k, v := range this.syspaths {
-		paths[i] = this.Eth10Account() + acct + k
-		typeIds[i] = v
-		i++
+	paths, typeIds := common.MapKVs(this.syspaths)
+	common.SortBy1st(paths, typeIds, func(lhv, rhv string) bool { return lhv < rhv })
+
+	for i, path := range paths {
+		paths[i] = this.Eth10Account() + acct + path
 	}
 	return paths, typeIds
 }

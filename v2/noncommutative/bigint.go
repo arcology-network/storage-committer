@@ -32,17 +32,16 @@ func (this *Bigint) Clone() interface{} {
 	return (*Bigint)(new(big.Int).Set(&v))
 }
 
-func (this *Bigint) ReInit()            {}
-func (this *Bigint) Value() interface{} { return (this) }
-func (this *Bigint) Delta() interface{} { return (this) }
-func (this *Bigint) Sign() bool         { return true } // delta sign
-func (this *Bigint) Min() interface{}   { return nil }
-func (this *Bigint) Max() interface{}   { return nil }
+func (this *Bigint) ReInit()                            {}
+func (this *Bigint) Value() interface{}                 { return (this) }
+func (this *Bigint) Delta() interface{}                 { return (this) }
+func (this *Bigint) Sign() bool                         { return true } // delta sign
+func (this *Bigint) Min() interface{}                   { return nil }
+func (this *Bigint) Max() interface{}                   { return nil }
+func (this *Bigint) Get() (interface{}, uint32, uint32) { return (*big.Int)(this), 1, 0 }
 func (this *Bigint) New(_, delta, _, _, _ interface{}) interface{} {
 	return common.IfThenDo1st(delta != nil && delta.(*Bigint) != nil, func() interface{} { return delta.(*Bigint).Clone() }, interface{}(this))
 }
-
-func (this *Bigint) Get() (interface{}, uint32, uint32) { return (*big.Int)(this), 1, 0 }
 
 func (this *Bigint) Set(value interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
 	if value != nil {

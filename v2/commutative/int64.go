@@ -17,7 +17,7 @@ type Int64 struct {
 }
 
 func NewInt64(min, max int64) interface{} {
-	if min >= max {
+	if min > max {
 		return nil
 	}
 
