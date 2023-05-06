@@ -245,13 +245,13 @@ func (this *ConcurrentUrl) KVs() ([]string, []interface{}) {
 }
 
 // Call this as s
-func (this *ConcurrentUrl) PostImport() {
+func (this *ConcurrentUrl) Sort() {
 	common.ParallelExecute(
 		func() { this.invImporter.SortTransitions() },
 		func() { this.importer.SortTransitions() })
 }
 
-func (this *ConcurrentUrl) Precommit(txs []uint32) []error {
+func (this *ConcurrentUrl) Finalize(txs []uint32) []error {
 	if txs != nil && len(txs) == 0 { // Commit all the transactions when txs == nil
 		return []error{}
 	}
@@ -282,7 +282,7 @@ func (this *ConcurrentUrl) Commit(txs []uint32) []error {
 		this.Clear()
 		return nil
 	}
-	errs := this.Precommit(txs)
+	errs := this.Finalize(txs)
 	this.WriteToDbBuffer()
 	this.SaveToDB()
 	return errs
@@ -299,7 +299,7 @@ func (this *ConcurrentUrl) AllInOneCommit(transitions []ccurlcommon.UnivalueInte
 	fmt.Println("indexer.Import + accountMerkle Import :--------------------------------", time.Since(t0))
 
 	t0 = time.Now()
-	this.PostImport()
+	this.Sort()
 	fmt.Println("indexer.Commit :--------------------------------", time.Since(t0))
 
 	t0 = time.Now()
@@ -307,7 +307,7 @@ func (this *ConcurrentUrl) AllInOneCommit(transitions []ccurlcommon.UnivalueInte
 	fmt.Println("GC 0:--------------------------------", time.Since(t0))
 
 	t0 = time.Now()
-	this.Precommit(txs)
+	this.Finalize(txs)
 	fmt.Println("Precommit :--------------------------------", time.Since(t0))
 
 	// Build the merkle tree

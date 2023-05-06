@@ -28,7 +28,7 @@ func TestAuxTrans(t *testing.T) {
 
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM}) // Commit
 
 	url.Init(store)
@@ -102,7 +102,7 @@ func TestAuxTrans(t *testing.T) {
 	out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
 
 	url.Import(out)
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{1})
 }
 
@@ -119,7 +119,7 @@ func TestCheckAccessRecords(t *testing.T) {
 
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans00).Encode()).(univalue.Univalues))
 
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{1}) // Commit
 
 	url.Init(store)
@@ -133,7 +133,7 @@ func TestCheckAccessRecords(t *testing.T) {
 
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans10).Encode()).(univalue.Univalues))
 
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{1}) // Commit
 
 	url.Init(store)
@@ -148,7 +148,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	// accesses10, trans11 := url.Export(ccurlcommon.Sorter)
 	// url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans11).Encode()).(univalue.Univalues))
 
-	// url.PostImport()
+	// url.Sort()
 	// url.Commit([]uint32{1}) // Commit
 
 	// url = ccurl.NewConcurrentUrl(store)

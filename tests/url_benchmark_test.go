@@ -57,7 +57,7 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 	t0 := time.Now()
 
 	url.Import(transitions)
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{0})
 	fmt.Println("Total = :", time.Since(t0))
 }
@@ -102,7 +102,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	t0 = time.Now()
 
 	url.Import(trans)
-	url.PostImport()
+	url.Sort()
 	fmt.Println("Import:", time.Since(t0))
 
 	t0 = time.Now()
@@ -122,7 +122,7 @@ func BenchmarkUrlAddThenDelete(b *testing.B) {
 	trans := univalue.Univalues(common.Clone(url.Export())).To(univalue.TransitionFilters()...)
 
 	url.Import(trans)
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	alice := datacompression.RandomAccount()
@@ -160,7 +160,7 @@ func BenchmarkUrlAddThenPop(b *testing.B) {
 	trans := univalue.Univalues(common.Clone(url.Export())).To(univalue.TransitionFilters()...)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	alice := datacompression.RandomAccount()
@@ -283,7 +283,7 @@ func BenchmarkMetaIterator(b *testing.B) {
 
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	path := commutative.NewPath()

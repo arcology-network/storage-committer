@@ -28,7 +28,7 @@ func NewImporter(store ccurlcommon.DatastoreInterface, platform ccurlcommon.Plat
 	var indexer Importer
 	indexer.numThreads = 8
 	indexer.store = store
-	// indexer.RWCache = make(map[string]ccurlcommon.UnivalueInterface)
+
 	indexer.byTx = make(map[uint32][]ccurlcommon.UnivalueInterface)
 	indexer.platform = platform
 	indexer.byPath = ccmap.NewConcurrentMap()
@@ -49,9 +49,7 @@ func (this *Importer) Init(store ccurlcommon.DatastoreInterface) {
 }
 
 func (this *Importer) Store() *ccurlcommon.DatastoreInterface { return &this.store }
-
-// func (this *Importer) Buffer() *map[string]ccurlcommon.UnivalueInterface { return &this.RWCache }
-func (this *Importer) ByPath() interface{} { return this.byPath }
+func (this *Importer) ByPath() interface{}                    { return this.byPath }
 
 func (this *Importer) NewUnivalue() *univalue.Univalue {
 	v := this.uniPool.Get().(*univalue.Univalue)

@@ -54,7 +54,7 @@ func TestSimpleBalance(t *testing.T) {
 	}
 
 	url.Import(out)
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{0, 1})
 
 	url = ccurl.NewConcurrentUrl(store)
@@ -201,7 +201,7 @@ func TestNonce(t *testing.T) {
 
 	trans := univalue.Univalues(common.Clone(url1.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 	url1.Import(trans)
-	url1.PostImport()
+	url1.Sort()
 	url1.Commit([]uint32{0})
 
 	nonce, _ = url1.Read(0, "blcc://eth1.0/account/"+alice+"/nonce")
@@ -273,7 +273,7 @@ func TestMultipleNonces(t *testing.T) {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
 	}
 
-	url0.PostImport()
+	url0.Sort()
 	url0.Commit([]uint32{0})
 
 	nonce, _ = url1.Read(0, "blcc://eth1.0/account/"+bob+"/nonce")

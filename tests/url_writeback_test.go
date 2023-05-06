@@ -26,7 +26,7 @@ func TestAddAndDelete(t *testing.T) {
 
 	acctTrans := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Init(store)
@@ -35,7 +35,7 @@ func TestAddAndDelete(t *testing.T) {
 
 	acctTrans = univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{1})
 
 	url.Init(store)
@@ -57,7 +57,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 	acctTrans := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Init(store)
@@ -69,7 +69,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(addPath).Encode()).(univalue.Univalues))
 	// url.Import(url.Decode(univalue.Univalues(addPath).Encode()))
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{1})
 
 	url.Init(store)
@@ -78,7 +78,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 	addTrans := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 	// url.Import(url.Decode(univalue.Univalues(addTrans).Encode()))
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(addTrans).Encode()).(univalue.Univalues))
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{1})
 
 	if v, _ := url.Read(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1"); v == nil {
@@ -100,7 +100,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 
 	url3 := ccurl.NewConcurrentUrl(store)
 	url3.Import(append(addTrans, deleteTrans...))
-	url3.PostImport()
+	url3.Sort()
 	url3.Commit([]uint32{1, 2})
 
 	if v, _ := url3.Read(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1"); v != nil {
@@ -130,7 +130,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 
 	acctTrans = univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{1})
 
 	url.Init(store)
@@ -156,7 +156,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	// url.Import(url.Decode(univalue.Univalues(out).Encode()))
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(out).Encode()).(univalue.Univalues))
 
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Init(store)
@@ -171,7 +171,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	out = univalue.Univalues{}.Decode(in).(univalue.Univalues)
 	// url.Import(url.Decode(univalue.Univalues(out).Encode()))
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(out).Encode()).(univalue.Univalues))
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{1})
 
 	url.Init(store)
@@ -201,7 +201,7 @@ func TestStateUpdate(t *testing.T) {
 
 	// url.Import(url.Decode(univalue.Univalues(initTrans).Encode()))
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(initTrans).Encode()).(univalue.Univalues))
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Init(store)
@@ -219,7 +219,7 @@ func TestStateUpdate(t *testing.T) {
 
 	// url.Import(url.Decode(univalue.Univalues(append(tx0Out, tx1Out...)).Encode()))
 	url.Import((append(tx0Out, tx1Out...)))
-	url.PostImport()
+	url.Sort()
 	errs := url.Commit([]uint32{0, 1})
 	if len(errs) != 0 {
 		t.Error(errs)
@@ -259,7 +259,7 @@ func TestStateUpdate(t *testing.T) {
 	out := univalue.Univalues{}.Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues)
 
 	url.Import(out)
-	url.PostImport()
+	url.Sort()
 	errs = url.Commit([]uint32{1})
 	for _, err := range errs {
 		t.Error(err)
@@ -282,7 +282,7 @@ func TestMultipleTxStateUpdate(t *testing.T) {
 	initTrans := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(initTrans).Encode()).(univalue.Univalues))
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Init(store)
@@ -300,7 +300,7 @@ func TestMultipleTxStateUpdate(t *testing.T) {
 
 	// url.Import(url.Decode(univalue.Univalues(append(tx0Out, tx1Out...)).Encode()))
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(append(tx0Out, tx1Out...)).Encode()).(univalue.Univalues))
-	url.PostImport()
+	url.Sort()
 
 	errs := url.Commit([]uint32{0, 1})
 	if len(errs) != 0 {
@@ -331,7 +331,7 @@ func TestMultipleTxStateUpdate(t *testing.T) {
 	// 	transitions := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 	// url.Import(univalue.Univalues{}.Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues))
 
-	// url.PostImport()
+	// url.Sort()
 	// url.Commit([]uint32{1})
 
 	// url.Init(store)
@@ -357,7 +357,7 @@ func TestAccessControl(t *testing.T) {
 	// url.Import(url.Decode(univalue.Univalues(initTrans).Encode()))
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(initTrans).Encode()).(univalue.Univalues))
 
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Init(store)
@@ -376,7 +376,7 @@ func TestAccessControl(t *testing.T) {
 	// url.Import(url.Decode(univalue.Univalues(append(tx0Out, tx1Out...)).Encode()))
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(append(tx0Out, tx1Out...)).Encode()).(univalue.Univalues))
 
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{0, 1})
 
 	url.Init(store)

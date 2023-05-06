@@ -57,7 +57,7 @@ func TestAddThenDeletePath(t *testing.T) {
 	out := univalue.Univalues{}.Decode(buffer).(univalue.Univalues)
 
 	url.Import(out)
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Init(store)
@@ -69,7 +69,7 @@ func TestAddThenDeletePath(t *testing.T) {
 
 	transitions := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues))
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{1})
 
 	v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
@@ -85,7 +85,7 @@ func TestAddThenDeletePath(t *testing.T) {
 	acctTrans = univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 	buffer = univalue.Univalues(acctTrans).Encode()
 	url.Import(univalue.Univalues{}.Decode(buffer).(univalue.Univalues))
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{1})
 
 	if v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/"); v != nil {
@@ -108,7 +108,7 @@ func TestAddThenDeletePath(t *testing.T) {
 // 	//values := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).([]ccurlcommon.UnivalueInterface)
 // 	ts := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues)
 // 	url.Import(ts)
-// 	url.PostImport()
+// 	url.Sort()
 // 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 // 	url.Init(store)
@@ -121,7 +121,7 @@ func TestAddThenDeletePath(t *testing.T) {
 // 		transitions := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 // 	url.Import((&univalue.Univalues{}).Decode(codec.Encodables(transitions).Encode()).(univalue.Univalues))
 
-// 	url.PostImport()
+// 	url.Sort()
 // 	url.Commit([]uint32{1})
 
 // 	v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
@@ -136,7 +136,7 @@ func TestAddThenDeletePath(t *testing.T) {
 
 // 	_, trans = url.Export(ccurlcommon.Sorter)
 // 	url.Import((&univalue.Univalues{}).Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
-// 	url.PostImport()
+// 	url.Sort()
 // 	url.Commit([]uint32{1})
 
 // 	if v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/"); v != nil {
@@ -154,7 +154,7 @@ func TestBasic(t *testing.T) {
 
 	acctTrans := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Init(store)
@@ -233,7 +233,7 @@ func TestBasic(t *testing.T) {
 
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues))
 	// url.Import(url.Decode(univalue.Univalues(transitions).Encode()))
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{1})
 
 	/* =========== The second cycle ==============*/
@@ -254,7 +254,7 @@ func TestPathAddThenDelete(t *testing.T) {
 	acctTrans := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Init(store)
@@ -338,7 +338,7 @@ func TestUrl1(t *testing.T) {
 
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Init(store)
@@ -421,7 +421,7 @@ func TestUrl2(t *testing.T) {
 
 	acctTrans := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Init(store)
@@ -829,7 +829,7 @@ func TestNestedPath(t *testing.T) {
 	// }
 
 	url.Import(out)
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{1})
 }
 

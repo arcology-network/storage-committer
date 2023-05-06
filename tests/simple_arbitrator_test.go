@@ -26,7 +26,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	trans := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	alice := datacompression.RandomAccount()
@@ -54,7 +54,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(append(transitions1, transitions2...)).Encode()).(univalue.Univalues))
 
-	url.PostImport()
+	url.Sort()
 	url.Commit(conflictTx)
 
 	if len(conflictTx) != 0 {
@@ -70,7 +70,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	url.Write(ccurlcommon.SYSTEM, ccurl.NewPlatform().Eth10Account(), meta)
 	trans := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Init(store)
@@ -111,7 +111,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	// url.Write(ccurlcommon.SYSTEM, ccurl.NewPlatform().Eth10Account(), commutative.NewPath())
 	acctTrans := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
-	url.PostImport()
+	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 	url.Init(store)
 
@@ -148,7 +148,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	in := univalue.Univalues(append(transitions1, transitions2...)).Encode()
 	out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
 	url.Import(out)
-	url.PostImport()
+	url.Sort()
 	url.Commit(toCommit)
 
 	url3 := ccurl.NewConcurrentUrl(store)
@@ -182,7 +182,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	// url.Import(url.Decode(univalue.Univalues(append(transitions3, transitions4...)).Encode()))
-	url.PostImport()
+	url.Sort()
 	url.Commit(toCommit)
 
 	v, err := url3.Read(3, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1")
