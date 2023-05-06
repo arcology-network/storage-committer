@@ -340,7 +340,7 @@ func TestMultipleTxStateUpdate(t *testing.T) {
 	if !reflect.DeepEqual(keys, []string{"elem-00", "elem-01", "elem-111", "elem-222"}) {
 		t.Error("Error: Keys don't match !")
 	}
-	// url.Indexer().Store().Print()
+	// url.Importer().Store().Print()
 }
 
 func TestAccessControl(t *testing.T) {

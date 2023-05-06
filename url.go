@@ -20,14 +20,11 @@ import (
 )
 
 type ConcurrentUrl struct {
-	indexer    *indexer.Indexer
-	invIndexer *indexer.Indexer
+	importer    *indexer.Importer
+	invImporter *indexer.Importer
+	writeCache  *indexer.LocalCache
+	Platform    *Platform
 
-	Platform *Platform
-	// Buf for Export.
-	buffer        []ccurlcommon.UnivalueInterface // Transition + access record buffer
-	accesseBuf    []ccurlcommon.UnivalueInterface // Access records
-	transitBuf    []ccurlcommon.UnivalueInterface // Transitions
 	ImportFilters []ccurlcommon.FilterTransitionsInterface
 	numThreads    int
 }
@@ -35,16 +32,14 @@ type ConcurrentUrl struct {
 func NewConcurrentUrl(store ccurlcommon.DatastoreInterface, args ...interface{}) *ConcurrentUrl {
 	platform := NewPlatform()
 	return &ConcurrentUrl{
-		indexer:    indexer.NewIndexer(store, platform),
-		invIndexer: indexer.NewIndexer(store, platform),
-		Platform:   platform,
+		Platform: platform,
 
-		buffer:     make([]ccurlcommon.UnivalueInterface, 0, 64),
-		accesseBuf: make([]ccurlcommon.UnivalueInterface, 0, 64),
-		transitBuf: make([]ccurlcommon.UnivalueInterface, 0, 64),
-
+		importer:      indexer.NewImporter(store, platform),
+		invImporter:   indexer.NewImporter(store, platform),
 		ImportFilters: []ccurlcommon.FilterTransitionsInterface{&indexer.NonceFilter{}, &indexer.BalanceFilter{}},
-		numThreads:    8,
+
+		writeCache: indexer.NewLocalCache(store, platform),
+		numThreads: 8,
 	}
 }
 
@@ -56,31 +51,25 @@ func (this *ConcurrentUrl) ReadCommitted(tx uint32, key string) (interface{}, er
 	return (*this.Store()).Retrive(key)
 }
 
-func (this *ConcurrentUrl) Indexer() *indexer.Indexer {
-	return this.indexer
+func (this *ConcurrentUrl) Importer() *indexer.Importer {
+	return this.importer
 }
 
 func (this *ConcurrentUrl) Init(store ccurlcommon.DatastoreInterface) {
-	this.indexer.Init(store)
-	this.invIndexer.Init(store)
-	this.reset()
-}
-
-func (this *ConcurrentUrl) reset() {
-	this.buffer = this.buffer[:0]
-	this.accesseBuf = this.accesseBuf[:0]
-	this.transitBuf = this.transitBuf[:0]
+	this.importer.Init(store)
+	this.invImporter.Init(store)
 }
 
 func (this *ConcurrentUrl) Store() *ccurlcommon.DatastoreInterface {
-	return this.indexer.Store()
+	return this.importer.Store()
 }
 
 func (this *ConcurrentUrl) Clear() {
-	(*this.indexer.Store()).Clear()
-	this.reset() // Reset the buffers
-	this.indexer.Clear()
-	this.invIndexer.Clear()
+	(*this.importer.Store()).Clear()
+
+	this.writeCache.Clear()
+	this.importer.Clear()
+	this.invImporter.Clear()
 }
 
 // load accounts
@@ -110,11 +99,11 @@ func (this *ConcurrentUrl) CreateAccount(tx uint32, platform string, acct string
 			v = noncommutative.NewBytes([]byte{})
 		}
 
-		if !this.indexer.IfExists(path) {
-			err = this.indexer.Write(tx, path, v) // root path
+		if !this.writeCache.IfExists(path) {
+			err = this.writeCache.Write(tx, path, v) // root path
 
-			if !this.indexer.IfExists(path) {
-				err = this.indexer.Write(tx, path, v) // root path
+			if !this.writeCache.IfExists(path) {
+				err = this.writeCache.Write(tx, path, v) // root path
 				panic("Failed to create")
 			}
 		}
@@ -123,16 +112,16 @@ func (this *ConcurrentUrl) CreateAccount(tx uint32, platform string, acct string
 }
 
 func (this *ConcurrentUrl) IfExists(path string) bool {
-	return this.indexer.IfExists(path)
+	return this.writeCache.IfExists(path)
 }
 
 func (this *ConcurrentUrl) Peek(path string) (interface{}, error) {
-	value, _ := this.indexer.Peek(path)
+	value, _ := this.writeCache.Peek(path)
 	return value, nil
 }
 
 func (this *ConcurrentUrl) Read(tx uint32, path string) (interface{}, error) {
-	return this.indexer.Read(tx, path), nil
+	return this.writeCache.Read(tx, path), nil
 }
 
 func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}) error {
@@ -141,7 +130,7 @@ func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}) erro
 			return errors.New("Error: Unknown data type !")
 		}
 	}
-	return this.indexer.Write(tx, path, value)
+	return this.writeCache.Write(tx, path, value)
 }
 
 // Read th Nth element under a path
@@ -201,7 +190,7 @@ func (this *ConcurrentUrl) WriteAt(tx uint32, path string, idx uint64, value int
 	}
 }
 
-func (this *ConcurrentUrl) Exempted(transition ccurlcommon.UnivalueInterface) bool {
+func (this *ConcurrentUrl) unconditional(transition ccurlcommon.UnivalueInterface) bool {
 	for i := 0; i < len(this.ImportFilters); i++ {
 		if this.ImportFilters[i].Is(this.Platform.RootLength(), *transition.GetPath()) {
 			return true
@@ -213,7 +202,7 @@ func (this *ConcurrentUrl) Exempted(transition ccurlcommon.UnivalueInterface) bo
 func (this *ConcurrentUrl) Import(transitions []ccurlcommon.UnivalueInterface, args ...interface{}) {
 	invTransitions := make([]ccurlcommon.UnivalueInterface, 0, len(transitions))
 	for i := 0; i < len(transitions); i++ {
-		if this.Exempted(transitions[i]) {
+		if this.unconditional(transitions[i]) {
 			invTransitions = append(invTransitions, transitions[i])
 			transitions[i] = nil
 		}
@@ -221,14 +210,13 @@ func (this *ConcurrentUrl) Import(transitions []ccurlcommon.UnivalueInterface, a
 	common.RemoveIf(&transitions, func(v ccurlcommon.UnivalueInterface) bool { return v == nil })
 
 	common.ParallelExecute(
-		func() { this.invIndexer.Import(invTransitions, args...) },
-		func() { this.indexer.Import(transitions, args...) })
-
+		func() { this.invImporter.Import(invTransitions, args...) },
+		func() { this.importer.Import(transitions, args...) })
 }
 
 func (this *ConcurrentUrl) KVs() ([]string, []interface{}) {
-	keys, values := this.indexer.KVs()
-	invKeys, invVals := this.invIndexer.KVs()
+	keys, values := this.importer.KVs()
+	invKeys, invVals := this.invImporter.KVs()
 
 	kvs := make(map[string]interface{}, len(keys)+len(invKeys))
 	for i, key := range keys {
@@ -259,8 +247,8 @@ func (this *ConcurrentUrl) KVs() ([]string, []interface{}) {
 // Call this as s
 func (this *ConcurrentUrl) PostImport() {
 	common.ParallelExecute(
-		func() { this.invIndexer.SortTransitions() },
-		func() { this.indexer.SortTransitions() })
+		func() { this.invImporter.SortTransitions() },
+		func() { this.importer.SortTransitions() })
 }
 
 func (this *ConcurrentUrl) Precommit(txs []uint32) []error {
@@ -269,22 +257,22 @@ func (this *ConcurrentUrl) Precommit(txs []uint32) []error {
 	}
 
 	common.ParallelExecute(
-		func() { this.invIndexer.FinalizeStates() },
+		func() { this.invImporter.FinalizeStates() },
 		func() {
-			this.indexer.WhilteList(txs)  // Remove all the transitions generated by the conflicting transactions
-			this.indexer.FinalizeStates() // Finalize states
+			this.importer.WhilteList(txs)  // Remove all the transitions generated by the conflicting transactions
+			this.importer.FinalizeStates() // Finalize states
 		},
 	)
 	return nil
 }
 
-func (this *ConcurrentUrl) Postcommit() {
+func (this *ConcurrentUrl) WriteToDbBuffer() {
 	keys, values := this.KVs()
-	(*this.indexer.Store()).Precommit(keys, values) // save the transitions to the DB buffer
+	(*this.importer.Store()).Precommit(keys, values) // save the transitions to the DB buffer
 }
 
 func (this *ConcurrentUrl) SaveToDB() {
-	store := this.indexer.Store()
+	store := this.importer.Store()
 	(*store).Commit() // Commit to the state store
 	this.Clear()
 }
@@ -295,7 +283,7 @@ func (this *ConcurrentUrl) Commit(txs []uint32) []error {
 		return nil
 	}
 	errs := this.Precommit(txs)
-	this.Postcommit()
+	this.WriteToDbBuffer()
 	this.SaveToDB()
 	return errs
 }
@@ -305,7 +293,7 @@ func (this *ConcurrentUrl) AllInOneCommit(transitions []ccurlcommon.UnivalueInte
 
 	accountMerkle := indexer.NewAccountMerkle(this.Platform)
 	common.ParallelExecute(
-		func() { this.indexer.Import(transitions) },
+		func() { this.importer.Import(transitions) },
 		func() { accountMerkle.Import(transitions) })
 
 	fmt.Println("indexer.Import + accountMerkle Import :--------------------------------", time.Since(t0))
@@ -324,7 +312,7 @@ func (this *ConcurrentUrl) AllInOneCommit(transitions []ccurlcommon.UnivalueInte
 
 	// Build the merkle tree
 	t0 = time.Now()
-	k, v := this.indexer.KVs()
+	k, v := this.importer.KVs()
 	encoded := make([][]byte, 0, len(v))
 	for _, value := range v {
 		encoded = append(encoded, value.(ccurlcommon.UnivalueInterface).GetEncoded())
@@ -333,7 +321,7 @@ func (this *ConcurrentUrl) AllInOneCommit(transitions []ccurlcommon.UnivalueInte
 	fmt.Println("ComputeMerkle:", time.Since(t0))
 
 	t0 = time.Now()
-	this.Postcommit()
+	this.WriteToDbBuffer()
 	fmt.Println("Postcommit :--------------------------------", time.Since(t0))
 
 	t0 = time.Now()
@@ -344,14 +332,7 @@ func (this *ConcurrentUrl) AllInOneCommit(transitions []ccurlcommon.UnivalueInte
 }
 
 func (this *ConcurrentUrl) Export(preprocessors ...func([]ccurlcommon.UnivalueInterface) []ccurlcommon.UnivalueInterface) []ccurlcommon.UnivalueInterface {
-	this.indexer.Vectorize(this.indexer.Buffer(), &this.buffer, false) // Export records to the buffer
-
-	for _, processor := range preprocessors {
-		this.buffer = common.IfThenDo1st(processor != nil, func() []ccurlcommon.UnivalueInterface {
-			return processor(this.buffer)
-		}, this.buffer)
-	}
-	return this.buffer
+	return this.writeCache.Export(preprocessors...)
 }
 
 func (this *ConcurrentUrl) ExportAll(preprocessors ...func([]ccurlcommon.UnivalueInterface) []ccurlcommon.UnivalueInterface) ([]ccurlcommon.UnivalueInterface, []ccurlcommon.UnivalueInterface) {
@@ -360,5 +341,5 @@ func (this *ConcurrentUrl) ExportAll(preprocessors ...func([]ccurlcommon.Univalu
 }
 
 func (this *ConcurrentUrl) Print() {
-	this.indexer.Print()
+	this.writeCache.Print()
 }

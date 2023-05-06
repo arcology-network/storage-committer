@@ -214,7 +214,8 @@ func TestBasic(t *testing.T) {
 		}
 	}
 
-	transitions := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
+	trans := common.Clone(url.Export(ccurlcommon.Sorter))
+	transitions := univalue.Univalues(trans).To(univalue.TransitionFilters()...)
 
 	if !reflect.DeepEqual(transitions[0].Value().(ccurlcommon.TypeInterface).Delta().(*commutative.PathDelta).Added(), []string{"elem-000", "elem-111"}) {
 		t.Error("Error: keys are missing from the added buffer!")
@@ -341,8 +342,7 @@ func TestUrl1(t *testing.T) {
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Init(store)
-	path := commutative.NewPath()
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.NewPath()); err != nil {
 		t.Error(err)
 	}
 
@@ -397,6 +397,7 @@ func TestUrl1(t *testing.T) {
 
 	// Export all access records and state transitions
 	transitions := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.TransitionFilters()...)
+	// v, _, _ := transitions[0].Value().(ccurlcommon.TypeInterface).Get()
 	if (*transitions[0].Value().(*noncommutative.String)) != "ctrn-0" {
 		t.Error("Error: keys don't match")
 	}

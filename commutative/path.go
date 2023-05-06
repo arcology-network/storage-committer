@@ -124,12 +124,12 @@ func (this *Path) Set(value interface{}, source interface{}) (interface{}, uint3
 	targetPath := source.([]interface{})[0].(string)
 	myPath := source.([]interface{})[1].(string)
 	tx := source.([]interface{})[2].(uint32)
-	indexer := source.([]interface{})[3].(ccurlcommon.IndexerInterface)
+	writeCache := source.([]interface{})[3].(ccurlcommon.WriteCacheInterface)
 
 	if ccurlcommon.IsPath(targetPath) && len(targetPath) == len(myPath) { // Delete or rewrite the path
 		if value == nil { // Delete the path and all its elements
 			for _, subpath := range this.value.Keys() { // Get all the sub paths
-				indexer.Write(tx, targetPath+subpath, nil) //FIXME: THIS EMITS SOME ERROR MESSAGE, DOESN't SEEM HARMFUL, BUT WEIRED
+				writeCache.Write(tx, targetPath+subpath, nil) //FIXME: THIS EMITS SOME ERROR MESSAGE, DOESN't SEEM HARMFUL, BUT WEIRED
 			}
 			return this, 0, 1, 0, nil
 		}
@@ -148,7 +148,7 @@ func (this *Path) Set(value interface{}, source interface{}) (interface{}, uint3
 		this.value.Insert(subkey)
 	}
 
-	preexists := (*indexer.Buffer())[targetPath].Preexist()
+	preexists := (*writeCache.Cache())[targetPath].Preexist()
 	// this.addKey(subkey, value, preexists)
 	// this.delKeys(subkey, value, preexists)
 	this.delta.ProcessKey(subkey, value, preexists)

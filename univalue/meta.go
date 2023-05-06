@@ -48,7 +48,7 @@ func (this *Unimeta) IncrementWrites(writes uint32)     { this.writes += writes 
 func (this *Unimeta) IncrementDelta(deltaWrites uint32) { this.deltaWrites += deltaWrites }
 
 func (this *Unimeta) CheckPreexist(key string, source interface{}) bool {
-	return source.(ccurlcommon.IndexerInterface).RetriveShallow(key) != nil
+	return source.(ccurlcommon.ImporterInterface).RetriveShallow(key) != nil
 }
 
 func (this *Unimeta) Clone() Unimeta {

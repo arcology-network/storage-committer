@@ -94,17 +94,19 @@ type UnivalueInterface interface { // value type
 	Print()
 }
 
-type IndexerInterface interface {
+type WriteCacheInterface interface {
 	Read(uint32, string) interface{}
 	Peek(path string) (interface{}, bool)
 	Write(uint32, string, interface{}) error
 	Insert(string, interface{})
 
 	RetriveShallow(string) interface{}
-	Buffer() *map[string]UnivalueInterface
+	Cache() *map[string]UnivalueInterface
 	Store() *DatastoreInterface
+}
 
-	//Platform() *Platform
+type ImporterInterface interface {
+	RetriveShallow(string) interface{}
 }
 
 type FilterTransitionsInterface interface {

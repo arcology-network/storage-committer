@@ -22,13 +22,13 @@ func NewDeltaSequence() *DeltaSequence {
 	}
 }
 
-func (this *DeltaSequence) Reset(key string, indexer *Indexer, mempool *mempool.Mempool) {
+func (this *DeltaSequence) Reset(key string, indexer *Importer, mempool *mempool.Mempool) {
 	this.key = key
 	this.transitions = this.transitions[:0]
 	this.base = nil
 }
 
-func (this *DeltaSequence) Init(key string, indexer *Indexer, mempool *mempool.Mempool) {
+func (this *DeltaSequence) Init(key string, indexer *Importer, mempool *mempool.Mempool) {
 	if initialState := indexer.RetriveShallow(key); initialState != nil {
 		nVal := mempool.Get().(*univalue.Univalue)
 		nVal.Init(ccurlcommon.SYSTEM, key, 0, 0, initialState.(ccurlcommon.TypeInterface).Clone(), indexer)
