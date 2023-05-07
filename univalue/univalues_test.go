@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/datacompression"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
@@ -53,7 +54,6 @@ func TestUnivaluesCodecUint64(t *testing.T) {
 	if !Univalues(in).Equal(out2) {
 		t.Error("Error")
 	}
-
 }
 
 func TestUnivaluesCodecU256(t *testing.T) {
@@ -100,6 +100,66 @@ func TestUnivaluesCodeMeta(t *testing.T) {
 	outKeys, _, _ := out.Value().(ccurlcommon.TypeInterface).Get()
 
 	if !common.EqualArray(inKeys.([]string), outKeys.([]string)) {
+		t.Error("Error")
+	}
+}
+
+func TestUnivaluesSelectiveEncoding(t *testing.T) {
+	alice := datacompression.RandomAccount()
+
+	numericU256 := Univalues([]ccurlcommon.UnivalueInterface{ // Commutative numeric new with default and specified limits
+		(&Univalue{}).New(*NewUnimeta(1, "blcc://eth1.0/account/"+alice+"/balance", 3, 4, 0, commutative.UINT256, false), commutative.NewU256(commutative.U256_MIN, commutative.U256_MAX), []byte{}).(*Univalue),
+		(&Univalue{}).New(*NewUnimeta(1, "blcc://eth1.0/account/"+alice+"/balance", 3, 4, 0, commutative.UINT256, false), commutative.NewU256(uint256.NewInt(111), uint256.NewInt(999)), []byte{}).(*Univalue),
+		(&Univalue{}).New(*NewUnimeta(1, "blcc://eth1.0/account/"+alice+"/balance", 3, 4, 1, commutative.UINT256, false), commutative.NewU256(commutative.U256_MIN, commutative.U256_MAX), []byte{}).(*Univalue),
+		(&Univalue{}).New(*NewUnimeta(1, "blcc://eth1.0/account/"+alice+"/balance", 0, 4, 1, commutative.UINT256, false), commutative.NewU256(uint256.NewInt(111), uint256.NewInt(999)), []byte{}).(*Univalue),
+
+		(&Univalue{}).New(*NewUnimeta(1, "blcc://eth1.0/account/"+alice+"/balance", 3, 4, 0, commutative.UINT256, true),
+			(&commutative.U256{}).NewU256(uint256.NewInt(10), uint256.NewInt(20), commutative.U256_MIN, commutative.U256_MAX, true), []byte{}).(*Univalue), // 4
+
+		(&Univalue{}).New(*NewUnimeta(1, "blcc://eth1.0/account/"+alice+"/balance", 2, 0, 1, commutative.UINT256, false),
+			(&commutative.U256{}).NewU256(uint256.NewInt(10), uint256.NewInt(20), commutative.U256_MIN, uint256.NewInt(999), true), []byte{}).(*Univalue), // 5
+
+		(&Univalue{}).New(*NewUnimeta(1, "blcc://eth1.0/account/"+alice+"/balance", 2, 0, 1, commutative.UINT256, false),
+			(&commutative.U256{}).NewU256(uint256.NewInt(10), uint256.NewInt(20), uint256.NewInt(111), commutative.U256_MAX, true), []byte{}).(*Univalue), // 6
+
+		(&Univalue{}).New(*NewUnimeta(1, "blcc://eth1.0/account/"+alice+"/balance", 2, 0, 1, commutative.UINT256, false),
+			(&commutative.U256{}).NewU256(uint256.NewInt(10), uint256.NewInt(20), uint256.NewInt(111), uint256.NewInt(999), true), []byte{}).(*Univalue), // 7
+
+		(&Univalue{}).New(*NewUnimeta(1, "blcc://eth1.0/account/"+alice+"/balance", 2, 0, 1, commutative.UINT256, false),
+			(&commutative.U256{}).NewU256(uint256.NewInt(10), uint256.NewInt(20), uint256.NewInt(111), uint256.NewInt(999), false), []byte{}).(*Univalue), // 8
+	})
+
+	encodedValues := codec.Byteset{}.Decode(numericU256.To(TransitionFilters()...).Encode()).(codec.Byteset)
+
+	if (codec.Byteset{}.Decode(codec.Byteset{}.Decode(encodedValues[0]).(codec.Byteset)[1]).(codec.Byteset).Size()) != commutative.NewU256().(*commutative.U256).HeaderSize() {
+		t.Error("Error")
+	}
+
+	if (codec.Byteset{}.Decode(codec.Byteset{}.Decode(encodedValues[1]).(codec.Byteset)[1]).(codec.Byteset).Size()) != commutative.NewU256().(*commutative.U256).HeaderSize()+64 {
+		t.Error("Error")
+	}
+
+	if (codec.Byteset{}.Decode(codec.Byteset{}.Decode(encodedValues[2]).(codec.Byteset)[1]).(codec.Byteset).Size()) != commutative.NewU256().(*commutative.U256).HeaderSize() {
+		t.Error("Error")
+	}
+
+	if (codec.Byteset{}.Decode(codec.Byteset{}.Decode(encodedValues[3]).(codec.Byteset)[1]).(codec.Byteset).Size()) != commutative.NewU256().(*commutative.U256).HeaderSize()+64 {
+		t.Error("Error")
+	}
+
+	if (codec.Byteset{}.Decode(codec.Byteset{}.Decode(encodedValues[4]).(codec.Byteset)[1]).(codec.Byteset).Size()) != commutative.NewU256().(*commutative.U256).HeaderSize()+32+1 {
+		t.Error("Error")
+	}
+
+	if (codec.Byteset{}.Decode(codec.Byteset{}.Decode(encodedValues[5]).(codec.Byteset)[1]).(codec.Byteset).Size()) != commutative.NewU256().(*commutative.U256).HeaderSize()+32+32+1 {
+		t.Error("Error")
+	}
+
+	if (codec.Byteset{}.Decode(codec.Byteset{}.Decode(encodedValues[6]).(codec.Byteset)[1]).(codec.Byteset).Size()) != commutative.NewU256().(*commutative.U256).HeaderSize()+32+32+1 {
+		t.Error("Error")
+	}
+
+	if (codec.Byteset{}.Decode(codec.Byteset{}.Decode(encodedValues[7]).(codec.Byteset)[1]).(codec.Byteset).Size()) != commutative.NewU256().(*commutative.U256).HeaderSize()+32+32+32+1 {
 		t.Error("Error")
 	}
 }

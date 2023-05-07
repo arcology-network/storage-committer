@@ -59,7 +59,7 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 	url.Import(transitions)
 	url.Sort()
 	url.Commit([]uint32{0})
-	fmt.Println("Total = :", time.Since(t0))
+	fmt.Println("Account Commit single Total time= :", time.Since(t0))
 }
 
 func BenchmarkMultipleAccountCommit(b *testing.B) {
@@ -93,7 +93,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 			}
 		}
 	}
-	fmt.Println("Write:", time.Since(t0))
+	fmt.Println("Write 2500 accounts in :", time.Since(t0))
 
 	t0 = time.Now()
 	trans := univalue.Univalues(common.Clone(url.Export())).To(univalue.TransitionFilters()...)
@@ -103,15 +103,17 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 
 	url.Import(trans)
 	url.Sort()
-	fmt.Println("Import:", time.Since(t0))
+	fmt.Println("Import: ", len(trans), " in: ", time.Since(t0))
 
 	t0 = time.Now()
 
 	url.Commit([]uint32{0})
 	fmt.Println("Commit:", time.Since(t0))
 
+	t0 = time.Now()
 	nilHash := merkle.Sha256(nil)
-	fmt.Print(nilHash)
+	fmt.Println("Hash:", nilHash)
+	fmt.Println("merkle: ", time.Since(t0))
 }
 
 func BenchmarkUrlAddThenDelete(b *testing.B) {
@@ -190,43 +192,43 @@ func BenchmarkUrlAddThenPop(b *testing.B) {
 	// fmt.Println("Pop 50000 noncommutative bytes in", fmt.Sprint(50000), time.Since(t0))
 }
 
-func BenchmarkOrderedMap(b *testing.B) {
-	m := orderedmap.NewOrderedMap()
-	alice := datacompression.RandomAccount()
-	t0 := time.Now()
+// func BenchmarkOrderedMap(b *testing.B) {
+// 	m := orderedmap.NewOrderedMap()
+// 	alice := datacompression.RandomAccount()
+// 	t0 := time.Now()
 
-	for i := 0; i < 100000; i++ {
-		m.Set("blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0"+fmt.Sprint(i), true)
-	}
-	fmt.Println("orderedmap Insertion:", time.Since(t0))
+// 	for i := 0; i < 100000; i++ {
+// 		m.Set("blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0"+fmt.Sprint(i), true)
+// 	}
+// 	fmt.Println("orderedmap Insertion:", time.Since(t0))
 
-	t0 = time.Now()
-	m2 := make(map[string]bool)
-	for i := 0; i < 100000; i++ {
-		m2["blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0"+fmt.Sprint(i)] = true
-	}
-	fmt.Println("Golang map Insertion:", time.Since(t0))
+// 	t0 = time.Now()
+// 	m2 := make(map[string]bool)
+// 	for i := 0; i < 100000; i++ {
+// 		m2["blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0"+fmt.Sprint(i)] = true
+// 	}
+// 	fmt.Println("Golang map Insertion:", time.Since(t0))
 
-	t0 = time.Now()
-	m.Keys()
-	fmt.Println("orderedmap get keys ", time.Since(t0))
+// 	t0 = time.Now()
+// 	m.Keys()
+// 	fmt.Println("orderedmap get keys ", time.Since(t0))
 
-	t0 = time.Now()
-	targeStr := make([]string, 100000)
-	for i := 0; i < 100000; i++ {
-		targeStr[i] = "blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-0" + fmt.Sprint(i)
-	}
-	fmt.Println("Copy keys "+fmt.Sprint(len(targeStr)), time.Since(t0))
-}
+// 	t0 = time.Now()
+// 	targeStr := make([]string, 100000)
+// 	for i := 0; i < 100000; i++ {
+// 		targeStr[i] = "blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-0" + fmt.Sprint(i)
+// 	}
+// 	fmt.Println("Copy keys "+fmt.Sprint(len(targeStr)), time.Since(t0))
+// }
 
-func BenchmarkOrderedMapInit(b *testing.B) {
-	t0 := time.Now()
-	orderedMaps := make([]*orderedmap.OrderedMap, 100000)
-	for i := 0; i < len(orderedMaps); i++ {
-		orderedMaps[i] = orderedmap.NewOrderedMap()
-	}
-	fmt.Println("Initialized  "+fmt.Sprint(len(orderedMaps)), "OrderedMap in", time.Since(t0))
-}
+// func BenchmarkOrderedMapInit(b *testing.B) {
+// 	t0 := time.Now()
+// 	orderedMaps := make([]*orderedmap.OrderedMap, 100000)
+// 	for i := 0; i < len(orderedMaps); i++ {
+// 		orderedMaps[i] = orderedmap.NewOrderedMap()
+// 	}
+// 	fmt.Println("Initialized  "+fmt.Sprint(len(orderedMaps)), "OrderedMap in", time.Since(t0))
+// }
 
 func BenchmarkInsertAndDelete(b *testing.B) {
 	m := orderedmap.NewOrderedMap()
@@ -279,7 +281,7 @@ func BenchmarkMetaIterator(b *testing.B) {
 	url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice)
 	// acctTrans := univalue.Univalues(common.Clone(url.Export())).To(univalue.AccessFilters()...)
 
-	acctTrans := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.AccessFilters()...)
+	acctTrans := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.AccessFilters()...)
 
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
@@ -352,10 +354,9 @@ func BenchmarkMapKeyLengthComparison(b *testing.B) {
 }
 
 func BenchmarkAccountCreationWithMerkle(b *testing.B) {
-	lut := datacompression.NewCompressionLut()
-	store := cachedstorage.NewDataStore(lut)
-	meta := commutative.NewPath()
-	store.Inject((ccurl.NewPlatform().Eth10Account()), meta)
+	// lut := datacompression.NewCompressionLut()
+	store := cachedstorage.NewDataStore()
+	store.Inject((ccurl.NewPlatform().Eth10Account()), commutative.NewPath())
 
 	t0 := time.Now()
 	url := ccurl.NewConcurrentUrl(store)
@@ -368,15 +369,17 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	fmt.Println("Write "+fmt.Sprint(100000*9), time.Since(t0))
 
 	t0 = time.Now()
-	acctTrans := univalue.Univalues(common.Clone(url.Export())).To(univalue.AccessFilters()...)
+	acctTrans := univalue.Univalues(common.Clone(url.Export())).To(univalue.TransitionFilters()...)
 
 	fmt.Println("Export "+fmt.Sprint(100000*9), time.Since(t0))
 
 	t0 = time.Now()
 
-	transitions := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues)
-	url.Import(transitions)
-	//	errs := url.AllInOneCommit(acctTrans, []uint32{0})
+	// transitions := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues)
+	url.Import(acctTrans)
+	url.Sort()
+	url.Commit([]uint32{ccurlcommon.SYSTEM})
+	// errs := url.AllInOneCommit(acctTrans, []uint32{0})
 
 	// if len(errs) > 0 {
 	// 	fmt.Println(errs)
@@ -385,8 +388,8 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 }
 
 func TestAccountMerkleImportPerf(t *testing.T) {
-	lut := datacompression.NewCompressionLut()
-	store := cachedstorage.NewDataStore(lut)
+	// lut := datacompression.NewCompressionLut()
+	store := cachedstorage.NewDataStore()
 	meta := commutative.NewPath()
 	store.Inject((ccurl.NewPlatform().Eth10Account()), meta)
 
@@ -396,7 +399,7 @@ func TestAccountMerkleImportPerf(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	acctTrans := univalue.Univalues(common.Clone(url.Export(ccurlcommon.Sorter))).To(univalue.AccessFilters()...)
+	acctTrans := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.AccessFilters()...)
 
 	for n := 0; n < 10; n++ {
 		accountMerkle := indexer.NewAccountMerkle(ccurl.NewPlatform())
@@ -405,7 +408,7 @@ func TestAccountMerkleImportPerf(t *testing.T) {
 			accountMerkle.Import(acctTrans[i*len(acctTrans)/100 : (i+1)*len(acctTrans)/100])
 		}
 		accountMerkle.Clear()
-		t.Log(time.Since(t0))
+		t.Log("Account merkle: ", time.Since(t0))
 	}
 }
 

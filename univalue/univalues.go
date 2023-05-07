@@ -9,7 +9,7 @@ import (
 
 type Univalues []ccurlcommon.UnivalueInterface
 
-func (this Univalues) To(filters ...func(ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface) []ccurlcommon.UnivalueInterface {
+func (this Univalues) To(filters ...func(ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface) Univalues {
 	for _, condition := range filters {
 		this = common.CastTo(this, condition)
 	}
@@ -17,6 +17,7 @@ func (this Univalues) To(filters ...func(ccurlcommon.UnivalueInterface) ccurlcom
 	return this
 }
 
+// Debugging only
 func (this Univalues) IfContains(condition ccurlcommon.UnivalueInterface) bool {
 	for _, v := range this {
 		if (v).(*Univalue).Equal(condition.(*Univalue)) {

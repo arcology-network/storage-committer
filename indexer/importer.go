@@ -1,8 +1,6 @@
 package indexer
 
 import (
-	"sort"
-
 	common "github.com/arcology-network/common-lib/common"
 	ccmap "github.com/arcology-network/common-lib/container/map"
 	"github.com/arcology-network/common-lib/mempool"
@@ -18,10 +16,10 @@ type Importer struct {
 
 	platform ccurlcommon.PlatformInterface
 
-	updatedKeys   []string      // Keys updated in the circle
-	updatedValues []interface{} // Value updated in the circle
-	seqPool       *mempool.Mempool
-	uniPool       *mempool.Mempool
+	keyBuffer []string      // Keys updated in the cycle
+	valBuffer []interface{} // Value updated in the cycle
+	seqPool   *mempool.Mempool
+	uniPool   *mempool.Mempool
 }
 
 func NewImporter(store ccurlcommon.DatastoreInterface, platform ccurlcommon.PlatformInterface, args ...interface{}) *Importer {
@@ -150,18 +148,18 @@ func (this *Importer) WhilteList(whitelist []uint32) []error {
 	return []error{}
 }
 
-func (this *Importer) SortTransitions() {
-	this.updatedKeys = this.byPath.Keys()
+func (this *Importer) SortDeltaSequences() {
+	this.keyBuffer = this.byPath.Keys()
 	// var err error
-	// this.updatedKeys, err = performance.SortStrings(this.updatedKeys) // Keys should be unique
+	// this.keyBuffer, err = performance.SortStrings(this.keyBuffer) // Keys should be unique
 	// if err != nil {
 	// 	panic(err)
 	// }
-	sort.Strings(this.updatedKeys) // For the later merkle tree calculation
+	// sort.Strings(this.keyBuffer) // For the later merkle tree calculation
 
 	sorter := func(start, end, index int, args ...interface{}) {
 		for i := start; i < end; i++ {
-			deltaSeq, _ := this.byPath.Get(this.updatedKeys[i])
+			deltaSeq, _ := this.byPath.Get(this.keyBuffer[i])
 
 			// typeValue := deltaSeq.(*DeltaSequence).base
 			// if typeValue == nil {
@@ -173,46 +171,46 @@ func (this *Importer) SortTransitions() {
 			// }
 		}
 	}
-	common.ParallelWorker(len(this.updatedKeys), this.numThreads, sorter)
+	common.ParallelWorker(len(this.keyBuffer), this.numThreads, sorter)
 }
 
 // Merge and finalize state deltas
-func (this *Importer) FinalizeStates() {
-	this.updatedValues = this.updatedValues[:0]
-	this.updatedValues = append(this.updatedValues, make([]interface{}, len(this.updatedKeys))...)
+func (this *Importer) MergeStateDelta() {
+	this.valBuffer = this.valBuffer[:0]
+	this.valBuffer = append(this.valBuffer, make([]interface{}, len(this.keyBuffer))...)
 	finalizer := func(start, end, index int, args ...interface{}) {
 		for i := start; i < end; i++ {
-			deltaSeq, _ := this.byPath.Get(this.updatedKeys[i])
+			deltaSeq, _ := this.byPath.Get(this.keyBuffer[i])
 			deltaSeq.(*DeltaSequence).Finalize()
 			if deltaSeq.(*DeltaSequence).Value() == nil { // Some sequences may have been deleted with transactions they belong to
-				this.updatedKeys[i] = ""
-				this.updatedValues[i] = nil
+				this.keyBuffer[i] = ""
+				this.valBuffer[i] = nil
 				continue
 			}
-			this.updatedValues[i] = deltaSeq.(*DeltaSequence).Value().(ccurlcommon.UnivalueInterface)
+			this.valBuffer[i] = deltaSeq.(*DeltaSequence).Value().(ccurlcommon.UnivalueInterface)
 		}
 	}
-	common.ParallelWorker(len(this.updatedKeys), this.numThreads, finalizer)
-	common.Remove(&this.updatedKeys, "")
-	common.RemoveIf(&this.updatedValues, func(v interface{}) bool { return v == nil })
+	common.ParallelWorker(len(this.keyBuffer), this.numThreads, finalizer)
+
+	common.Remove(&this.keyBuffer, "")
+	common.RemoveIf(&this.valBuffer, func(v interface{}) bool { return v == nil })
 }
 
 func (this *Importer) KVs() ([]string, []interface{}) {
-	common.Remove(&this.updatedKeys, "")
-	common.RemoveIf(&this.updatedValues, func(v interface{}) bool { return v == nil })
-	return this.updatedKeys, this.updatedValues
+	common.Remove(&this.keyBuffer, "")
+	common.RemoveIf(&this.valBuffer, func(v interface{}) bool { return v == nil })
+	return this.keyBuffer, this.valBuffer
 }
 
 // Clear all
 func (this *Importer) Clear() {
-	// this.RWCache = make(map[string]ccurlcommon.UnivalueInterface)
 	for k, v := range this.byTx {
 		this.byTx[k] = v[:0]
 	}
 
 	this.byPath = ccmap.NewConcurrentMap()
-	this.updatedKeys = this.updatedKeys[:0]
-	this.updatedValues = this.updatedValues[:0]
+	this.keyBuffer = this.keyBuffer[:0]
+	this.valBuffer = this.valBuffer[:0]
 
 	this.seqPool.ForEachAllocated(func(obj interface{}) {
 		obj.(*DeltaSequence).Reclaim()

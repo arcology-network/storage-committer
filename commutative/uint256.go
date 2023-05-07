@@ -29,7 +29,7 @@ type U256 struct {
 
 func NewU256(limits ...*uint256.Int) interface{} {
 	limits = common.IfThen(len(limits) == 0, []*uint256.Int{U256_MIN, U256_MAX}, limits)
-	if (limits[1]).Cmp(limits[0]) < 0 {
+	if (limits[1]).Cmp(limits[0]) < 0 { // The upper limit has to be greater than the lower one
 		return nil
 	}
 
@@ -76,6 +76,16 @@ func NewU256DeltaFromBigInt(delta *big.Int) (interface{}, bool) {
 		delta:         (*codec.Uint256)(deltaV),
 		deltaPositive: sign != -1, // >= 0
 	}, true
+}
+
+func (*U256) NewU256(value, delta, min, max *uint256.Int, sign bool) *U256 {
+	return &U256{
+		value:         (*codec.Uint256)(value),
+		delta:         (*codec.Uint256)(delta),
+		min:           (*codec.Uint256)(min),
+		max:           (*codec.Uint256)(max),
+		deltaPositive: sign, // positive delta by default
+	}
 }
 
 // For the codec only, don't use it for other purposes

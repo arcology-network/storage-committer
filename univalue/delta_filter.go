@@ -1,6 +1,9 @@
 package univalue
 
 import (
+	"bytes"
+	"sort"
+
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
@@ -13,6 +16,15 @@ func ReadOnly(unival ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterfac
 
 func DelNonExist(unival ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface {
 	return common.IfThen(unival != nil && unival.Value() == nil && !unival.Preexist(), nil, unival)
+}
+
+func Sorter(univals []ccurlcommon.UnivalueInterface) []ccurlcommon.UnivalueInterface {
+	sort.SliceStable(univals, func(i, j int) bool {
+		lhs := (*(univals[i].GetPath()))
+		rhs := (*(univals[j].GetPath()))
+		return bytes.Compare([]byte(lhs)[:], []byte(rhs)[:]) < 0
+	})
+	return univals
 }
 
 func ExtractDelta(unival ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface {

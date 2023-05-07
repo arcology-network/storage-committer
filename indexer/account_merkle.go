@@ -48,15 +48,6 @@ func (this *AccountMerkle) GetMerkles() *map[string]*merkle.Merkle {
 	return &this.merkles
 }
 
-func find(str string, c byte) int {
-	for i, s := range str {
-		if byte(s) == c {
-			return i
-		}
-	}
-	return -1
-}
-
 // Insert to the merkle tree
 func (this *AccountMerkle) Import(transitions []ccurlcommon.UnivalueInterface) {
 	offset := len(this.platform.Eth10Account())
@@ -75,18 +66,20 @@ func (this *AccountMerkle) Import(transitions []ccurlcommon.UnivalueInterface) {
 }
 
 // Build a Merkle for every updated account
-func (this *AccountMerkle) Build(sortedKeys []string, values [][]byte) []*string {
-	if len(sortedKeys) == 0 {
+func (this *AccountMerkle) Build(keys []string, values [][]byte) []*string {
+	common.SortBy1st(keys, values, func(lhv, rhv string) bool { return lhv < rhv })
+
+	if len(keys) == 0 {
 		return nil
 	}
 
 	t0 := time.Now()
 	offset := len(this.platform.Eth10Account())
-	ranges, accountKeys := this.MarkAccountRange(sortedKeys)
+	ranges, accountKeys := this.markAccountRange(keys)
 	hasher := func(start, end, index int, args ...interface{}) {
 		mempool := this.nodePool.GetTlsMempool(index)
 		for i := start; i < end; i++ {
-			path := sortedKeys[ranges[i]]
+			path := keys[ranges[i]]
 			if len(path) == 0 {
 				continue
 			}
@@ -96,10 +89,16 @@ func (this *AccountMerkle) Build(sortedKeys []string, values [][]byte) []*string
 
 			dataSet := make([][]byte, 0, ranges[i+1]-ranges[i])
 			for j := ranges[i]; j < ranges[i+1]; j++ {
-				if sortedKeys[j][len(sortedKeys[j])-1] == '/' {
+				if keys[j][len(keys[j])-1] == '/' {
 					continue // Skip path meta
 				}
 				dataSet = append(dataSet, values[j])
+			}
+
+			// Create a merkle
+			if this.merkles[acct] == nil {
+				// mk := this.merklePool.Get().(*merkle.Merkle).Reset()
+				this.merkles[acct] = this.merklePool.Get().(*merkle.Merkle).Reset() // one merkle for each account
 			}
 			this.merkles[acct].Init(dataSet, mempool)
 		}
@@ -109,7 +108,8 @@ func (this *AccountMerkle) Build(sortedKeys []string, values [][]byte) []*string
 	return accountKeys
 }
 
-func (this *AccountMerkle) MarkAccountRange(paths []string) ([]int, []*string) {
+// Assume the paths are already sorted
+func (this *AccountMerkle) markAccountRange(paths []string) ([]int, []*string) {
 	positions := make([]int, 0, len(paths))
 	positions = append(positions, 0)
 	current := paths[0]

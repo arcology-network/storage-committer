@@ -1,9 +1,7 @@
 package common
 
 import (
-	"bytes"
 	"math"
-	"sort"
 )
 
 const (
@@ -131,12 +129,3 @@ type DatastoreInterface interface {
 }
 
 type Hasher func(TypeInterface) []byte
-
-func Sorter(univals []UnivalueInterface) []UnivalueInterface {
-	sort.SliceStable(univals, func(i, j int) bool {
-		lhs := (*(univals[i].GetPath()))
-		rhs := (*(univals[j].GetPath()))
-		return bytes.Compare([]byte(lhs)[:], []byte(rhs)[:]) < 0
-	})
-	return univals
-}

@@ -88,31 +88,22 @@ func TestUnivalueCodeMeta(t *testing.T) {
 	}
 }
 
-func TestCodecMetaUnivalues(t *testing.T) {
+func TestUnimetaCodecUint64(t *testing.T) {
 	/* Commutative Int64 Test */
 	alice := datacompression.RandomAccount()
 
-	meta := commutative.NewPath()
-	meta.(*commutative.Path).SetSubs([]string{"e-01", "e-001", "e-002", "e-002"})
-	meta.(*commutative.Path).SetAdded([]string{"+01", "+001", "+002", "+002"})
-	meta.(*commutative.Path).SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
-	unival := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 11, meta)
-
-	in := Univalues([]ccurlcommon.UnivalueInterface{unival, unival})
+	// meta:= commutative.NewPath()
+	u256 := commutative.NewUint64(0, 100).(*commutative.Uint64)
+	in := NewUnimeta(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, u256.TypeID(), false)
+	in.reads = 1
+	in.writes = 2
+	in.deltaWrites = 3
 
 	bytes := in.Encode()
-	out := (&Univalues{}).Decode(bytes).(Univalues)
+	out := (&Unimeta{}).Decode(bytes).(*Unimeta)
 
-	for i := 0; i < len(out); i++ {
-		// fmt.Print(in[i].Value().(*commutative.Path).Value())
-		// fmt.Println(out[i].Value().(*commutative.Path).Value())
-
-		// fmt.Print(in[i].Value().(*commutative.Path).Added())
-		// fmt.Println(out[i].Value().(*commutative.Path).Added())
-
-		// fmt.Print(in[i].Value().(*commutative.Path).Removed())
-		// fmt.Println(out[i].Value().(*commutative.Path).Removed())
-		// fmt.Println(out[i])
+	if in == out {
+		t.Error("Error")
 	}
 }
 

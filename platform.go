@@ -72,7 +72,11 @@ func (this *Platform) IsSysPath(path string) bool {
 		return path == this.Eth10() || path == this.Eth10Account()
 	}
 
-	subPath := path[this.Eth10AccountLenght():]
+	subPath := path[this.Eth10AccountLenght():] // Removed the shared part
 	_, ok := this.syspaths[subPath]
 	return ok
+}
+
+func (this *Platform) GetSysPaths() []string {
+	return common.MapKeys(this.syspaths)
 }

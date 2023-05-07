@@ -19,9 +19,9 @@ type Unimeta struct {
 	reclaimFunc func(interface{})
 }
 
-func NewUnimeta(tx uint32, key string, reads, writes uint32, deltaWrites uint32, args ...interface{}) *Unimeta {
+func NewUnimeta(tx uint32, key string, reads, writes uint32, deltaWrites uint32, vType uint8, preexists bool) *Unimeta {
 	return &Unimeta{
-		vType:       (&Unimeta{}).GetTypeID(args[0]),
+		vType:       vType,
 		tx:          tx,
 		path:        &key,
 		reads:       reads,
