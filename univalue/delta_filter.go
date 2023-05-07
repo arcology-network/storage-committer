@@ -35,9 +35,9 @@ func ExtractDelta(unival ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInte
 	var v interface{}
 	if unival.Value() != nil {
 		value := unival.Value().(ccurlcommon.TypeInterface)
-		if !unival.Preexist() || (unival.DeltaWrites() > 0 && unival.TypeID() != commutative.PATH) { // commutative but not meta, for the accumulator
+		if unival.DeltaWrites() > 0 && unival.TypeID() != commutative.PATH { // commutative but not meta, for the accumulator
 			v = unival.Value().(ccurlcommon.TypeInterface).New(
-				nil,
+				value.Value(), // The value is needed for the accumulator, otherwise it has no access to its original state
 				common.IfThenDo1st(value.Delta() != nil, func() interface{} { return value.Delta().(codec.Encodable).Clone() }, nil),
 				value.Sign(),
 				common.IfThenDo1st(value.Min() != nil, func() interface{} { return value.Min().(codec.Encodable).Clone() }, nil),
