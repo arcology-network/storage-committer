@@ -33,11 +33,11 @@ func TestCachePolicyLowScore(t *testing.T) {
 		// -------------------- First insertion --------------------
 		dataStore.BatchInject(keys, nVals)
 		//dataStore.CachePolicy().AddToBuffer(keys, nVals)
-		dataStore.CachePolicy().Refresh(dataStore.LocalCache())
+		dataStore.CachePolicy().Refresh(dataStore.WriteCache())
 		dataStore.CachePolicy().PrintScores()
 
-		entiresFreed, memFreed := dataStore.CachePolicy().Refresh(dataStore.LocalCache())
-		if entiresFreed != 5 || dataStore.CachePolicy().Size() != 0 || dataStore.LocalCache().Size() != 0 {
+		entiresFreed, memFreed := dataStore.CachePolicy().Refresh(dataStore.WriteCache())
+		if entiresFreed != 5 || dataStore.CachePolicy().Size() != 0 || dataStore.WriteCache().Size() != 0 {
 			t.Error("dataStore.cachePolicy should be empty: ", entiresFreed, " dataStore.cachePolicy.scoreboard:", memFreed, " bytes")
 		}
 
@@ -53,12 +53,12 @@ func TestCachePolicyLowScore(t *testing.T) {
 		// --------------Second insertion ---------------------
 		dataStore.BatchInject(keys, nVals)
 		//dataStore.CachePolicy().AddToBuffer(keys, nVals)
-		dataStore.CachePolicy().Refresh(dataStore.LocalCache())
+		dataStore.CachePolicy().Refresh(dataStore.WriteCache())
 
-		entiresFreed, _ = dataStore.CachePolicy().Refresh(dataStore.LocalCache())
-		if entiresFreed == 5 || dataStore.CachePolicy().Size() == 0 || dataStore.LocalCache().Size() == 0 {
+		entiresFreed, _ = dataStore.CachePolicy().Refresh(dataStore.WriteCache())
+		if entiresFreed == 5 || dataStore.CachePolicy().Size() == 0 || dataStore.WriteCache().Size() == 0 {
 			dataStore.CachePolicy().PrintScores()
-			t.Error("Error: There should be 0 ", dataStore.CachePolicy().Size(), dataStore.LocalCache().Size())
+			t.Error("Error: There should be 0 ", dataStore.CachePolicy().Size(), dataStore.WriteCache().Size())
 		}
 	*/
 }
@@ -79,11 +79,11 @@ func TestCachePolicyAndPersistentDB(t *testing.T) {
 		// First insertion
 		dataStore.BatchInject(keys, nVals)
 		//dataStore.CachePolicy().AddToBuffer(keys, nVals)
-		dataStore.CachePolicy().Refresh(dataStore.LocalCache())
+		dataStore.CachePolicy().Refresh(dataStore.WriteCache())
 		dataStore.CachePolicy().PrintScores()
 
-		entiresFreed, memFreed := dataStore.CachePolicy().Refresh(dataStore.LocalCache())
-		if entiresFreed != 10 || memFreed == 0 || dataStore.CachePolicy().Size() != 0 || dataStore.LocalCache().Size() != 0 {
+		entiresFreed, memFreed := dataStore.CachePolicy().Refresh(dataStore.WriteCache())
+		if entiresFreed != 10 || memFreed == 0 || dataStore.CachePolicy().Size() != 0 || dataStore.WriteCache().Size() != 0 {
 			t.Error("dataStore.cachePolicy should be empty: ", entiresFreed, " dataStore.cachePolicy.scoreboard:", memFreed, " bytes")
 		}
 
@@ -91,10 +91,10 @@ func TestCachePolicyAndPersistentDB(t *testing.T) {
 		dataStore.BatchInject(keys, nVals)
 
 		//dataStore.CachePolicy().AddToBuffer(keys, nVals)
-		dataStore.CachePolicy().Refresh(dataStore.LocalCache())
+		dataStore.CachePolicy().Refresh(dataStore.WriteCache())
 		dataStore.CachePolicy().PrintScores()
 
-		entiresFreed, memFreed = dataStore.CachePolicy().Refresh(dataStore.LocalCache())
+		entiresFreed, memFreed = dataStore.CachePolicy().Refresh(dataStore.WriteCache())
 		if entiresFreed == 0 || memFreed == 0 {
 			fmt.Println("Error: Freed Entries: ", entiresFreed, " size: ", memFreed, " bytes")
 			dataStore.CachePolicy().PrintScores()
@@ -119,10 +119,10 @@ func TestCacheWithPersistentStorage(t *testing.T) {
 	// First insertion
 	dataStore.BatchInject(keys, nVals)
 	//dataStore.CachePolicy().AddToBuffer(keys, nVals)
-	dataStore.CachePolicy().Refresh(dataStore.LocalCache())
+	dataStore.CachePolicy().Refresh(dataStore.WriteCache())
 	dataStore.CachePolicy().PrintScores()
 
-	dataStore.CachePolicy().Refresh(dataStore.LocalCache())
+	dataStore.CachePolicy().Refresh(dataStore.WriteCache())
 	dataStore.CachePolicy().PrintScores()
 
 	v := dataStore.BatchRetrive(keys)
@@ -151,10 +151,10 @@ func BenchmarkCachePolicy(b *testing.B) {
 
 	t0 := time.Now()
 	//dataStore.CachePolicy().AddToBuffer(keys, nVals)
-	dataStore.CachePolicy().Refresh(dataStore.LocalCache())
+	dataStore.CachePolicy().Refresh(dataStore.WriteCache())
 	fmt.Println("CachePolicy Refresh:", time.Since(t0))
 
 	t0 = time.Now()
-	dataStore.CachePolicy().Refresh(dataStore.LocalCache())
+	dataStore.CachePolicy().Refresh(dataStore.WriteCache())
 	fmt.Println("CachePolicy FreeMemory:", time.Since(t0))
 }

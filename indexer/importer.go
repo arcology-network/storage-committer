@@ -46,8 +46,9 @@ func (this *Importer) Init(store ccurlcommon.DatastoreInterface) {
 	this.Clear()
 }
 
-func (this *Importer) Store() *ccurlcommon.DatastoreInterface { return &this.store }
-func (this *Importer) ByPath() interface{}                    { return this.byPath }
+func (this *Importer) SetStore(store ccurlcommon.DatastoreInterface) { this.store = store }
+func (this *Importer) Store() ccurlcommon.DatastoreInterface         { return this.store }
+func (this *Importer) ByPath() interface{}                           { return this.byPath }
 
 func (this *Importer) NewUnivalue() *univalue.Univalue {
 	v := this.uniPool.Get().(*univalue.Univalue)

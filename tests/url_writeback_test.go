@@ -220,11 +220,7 @@ func TestStateUpdate(t *testing.T) {
 	// url.Import(url.Decode(univalue.Univalues(append(tx0Out, tx1Out...)).Encode()))
 	url.Import((append(tx0Out, tx1Out...)))
 	url.Sort()
-	errs := url.Commit([]uint32{0, 1})
-	if len(errs) != 0 {
-		t.Error(errs)
-	}
-
+	url.Commit([]uint32{0, 1})
 	//need to encode delta only now it encodes everything
 
 	if err := CheckPaths(alice, url); err != nil {
@@ -260,10 +256,7 @@ func TestStateUpdate(t *testing.T) {
 
 	url.Import(out)
 	url.Sort()
-	errs = url.Commit([]uint32{1})
-	for _, err := range errs {
-		t.Error(err)
-	}
+	url.Commit([]uint32{1})
 
 	if v, _ := url.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/"); v != nil {
 		t.Error("Error: Should be gone already !")
@@ -302,10 +295,7 @@ func TestMultipleTxStateUpdate(t *testing.T) {
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(append(tx0Out, tx1Out...)).Encode()).(univalue.Univalues))
 	url.Sort()
 
-	errs := url.Commit([]uint32{0, 1})
-	if len(errs) != 0 {
-		t.Error(errs)
-	}
+	url.Commit([]uint32{0, 1})
 
 	// url.Init(store)
 	CheckPaths(alice, url) /* Check Paths */

@@ -38,7 +38,7 @@ func TestPartialCache(t *testing.T) {
 
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999"))
 	acctTrans = univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionFilters()...)
-	(*url.Store()).(*cachedstorage.DataStore).LocalCache().Clear()
+	url.Importer().Store().(*cachedstorage.DataStore).WriteCache().Clear()
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues), true, excludeMemDB) // The changes will be discarded.
 	url.Sort()
 	url.Commit([]uint32{1})
@@ -53,7 +53,7 @@ func TestPartialCache(t *testing.T) {
 
 	/* Don't filter persistent data source	*/
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999"))
-	(*url.Store()).(*cachedstorage.DataStore).LocalCache().Clear()                                       // Make sure only the persistent storage has the data.
+	url.Importer().Store().(*cachedstorage.DataStore).WriteCache().Clear()                               // Make sure only the persistent storage has the data.
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues)) // This should take effect
 	url.Sort()
 	url.Commit([]uint32{1})
@@ -95,7 +95,7 @@ func TestPartialCacheWithFilter(t *testing.T) {
 
 	acctTrans = univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionFilters()...)
 
-	(*url.Store()).(*cachedstorage.DataStore).LocalCache().Clear()
+	url.Importer().Store().(*cachedstorage.DataStore).WriteCache().Clear()
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues), true, excludeMemDB) // The changes will be discarded.
 	url.Sort()
 	url.Commit([]uint32{1})

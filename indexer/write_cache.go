@@ -13,7 +13,7 @@ import (
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 )
 
-type LocalCache struct {
+type WriteCache struct {
 	store    ccurlcommon.DatastoreInterface
 	kvDict   map[string]ccurlcommon.UnivalueInterface // Local KV lookup
 	platform ccurlcommon.PlatformInterface
@@ -21,8 +21,8 @@ type LocalCache struct {
 	uniPool  *mempool.Mempool
 }
 
-func NewLocalCache(store ccurlcommon.DatastoreInterface, platform ccurlcommon.PlatformInterface, args ...interface{}) *LocalCache {
-	var writeCache LocalCache
+func NewWriteCache(store ccurlcommon.DatastoreInterface, platform ccurlcommon.PlatformInterface, args ...interface{}) *WriteCache {
+	var writeCache WriteCache
 	writeCache.store = store
 	writeCache.kvDict = make(map[string]ccurlcommon.UnivalueInterface)
 	writeCache.store = store
@@ -33,11 +33,12 @@ func NewLocalCache(store ccurlcommon.DatastoreInterface, platform ccurlcommon.Pl
 	return &writeCache
 }
 
-func (this *LocalCache) Store() *ccurlcommon.DatastoreInterface           { return &this.store }
-func (this *LocalCache) Cache() *map[string]ccurlcommon.UnivalueInterface { return &this.kvDict }
+func (this *WriteCache) SetStore(store ccurlcommon.DatastoreInterface)    { this.store = store }
+func (this *WriteCache) Store() ccurlcommon.DatastoreInterface            { return this.store }
+func (this *WriteCache) Cache() *map[string]ccurlcommon.UnivalueInterface { return &this.kvDict }
 
 // Merge two DB Caches
-func (this *LocalCache) MergeFrom(other *LocalCache) {
+func (this *WriteCache) MergeFrom(other *WriteCache) {
 	for k, from := range other.kvDict {
 		if to, ok := this.kvDict[k]; ok { // already exists
 			to.IncrementReads(from.Reads())
@@ -48,13 +49,13 @@ func (this *LocalCache) MergeFrom(other *LocalCache) {
 	}
 }
 
-func (this *LocalCache) NewUnivalue() *univalue.Univalue {
+func (this *WriteCache) NewUnivalue() *univalue.Univalue {
 	v := this.uniPool.Get().(*univalue.Univalue)
 	return v
 }
 
 // If the access has been recorded
-func (this *LocalCache) GetOrInit(tx uint32, path string) ccurlcommon.UnivalueInterface {
+func (this *WriteCache) GetOrInit(tx uint32, path string) ccurlcommon.UnivalueInterface {
 	unival := this.kvDict[path]
 	if unival == nil { // Not in the kvDict, check the datastore
 		unival = this.NewUnivalue()
@@ -64,20 +65,20 @@ func (this *LocalCache) GetOrInit(tx uint32, path string) ccurlcommon.UnivalueIn
 	return unival
 }
 
-func (this *LocalCache) Read(tx uint32, path string) interface{} {
+func (this *WriteCache) Read(tx uint32, path string) interface{} {
 	univalue := this.GetOrInit(tx, path)
 	return univalue.Get(tx, path, this.Cache())
 }
 
 // Get the value directly, skip the access counting at the univalue level
-func (this *LocalCache) Peek(path string) (interface{}, bool) {
+func (this *WriteCache) Peek(path string) (interface{}, bool) {
 	if v, ok := this.kvDict[path]; ok {
 		return v.Value(), true
 	}
 	return this.RetriveShallow(path), false
 }
 
-func (this *LocalCache) Write(tx uint32, path string, value interface{}) error {
+func (this *WriteCache) Write(tx uint32, path string, value interface{}) error {
 	parentPath := ccurlcommon.GetParentPath(path)
 	if this.IfExists(parentPath) || tx == ccurlcommon.SYSTEM { // The parent path exists or to inject the path directly
 		univalue := this.GetOrInit(tx, path) // Get a univalue wrapper
@@ -93,24 +94,24 @@ func (this *LocalCache) Write(tx uint32, path string, value interface{}) error {
 	return errors.New("Error: The parent path doesn't exist: " + parentPath)
 }
 
-func (this *LocalCache) IfExists(path string) bool {
+func (this *WriteCache) IfExists(path string) bool {
 	return this.kvDict[path] != nil || this.RetriveShallow(path) != nil
 }
 
-func (this *LocalCache) Insert(path string, value interface{}) {
+func (this *WriteCache) Insert(path string, value interface{}) {
 	this.kvDict[path] = value.(ccurlcommon.UnivalueInterface)
 }
 
-func (this *LocalCache) RetriveShallow(key string) interface{} {
+func (this *WriteCache) RetriveShallow(key string) interface{} {
 	ret, _ := this.store.Retrive(key)
 	return ret
 }
 
-func (this *LocalCache) Clear() {
+func (this *WriteCache) Clear() {
 	this.kvDict = make(map[string]ccurlcommon.UnivalueInterface)
 }
 
-func (this *LocalCache) Equal(other *LocalCache) bool {
+func (this *WriteCache) Equal(other *WriteCache) bool {
 	cache0 := []ccurlcommon.UnivalueInterface{}
 	cache1 := []ccurlcommon.UnivalueInterface{}
 
@@ -121,7 +122,7 @@ func (this *LocalCache) Equal(other *LocalCache) bool {
 }
 
 /* Map to array */
-func (*LocalCache) Vectorize(dict *map[string]ccurlcommon.UnivalueInterface, valBuf *[]ccurlcommon.UnivalueInterface, needToSort bool) {
+func (*WriteCache) Vectorize(dict *map[string]ccurlcommon.UnivalueInterface, valBuf *[]ccurlcommon.UnivalueInterface, needToSort bool) {
 	*valBuf = (*valBuf)[:0]
 	for _, v := range *dict {
 		*valBuf = append((*valBuf), v)
@@ -134,7 +135,7 @@ func (*LocalCache) Vectorize(dict *map[string]ccurlcommon.UnivalueInterface, val
 	}
 }
 
-func (this *LocalCache) Export(preprocessors ...func([]ccurlcommon.UnivalueInterface) []ccurlcommon.UnivalueInterface) []ccurlcommon.UnivalueInterface {
+func (this *WriteCache) Export(preprocessors ...func([]ccurlcommon.UnivalueInterface) []ccurlcommon.UnivalueInterface) []ccurlcommon.UnivalueInterface {
 	this.buffer = this.buffer[:0]
 	this.Vectorize(&this.kvDict, &this.buffer, false) // Export records to the buffer
 
@@ -146,7 +147,7 @@ func (this *LocalCache) Export(preprocessors ...func([]ccurlcommon.UnivalueInter
 	return this.buffer
 }
 
-func (this *LocalCache) Print() {
+func (this *WriteCache) Print() {
 	values := []ccurlcommon.UnivalueInterface{}
 	this.Vectorize(&this.kvDict, &values, true)
 	for i, elem := range values {

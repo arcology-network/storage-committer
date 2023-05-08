@@ -100,7 +100,7 @@ type WriteCacheInterface interface {
 
 	RetriveShallow(string) interface{}
 	Cache() *map[string]UnivalueInterface
-	Store() *DatastoreInterface
+	Store() DatastoreInterface
 }
 
 type ImporterInterface interface {

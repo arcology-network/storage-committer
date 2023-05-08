@@ -19,9 +19,9 @@ import (
 )
 
 type ConcurrentUrl struct {
+	writeCache  *indexer.WriteCache
 	importer    *indexer.Importer
 	invImporter *indexer.Importer // transitions that will take effect anyway regardless of execution failures or conflicts
-	writeCache  *indexer.LocalCache
 	Platform    *Platform
 
 	ImportFilters []ccurlcommon.FilterTransitionsInterface
@@ -31,27 +31,33 @@ type ConcurrentUrl struct {
 func NewConcurrentUrl(store ccurlcommon.DatastoreInterface, args ...interface{}) *ConcurrentUrl {
 	platform := NewPlatform()
 	return &ConcurrentUrl{
-		Platform: platform,
-
+		writeCache:    indexer.NewWriteCache(store, platform),
 		importer:      indexer.NewImporter(store, platform),
 		invImporter:   indexer.NewImporter(store, platform),
 		ImportFilters: []ccurlcommon.FilterTransitionsInterface{&indexer.NonceFilter{}, &indexer.BalanceFilter{}},
 
-		writeCache: indexer.NewLocalCache(store, platform),
+		Platform:   platform,
 		numThreads: 8,
 	}
 }
+
+func (this *ConcurrentUrl) New(args ...interface{}) *ConcurrentUrl {
+	return &ConcurrentUrl{
+		writeCache: args[0].(*indexer.WriteCache),
+		Platform:   args[1].(*Platform),
+		numThreads: 8,
+	}
+}
+
+func (this *ConcurrentUrl) WriteCache() *indexer.WriteCache { return this.writeCache }
+func (this *ConcurrentUrl) Importer() *indexer.Importer     { return this.importer }
 
 // Get data from the DB direcly, still under conflict protection
 func (this *ConcurrentUrl) ReadCommitted(tx uint32, key string) (interface{}, error) {
 	if _, err := this.Read(tx, key); err != nil { // For conflict detection
 		return nil, err
 	}
-	return (*this.Store()).Retrive(key)
-}
-
-func (this *ConcurrentUrl) Importer() *indexer.Importer {
-	return this.importer
+	return this.Importer().Store().Retrive(key)
 }
 
 func (this *ConcurrentUrl) Init(store ccurlcommon.DatastoreInterface) {
@@ -59,12 +65,8 @@ func (this *ConcurrentUrl) Init(store ccurlcommon.DatastoreInterface) {
 	this.invImporter.Init(store)
 }
 
-func (this *ConcurrentUrl) Store() *ccurlcommon.DatastoreInterface {
-	return this.importer.Store()
-}
-
 func (this *ConcurrentUrl) Clear() {
-	(*this.importer.Store()).Clear()
+	this.importer.Store().Clear()
 
 	this.writeCache.Clear()
 	this.importer.Clear()
@@ -198,7 +200,7 @@ func (this *ConcurrentUrl) unconditional(transition ccurlcommon.UnivalueInterfac
 	return false
 }
 
-func (this *ConcurrentUrl) Import(transitions []ccurlcommon.UnivalueInterface, args ...interface{}) {
+func (this *ConcurrentUrl) Import(transitions []ccurlcommon.UnivalueInterface, args ...interface{}) *ConcurrentUrl {
 	invTransitions := make([]ccurlcommon.UnivalueInterface, 0, len(transitions))
 	for i := 0; i < len(transitions); i++ {
 		if this.unconditional(transitions[i]) {
@@ -211,18 +213,21 @@ func (this *ConcurrentUrl) Import(transitions []ccurlcommon.UnivalueInterface, a
 	common.ParallelExecute(
 		func() { this.invImporter.Import(invTransitions, args...) },
 		func() { this.importer.Import(transitions, args...) })
+	return this
 }
 
 // Call this as s
-func (this *ConcurrentUrl) Sort() {
+func (this *ConcurrentUrl) Sort() *ConcurrentUrl {
 	common.ParallelExecute(
 		func() { this.invImporter.SortDeltaSequences() },
 		func() { this.importer.SortDeltaSequences() })
+
+	return this
 }
 
-func (this *ConcurrentUrl) Finalize(txs []uint32) []error {
+func (this *ConcurrentUrl) Finalize(txs []uint32) *ConcurrentUrl {
 	if txs != nil && len(txs) == 0 { // Commit all the transactions when txs == nil
-		return []error{}
+		return this
 	}
 
 	common.ParallelExecute(
@@ -232,7 +237,7 @@ func (this *ConcurrentUrl) Finalize(txs []uint32) []error {
 			this.importer.MergeStateDelta() // Finalize states
 		},
 	)
-	return nil
+	return this
 }
 
 func (this *ConcurrentUrl) WriteToDbBuffer() {
@@ -242,24 +247,24 @@ func (this *ConcurrentUrl) WriteToDbBuffer() {
 	keys = append(keys, invKeys...)
 	values = append(values, invVals...)
 
-	(*this.importer.Store()).Precommit(keys, values) // save the transitions to the DB buffer
+	this.importer.Store().Precommit(keys, values) // save the transitions to the DB buffer
 }
 
 func (this *ConcurrentUrl) SaveToDB() {
 	store := this.importer.Store()
-	(*store).Commit() // Commit to the state store
+	store.Commit() // Commit to the state store
 	this.Clear()
 }
 
-func (this *ConcurrentUrl) Commit(txs []uint32) []error {
-	if len(txs) == 0 {
+func (this *ConcurrentUrl) Commit(txs []uint32) *ConcurrentUrl {
+	if txs != nil && len(txs) == 0 {
 		this.Clear()
-		return nil
+		return this
 	}
-	errs := this.Finalize(txs)
+	this.Finalize(txs)
 	this.WriteToDbBuffer()
 	this.SaveToDB()
-	return errs
+	return this
 }
 
 func (this *ConcurrentUrl) AllInOneCommit(transitions []ccurlcommon.UnivalueInterface, txs []uint32) []error {
