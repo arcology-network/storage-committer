@@ -93,7 +93,8 @@ func (this *Univalues) GobDecode(data []byte) error {
 }
 
 func (this Univalues) Print() {
-	for _, v := range this {
+	for i, v := range this {
+		fmt.Print(i, ": ")
 		v.Print()
 	}
 	fmt.Println(" --------------------  ")

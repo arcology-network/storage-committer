@@ -38,13 +38,16 @@ func (this *WriteCache) Store() ccurlcommon.DatastoreInterface            { retu
 func (this *WriteCache) Cache() *map[string]ccurlcommon.UnivalueInterface { return &this.kvDict }
 
 // Merge two DB Caches
-func (this *WriteCache) MergeFrom(other *WriteCache) {
+func (this *WriteCache) MergeFrom(other *WriteCache, txID uint32) {
 	for k, from := range other.kvDict {
+		from.SetTx(txID)
 		if to, ok := this.kvDict[k]; ok { // already exists
 			to.IncrementReads(from.Reads())
 			to.IncrementWrites(from.Writes())
 			to.IncrementDelta(from.DeltaWrites())
 			to.SetValue(from.Value())
+		} else {
+			this.kvDict[k] = from
 		}
 	}
 }

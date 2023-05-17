@@ -23,22 +23,22 @@ type Importer struct {
 }
 
 func NewImporter(store ccurlcommon.DatastoreInterface, platform ccurlcommon.PlatformInterface, args ...interface{}) *Importer {
-	var indexer Importer
-	indexer.numThreads = 8
-	indexer.store = store
+	var importer Importer
+	importer.numThreads = 8
+	importer.store = store
 
-	indexer.byTx = make(map[uint32][]ccurlcommon.UnivalueInterface)
-	indexer.platform = platform
-	indexer.byPath = ccmap.NewConcurrentMap()
+	importer.byTx = make(map[uint32][]ccurlcommon.UnivalueInterface)
+	importer.platform = platform
+	importer.byPath = ccmap.NewConcurrentMap()
 
-	indexer.seqPool = mempool.NewMempool("importer-seq", func() interface{} {
+	importer.seqPool = mempool.NewMempool("importer-seq", func() interface{} {
 		return NewDeltaSequence()
 	})
 
-	indexer.uniPool = mempool.NewMempool("importer-univalue", func() interface{} {
+	importer.uniPool = mempool.NewMempool("importer-univalue", func() interface{} {
 		return new(univalue.Univalue)
 	})
-	return &indexer
+	return &importer
 }
 
 func (this *Importer) Init(store ccurlcommon.DatastoreInterface) {

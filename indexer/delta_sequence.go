@@ -85,7 +85,7 @@ func (this *DeltaSequence) Finalize() {
 		return
 	}
 
-	if err := this.base.ApplyDelta(ccurlcommon.SYSTEM, this.transitions[i+1:]); err != nil {
+	if err := this.base.ApplyDelta(this.transitions[i+1:]); err != nil {
 		panic(err)
 	}
 }

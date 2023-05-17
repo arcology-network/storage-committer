@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"strconv"
-	"strings"
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
@@ -46,6 +44,7 @@ func (*Univalue) New(meta, value, cache interface{}) interface{} {
 	}
 }
 
+func (this *Univalue) SetTx(txId uint32)             { this.tx = txId }
 func (this *Univalue) ClearCache()                   { this.cache = this.cache[:0] }
 func (this *Univalue) Value() interface{}            { return this.value }
 func (this *Univalue) SetValue(newValue interface{}) { this.value = newValue }
@@ -161,7 +160,7 @@ func (this *Univalue) Set(tx uint32, path string, typedV interface{}, indexer in
 }
 
 // Check & Merge attributes
-func (this *Univalue) ApplyDelta(tx uint32, v interface{}) error {
+func (this *Univalue) ApplyDelta(v interface{}) error {
 	vec := v.([]ccurlcommon.UnivalueInterface)
 
 	/* Precheck & Merge attributes*/
@@ -221,16 +220,17 @@ func (this *Univalue) Checksum() [32]byte {
 }
 
 func (this *Univalue) Print() {
-	spaces := fmt.Sprintf("%"+strconv.Itoa(len(strings.Split(*this.path, "/"))*4)+"v", " ")
-	fmt.Println(spaces+"tx: ", this.tx)
-	fmt.Println(spaces+"reads: ", this.reads)
-	fmt.Println(spaces+"writes: ", this.writes)
-	fmt.Println(spaces+"path: ", *this.path)
-	fmt.Println(spaces+"value: ", this.value)
+	spaces := " " //fmt.Sprintf("%"+strconv.Itoa(len(strings.Split(*this.path, "/"))*1)+"v", " ")
+	fmt.Print(spaces+"tx: ", this.tx)
+	fmt.Print(spaces+"reads: ", this.reads)
+	fmt.Print(spaces+"writes: ", this.writes)
+	fmt.Print(spaces+"DeltaWrites: ", this.deltaWrites)
+	fmt.Print(spaces+"path: ", *this.path)
+	// fmt.Print(spaces+"value: ", this.value)
 	fmt.Println(spaces+"preexists: ", this.preexists)
 
 	//this.value.(ccurlcommon.TypeInterface).Print()
-	fmt.Println("--------------------------------------------------------")
+	// fmt.Println("--------------------------------------------------------")
 }
 
 func (this *Univalue) Equal(other ccurlcommon.UnivalueInterface) bool {

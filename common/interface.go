@@ -66,6 +66,7 @@ type UnivalueInterface interface { // value type
 	Set(uint32, string, interface{}, interface{}) error
 	Get(uint32, string, interface{}) interface{}
 	GetTx() uint32
+	SetTx(uint32)
 	GetPath() *string
 	SetPath(*string)
 	Value() interface{}
@@ -75,7 +76,7 @@ type UnivalueInterface interface { // value type
 	GetCache() interface{}
 	New(interface{}, interface{}, interface{}) interface{}
 
-	ApplyDelta(uint32, interface{}) error
+	ApplyDelta(interface{}) error
 	Preexist() bool
 	IsReadOnly() bool
 	IsConcurrentWritable() bool

@@ -25,7 +25,6 @@ type ConcurrentUrl struct {
 	Platform    *Platform
 
 	ImportFilters []ccurlcommon.FilterTransitionsInterface
-	numThreads    int
 }
 
 func NewConcurrentUrl(store ccurlcommon.DatastoreInterface, args ...interface{}) *ConcurrentUrl {
@@ -36,8 +35,7 @@ func NewConcurrentUrl(store ccurlcommon.DatastoreInterface, args ...interface{})
 		invImporter:   indexer.NewImporter(store, platform),
 		ImportFilters: []ccurlcommon.FilterTransitionsInterface{&indexer.NonceFilter{}, &indexer.BalanceFilter{}},
 
-		Platform:   platform,
-		numThreads: 8,
+		Platform: platform,
 	}
 }
 
@@ -45,7 +43,6 @@ func (this *ConcurrentUrl) New(args ...interface{}) *ConcurrentUrl {
 	return &ConcurrentUrl{
 		writeCache: args[0].(*indexer.WriteCache),
 		Platform:   args[1].(*Platform),
-		numThreads: 8,
 	}
 }
 
@@ -151,7 +148,7 @@ func (this *ConcurrentUrl) at(tx uint32, path string, idx uint64) (interface{}, 
 
 // Read th Nth element under a path
 func (this *ConcurrentUrl) ReadAt(tx uint32, path string, idx uint64) (interface{}, error) {
-	if key, err := this.at(tx, path, idx); err == nil {
+	if key, err := this.at(tx, path, idx); err == nil && key != nil {
 		return this.Read(tx, key.(string))
 	} else {
 		return key, err

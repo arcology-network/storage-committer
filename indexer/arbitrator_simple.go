@@ -79,6 +79,7 @@ func (this *ArbitratorSlow) Detect(newTrans []ccurlcommon.UnivalueInterface) (ma
 			if v[0].Writes() > 0 || v[i].Writes() > 0 {
 				conflictDict[*v[0].GetPath()] = append(conflictDict[*v[0].GetPath()], v[i])
 				txToRemove[v[i].GetTx()] = true
+				v[i].Print()
 			}
 		}
 	}
