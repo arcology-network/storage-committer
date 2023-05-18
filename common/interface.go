@@ -72,6 +72,7 @@ type UnivalueInterface interface { // value type
 	Value() interface{}
 	SetValue(interface{})
 
+	WriteTo(WriteCacheInterface)
 	GetUnimeta() interface{}
 	GetCache() interface{}
 	New(interface{}, interface{}, interface{}) interface{}

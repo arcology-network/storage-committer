@@ -2,6 +2,7 @@ package univalue
 
 import (
 	"crypto/sha256"
+	"sort"
 
 	"github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
@@ -47,4 +48,10 @@ func (this Univalues) Equal(other Univalues) bool {
 		}
 	}
 	return true
+}
+
+func (this Univalues) SortByPath() {
+	sort.SliceStable(this, func(i, j int) bool {
+		return len(*this[i].GetPath()) < len(*this[j].GetPath())
+	})
 }

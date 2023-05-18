@@ -67,7 +67,7 @@ func (this *Path) New(value, delta, sign, min, max interface{}) interface{} {
 
 func (this *Path) ApplyDelta(v interface{}) ccurlcommon.TypeInterface { // Apply the transitions to the original value
 	this.ReInit()
-	keys := append(this.value.Keys(), this.delta.addDict.Keys()...) // The value should only contain committed keys
+	toAdd := this.delta.addDict.Keys() // The value should only contain committed keys
 	toRemove := this.delta.Removed()
 	univals := v.([]ccurlcommon.UnivalueInterface)
 	for i := 0; i < len(univals); i++ {
@@ -75,48 +75,32 @@ func (this *Path) ApplyDelta(v interface{}) ccurlcommon.TypeInterface { // Apply
 			continue
 		}
 
-		delta := univals[i].Value().(ccurlcommon.TypeInterface).Delta()
-		if delta == nil { // Deletion
-			keys = keys[:0]
-			toRemove = toRemove[:0]
-			this = nil
-			continue
+		if univals[i].Value() == nil { // Deletion
+			return nil
 		}
 
-		keys = append(keys, delta.(*PathDelta).Added()...)
-		toRemove = append(toRemove, delta.(*PathDelta).Removed()...)
+		delta := univals[i].Value().(ccurlcommon.TypeInterface).Delta().(*PathDelta)
+		toAdd = append(toAdd, delta.Added()...)
+		toRemove = append(toRemove, delta.Removed()...)
 	}
 
-	if this != nil {
-		if len(toRemove) > 0 {
-			// t0 := time.Now()
-			// keys, _ = performance.RemoveString(keys, toRemove)
-			toRemoveDict := make(map[string]bool)
-			for _, v := range toRemove {
-				toRemoveDict[v] = true
-			}
-
-			next := 0
-			for i := 0; i < len(keys); i++ {
-				if _, ok := toRemoveDict[keys[i]]; ok {
-					continue
-				} else {
-					keys[next] = keys[i]
-					next++
-				}
-			}
-			keys = keys[:next]
-			// fmt.Println("RemoveBytes ", time.Since(t0))
+	keys := append(this.Keys(), toAdd...)
+	if len(toRemove) > 0 {
+		dict := make(map[string]bool)
+		for _, v := range toRemove {
+			dict[v] = true
 		}
 
-		this.value = orderedset.NewOrderedSet(keys)
+		common.RemoveIf(&keys, func(v string) bool {
+			_, ok := dict[v]
+			return ok
+		})
 	}
-	//fmt.Println("ApplyDelta :", time.Since(t0))
 
-	if this == nil {
-		return nil
+	return &Path{
+		orderedset.NewOrderedSet(keys), // committed keys + added - removed
+		NewPathDelta([]string{}, []string{}),
 	}
-	return this
 }
 
 // Write and afflicated operations
@@ -149,10 +133,7 @@ func (this *Path) Set(value interface{}, source interface{}) (interface{}, uint3
 	}
 
 	preexists := (*writeCache.Cache())[targetPath].Preexist()
-	// this.addKey(subkey, value, preexists)
-	// this.delKeys(subkey, value, preexists)
 	this.delta.ProcessKey(subkey, value, preexists)
-
 	return this, 0, 0, 1, nil
 }
 

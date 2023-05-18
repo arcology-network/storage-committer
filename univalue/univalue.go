@@ -124,6 +124,13 @@ func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{
 	return this.value
 }
 
+func (this *Univalue) WriteTo(writeCache ccurlcommon.WriteCacheInterface) {
+	common.IfThenDo(this.writes == 0 && this.deltaWrites == 0,
+		func() { writeCache.Read(this.tx, *this.GetPath()) },
+		func() { writeCache.Write(this.tx, *this.GetPath(), this.value) },
+	)
+}
+
 func (this *Univalue) Set(tx uint32, path string, typedV interface{}, indexer interface{}) error { // update the value
 	this.tx = tx
 	if this.Value() == nil && typedV == nil {

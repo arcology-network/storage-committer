@@ -40,15 +40,18 @@ func (this *WriteCache) Cache() *map[string]ccurlcommon.UnivalueInterface { retu
 // Merge two DB Caches
 func (this *WriteCache) MergeFrom(other *WriteCache, txID uint32) {
 	for k, from := range other.kvDict {
-		from.SetTx(txID)
-		if to, ok := this.kvDict[k]; ok { // already exists
-			to.IncrementReads(from.Reads())
-			to.IncrementWrites(from.Writes())
-			to.IncrementDelta(from.DeltaWrites())
-			to.SetValue(from.Value())
-		} else {
-			this.kvDict[k] = from
-		}
+		// from.SetTx(txID)
+		// if to, ok := this.kvDict[k]; ok { // already exists
+		// to.IncrementReads(from.Reads())
+		// to.IncrementWrites(from.Writes())
+		// to.IncrementDelta(from.DeltaWrites())
+		// to.SetValue(from.Value())
+		// to.Value().(ccurlcommon.TypeInterface).Set()
+		this.Write(txID, k, from.Value().(ccurlcommon.TypeInterface).Delta())
+
+		// } else {
+		// 	this.kvDict[k] = from
+		// }
 	}
 }
 
