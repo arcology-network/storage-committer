@@ -37,24 +37,6 @@ func (this *WriteCache) SetStore(store ccurlcommon.DatastoreInterface)    { this
 func (this *WriteCache) Store() ccurlcommon.DatastoreInterface            { return this.store }
 func (this *WriteCache) Cache() *map[string]ccurlcommon.UnivalueInterface { return &this.kvDict }
 
-// Merge two DB Caches
-func (this *WriteCache) MergeFrom(other *WriteCache, txID uint32) {
-	for k, from := range other.kvDict {
-		// from.SetTx(txID)
-		// if to, ok := this.kvDict[k]; ok { // already exists
-		// to.IncrementReads(from.Reads())
-		// to.IncrementWrites(from.Writes())
-		// to.IncrementDelta(from.DeltaWrites())
-		// to.SetValue(from.Value())
-		// to.Value().(ccurlcommon.TypeInterface).Set()
-		this.Write(txID, k, from.Value().(ccurlcommon.TypeInterface).Delta())
-
-		// } else {
-		// 	this.kvDict[k] = from
-		// }
-	}
-}
-
 func (this *WriteCache) NewUnivalue() *univalue.Univalue {
 	v := this.uniPool.Get().(*univalue.Univalue)
 	return v
@@ -95,7 +77,6 @@ func (this *WriteCache) Write(tx uint32, path string, value interface{}) error {
 			err = parentMeta.Set(tx, path, univalue.Value(), this)
 		}
 		return err
-		// }
 	}
 	return errors.New("Error: The parent path doesn't exist: " + parentPath)
 }

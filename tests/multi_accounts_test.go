@@ -26,7 +26,7 @@ func TestMultiAccountCreation(t *testing.T) {
 		}
 	}
 	raw := url.Export(univalue.Sorter)
-	acctTrans := univalue.Univalues(common.Clone(raw)).To(univalue.TransitionFilters()...)
+	acctTrans := univalue.Univalues(common.Clone(raw)).To(univalue.TransitionCodecFilterSet()...)
 
 	paths := concurrenturl.NewPlatform().GetSysPaths()
 
@@ -38,7 +38,7 @@ func TestMultiAccountCreation(t *testing.T) {
 	url.Sort()
 	url.Commit([]uint32{0})
 
-	acctTrans = univalue.Univalues(common.Clone(raw)).To(univalue.TransitionFilters()...)
+	acctTrans = univalue.Univalues(common.Clone(raw)).To(univalue.TransitionCodecFilterSet()...)
 	encoded := univalue.Univalues(acctTrans).Encode()
 
 	out := univalue.Univalues{}.Decode(encoded).(univalue.Univalues)

@@ -24,7 +24,7 @@ func TestAuxTrans(t *testing.T) {
 	}
 
 	// _, trans00 := url.Export(univalue.Sorter)
-	acctTrans := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionFilters()...)
+	acctTrans := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
 
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
@@ -83,7 +83,7 @@ func TestAuxTrans(t *testing.T) {
 		}
 	}
 
-	transitions := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionFilters()...)
+	transitions := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
 	if !reflect.DeepEqual(transitions[0].Value().(ccurlcommon.TypeInterface).Delta().(*commutative.PathDelta).Added(), []string{"elem-000"}) {
 		t.Error("keys don't match")
 	}
@@ -115,7 +115,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	}
 
 	// _, trans00 := url.Export(univalue.Sorter)
-	trans00 := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionFilters()...)
+	trans00 := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
 
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans00).Encode()).(univalue.Univalues))
 
@@ -129,7 +129,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	}
 
 	// _, trans10 := url.Export(univalue.Sorter)
-	trans10 := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionFilters()...)
+	trans10 := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
 
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans10).Encode()).(univalue.Univalues))
 

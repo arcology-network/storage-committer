@@ -312,8 +312,13 @@ func (this *ConcurrentUrl) Export(preprocessors ...func([]ccurlcommon.UnivalueIn
 }
 
 func (this *ConcurrentUrl) ExportAll(preprocessors ...func([]ccurlcommon.UnivalueInterface) []ccurlcommon.UnivalueInterface) ([]ccurlcommon.UnivalueInterface, []ccurlcommon.UnivalueInterface) {
-	return univalue.Univalues(common.Clone(this.Export(univalue.Sorter))).To(univalue.AccessFilters()...),
-		univalue.Univalues(common.Clone(this.Export(univalue.Sorter))).To(univalue.TransitionFilters()...)
+	all := common.Clone(this.Export(univalue.Sorter))
+	univalue.Univalues(all).Print()
+
+	accesses := univalue.Univalues(all).To(univalue.AccessCodecFilterSet()...)
+	transitions := univalue.Univalues(all).To(univalue.TransitionCodecFilterSet()...)
+
+	return accesses, transitions
 }
 
 func (this *ConcurrentUrl) Print() {

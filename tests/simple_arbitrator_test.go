@@ -23,7 +23,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 
 	meta := commutative.NewPath()
 	url.Write(ccurlcommon.SYSTEM, ccurl.NewPlatform().Eth10Account(), meta)
-	trans := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionFilters()...)
+	trans := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 
 	url.Sort()
@@ -33,14 +33,14 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	url.Init(store)
 	url.CreateAccount(1, url.Platform.Eth10(), alice) // CreateAccount account structure {
 	// accesses1, transitions1 := url.Export(univalue.Sorter)
-	transitions1 := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionFilters()...)
-	accesses1 := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.AccessFilters()...)
+	transitions1 := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
+	accesses1 := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.AccessCodecFilterSet()...)
 
 	url2 := ccurl.NewConcurrentUrl(store)
 	url2.CreateAccount(2, url.Platform.Eth10(), "bob") // CreateAccount account structure {
 
-	accesses2 := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.AccessFilters()...)
-	transitions2 := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionFilters()...)
+	accesses2 := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.AccessCodecFilterSet()...)
+	transitions2 := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
 
 	arib := indexer.NewArbitratorSlow()
 
@@ -68,7 +68,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 
 	meta := commutative.NewPath()
 	url.Write(ccurlcommon.SYSTEM, ccurl.NewPlatform().Eth10Account(), meta)
-	trans := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionFilters()...)
+	trans := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -81,7 +81,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-1"))
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-1"))
 	// accesses1, _ := url.Export(univalue.Sorter)
-	accesses1 := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.AccessFilters()...)
+	accesses1 := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.AccessCodecFilterSet()...)
 
 	url2 := ccurl.NewConcurrentUrl(store)
 	url2.CreateAccount(2, url.Platform.Eth10(), alice) // CreateAccount account structure {
@@ -90,7 +90,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-2"))
 	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-2"))
 	// accesses2, _ := url2.Export(univalue.Sorter)
-	accesses2 := univalue.Univalues(common.Clone(url2.Export(univalue.Sorter))).To(univalue.AccessFilters()...)
+	accesses2 := univalue.Univalues(common.Clone(url2.Export(univalue.Sorter))).To(univalue.AccessCodecFilterSet()...)
 
 	arib := indexer.NewArbitratorSlow()
 	_, conflictTx := arib.Detect(append(accesses1, accesses2...))
@@ -109,7 +109,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	}
 
 	// url.Write(ccurlcommon.SYSTEM, ccurl.NewPlatform().Eth10Account(), commutative.NewPath())
-	acctTrans := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionFilters()...)
+	acctTrans := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -120,8 +120,8 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-1"))
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-1"))
 	// accesses1, transitions1 := url.Export(univalue.Sorter)
-	accesses1 := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.AccessFilters()...)
-	transitions1 := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionFilters()...)
+	accesses1 := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.AccessCodecFilterSet()...)
+	transitions1 := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
 
 	url2 := ccurl.NewConcurrentUrl(store)
 	url2.CreateAccount(2, url.Platform.Eth10(), alice) // CreateAccount account structure {
@@ -132,8 +132,8 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-2"))
 
 	// accesses2, transitions2 := url2.Export(univalue.Sorter)
-	accesses2 := univalue.Univalues(common.Clone(url2.Export(univalue.Sorter))).To(univalue.AccessFilters()...)
-	transitions2 := univalue.Univalues(common.Clone(url2.Export(univalue.Sorter))).To(univalue.TransitionFilters()...)
+	accesses2 := univalue.Univalues(common.Clone(url2.Export(univalue.Sorter))).To(univalue.AccessCodecFilterSet()...)
+	transitions2 := univalue.Univalues(common.Clone(url2.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
 
 	aribi := indexer.NewArbitratorSlow()
 	// indexer.HashPaths(accesses1)
@@ -157,16 +157,16 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	}
 
 	// accesses3, transitions3 := url3.Export(univalue.Sorter)
-	accesses3 := univalue.Univalues(common.Clone(url3.Export(univalue.Sorter))).To(univalue.AccessFilters()...)
-	transitions3 := univalue.Univalues(common.Clone(url3.Export(univalue.Sorter))).To(univalue.TransitionFilters()...)
+	accesses3 := univalue.Univalues(common.Clone(url3.Export(univalue.Sorter))).To(univalue.AccessCodecFilterSet()...)
+	transitions3 := univalue.Univalues(common.Clone(url3.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
 
 	url4 := ccurl.NewConcurrentUrl(store)
 	if err := url4.Write(4, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("url4-1-by-tx-3")); err != nil {
 		t.Error(err)
 	}
 	// accesses4, transitions4 := url4.Export(univalue.Sorter)
-	accesses4 := univalue.Univalues(common.Clone(url4.Export(univalue.Sorter))).To(univalue.AccessFilters()...)
-	transitions4 := univalue.Univalues(common.Clone(url4.Export(univalue.Sorter))).To(univalue.TransitionFilters()...)
+	accesses4 := univalue.Univalues(common.Clone(url4.Export(univalue.Sorter))).To(univalue.AccessCodecFilterSet()...)
+	transitions4 := univalue.Univalues(common.Clone(url4.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
 
 	aribi = indexer.NewArbitratorSlow()
 	_, conflictTx = aribi.Detect(append(accesses3, accesses4...))

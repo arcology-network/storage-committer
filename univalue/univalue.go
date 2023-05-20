@@ -69,7 +69,7 @@ func (this *Univalue) Meta() ccurlcommon.UnivalueInterface {
 }
 
 func (this *Univalue) Delta() ccurlcommon.UnivalueInterface {
-	if ReadOnly(this) == nil || DelNonExist(this) == nil {
+	if RemoveReadOnly(this) == nil || DelNonExist(this) == nil {
 		return nil // Not a transition at all
 	}
 

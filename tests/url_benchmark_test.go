@@ -47,7 +47,7 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 
 	//t0 = time.Now()
 	// _, transitions := url.Export(nil)
-	transitions := univalue.Univalues(common.Clone(url.Export())).To(univalue.AccessFilters()...)
+	transitions := univalue.Univalues(common.Clone(url.Export())).To(univalue.AccessCodecFilterSet()...)
 
 	// in := univalue.Univalues(transitions).Encode()
 	//out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
@@ -96,7 +96,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	fmt.Println("Write 2500 accounts in :", time.Since(t0))
 
 	t0 = time.Now()
-	trans := univalue.Univalues(common.Clone(url.Export())).To(univalue.TransitionFilters()...)
+	trans := univalue.Univalues(common.Clone(url.Export())).To(univalue.TransitionCodecFilterSet()...)
 	fmt.Println("Export:", time.Since(t0))
 
 	t0 = time.Now()
@@ -121,7 +121,7 @@ func BenchmarkUrlAddThenDelete(b *testing.B) {
 	url := ccurl.NewConcurrentUrl(store)
 	meta := commutative.NewPath()
 	url.Write(ccurlcommon.SYSTEM, ccurl.NewPlatform().Eth10Account(), meta)
-	trans := univalue.Univalues(common.Clone(url.Export())).To(univalue.TransitionFilters()...)
+	trans := univalue.Univalues(common.Clone(url.Export())).To(univalue.TransitionCodecFilterSet()...)
 
 	url.Import(trans)
 	url.Sort()
@@ -159,7 +159,7 @@ func BenchmarkUrlAddThenPop(b *testing.B) {
 	meta := commutative.NewPath()
 	url.Write(ccurlcommon.SYSTEM, ccurl.NewPlatform().Eth10Account(), meta)
 
-	trans := univalue.Univalues(common.Clone(url.Export())).To(univalue.TransitionFilters()...)
+	trans := univalue.Univalues(common.Clone(url.Export())).To(univalue.TransitionCodecFilterSet()...)
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 
 	url.Sort()
@@ -279,9 +279,9 @@ func BenchmarkMetaIterator(b *testing.B) {
 
 	alice := datacompression.RandomAccount()
 	url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice)
-	// acctTrans := univalue.Univalues(common.Clone(url.Export())).To(univalue.AccessFilters()...)
+	// acctTrans := univalue.Univalues(common.Clone(url.Export())).To(univalue.AccessCodecFilterSet()...)
 
-	acctTrans := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.AccessFilters()...)
+	acctTrans := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.AccessCodecFilterSet()...)
 
 	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
@@ -369,7 +369,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	fmt.Println("Write "+fmt.Sprint(100000*9), time.Since(t0))
 
 	t0 = time.Now()
-	acctTrans := univalue.Univalues(common.Clone(url.Export())).To(univalue.TransitionFilters()...)
+	acctTrans := univalue.Univalues(common.Clone(url.Export())).To(univalue.TransitionCodecFilterSet()...)
 
 	fmt.Println("Export "+fmt.Sprint(100000*9), time.Since(t0))
 
@@ -399,7 +399,7 @@ func TestAccountMerkleImportPerf(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	acctTrans := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.AccessFilters()...)
+	acctTrans := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.AccessCodecFilterSet()...)
 
 	for n := 0; n < 10; n++ {
 		accountMerkle := indexer.NewAccountMerkle(ccurl.NewPlatform())
@@ -613,7 +613,7 @@ func BenchmarkTransitionImport(b *testing.B) {
 	fmt.Println("Write "+fmt.Sprint(100000*9), time.Since(t0))
 
 	t0 = time.Now()
-	acctTrans := univalue.Univalues(common.Clone(url.Export())).To(univalue.AccessFilters()...)
+	acctTrans := univalue.Univalues(common.Clone(url.Export())).To(univalue.AccessCodecFilterSet()...)
 
 	fmt.Println("Export "+fmt.Sprint(150000*9), time.Since(t0))
 
@@ -642,7 +642,7 @@ func BenchmarkConcurrentTransitionImport(b *testing.B) {
 	fmt.Println("Write "+fmt.Sprint(100000*9), time.Since(t0))
 
 	t0 = time.Now()
-	acctTrans := univalue.Univalues(common.Clone(url.Export())).To(univalue.AccessFilters()...)
+	acctTrans := univalue.Univalues(common.Clone(url.Export())).To(univalue.AccessCodecFilterSet()...)
 
 	fmt.Println("Export "+fmt.Sprint(150000*9), time.Since(t0))
 

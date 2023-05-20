@@ -68,7 +68,7 @@ func TestUnivalueCodec(t *testing.T) {
 
 	url := ccurl.NewConcurrentUrl(store)
 	url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), fmt.Sprint("rand.Int()"))
-	transVec := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionFilters()...)
+	transVec := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
 	transitions = append(transitions, transVec...)
 
 	for i := 0; i < len(transitions); i++ {
@@ -90,7 +90,7 @@ func TestUnivaluesCodec(t *testing.T) {
 		acct := datacompression.RandomAccount()
 		url := ccurl.NewConcurrentUrl(store)
 		url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), acct)
-		transVec := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionFilters()...)
+		transVec := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
 		transitions = append(transitions, transVec...)
 	}
 	t0 := time.Now()

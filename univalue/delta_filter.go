@@ -10,7 +10,7 @@ import (
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 )
 
-func ReadOnly(unival ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface {
+func RemoveReadOnly(unival ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface {
 	return common.IfThen(unival != nil && unival.IsReadOnly(), nil, unival)
 }
 
@@ -27,7 +27,7 @@ func Sorter(univals []ccurlcommon.UnivalueInterface) []ccurlcommon.UnivalueInter
 	return univals
 }
 
-func ExtractDelta(unival ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface {
+func ExtractDeltaForEncoding(unival ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface {
 	if unival == nil {
 		return unival
 	}
@@ -56,10 +56,18 @@ func ExtractDelta(unival ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInte
 	}
 }
 
-func TransitionFilters() []func(ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface {
+func RemoveNonce(unival ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface {
+	return common.IfThen(
+		unival != nil && len(*unival.GetPath()) > len("/nonce") && (*unival.GetPath())[len(*unival.GetPath())-len("/nonce"):] == "/nonce",
+		nil,
+		unival,
+	)
+}
+
+func TransitionCodecFilterSet() []func(ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface {
 	return []func(ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface{
-		ReadOnly,
+		RemoveReadOnly,
 		DelNonExist,
-		ExtractDelta, //
+		ExtractDeltaForEncoding, //
 	}
 }

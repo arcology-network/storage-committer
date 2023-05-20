@@ -27,7 +27,7 @@ func Create_Ctrn_0(account string, store *cachedstorage.DataStore) ([]byte, erro
 		return []byte{}, err
 	}
 
-	transitions := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionFilters()...)
+	transitions := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
 	return univalue.Univalues(transitions).Encode(), nil
 }
 
@@ -46,7 +46,7 @@ func ParallelInsert_Ctrn_0(account string, store *cachedstorage.DataStore) ([]by
 		return []byte{}, err
 	}
 
-	transitions := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionFilters()...)
+	transitions := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
 	return univalue.Univalues(transitions).Encode(), nil
 }
 
@@ -65,7 +65,7 @@ func Create_Ctrn_1(account string, store *cachedstorage.DataStore) ([]byte, erro
 		return []byte{}, err
 	}
 
-	transitions := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionFilters()...)
+	transitions := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
 	return univalue.Univalues(transitions).Encode(), nil
 }
 

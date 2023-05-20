@@ -43,7 +43,7 @@ func TestSimpleBalance(t *testing.T) {
 
 	// Export variables
 	// _, in := url.Export(univalue.Sorter)
-	in := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionFilters()...)
+	in := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
 
 	buffer := univalue.Univalues(in).Encode()
 	out := univalue.Univalues{}.Decode(buffer).(univalue.Univalues)
@@ -72,8 +72,8 @@ func TestSimpleBalance(t *testing.T) {
 	}
 
 	// records, trans := url2.Export(univalue.Sorter)
-	trans := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionFilters()...)
-	records := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.AccessFilters()...)
+	trans := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
+	records := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.AccessCodecFilterSet()...)
 
 	univalue.Univalues(trans).Encode()
 	for _, v := range records {
@@ -157,7 +157,7 @@ func TestBalance(t *testing.T) {
 	}
 
 	// Export variables
-	transitions := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionFilters()...)
+	transitions := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
 	// for i := range transitions {
 	trans := transitions[9]
 
@@ -199,7 +199,7 @@ func TestNonce(t *testing.T) {
 		t.Error("Error: blcc://eth1.0/account/alice/nonce should be ", 6)
 	}
 
-	trans := univalue.Univalues(common.Clone(url1.Export(univalue.Sorter))).To(univalue.TransitionFilters()...)
+	trans := univalue.Univalues(common.Clone(url1.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
 	url1.Import(trans)
 	url1.Sort()
 	url1.Commit([]uint32{0})
@@ -231,7 +231,7 @@ func TestMultipleNonces(t *testing.T) {
 
 	// _, trans0 := url0.Export(univalue.Sorter)
 	// ccurltype.SetInvariate(trans0, "nonce")
-	trans0 := univalue.Univalues(common.Clone(url0.Export(univalue.Sorter))).To(univalue.TransitionFilters()...)
+	trans0 := univalue.Univalues(common.Clone(url0.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
 
 	url1 := ccurl.NewConcurrentUrl(store)
 	bob := BobAccount()
@@ -255,7 +255,7 @@ func TestMultipleNonces(t *testing.T) {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
 	}
 
-	trans1 := univalue.Univalues(common.Clone(url1.Export(univalue.Sorter))).To(univalue.TransitionFilters()...)
+	trans1 := univalue.Univalues(common.Clone(url1.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
 	// ccurltype.SetInvariate(trans1, "nonce")
 
 	nonce, _ = url1.Read(0, "blcc://eth1.0/account/"+bob+"/nonce")

@@ -128,7 +128,7 @@ func TestUnivaluesSelectiveEncoding(t *testing.T) {
 	// 		(&commutative.U256{}).NewU256(uint256.NewInt(10), uint256.NewInt(20), uint256.NewInt(111), uint256.NewInt(999), false), []byte{}).(*Univalue), // 8
 	// })
 
-	// encodedValues := codec.Byteset{}.Decode(numericU256.To(TransitionFilters()...).Encode()).(codec.Byteset)
+	// encodedValues := codec.Byteset{}.Decode(numericU256.To(TransitionCodecFilterSet()...).Encode()).(codec.Byteset)
 
 	// if (codec.Byteset{}.Decode(codec.Byteset{}.Decode(encodedValues[0]).(codec.Byteset)[1]).(codec.Byteset).Size()) != commutative.NewU256().(*commutative.U256).HeaderSize() {
 	// 	t.Error("Error")
