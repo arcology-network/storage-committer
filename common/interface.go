@@ -25,6 +25,9 @@ type TypeInterface interface { // value type
 	Equal(interface{}) bool
 	Clone() interface{}
 
+	IsNumeric() bool
+	IsCommutative() bool
+
 	Value() interface{} // Get() - read/write count
 	Delta() interface{}
 	Sign() bool
@@ -36,7 +39,7 @@ type TypeInterface interface { // value type
 	Get() (interface{}, uint32, uint32)
 	Set(interface{}, interface{}) (interface{}, uint32, uint32, uint32, error)
 	CopyTo(interface{}) (interface{}, uint32, uint32, uint32)
-	ApplyDelta(interface{}) TypeInterface
+	ApplyDelta(interface{}) (TypeInterface, error)
 	IsSelf(interface{}) bool
 
 	MemSize() uint32 // Size in memory

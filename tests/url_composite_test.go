@@ -40,7 +40,7 @@ func TestAuxTrans(t *testing.T) {
 	}
 
 	// Try to rewrite a path, should fail !
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", "path"); err == nil {
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", noncommutative.NewString("path")); err == nil {
 		t.Error(err)
 	}
 

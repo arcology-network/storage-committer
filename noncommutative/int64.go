@@ -21,6 +21,9 @@ func (this *Int64) Clone() interface{}                                         {
 func (this *Int64) Equal(other interface{}) bool                               { return *this == *(other.(*Int64)) }
 func (this *Int64) Get() (interface{}, uint32, uint32)                         { return int64(*this), 1, 0 }
 
+func (this *Int64) IsNumeric() bool     { return true }
+func (this *Int64) IsCommutative() bool { return false }
+
 func (this *Int64) ReInit()            {}
 func (this *Int64) Value() interface{} { return (this) }
 func (this *Int64) Delta() interface{} { return (this) }
@@ -38,7 +41,7 @@ func (this *Int64) Set(value interface{}, source interface{}) (interface{}, uint
 	return this, 0, 1, 0, nil
 }
 
-func (this *Int64) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
+func (this *Int64) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, error) {
 	vec := v.([]ccurlcommon.UnivalueInterface)
 	for i := 0; i < len(vec); i++ {
 		v := vec[i].Value()
@@ -60,7 +63,7 @@ func (this *Int64) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 	}
 
 	if this == nil {
-		return nil
+		return nil, nil
 	}
-	return this
+	return this, nil
 }

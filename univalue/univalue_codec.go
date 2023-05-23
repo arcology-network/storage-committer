@@ -68,7 +68,7 @@ func (this *Univalue) GetEncoded() []byte {
 		return []byte{}
 	}
 
-	if this.IsCommutative(this) {
+	if this.Value().(ccurlcommon.TypeInterface).IsCommutative() {
 		return this.value.(ccurlcommon.TypeInterface).Value().(codec.Encodable).Encode()
 	}
 

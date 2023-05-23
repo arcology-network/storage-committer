@@ -108,6 +108,9 @@ func (this *U256) ReInit() {
 	this.max = common.IfThen(this.max == nil, (*codec.Uint256)(U256_MAX.Clone()), this.max)
 }
 
+func (this *U256) IsNumeric() bool     { return true }
+func (this *U256) IsCommutative() bool { return true }
+
 func (this *U256) Value() interface{} { return this.value }
 func (this *U256) Delta() interface{} { return this.delta }
 func (this *U256) Sign() bool         { return this.delta.Cmp((*codec.Uint256)(U256_ZERO)) >= 0 }
@@ -191,7 +194,7 @@ func (this *U256) Set(newDelta interface{}, source interface{}) (interface{}, ui
 	return this, 0, 0, 1, errors.New("Error: Value out of range")
 }
 
-func (this *U256) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
+func (this *U256) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, error) {
 	this.ReInit()
 	vec := v.([]ccurlcommon.UnivalueInterface)
 	for i := 0; i < len(vec); i++ {
@@ -206,7 +209,7 @@ func (this *U256) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 
 		if this != nil && v != nil { // Update an existent
 			if _, _, _, _, err := this.Set(v.(*U256), nil); err != nil {
-				panic(err)
+				return nil, err
 			}
 		}
 
@@ -218,7 +221,7 @@ func (this *U256) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 	newValue, _, _ := this.Get()
 	this.value = (*codec.Uint256)(newValue.(*uint256.Int))
 	(*uint256.Int)(this.delta).Clear()
-	return this
+	return this, nil
 }
 
 func (this *U256) Reset() {

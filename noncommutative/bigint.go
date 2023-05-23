@@ -9,7 +9,9 @@ import (
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 )
 
-type Bigint codec.Bigint
+// type Bigint codec.Bigint
+
+type Bigint codec.Bigint //has anonymous camera
 
 func NewBigint(v int64) interface{} {
 	var value big.Int
@@ -32,6 +34,8 @@ func (this *Bigint) Clone() interface{} {
 	return (*Bigint)(new(big.Int).Set(&v))
 }
 
+func (this *Bigint) IsNumeric() bool                    { return true }
+func (this *Bigint) IsCommutative() bool                { return false }
 func (this *Bigint) ReInit()                            {}
 func (this *Bigint) Value() interface{}                 { return (this) }
 func (this *Bigint) Delta() interface{}                 { return (this) }
@@ -50,7 +54,7 @@ func (this *Bigint) Set(value interface{}, source interface{}) (interface{}, uin
 	return this, 0, 1, 0, nil
 }
 
-func (this *Bigint) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
+func (this *Bigint) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, error) {
 	vec := v.([]ccurlcommon.UnivalueInterface)
 	for i := 0; i < len(vec); i++ {
 		v := vec[i].Value()
@@ -72,7 +76,7 @@ func (this *Bigint) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 	}
 
 	if this == nil {
-		return nil
+		return nil, nil
 	}
-	return this
+	return this, nil
 }

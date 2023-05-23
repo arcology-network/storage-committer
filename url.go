@@ -127,12 +127,11 @@ func (this *ConcurrentUrl) Read(tx uint32, path string) (interface{}, error) {
 }
 
 func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}) error {
-	if value != nil {
-		if id := (&univalue.Univalue{}).GetTypeID(value); id == uint8(reflect.Invalid) {
-			return errors.New("Error: Unknown data type !")
-		}
-	}
-	return this.writeCache.Write(tx, path, value)
+	return common.IfThenDo1st(
+		value == nil || (value != nil && value.(ccurlcommon.TypeInterface).TypeID() != uint8(reflect.Invalid)),
+		func() error { return this.writeCache.Write(tx, path, value) },
+		errors.New("Error: Unknown data type !"),
+	)
 }
 
 // Read th Nth element under a path

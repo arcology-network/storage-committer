@@ -22,6 +22,9 @@ func (this *String) Equal(other interface{}) bool                               
 func (this *String) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }
 func (this *String) Get() (interface{}, uint32, uint32)                         { return string(*this), 1, 0 }
 
+func (this *String) IsNumeric() bool     { return false }
+func (this *String) IsCommutative() bool { return false }
+
 func (this *String) ReInit()            {}
 func (this *String) Value() interface{} { return (this) }
 func (this *String) Delta() interface{} { return (this) }
@@ -44,7 +47,7 @@ func (this *String) Set(value interface{}, source interface{}) (interface{}, uin
 	return this, 0, 1, 0, nil
 }
 
-func (this *String) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
+func (this *String) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, error) {
 	vec := v.([]ccurlcommon.UnivalueInterface)
 	for i := 0; i < len(vec); i++ {
 		v := vec[i].Value()
@@ -66,7 +69,7 @@ func (this *String) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 	}
 
 	if this == nil {
-		return nil
+		return nil, nil
 	}
-	return this
+	return this, nil
 }

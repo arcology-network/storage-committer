@@ -1,11 +1,7 @@
 package univalue
 
 import (
-	"reflect"
-
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
-	commutative "github.com/arcology-network/concurrenturl/commutative"
-	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 )
 
 type Unimeta struct {
@@ -40,7 +36,7 @@ func (this *Unimeta) TypeID() uint8        { return this.vType }
 func (this *Unimeta) Reads() uint32       { return this.reads }
 func (this *Unimeta) Writes() uint32      { return this.writes } // Exist in cache as a failed read
 func (this *Unimeta) DeltaWrites() uint32 { return this.deltaWrites }
-func (this *Univalue) IsReadOnly() bool   { return this.Writes() == 0 && this.DeltaWrites() == 0 }
+func (this *Unimeta) IsReadOnly() bool    { return this.Writes() == 0 && this.DeltaWrites() == 0 }
 
 func (this *Unimeta) Preexist() bool { return this.preexists } // Exist in cache as a failed read
 
@@ -63,44 +59,4 @@ func (this *Unimeta) Clone() Unimeta {
 		preexists:   this.preexists,
 		reclaimFunc: this.reclaimFunc,
 	}
-}
-
-func (*Unimeta) GetTypeID(value interface{}) uint8 {
-	if value != nil {
-		switch value.(type) {
-		case *noncommutative.Bigint:
-			return noncommutative.BIGINT
-		case *noncommutative.Int64:
-			return noncommutative.INT64
-		case *noncommutative.String:
-			return noncommutative.STRING
-		case *noncommutative.Bytes:
-			return noncommutative.BYTES
-		case *commutative.Path:
-			return commutative.PATH
-		case *commutative.U256: /* Commutatives */
-			return commutative.UINT256
-		case *commutative.Int64:
-			return commutative.INT64
-		case *commutative.Uint64:
-			return commutative.UINT64
-		}
-	}
-	return uint8(reflect.Invalid)
-}
-
-func (Unimeta) IsCommutative(value interface{}) bool {
-	if value != nil {
-		switch value.(type) {
-		case *commutative.Path:
-			return true
-		case *commutative.U256: /* Commutatives */
-			return true
-		case *commutative.Int64:
-			return true
-		case *commutative.Uint64:
-			return true
-		}
-	}
-	return false
 }

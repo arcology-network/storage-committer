@@ -71,6 +71,9 @@ func (this *Uint64) Equal(other interface{}) bool {
 
 func (this *Uint64) MemSize() uint32 { return 5 * 8 }
 
+func (this *Uint64) IsNumeric() bool     { return true }
+func (this *Uint64) IsCommutative() bool { return true }
+
 func (this *Uint64) Value() interface{} { return (this.value) }
 func (this *Uint64) Delta() interface{} { return (this.delta) }
 func (this *Uint64) Sign() bool         { return true }
@@ -94,7 +97,7 @@ func (this *Uint64) Set(v interface{}, source interface{}) (interface{}, uint32,
 	return this, 0, 0, 1, nil
 }
 
-func (this *Uint64) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
+func (this *Uint64) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, error) {
 	this.ReInit()
 	vec := v.([]ccurlcommon.UnivalueInterface)
 	for i := 0; i < len(vec); i++ {
@@ -108,7 +111,9 @@ func (this *Uint64) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 		}
 
 		if this != nil && v != nil {
-			this.Set(v.(*Uint64), nil)
+			if _, _, _, _, err := this.Set(v.(*Uint64), nil); err != nil {
+				return nil, err
+			}
 		}
 
 		if this != nil && v == nil {
@@ -117,12 +122,12 @@ func (this *Uint64) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 	}
 
 	if this == nil {
-		return nil
+		return nil, errors.New("Error: Nil value")
 	}
 
 	*this.value += *this.delta
 	*this.delta = 0
-	return this
+	return this, nil
 }
 
 func (this *Uint64) Reset() {

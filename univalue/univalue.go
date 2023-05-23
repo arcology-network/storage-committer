@@ -22,13 +22,13 @@ type Univalue struct {
 func NewUnivalue(tx uint32, key string, reads, writes uint32, deltaWrites uint32, args ...interface{}) *Univalue {
 	return &Univalue{
 		Unimeta{
-			vType:       (&Univalue{}).GetTypeID(args[0]),
+			vType:       common.IfThenDo1st(args[0] != nil, func() uint8 { return args[0].(ccurlcommon.TypeInterface).TypeID() }, uint8(reflect.Invalid)),
 			tx:          tx,
 			path:        &key,
 			reads:       reads,
 			writes:      writes,
 			deltaWrites: deltaWrites,
-			preexists:   common.IfThenDo1st(args != nil && len(args) > 1, func() bool { return (&Unimeta{}).CheckPreexist(key, args[1]) }, false),
+			preexists:   common.IfThenDo1st(len(args) > 1, func() bool { return (&Unimeta{}).CheckPreexist(key, args[1]) }, false),
 		},
 		args[0],
 		[]byte{},
@@ -68,13 +68,13 @@ func (this *Univalue) Meta() ccurlcommon.UnivalueInterface {
 }
 
 func (this *Univalue) Init(tx uint32, key string, reads, writes uint32, v interface{}, args ...interface{}) {
-	this.vType = (&Univalue{}).GetTypeID(v)
+	this.vType = common.IfThenDo1st(v != nil, func() uint8 { return v.(ccurlcommon.TypeInterface).TypeID() }, uint8(reflect.Invalid))
 	this.tx = tx
 	this.path = &key
 	this.reads = reads
 	this.writes = writes
 	this.value = v
-	this.preexists = common.IfThenDo1st(args != nil && len(args) > 0, func() bool { return (&Unimeta{}).CheckPreexist(key, args[0]) }, false)
+	this.preexists = common.IfThenDo1st(len(args) > 0, func() bool { return (&Unimeta{}).CheckPreexist(key, args[0]) }, false)
 }
 
 func (this *Univalue) Reclaim() {
@@ -156,8 +156,11 @@ func (this *Univalue) ApplyDelta(v interface{}) error {
 	}
 
 	// Apply transitions
+	var err error
 	if this.Value() != nil {
-		this.value = this.Value().(ccurlcommon.TypeInterface).ApplyDelta(v)
+		if this.value, err = this.Value().(ccurlcommon.TypeInterface).ApplyDelta(v); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -175,7 +178,7 @@ func (this *Univalue) PrecheckAttributes(other *Univalue) {
 		panic("Error: Value type mismatched!") // Read only variable should never be here.
 	}
 
-	if this.preexists && this.IsCommutative(this) && this.Reads() > 0 && this.IsConcurrentWritable() == other.IsConcurrentWritable() {
+	if this.preexists && this.Value().(ccurlcommon.TypeInterface).IsCommutative() && this.Reads() > 0 && this.IsConcurrentWritable() == other.IsConcurrentWritable() {
 		this.Print()
 		fmt.Println("================================================================")
 		other.Print()

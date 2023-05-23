@@ -29,6 +29,9 @@ func (this *Path) TypeID() uint8                                              { 
 func (this *Path) IsSelf(key interface{}) bool                                { return ccurlcommon.IsPath(key.(string)) }
 func (this *Path) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }
 
+func (this *Path) IsNumeric() bool     { return false }
+func (this *Path) IsCommutative() bool { return true }
+
 func (this *Path) Value() interface{} { return this.value }
 func (this *Path) Delta() interface{} { return this.delta }
 func (this *Path) Sign() bool         { return true }
@@ -65,7 +68,7 @@ func (this *Path) New(value, delta, sign, min, max interface{}) interface{} {
 	}
 }
 
-func (this *Path) ApplyDelta(v interface{}) ccurlcommon.TypeInterface { // Apply the transitions to the original value
+func (this *Path) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, error) { // Apply the transitions to the original value
 	this.ReInit()
 	toAdd := this.delta.addDict.Keys() // The value should only contain committed keys
 	toRemove := this.delta.Removed()
@@ -76,7 +79,7 @@ func (this *Path) ApplyDelta(v interface{}) ccurlcommon.TypeInterface { // Apply
 		}
 
 		if univals[i].Value() == nil { // Deletion
-			return nil
+			return nil, nil
 		}
 
 		delta := univals[i].Value().(ccurlcommon.TypeInterface).Delta().(*PathDelta)
@@ -100,7 +103,7 @@ func (this *Path) ApplyDelta(v interface{}) ccurlcommon.TypeInterface { // Apply
 	return &Path{
 		orderedset.NewOrderedSet(keys), // committed keys + added - removed
 		NewPathDelta([]string{}, []string{}),
-	}
+	}, nil
 }
 
 // Write and afflicated operations

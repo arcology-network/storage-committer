@@ -66,6 +66,9 @@ func (this *Int64) Equal(other interface{}) bool {
 		common.Equal(this.max, other.(*Int64).max, func(v *codec.Int64) bool { return *v == math.MaxInt64 })
 }
 
+func (this *Int64) IsNumeric() bool     { return true }
+func (this *Int64) IsCommutative() bool { return true }
+
 func (this *Int64) Value() interface{} { return (this.value) }
 func (this *Int64) Delta() interface{} { return (this.delta) }
 func (this *Int64) Sign() bool         { return *this.delta >= 0 }
@@ -107,7 +110,7 @@ func (this *Int64) isUnderflow(delta int64) bool {
 		(*this.min > codec.Int64(delta) || flag)
 }
 
-func (this *Int64) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
+func (this *Int64) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, error) {
 	this.ReInit()
 	vec := v.([]ccurlcommon.UnivalueInterface)
 	for i := 0; i < len(vec); i++ {
@@ -121,7 +124,9 @@ func (this *Int64) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 		}
 
 		if this != nil && v != nil {
-			this.Set(v.(*Int64), nil)
+			if _, _, _, _, err := this.Set(v.(*Int64), nil); err != nil {
+				return nil, err
+			}
 		}
 
 		if this != nil && v == nil {
@@ -130,12 +135,12 @@ func (this *Int64) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 	}
 
 	if this == nil {
-		return nil
+		return nil, errors.New("Error: Nil value")
 	}
 
 	*this.value += *this.delta
 	*this.delta = 0
-	return this
+	return this, nil
 }
 
 func (this *Int64) Reset() {

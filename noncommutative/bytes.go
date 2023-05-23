@@ -48,6 +48,9 @@ func (this *Bytes) Equal(other interface{}) bool {
 	return bytes.Equal(this.value, other.(*Bytes).value)
 }
 
+func (this *Bytes) IsNumeric() bool     { return false }
+func (this *Bytes) IsCommutative() bool { return false }
+
 func (this *Bytes) ReInit()                            {}
 func (this *Bytes) Value() interface{}                 { return this.value }
 func (this *Bytes) Delta() interface{}                 { return this.value }
@@ -71,7 +74,7 @@ func (this *Bytes) Set(value interface{}, source interface{}) (interface{}, uint
 	return this, 0, 1, 0, nil
 }
 
-func (this *Bytes) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
+func (this *Bytes) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, error) {
 	vec := v.([]ccurlcommon.UnivalueInterface)
 	for i := 0; i < len(vec); i++ {
 		v := vec[i].Value()
@@ -93,7 +96,7 @@ func (this *Bytes) ApplyDelta(v interface{}) ccurlcommon.TypeInterface {
 	}
 
 	if this == nil {
-		return nil
+		return nil, nil
 	}
-	return this
+	return this, nil
 }
