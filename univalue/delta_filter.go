@@ -10,14 +10,6 @@ import (
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 )
 
-func RemoveReadOnly(unival ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface {
-	return common.IfThen(unival != nil && unival.IsReadOnly(), nil, unival)
-}
-
-func DelNonExist(unival ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface {
-	return common.IfThen(unival != nil && unival.Value() == nil && !unival.Preexist(), nil, unival)
-}
-
 func Sorter(univals []ccurlcommon.UnivalueInterface) []ccurlcommon.UnivalueInterface {
 	sort.SliceStable(univals, func(i, j int) bool {
 		lhs := (*(univals[i].GetPath()))
@@ -25,6 +17,14 @@ func Sorter(univals []ccurlcommon.UnivalueInterface) []ccurlcommon.UnivalueInter
 		return bytes.Compare([]byte(lhs)[:], []byte(rhs)[:]) < 0
 	})
 	return univals
+}
+
+func RemoveReadOnly(unival ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface {
+	return common.IfThen(unival != nil && unival.IsReadOnly(), nil, unival)
+}
+
+func DelNonExist(unival ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface {
+	return common.IfThen(unival != nil && unival.Value() == nil && !unival.Preexist(), nil, unival)
 }
 
 func ExtractDeltaForEncoding(unival ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface {
@@ -62,6 +62,12 @@ func RemoveNonce(unival ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInter
 		nil,
 		unival,
 	)
+}
+
+func CloneValue(unival ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface {
+	return common.IfThenDo1st(
+		unival != nil,
+		func() ccurlcommon.UnivalueInterface { return unival.Clone().(ccurlcommon.UnivalueInterface) }, unival)
 }
 
 func TransitionCodecFilterSet() []func(ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface {

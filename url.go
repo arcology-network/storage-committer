@@ -118,6 +118,10 @@ func (this *ConcurrentUrl) Peek(path string) (interface{}, error) {
 	return value, nil
 }
 
+func (this *ConcurrentUrl) Do(tx uint32, path string, do interface{}) (interface{}, error) {
+	return this.writeCache.Do(tx, path, do), nil
+}
+
 func (this *ConcurrentUrl) Read(tx uint32, path string) (interface{}, error) {
 	return this.writeCache.Read(tx, path), nil
 }
@@ -150,6 +154,15 @@ func (this *ConcurrentUrl) at(tx uint32, path string, idx uint64) (interface{}, 
 func (this *ConcurrentUrl) ReadAt(tx uint32, path string, idx uint64) (interface{}, error) {
 	if key, err := this.at(tx, path, idx); err == nil && key != nil {
 		return this.Read(tx, key.(string))
+	} else {
+		return key, err
+	}
+}
+
+// Read th Nth element under a path
+func (this *ConcurrentUrl) DoAt(tx uint32, path string, idx uint64, do interface{}) (interface{}, error) {
+	if key, err := this.at(tx, path, idx); err == nil && key != nil {
+		return this.Do(tx, key.(string), do)
 	} else {
 		return key, err
 	}

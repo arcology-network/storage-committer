@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/commutative"
@@ -68,35 +67,6 @@ func (this *Univalue) Meta() ccurlcommon.UnivalueInterface {
 	}
 }
 
-func (this *Univalue) Delta() ccurlcommon.UnivalueInterface {
-	if RemoveReadOnly(this) == nil || DelNonExist(this) == nil {
-		return nil // Not a transition at all
-	}
-
-	var v interface{}
-	if this.value != nil {
-		value := this.value.(ccurlcommon.TypeInterface)
-		if !this.preexists || (this.deltaWrites > 0 && this.TypeID() != commutative.PATH) { // commutative but not meta, for the accumulator
-			v = this.value.(ccurlcommon.TypeInterface).New(
-				nil,
-				common.IfThenDo1st(value.Delta() != nil, func() interface{} { return value.Delta().(codec.Encodable).Clone() }, nil),
-				value.Sign(),
-				common.IfThenDo1st(value.Min() != nil, func() interface{} { return value.Min().(codec.Encodable).Clone() }, nil),
-				common.IfThenDo1st(value.Max() != nil, func() interface{} { return value.Max().(codec.Encodable).Clone() }, nil),
-			)
-
-		} else {
-			v = this.value.(ccurlcommon.TypeInterface).New(nil, value.Delta(), value.Sign(), nil, nil)
-		}
-	}
-
-	return &Univalue{
-		this.Unimeta,
-		v,
-		[]byte{},
-	}
-}
-
 func (this *Univalue) Init(tx uint32, key string, reads, writes uint32, v interface{}, args ...interface{}) {
 	this.vType = (&Univalue{}).GetTypeID(v)
 	this.tx = tx
@@ -111,6 +81,14 @@ func (this *Univalue) Reclaim() {
 	if this.reclaimFunc != nil {
 		this.reclaimFunc(this)
 	}
+}
+
+func (this *Univalue) Do(tx uint32, path string, do interface{}) interface{} {
+	ret := do.(func(interface{}) interface{})(this).([]interface{})
+	this.reads += ret[0].(uint32)
+	this.writes += ret[1].(uint32)
+	this.deltaWrites += ret[2].(uint32)
+	return ret[3]
 }
 
 func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{} {
@@ -216,8 +194,8 @@ func (this *Univalue) PrecheckAttributes(other *Univalue) {
 func (this *Univalue) Clone() interface{} {
 	v := &Univalue{
 		this.Unimeta.Clone(),
-		common.IfThenDo1st(this.value != nil, func() interface{} { return this.value.(ccurlcommon.TypeInterface).Clone() }, nil),
-		codec.Bytes(this.cache).Clone().([]byte),
+		common.IfThenDo1st(this.value != nil, func() interface{} { return this.value.(ccurlcommon.TypeInterface).Clone() }, this.value),
+		common.Clone(this.cache),
 	}
 	return v
 }

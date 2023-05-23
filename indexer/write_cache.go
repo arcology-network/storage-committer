@@ -55,7 +55,12 @@ func (this *WriteCache) GetOrInit(tx uint32, path string) ccurlcommon.UnivalueIn
 
 func (this *WriteCache) Read(tx uint32, path string) interface{} {
 	univalue := this.GetOrInit(tx, path)
-	return univalue.Get(tx, path, this.Cache())
+	return univalue.Get(tx, path, nil)
+}
+
+func (this *WriteCache) Do(tx uint32, path string, do interface{}) interface{} {
+	univalue := this.GetOrInit(tx, path)
+	return univalue.Do(tx, path, do)
 }
 
 // Get the value directly, skip the access counting at the univalue level

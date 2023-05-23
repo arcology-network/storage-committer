@@ -31,6 +31,7 @@ func NewUnimeta(tx uint32, key string, reads, writes uint32, deltaWrites uint32,
 }
 
 func (this *Unimeta) GetTx() uint32        { return this.tx }
+func (this *Unimeta) SetTx(txId uint32)    { this.tx = txId }
 func (this *Unimeta) GetPath() *string     { return this.path }
 func (this *Unimeta) SetPath(path *string) { this.path = path }
 func (this *Unimeta) ClearPath()           { *this.path = (*this.path)[:0] }
@@ -57,6 +58,7 @@ func (this *Unimeta) Clone() Unimeta {
 		tx:          this.tx,
 		path:        this.path,
 		reads:       this.reads,
+		deltaWrites: this.deltaWrites,
 		writes:      this.writes,
 		preexists:   this.preexists,
 		reclaimFunc: this.reclaimFunc,
