@@ -194,7 +194,7 @@ func (this *U256) Set(newDelta interface{}, source interface{}) (interface{}, ui
 	return this, 0, 0, 1, errors.New("Error: Value out of range")
 }
 
-func (this *U256) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, error) {
+func (this *U256) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, int, error) {
 	this.ReInit()
 	vec := v.([]ccurlcommon.UnivalueInterface)
 	for i := 0; i < len(vec); i++ {
@@ -209,7 +209,7 @@ func (this *U256) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, error) {
 
 		if this != nil && v != nil { // Update an existent
 			if _, _, _, _, err := this.Set(v.(*U256), nil); err != nil {
-				return nil, err
+				return nil, i, err
 			}
 		}
 
@@ -221,7 +221,7 @@ func (this *U256) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, error) {
 	newValue, _, _ := this.Get()
 	this.value = (*codec.Uint256)(newValue.(*uint256.Int))
 	(*uint256.Int)(this.delta).Clear()
-	return this, nil
+	return this, len(vec), nil
 }
 
 func (this *U256) Reset() {

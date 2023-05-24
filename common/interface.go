@@ -39,7 +39,7 @@ type TypeInterface interface { // value type
 	Get() (interface{}, uint32, uint32)
 	Set(interface{}, interface{}) (interface{}, uint32, uint32, uint32, error)
 	CopyTo(interface{}) (interface{}, uint32, uint32, uint32)
-	ApplyDelta(interface{}) (TypeInterface, error)
+	ApplyDelta(interface{}) (TypeInterface, int, error)
 	IsSelf(interface{}) bool
 
 	MemSize() uint32 // Size in memory

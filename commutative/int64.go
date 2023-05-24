@@ -110,7 +110,7 @@ func (this *Int64) isUnderflow(delta int64) bool {
 		(*this.min > codec.Int64(delta) || flag)
 }
 
-func (this *Int64) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, error) {
+func (this *Int64) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, int, error) {
 	this.ReInit()
 	vec := v.([]ccurlcommon.UnivalueInterface)
 	for i := 0; i < len(vec); i++ {
@@ -125,7 +125,7 @@ func (this *Int64) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, error) 
 
 		if this != nil && v != nil {
 			if _, _, _, _, err := this.Set(v.(*Int64), nil); err != nil {
-				return nil, err
+				return nil, i, err
 			}
 		}
 
@@ -135,12 +135,12 @@ func (this *Int64) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, error) 
 	}
 
 	if this == nil {
-		return nil, errors.New("Error: Nil value")
+		return nil, 0, errors.New("Error: Nil value")
 	}
 
 	*this.value += *this.delta
 	*this.delta = 0
-	return this, nil
+	return this, len(vec), nil
 }
 
 func (this *Int64) Reset() {

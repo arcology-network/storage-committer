@@ -158,7 +158,7 @@ func (this *Univalue) ApplyDelta(v interface{}) error {
 	// Apply transitions
 	var err error
 	if this.Value() != nil {
-		if this.value, err = this.Value().(ccurlcommon.TypeInterface).ApplyDelta(v); err != nil {
+		if this.value, _, err = this.Value().(ccurlcommon.TypeInterface).ApplyDelta(v); err != nil {
 			return err
 		}
 	}

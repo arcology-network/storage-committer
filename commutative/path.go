@@ -68,7 +68,7 @@ func (this *Path) New(value, delta, sign, min, max interface{}) interface{} {
 	}
 }
 
-func (this *Path) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, error) { // Apply the transitions to the original value
+func (this *Path) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, int, error) { // Apply the transitions to the original value
 	this.ReInit()
 	toAdd := this.delta.addDict.Keys() // The value should only contain committed keys
 	toRemove := this.delta.Removed()
@@ -79,7 +79,7 @@ func (this *Path) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, error) {
 		}
 
 		if univals[i].Value() == nil { // Deletion
-			return nil, nil
+			return nil, 0, nil
 		}
 
 		delta := univals[i].Value().(ccurlcommon.TypeInterface).Delta().(*PathDelta)
@@ -103,7 +103,7 @@ func (this *Path) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, error) {
 	return &Path{
 		orderedset.NewOrderedSet(keys), // committed keys + added - removed
 		NewPathDelta([]string{}, []string{}),
-	}, nil
+	}, len(univals), nil
 }
 
 // Write and afflicated operations

@@ -24,18 +24,20 @@ type ConcurrentUrl struct {
 	invImporter *indexer.Importer // transitions that will take effect anyway regardless of execution failures or conflicts
 	Platform    *Platform
 
-	ImportFilters []ccurlcommon.FilterTransitionsInterface
+	ImportFilters []func(unival ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface
 }
 
 func NewConcurrentUrl(store ccurlcommon.DatastoreInterface, args ...interface{}) *ConcurrentUrl {
 	platform := NewPlatform()
 	return &ConcurrentUrl{
-		writeCache:    indexer.NewWriteCache(store, platform),
-		importer:      indexer.NewImporter(store, platform),
-		invImporter:   indexer.NewImporter(store, platform),
-		ImportFilters: []ccurlcommon.FilterTransitionsInterface{&indexer.NonceFilter{}, &indexer.BalanceFilter{}},
-
-		Platform: platform,
+		writeCache:  indexer.NewWriteCache(store, platform),
+		importer:    indexer.NewImporter(store, platform),
+		invImporter: indexer.NewImporter(store, platform),
+		ImportFilters: []func(unival ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface{
+			univalue.KeepNonce,
+			univalue.KeepBalance,
+		},
+		Platform: platform, //[]ccurlcommon.FilterTransitionsInterface{&indexer.NonceFilter{}, &indexer.BalanceFilter{}},
 	}
 }
 
@@ -103,6 +105,7 @@ func (this *ConcurrentUrl) CreateAccount(tx uint32, platform string, acct string
 			if !this.writeCache.IfExists(path) {
 				err = this.writeCache.Write(tx, path, v) // root path
 				panic("Failed to create")
+				return err
 			}
 		}
 	}
@@ -200,9 +203,9 @@ func (this *ConcurrentUrl) WriteAt(tx uint32, path string, idx uint64, value int
 	}
 }
 
-func (this *ConcurrentUrl) unconditional(transition ccurlcommon.UnivalueInterface) bool {
+func (this *ConcurrentUrl) keep(transition ccurlcommon.UnivalueInterface) bool {
 	for i := 0; i < len(this.ImportFilters); i++ {
-		if this.ImportFilters[i].Is(this.Platform.RootLength(), *transition.GetPath()) {
+		if this.ImportFilters[i](transition) != nil {
 			return true
 		}
 	}
@@ -212,8 +215,8 @@ func (this *ConcurrentUrl) unconditional(transition ccurlcommon.UnivalueInterfac
 func (this *ConcurrentUrl) Import(transitions []ccurlcommon.UnivalueInterface, args ...interface{}) *ConcurrentUrl {
 	invTransitions := make([]ccurlcommon.UnivalueInterface, 0, len(transitions))
 	for i := 0; i < len(transitions); i++ {
-		if this.unconditional(transitions[i]) {
-			invTransitions = append(invTransitions, transitions[i])
+		if this.keep(transitions[i]) {
+			invTransitions = append(invTransitions, transitions[i]) //
 			transitions[i] = nil
 		}
 	}

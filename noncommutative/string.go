@@ -47,7 +47,7 @@ func (this *String) Set(value interface{}, source interface{}) (interface{}, uin
 	return this, 0, 1, 0, nil
 }
 
-func (this *String) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, error) {
+func (this *String) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, int, error) {
 	vec := v.([]ccurlcommon.UnivalueInterface)
 	for i := 0; i < len(vec); i++ {
 		v := vec[i].Value()
@@ -69,7 +69,7 @@ func (this *String) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, error)
 	}
 
 	if this == nil {
-		return nil, nil
+		return nil, 0, nil
 	}
-	return this, nil
+	return this, len(vec), nil
 }

@@ -15,6 +15,7 @@ import (
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
+	"github.com/holiman/uint256"
 )
 
 func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
@@ -189,6 +190,39 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	if err != nil || v.(string) != "url3-1-by-tx-3" {
 		t.Error("Error: Wrong value")
 	}
+}
+
+func TestAccumulator(t *testing.T) {
+	store := cachedstorage.NewDataStore()
+	alice := datacompression.RandomAccount()
+	url := ccurl.NewConcurrentUrl(store)
+	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // CreateAccount account structure {
+		t.Error(err)
+	}
+
+	// url.Write(ccurlcommon.SYSTEM, ccurl.NewPlatform().Eth10Account(), commutative.NewPath())
+	acctTrans := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
+	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
+	url.Sort()
+	url.Commit([]uint32{ccurlcommon.SYSTEM})
+	url.Init(store)
+
+	// Add the first delta
+	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance",
+		commutative.NewU256Delta(uint256.NewInt(22), true)); err != nil {
+		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
+	}
+
+	// Add the first delta
+	if err := url.Write(2, "blcc://eth1.0/account/"+alice+"/balance",
+		commutative.NewU256Delta(uint256.NewInt(22), true)); err != nil {
+		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
+	}
+
+	// trans := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
+
+	// records := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.AccessCodecFilterSet()...)
+
 }
 
 func BenchmarkSimpleArbitrator(b *testing.B) {

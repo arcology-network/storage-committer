@@ -97,7 +97,7 @@ func (this *Uint64) Set(v interface{}, source interface{}) (interface{}, uint32,
 	return this, 0, 0, 1, nil
 }
 
-func (this *Uint64) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, error) {
+func (this *Uint64) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, int, error) {
 	this.ReInit()
 	vec := v.([]ccurlcommon.UnivalueInterface)
 	for i := 0; i < len(vec); i++ {
@@ -112,7 +112,7 @@ func (this *Uint64) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, error)
 
 		if this != nil && v != nil {
 			if _, _, _, _, err := this.Set(v.(*Uint64), nil); err != nil {
-				return nil, err
+				return nil, i, err
 			}
 		}
 
@@ -122,12 +122,12 @@ func (this *Uint64) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, error)
 	}
 
 	if this == nil {
-		return nil, errors.New("Error: Nil value")
+		return nil, 0, errors.New("Error: Nil value")
 	}
 
 	*this.value += *this.delta
 	*this.delta = 0
-	return this, nil
+	return this, len(vec), nil
 }
 
 func (this *Uint64) Reset() {
