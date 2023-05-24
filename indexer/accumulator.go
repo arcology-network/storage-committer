@@ -1,50 +1,28 @@
 package indexer
 
 import (
+	"errors"
+
 	common "github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 )
 
-type Conflict struct {
-	key   string
-	txIDs []uint32
-	err   *error
-}
-
-type Conflicts []Conflict
-
-func (this Conflicts) IDs() []uint32 {
-	txIDs := []uint32{}
-	for _, v := range this {
-		txIDs = append(txIDs, v.txIDs...)
-	}
-	return txIDs
-}
-
-func (this Conflicts) Keys() []string {
-	keys := []string{}
-	for _, v := range this {
-		keys = append(keys, v.key)
-	}
-	return keys
-}
-
 type Accumulator struct{}
 
-func (this *Accumulator) Detect(dict *map[string]*[]ccurlcommon.UnivalueInterface) []Conflict {
-	conflicts := []Conflict{}
+func (this *Accumulator) Detect(dict *map[string]*[]ccurlcommon.UnivalueInterface) []*Conflict {
+	conflicts := []*Conflict{}
 
 	for k, transitions := range *dict {
 		negatives, positives := this.Categorize(transitions)
-		underflown := this.isOutOfLimits(k, negatives)
-		overflown := this.isOutOfLimits(k, positives)
 
-		if underflown != nil {
-			conflicts = append(conflicts, *underflown)
+		if underflown := this.isOutOfLimits(k, negatives); underflown != nil {
+			*underflown.err = errors.New("Error: Value underflown")
+			conflicts = append(conflicts, underflown)
 		}
 
-		if overflown != nil {
-			conflicts = append(conflicts, *overflown)
+		if overflown := this.isOutOfLimits(k, positives); overflown != nil {
+			*overflown.err = errors.New("Error: Value overflown")
+			conflicts = append(conflicts, overflown)
 		}
 	}
 	return conflicts
@@ -57,13 +35,17 @@ func (this *Accumulator) isOutOfLimits(k string, transitions []ccurlcommon.Univa
 
 	initialv := transitions[0].Value().(ccurlcommon.TypeInterface).Clone().(ccurlcommon.TypeInterface)
 	_, length, err := initialv.ApplyDelta(transitions[1:])
+	if err == nil {
+		return nil
+	}
 
 	txIDs := []uint32{}
-	common.Foreach(transitions[:length], func(v *ccurlcommon.UnivalueInterface) { txIDs = append(txIDs, (*v).GetTx()) })
+	common.Foreach(transitions[length+1:], func(v *ccurlcommon.UnivalueInterface) { txIDs = append(txIDs, (*v).GetTx()) })
 
 	return &Conflict{
-		txIDs: []uint32{},
-		err:   &err,
+		key:   k,
+		txIDs: txIDs,
+		err:   new(error),
 	}
 }
 
@@ -76,14 +58,8 @@ func (*Accumulator) Categorize(transitions *[]ccurlcommon.UnivalueInterface) ([]
 			continue
 		}
 
-		if trans.Value().(ccurlcommon.TypeInterface).Sign() {
-			positives = append(positives, trans)
-		} else {
-			negatives = append(negatives, trans)
-		}
-
 		common.IfThenDo(
-			trans.Value().(ccurlcommon.TypeInterface).Sign(),
+			trans.Value().(ccurlcommon.TypeInterface).DeltaSign(),
 			func() { positives = append(positives, trans) },
 			func() { negatives = append(negatives, trans) })
 	}

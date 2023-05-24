@@ -76,7 +76,6 @@ func (this *ConcurrentUrl) Clear() {
 func (this *ConcurrentUrl) CreateAccount(tx uint32, platform string, acct string) error {
 	paths, typeids := this.Platform.GetBuiltins(acct)
 
-	var err error
 	for i, path := range paths {
 		var v interface{}
 		switch typeids[i] {
@@ -100,16 +99,16 @@ func (this *ConcurrentUrl) CreateAccount(tx uint32, platform string, acct string
 		}
 
 		if !this.writeCache.IfExists(path) {
-			err = this.writeCache.Write(tx, path, v) // root path
+			if err := this.writeCache.Write(tx, path, v); err != nil { // root path
+				return err
+			}
 
 			if !this.writeCache.IfExists(path) {
-				err = this.writeCache.Write(tx, path, v) // root path
-				panic("Failed to create")
-				return err
+				return this.writeCache.Write(tx, path, v) // root path
 			}
 		}
 	}
-	return err
+	return nil
 }
 
 func (this *ConcurrentUrl) IfExists(path string) bool {

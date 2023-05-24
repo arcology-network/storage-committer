@@ -34,7 +34,7 @@ func (this *Path) IsCommutative() bool { return true }
 
 func (this *Path) Value() interface{} { return this.value }
 func (this *Path) Delta() interface{} { return this.delta }
-func (this *Path) Sign() bool         { return true }
+func (this *Path) DeltaSign() bool    { return true }
 func (this *Path) Min() interface{}   { return nil }
 func (this *Path) Max() interface{}   { return nil }
 

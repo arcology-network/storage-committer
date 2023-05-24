@@ -51,12 +51,20 @@ func (this *Bytes) Equal(other interface{}) bool {
 func (this *Bytes) IsNumeric() bool     { return false }
 func (this *Bytes) IsCommutative() bool { return false }
 
-func (this *Bytes) ReInit()                            {}
-func (this *Bytes) Value() interface{}                 { return this.value }
-func (this *Bytes) Delta() interface{}                 { return this.value }
-func (this *Bytes) Sign() bool                         { return true } // delta sign
-func (this *Bytes) Min() interface{}                   { return nil }
-func (this *Bytes) Max() interface{}                   { return nil }
+func (this *Bytes) ReInit() {}
+
+func (this *Bytes) Value() interface{} { return this.value }
+func (this *Bytes) Delta() interface{} { return this.value }
+func (this *Bytes) DeltaSign() bool    { return true } // delta sign
+func (this *Bytes) Min() interface{}   { return nil }
+func (this *Bytes) Max() interface{}   { return nil }
+
+func (this *Bytes) SetValue(v interface{})     { copy(this.value, v.(*Bytes).value) }
+func (this *Bytes) SetDelta(v interface{})     {}
+func (this *Bytes) SetDeltaSign(v interface{}) {}
+func (this *Bytes) SetMin(v interface{})       {}
+func (this *Bytes) SetMax(v interface{})       {}
+
 func (this *Bytes) Get() (interface{}, uint32, uint32) { return []byte(this.value), 1, 0 }
 func (this *Bytes) New(_, delta, _, _, _ interface{}) interface{} {
 	v := common.IfThenDo1st(delta != nil && delta.(codec.Bytes) != nil, func() codec.Bytes { return delta.(codec.Bytes).Clone().(codec.Bytes) }, this.value)
@@ -66,7 +74,7 @@ func (this *Bytes) New(_, delta, _, _, _ interface{}) interface{} {
 	}
 }
 
-func (this *Bytes) Set(value interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
+func (this *Bytes) Set(value interface{}, _ interface{}) (interface{}, uint32, uint32, uint32, error) {
 	if value != nil && this != value { // Avoid self copy.
 		this.value = make([]byte, len(value.(*Bytes).value))
 		copy(this.value, value.(*Bytes).value)

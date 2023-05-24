@@ -39,13 +39,13 @@ func ExtractDeltaForEncoding(unival ccurlcommon.UnivalueInterface) ccurlcommon.U
 			v = unival.Value().(ccurlcommon.TypeInterface).New(
 				value.Value(), // The value is needed for the accumulator, otherwise it has no access to its original state
 				common.IfThenDo1st(value.Delta() != nil, func() interface{} { return value.Delta().(codec.Encodable).Clone() }, nil),
-				value.Sign(),
+				value.DeltaSign(),
 				common.IfThenDo1st(value.Min() != nil, func() interface{} { return value.Min().(codec.Encodable).Clone() }, nil),
 				common.IfThenDo1st(value.Max() != nil, func() interface{} { return value.Max().(codec.Encodable).Clone() }, nil),
 			)
 
 		} else {
-			v = unival.Value().(ccurlcommon.TypeInterface).New(nil, value.Delta(), value.Sign(), nil, nil)
+			v = unival.Value().(ccurlcommon.TypeInterface).New(nil, value.Delta(), value.DeltaSign(), nil, nil)
 		}
 	}
 

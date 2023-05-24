@@ -30,7 +30,7 @@ type TypeInterface interface { // value type
 
 	Value() interface{} // Get() - read/write count
 	Delta() interface{}
-	Sign() bool
+	DeltaSign() bool
 	Min() interface{}
 	Max() interface{}
 	New(interface{}, interface{}, interface{}, interface{}, interface{}) interface{}

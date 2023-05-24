@@ -56,7 +56,7 @@ func (this *Univalue) Meta() ccurlcommon.UnivalueInterface {
 	if this.value != nil {
 		value := this.value.(ccurlcommon.TypeInterface)
 		if this.deltaWrites > 0 && this.reads == 0 && this.writes == 0 && this.TypeID() != commutative.PATH {
-			v = this.value.(ccurlcommon.TypeInterface).New(nil, value.Delta(), value.Sign(), value.Min(), value.Max())
+			v = this.value.(ccurlcommon.TypeInterface).New(nil, value.Delta(), value.DeltaSign(), value.Min(), value.Max())
 		}
 	}
 

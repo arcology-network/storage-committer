@@ -27,9 +27,18 @@ func (this *Int64) IsCommutative() bool { return false }
 func (this *Int64) ReInit()            {}
 func (this *Int64) Value() interface{} { return (this) }
 func (this *Int64) Delta() interface{} { return (this) }
-func (this *Int64) Sign() bool         { return true } // delta sign
+func (this *Int64) DeltaSign() bool    { return true } // delta sign
 func (this *Int64) Min() interface{}   { return nil }
 func (this *Int64) Max() interface{}   { return nil }
+
+func (this *Int64) SetValue(v interface{}) { *this = *(v.(*Int64)) }
+func (this *Int64) SetDelta(v interface{}) { *this = *(v.(*Int64)) }
+func (this *Int64) SetDeltaSign(v interface{}) {
+	(*this) *= (common.IfThen(v.(bool), Int64(1), Int64(-1)))
+}
+func (this *Int64) SetMin(v interface{}) {}
+func (this *Int64) SetMax(v interface{}) {}
+
 func (this *Int64) New(_, delta, _, _, _ interface{}) interface{} {
 	return common.IfThenDo1st(delta != nil && delta.(*Int64) != nil, func() interface{} { return delta.(*Int64).Clone() }, interface{}(this))
 }

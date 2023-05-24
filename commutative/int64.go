@@ -71,9 +71,15 @@ func (this *Int64) IsCommutative() bool { return true }
 
 func (this *Int64) Value() interface{} { return (this.value) }
 func (this *Int64) Delta() interface{} { return (this.delta) }
-func (this *Int64) Sign() bool         { return *this.delta >= 0 }
+func (this *Int64) DeltaSign() bool    { return *this.delta >= 0 }
 func (this *Int64) Min() interface{}   { return (this.min) }
 func (this *Int64) Max() interface{}   { return (this.max) }
+
+func (this *Int64) SetValue(v interface{})     { *this.value = (codec.Int64)(v.(int64)) }
+func (this *Int64) SetDelta(v interface{})     { *this.delta = (codec.Int64)(v.(int64)) }
+func (this *Int64) SetDeltaSign(v interface{}) {}
+func (this *Int64) SetMin(v interface{})       { *this.min = (codec.Int64)(v.(int64)) }
+func (this *Int64) SetMax(v interface{})       { *this.max = (codec.Int64)(v.(int64)) }
 
 func (this *Int64) MemSize() uint32                                            { return 5 * 8 }
 func (this *Int64) TypeID() uint8                                              { return INT64 }

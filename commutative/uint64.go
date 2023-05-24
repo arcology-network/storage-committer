@@ -76,9 +76,15 @@ func (this *Uint64) IsCommutative() bool { return true }
 
 func (this *Uint64) Value() interface{} { return (this.value) }
 func (this *Uint64) Delta() interface{} { return (this.delta) }
-func (this *Uint64) Sign() bool         { return true }
+func (this *Uint64) DeltaSign() bool    { return true }
 func (this *Uint64) Min() interface{}   { return (this.min) }
 func (this *Uint64) Max() interface{}   { return (this.max) }
+
+func (this *Uint64) SetValue(v interface{})     { *this.value = (codec.Uint64)(v.(uint64)) }
+func (this *Uint64) SetDelta(v interface{})     { *this.delta = (codec.Uint64)(v.(uint64)) }
+func (this *Uint64) SetDeltaSign(v interface{}) {}
+func (this *Uint64) SetMin(v interface{})       { *this.min = (codec.Uint64)(v.(uint64)) }
+func (this *Uint64) SetMax(v interface{})       { *this.max = (codec.Uint64)(v.(uint64)) }
 
 func (this *Uint64) TypeID() uint8                                              { return UINT64 }
 func (this *Uint64) IsSelf(key interface{}) bool                                { return true }

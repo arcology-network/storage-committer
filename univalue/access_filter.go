@@ -24,7 +24,7 @@ func KeepCumulativeNumeric(v ccurlcommon.UnivalueInterface) ccurlcommon.Univalue
 		common.IfThenDo1st(
 			typedv != nil && v.DeltaWrites() > 0 && v.Reads() == 0 && v.Writes() == 0 && v.TypeID() != commutative.PATH,
 			func() ccurlcommon.TypeInterface {
-				return typedv.New(nil, typedv.Delta(), typedv.Sign(), typedv.Min(), typedv.Max()).(ccurlcommon.TypeInterface)
+				return typedv.New(nil, typedv.Delta(), typedv.DeltaSign(), typedv.Min(), typedv.Max()).(ccurlcommon.TypeInterface)
 			},
 			nil),
 		[]byte{},

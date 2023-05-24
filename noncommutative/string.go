@@ -26,11 +26,18 @@ func (this *String) IsNumeric() bool     { return false }
 func (this *String) IsCommutative() bool { return false }
 
 func (this *String) ReInit()            {}
-func (this *String) Value() interface{} { return (this) }
-func (this *String) Delta() interface{} { return (this) }
-func (this *String) Sign() bool         { return true } // delta sign
+func (this *String) Value() interface{} { return this }
+func (this *String) Delta() interface{} { return this }
+func (this *String) DeltaSign() bool    { return true } // delta sign
 func (this *String) Min() interface{}   { return nil }
 func (this *String) Max() interface{}   { return nil }
+
+func (this *String) SetValue(v interface{})     { *this = String(v.(string)) }
+func (this *String) SetDelta(v interface{})     { *this = String(v.(string)) }
+func (this *String) SetDeltaSign(v interface{}) {}
+func (this *String) SetMin(v interface{})       {}
+func (this *String) SetMax(v interface{})       {}
+
 func (this *String) New(_, delta, _, _, _ interface{}) interface{} {
 	return common.IfThenDo1st(delta != nil && delta.(*String) != nil, func() interface{} { return delta.(*String).Clone() }, interface{}(this))
 }
