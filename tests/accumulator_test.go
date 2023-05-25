@@ -25,7 +25,7 @@ func TestAccumulatorUpperLimit(t *testing.T) {
 
 	trans := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
 	transV := []ccurlcommon.UnivalueInterface(trans)
-	balanceDeltas := common.FindAll(&transV, func(v ccurlcommon.UnivalueInterface) bool { return strings.LastIndex(*v.GetPath(), "/balance") > 0 })
+	balanceDeltas := common.CopyIf(&transV, func(v ccurlcommon.UnivalueInterface) bool { return strings.LastIndex(*v.GetPath(), "/balance") > 0 })
 
 	balanceDeltas[0].Value().(*commutative.U256).SetMin((uint256.NewInt(0)))
 	balanceDeltas[0].Value().(*commutative.U256).SetMax((uint256.NewInt(100)))
@@ -64,7 +64,7 @@ func TestAccumulatorLowerLimit(t *testing.T) {
 
 	trans := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
 	transV := []ccurlcommon.UnivalueInterface(trans)
-	balanceDeltas := common.FindAll(&transV, func(v ccurlcommon.UnivalueInterface) bool { return strings.LastIndex(*v.GetPath(), "/balance") > 0 })
+	balanceDeltas := common.CopyIf(&transV, func(v ccurlcommon.UnivalueInterface) bool { return strings.LastIndex(*v.GetPath(), "/balance") > 0 })
 
 	balanceDeltas[0].SetTx(0)
 	balanceDeltas[0].Value().(*commutative.U256).SetMin((uint256.NewInt(0)))

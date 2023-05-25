@@ -13,6 +13,12 @@ func (this *Accumulator) Detect(dict *map[string]*[]ccurlcommon.UnivalueInterfac
 	conflicts := []*Conflict{}
 
 	for k, transitions := range *dict {
+		if len(*transitions) == 1 ||
+			(*transitions)[0].Value() == nil ||
+			!(*transitions)[0].Value().(ccurlcommon.TypeInterface).IsCommutative() ||
+			!(*transitions)[0].Value().(ccurlcommon.TypeInterface).IsNumeric() {
+			continue
+		}
 		negatives, positives := this.Categorize(transitions)
 
 		if underflown := this.isOutOfLimits(k, negatives); underflown != nil {
@@ -52,11 +58,6 @@ func (this *Accumulator) isOutOfLimits(k string, transitions []ccurlcommon.Univa
 func (*Accumulator) Categorize(transitions *[]ccurlcommon.UnivalueInterface) ([]ccurlcommon.UnivalueInterface, []ccurlcommon.UnivalueInterface) {
 	negatives, positives := make([]ccurlcommon.UnivalueInterface, 0), make([]ccurlcommon.UnivalueInterface, 0)
 	for _, trans := range *transitions {
-		if trans.Value() == nil ||
-			!trans.Value().(ccurlcommon.TypeInterface).IsCommutative() ||
-			!trans.Value().(ccurlcommon.TypeInterface).IsNumeric() {
-			continue
-		}
 
 		common.IfThenDo(
 			trans.Value().(ccurlcommon.TypeInterface).DeltaSign(),

@@ -6,7 +6,7 @@ type Conflict struct {
 	err   *error
 }
 
-type Conflicts []Conflict
+type Conflicts []*Conflict
 
 func (this Conflicts) IDs() []uint32 {
 	txIDs := []uint32{}

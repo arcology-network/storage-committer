@@ -1,105 +1,65 @@
 package indexer
 
 import (
-	"bytes"
-	"sort"
+	"fmt"
+	"time"
 
 	"github.com/arcology-network/common-lib/codec"
 	common "github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	univalue "github.com/arcology-network/concurrenturl/univalue"
 
 	murmur "github.com/spaolacci/murmur3"
 )
 
-type ArbitratorSlow struct {
-	transitions map[string]*[]ccurlcommon.UnivalueInterface
+type Arbitrator struct {
+	dict map[string]*[]ccurlcommon.UnivalueInterface
 }
 
-func NewArbitratorSlow() *ArbitratorSlow {
-	return &ArbitratorSlow{
-		transitions: make(map[string]*[]ccurlcommon.UnivalueInterface),
+func NewArbitrator() *Arbitrator {
+	return &Arbitrator{
+		dict: make(map[string]*[]ccurlcommon.UnivalueInterface),
 	}
 }
 
-func (this *ArbitratorSlow) Detect(newTrans []ccurlcommon.UnivalueInterface) (map[string][]ccurlcommon.UnivalueInterface, []uint32) {
-	for _, trans := range newTrans {
-		if arr, ok := this.transitions[*trans.GetPath()]; !ok {
-			this.transitions[*trans.GetPath()] = &[]ccurlcommon.UnivalueInterface{trans}
+func (this *Arbitrator) Detect(newTrans []ccurlcommon.UnivalueInterface) []*Conflict {
+	t0 := time.Now()
+	univalue.Univalues(newTrans).Sort()
+	fmt.Println("Sort: ", time.Since(t0))
+
+	ranges := common.FindRange(newTrans, func(lhv, rhv ccurlcommon.UnivalueInterface) bool { return *lhv.GetPath() == *rhv.GetPath() })
+
+	conflicts := []*Conflict{}
+	for i := 0; i < len(ranges)-1; i++ {
+		if ranges[i]+1 == ranges[i+1] {
+			continue // Only one entry
+		}
+
+		var offset int
+		if newTrans[ranges[i]].Writes() == 0 {
+			if newTrans[ranges[i]].IsConcurrentWritable() {
+				offset = common.LocateFirstIf(newTrans[ranges[i]+1:ranges[i+1]], func(v ccurlcommon.UnivalueInterface) bool { return !v.IsConcurrentWritable() })
+			} else {
+				offset = common.LocateFirstIf(newTrans[ranges[i]+1:ranges[i+1]], func(v ccurlcommon.UnivalueInterface) bool { return v.Writes() > 0 || v.DeltaWrites() > 0 }) + 1
+			}
 		} else {
-			(*arr) = append((*arr), trans)
-		}
-	}
-
-	// ccmap := concurrentmap.NewConcurrentMap()
-	// ccmap.BatchSet(univalue.Univalues(newTrans).Keys(), common.From(newTrans))
-
-	for _, value := range this.transitions {
-		v := *value
-		if len(v) == 1 {
-			continue
+			offset = ranges[i] + 1
 		}
 
-		sort.SliceStable(v, func(i, j int) bool {
-			if len(*v[i].GetPath()) != len(*v[j].GetPath()) {
-				return len(*v[i].GetPath()) < len(*v[j].GetPath())
-			}
-
-			if !bytes.Equal([]byte(*v[i].GetPath()), []byte(*v[j].GetPath())) {
-				return bytes.Compare([]byte(*v[i].GetPath()), []byte(*v[j].GetPath())) < 0
-			}
-
-			if v[i].GetTx() != v[j].GetTx() {
-				return v[i].GetTx() < v[j].GetTx()
-			}
-
-			if v[i].Writes() != v[j].Writes() {
-				return v[i].Writes() < v[j].Writes()
-			}
-
-			if v[i].Reads() != v[j].Reads() {
-				return v[i].Reads() < v[j].Reads()
-			}
-			return false
-		})
-	}
-
-	txToRemove := make(map[uint32]bool)
-	conflictDict := make(map[string][]ccurlcommon.UnivalueInterface)
-	for _, value := range this.transitions {
-		v := *value
-		for i := 1; i < len(v); i++ {
-			if v[0].GetTx() == v[i].GetTx() {
-				continue
-			}
-
-			if v[0].IsConcurrentWritable() && v[i].IsConcurrentWritable() {
-				continue
-			}
-
-			if v[0].Writes() > 0 || v[i].Writes() > 0 {
-				conflictDict[*v[0].GetPath()] = append(conflictDict[*v[0].GetPath()], v[i])
-				txToRemove[v[i].GetTx()] = true
-				v[i].Print()
-			}
+		if offset >= 0 {
+			ids := []uint32{}
+			common.Foreach(newTrans[offset:ranges[i+1]], func(v *ccurlcommon.UnivalueInterface) { ids = append(ids, (*v).GetTx()) })
+			conflicts = append(conflicts,
+				&Conflict{
+					key:   *newTrans[ranges[i]].GetPath(),
+					txIDs: ids,
+					err:   nil,
+				},
+			)
 		}
 	}
-	txs := common.MapKeys(txToRemove)
-	// keys := txToRemove.Keys()
-	// txs := make([]uint32, len(keys))
-	// for i, v := range keys {
-	// 	txs[i] = v
-	// }
-
-	this.transitions = make(map[string]*[]ccurlcommon.UnivalueInterface)
-	return conflictDict, txs
+	return conflicts
 }
-
-// func IsConflict(lhv, rhv ccurlcommon.UnivalueInterface) {
-// 	if (lhv.Writes() > 0 || rhv.Writes() > 0) ||
-
-// 	{
-
-// }
 
 func HashPaths(records []ccurlcommon.UnivalueInterface) {
 	numThreads := 1
