@@ -8,6 +8,11 @@ const (
 	MAX_DEPTH            uint8 = 12
 	SYSTEM                     = math.MaxInt32
 	ETH10_ACCOUNT_LENGTH       = 40
+
+	ERR_OUT_OF_LOWER_LIMIT = 1
+	ERR_OUT_OF_UPPER_LIMIT = 2
+	ERR_ACCESS_CONFLICT    = 3
+	ERR_EXEC_FAILED        = 4
 )
 
 type PlatformInterface interface { // value type
@@ -113,7 +118,7 @@ type ImporterInterface interface {
 	RetriveShallow(string) interface{}
 }
 
-type FilterTransitionsInterface interface {
+type FilteredTransitionsInterface interface {
 	Is(int, string) bool
 }
 

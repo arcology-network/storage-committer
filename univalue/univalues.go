@@ -100,9 +100,10 @@ func (this Univalues) SortByCost() Univalues {
 func (this Univalues) Sort() Univalues {
 	summed := make([]uint64, len(this))
 	for i := ccurlcommon.ETH10_ACCOUNT_LENGTH; i < len(this); i++ {
-		summed[i] = codec.String(*this[i].GetPath()).Sum()
+		summed[i] = codec.String(*this[i].GetPath()).Sum(uint64(0))
 	}
 
+	// Don't switch the order
 	sort.Slice(this, func(i, j int) bool {
 		if summed[i] != summed[j] {
 			return summed[i] < summed[j]
@@ -110,6 +111,10 @@ func (this Univalues) Sort() Univalues {
 
 		if *this[i].GetPath() != *this[j].GetPath() {
 			return bytes.Compare([]byte(*this[i].GetPath()), []byte(*this[j].GetPath())) < 0
+		}
+
+		if this[i].GetTx() != this[j].GetTx() {
+			return this[i].GetTx() < this[j].GetTx()
 		}
 
 		if (this[i].Value() == nil || this[j].Value() == nil) && (this[i].Value() != this[j].Value()) {
@@ -132,9 +137,6 @@ func (this Univalues) Sort() Univalues {
 			return this[i].Preexist()
 		}
 
-		if this[i].GetTx() != this[j].GetTx() {
-			return this[i].GetTx() < this[j].GetTx()
-		}
 		return true
 	})
 	return this

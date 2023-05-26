@@ -4,25 +4,18 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/arcology-network/common-lib/codec"
 	common "github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
-
-	murmur "github.com/spaolacci/murmur3"
 )
 
-type Arbitrator struct {
-	dict map[string]*[]ccurlcommon.UnivalueInterface
-}
-
-func NewArbitrator() *Arbitrator {
-	return &Arbitrator{
-		dict: make(map[string]*[]ccurlcommon.UnivalueInterface),
-	}
-}
+type Arbitrator struct{}
 
 func (this *Arbitrator) Detect(newTrans []ccurlcommon.UnivalueInterface) []*Conflict {
+	if len(newTrans) == 0 {
+		return []*Conflict{}
+	}
+
 	t0 := time.Now()
 	univalue.Univalues(newTrans).Sort()
 	fmt.Println("Sort: ", time.Since(t0))
@@ -37,42 +30,33 @@ func (this *Arbitrator) Detect(newTrans []ccurlcommon.UnivalueInterface) []*Conf
 
 		var offset int
 		if newTrans[ranges[i]].Writes() == 0 {
-			if newTrans[ranges[i]].IsConcurrentWritable() {
+			if newTrans[ranges[i]].IsConcurrentWritable() { // Delta write only
 				offset = common.LocateFirstIf(newTrans[ranges[i]+1:ranges[i+1]], func(v ccurlcommon.UnivalueInterface) bool { return !v.IsConcurrentWritable() })
-			} else {
-				offset = common.LocateFirstIf(newTrans[ranges[i]+1:ranges[i+1]], func(v ccurlcommon.UnivalueInterface) bool { return v.Writes() > 0 || v.DeltaWrites() > 0 }) + 1
+			} else { // Read only
+				offset = common.LocateFirstIf(newTrans[ranges[i]+1:ranges[i+1]], func(v ccurlcommon.UnivalueInterface) bool { return v.Writes() > 0 || v.DeltaWrites() > 0 })
 			}
+			offset = common.IfThen(offset < 0, ranges[i+1]-ranges[i], offset+1) // offset == -1 means no conflict found
 		} else {
 			offset = ranges[i] + 1
 		}
 
-		if offset >= 0 {
-			ids := []uint32{}
-			common.Foreach(newTrans[offset:ranges[i+1]], func(v *ccurlcommon.UnivalueInterface) { ids = append(ids, (*v).GetTx()) })
-			conflicts = append(conflicts,
-				&Conflict{
-					key:   *newTrans[ranges[i]].GetPath(),
-					txIDs: ids,
-					err:   nil,
-				},
-			)
+		if ranges[i]+offset == ranges[i+1] {
+			continue
+		}
+
+		ids := []uint32{}
+		common.Foreach(newTrans[ranges[i]+offset:ranges[i+1]], func(v *ccurlcommon.UnivalueInterface) { ids = append(ids, (*v).GetTx()) })
+		conflicts = append(conflicts,
+			&Conflict{
+				key:     *newTrans[ranges[i]].GetPath(),
+				txIDs:   ids,
+				ErrCode: ccurlcommon.ERR_ACCESS_CONFLICT,
+			},
+		)
+
+		if outOfLimits := (&Accumulator{}).CheckMinMax(newTrans[offset:ranges[i+1]]); outOfLimits != nil {
+			conflicts = append(conflicts, outOfLimits...)
 		}
 	}
 	return conflicts
-}
-
-func HashPaths(records []ccurlcommon.UnivalueInterface) {
-	numThreads := 1
-	if len(records) > 128 {
-		numThreads = 4
-	}
-
-	hasher := func(start, end, index int, args ...interface{}) {
-		for i := start; i < end; i++ {
-			h0, h1 := murmur.Sum128(codec.String(*records[i].GetPath()).Encode())
-			path := codec.Bytes(codec.Uint64(h0).Encode()).ToString() + codec.Bytes(codec.Uint64(h1).Encode()).ToString()
-			records[i].SetPath(&path)
-		}
-	}
-	common.ParallelWorker(len(records), numThreads, hasher)
 }

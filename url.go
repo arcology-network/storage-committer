@@ -37,7 +37,7 @@ func NewConcurrentUrl(store ccurlcommon.DatastoreInterface, args ...interface{})
 			univalue.KeepNonce,
 			univalue.KeepBalance,
 		},
-		Platform: platform, //[]ccurlcommon.FilterTransitionsInterface{&indexer.NonceFilter{}, &indexer.BalanceFilter{}},
+		Platform: platform, //[]ccurlcommon.FilteredTransitionsInterface{&indexer.NonceFilter{}, &indexer.BalanceFilter{}},
 	}
 }
 
