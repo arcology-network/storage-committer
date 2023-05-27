@@ -6,15 +6,16 @@ import (
 	"fmt"
 	"reflect"
 
+	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
-	"github.com/arcology-network/concurrenturl/commutative"
 )
 
 type Univalue struct {
 	Unimeta
-	value interface{}
-	cache []byte
+	value     interface{}
+	cache     []byte
+	errorCode codec.Uint8
 }
 
 // func NewUnivalue
@@ -32,17 +33,23 @@ func NewUnivalue(tx uint32, key string, reads, writes uint32, deltaWrites uint32
 		},
 		args[0],
 		[]byte{},
+		0,
 	}
 }
 
-func (*Univalue) New(meta, value, cache interface{}) interface{} {
+func (*Univalue) New(meta, value, cache, errorCode interface{}) interface{} {
 	return &Univalue{
 		meta.(Unimeta),
 		value,
 		cache.([]byte),
+		codec.Uint8(errorCode.(uint8)),
 	}
 }
 
+func (this *Univalue) GetErrorCode() uint8     { return (uint8)(this.errorCode) }
+func (this *Univalue) SetErrorCode(code uint8) { this.errorCode = codec.Uint8(code) }
+
+func (this *Univalue) IsHotLoaded() bool             { return this.reads > 1 }
 func (this *Univalue) SetTx(txId uint32)             { this.tx = txId }
 func (this *Univalue) ClearCache()                   { this.cache = this.cache[:0] }
 func (this *Univalue) Value() interface{}            { return this.value }
@@ -50,22 +57,6 @@ func (this *Univalue) SetValue(newValue interface{}) { this.value = newValue }
 
 func (this *Univalue) GetUnimeta() interface{} { return this.Unimeta }
 func (this *Univalue) GetCache() interface{}   { return this.cache }
-
-func (this *Univalue) Meta() ccurlcommon.UnivalueInterface {
-	var v interface{}
-	if this.value != nil {
-		value := this.value.(ccurlcommon.TypeInterface)
-		if this.deltaWrites > 0 && this.reads == 0 && this.writes == 0 && this.TypeID() != commutative.PATH {
-			v = this.value.(ccurlcommon.TypeInterface).New(nil, value.Delta(), value.DeltaSign(), value.Min(), value.Max())
-		}
-	}
-
-	return &Univalue{
-		this.Unimeta,
-		v,
-		[]byte{},
-	}
-}
 
 func (this *Univalue) Init(tx uint32, key string, reads, writes uint32, v interface{}, args ...interface{}) {
 	this.vType = common.IfThenDo1st(v != nil, func() uint8 { return v.(ccurlcommon.TypeInterface).TypeID() }, uint8(reflect.Invalid))
@@ -199,6 +190,7 @@ func (this *Univalue) Clone() interface{} {
 		this.Unimeta.Clone(),
 		common.IfThenDo1st(this.value != nil, func() interface{} { return this.value.(ccurlcommon.TypeInterface).Clone() }, this.value),
 		common.Clone(this.cache),
+		0,
 	}
 	return v
 }

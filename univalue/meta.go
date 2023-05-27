@@ -48,6 +48,15 @@ func (this *Unimeta) CheckPreexist(key string, source interface{}) bool {
 	return source.(ccurlcommon.ImporterInterface).RetriveShallow(key) != nil
 }
 
+func (this *Unimeta) Equal(other *Unimeta) bool {
+	return this.vType == other.vType &&
+		this.tx == other.tx &&
+		*this.path == *other.path &&
+		this.reads == other.reads &&
+		this.writes == other.writes &&
+		this.deltaWrites == other.deltaWrites
+}
+
 func (this *Unimeta) Clone() Unimeta {
 	return Unimeta{
 		vType:       this.vType,

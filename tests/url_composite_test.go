@@ -10,8 +10,8 @@ import (
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
+	indexer "github.com/arcology-network/concurrenturl/indexer"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
-	univalue "github.com/arcology-network/concurrenturl/univalue"
 )
 
 func TestAuxTrans(t *testing.T) {
@@ -23,10 +23,10 @@ func TestAuxTrans(t *testing.T) {
 		t.Error(err)
 	}
 
-	// _, trans00 := url.Export(univalue.Sorter)
-	acctTrans := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
+	// _, trans00 := url.Export(indexer.Sorter)
+	acctTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.TransitionCodecFilterSet()...)
 
-	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
+	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
 
 	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM}) // Commit
@@ -35,12 +35,12 @@ func TestAuxTrans(t *testing.T) {
 	// create a path
 	path := commutative.NewPath()
 
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		t.Error(err)
 	}
 
 	// Try to rewrite a path, should fail !
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", noncommutative.NewString("path")); err == nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", noncommutative.NewString("path")); err == nil {
 		t.Error(err)
 	}
 
@@ -65,7 +65,7 @@ func TestAuxTrans(t *testing.T) {
 	}
 
 	// Write the entry
-	if value := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", noncommutative.NewInt64(1111)); value != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", noncommutative.NewInt64(1111)); err != nil {
 		t.Error("Shouldn't be not found")
 	}
 
@@ -83,7 +83,7 @@ func TestAuxTrans(t *testing.T) {
 		}
 	}
 
-	transitions := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
+	transitions := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.TransitionCodecFilterSet()...)
 	if !reflect.DeepEqual(transitions[0].Value().(ccurlcommon.TypeInterface).Delta().(*commutative.PathDelta).Added(), []string{"elem-000"}) {
 		t.Error("keys don't match")
 	}
@@ -98,8 +98,8 @@ func TestAuxTrans(t *testing.T) {
 		t.Error("The variable has been cleared")
 	}
 
-	in := univalue.Univalues(transitions).Encode()
-	out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
+	in := indexer.Univalues(transitions).Encode()
+	out := indexer.Univalues{}.Decode(in).(indexer.Univalues)
 
 	url.Import(out)
 	url.Sort()
@@ -114,39 +114,39 @@ func TestCheckAccessRecords(t *testing.T) {
 		t.Error(err)
 	}
 
-	// _, trans00 := url.Export(univalue.Sorter)
-	trans00 := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
+	// _, trans00 := url.Export(indexer.Sorter)
+	trans00 := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.TransitionCodecFilterSet()...)
 
-	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans00).Encode()).(univalue.Univalues))
+	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans00).Encode()).(indexer.Univalues))
 
 	url.Sort()
 	url.Commit([]uint32{1}) // Commit
 
 	url.Init(store)
 	path := commutative.NewPath()
-	if url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path) != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/") // create a path
 	}
 
-	// _, trans10 := url.Export(univalue.Sorter)
-	trans10 := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
+	// _, trans10 := url.Export(indexer.Sorter)
+	trans10 := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.TransitionCodecFilterSet()...)
 
-	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans10).Encode()).(univalue.Univalues))
+	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans10).Encode()).(indexer.Univalues))
 
 	url.Sort()
 	url.Commit([]uint32{1}) // Commit
 
 	url.Init(store)
-	if url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewInt64(1111)) != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewInt64(1111)); err != nil {
 		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/1") // create a path
 	}
 
-	if url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/2", noncommutative.NewInt64(2222)) != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/2", noncommutative.NewInt64(2222)); err != nil {
 		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/2") // create a path
 	}
 
-	// accesses10, trans11 := url.Export(univalue.Sorter)
-	// url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans11).Encode()).(univalue.Univalues))
+	// accesses10, trans11 := url.Export(indexer.Sorter)
+	// url.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans11).Encode()).(indexer.Univalues))
 
 	// url.Sort()
 	// url.Commit([]uint32{1}) // Commit
@@ -164,7 +164,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	// 	t.Error("Error: There should be 3 accesse records url") // create a path
 	// }
 
-	if url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/3", noncommutative.NewInt64(3333)) != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/3", noncommutative.NewInt64(3333)); err != nil {
 		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/3") // create a path
 	}
 

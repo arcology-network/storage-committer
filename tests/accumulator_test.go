@@ -8,10 +8,10 @@ import (
 	"github.com/arcology-network/common-lib/common"
 	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl"
+	arbitrator "github.com/arcology-network/concurrenturl/arbitrator"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
-	univalue "github.com/arcology-network/concurrenturl/univalue"
 	"github.com/holiman/uint256"
 )
 
@@ -23,7 +23,7 @@ func TestAccumulatorUpperLimit(t *testing.T) {
 		t.Error(err)
 	}
 
-	trans := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
+	trans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.TransitionCodecFilterSet()...)
 	transV := []ccurlcommon.UnivalueInterface(trans)
 	balanceDeltas := common.CopyIf(transV, func(v ccurlcommon.UnivalueInterface) bool { return strings.LastIndex(*v.GetPath(), "/balance") > 0 })
 
@@ -42,13 +42,13 @@ func TestAccumulatorUpperLimit(t *testing.T) {
 	// dict := make(map[string]*[]ccurlcommon.UnivalueInterface)
 	// dict[*(balanceDeltas[0]).GetPath()] = &balanceDeltas
 
-	conflicts := (&indexer.Accumulator{}).CheckMinMax(balanceDeltas)
+	conflicts := (&arbitrator.Accumulator{}).CheckMinMax(balanceDeltas)
 	if len(conflicts) != 0 {
 		t.Error("Error: There is no conflict")
 	}
 
 	balanceDeltas[3].Value().(*commutative.U256).SetDelta((uint256.NewInt(64)))
-	conflicts = (&indexer.Accumulator{}).CheckMinMax(balanceDeltas)
+	conflicts = (&arbitrator.Accumulator{}).CheckMinMax(balanceDeltas)
 	if len(conflicts) != 1 {
 		t.Error("Error: There is should be a of-limit-error")
 	}
@@ -62,7 +62,7 @@ func TestAccumulatorLowerLimit(t *testing.T) {
 		t.Error(err)
 	}
 
-	trans := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
+	trans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.TransitionCodecFilterSet()...)
 	transV := []ccurlcommon.UnivalueInterface(trans)
 	balanceDeltas := common.CopyIf(transV, func(v ccurlcommon.UnivalueInterface) bool { return strings.LastIndex(*v.GetPath(), "/balance") > 0 })
 
@@ -84,13 +84,13 @@ func TestAccumulatorLowerLimit(t *testing.T) {
 	balanceDeltas[3].SetTx(3)
 	balanceDeltas[3].Value().(*commutative.U256).SetDelta((uint256.NewInt(63)))
 
-	conflicts := (&indexer.Accumulator{}).CheckMinMax(balanceDeltas)
+	conflicts := (&arbitrator.Accumulator{}).CheckMinMax(balanceDeltas)
 	if len(conflicts) != 0 {
 		t.Error("Error: There is no conflict")
 	}
 
 	balanceDeltas[3].Value().(*commutative.U256).SetDelta((uint256.NewInt(64)))
-	conflicts = (&indexer.Accumulator{}).CheckMinMax(balanceDeltas)
+	conflicts = (&arbitrator.Accumulator{}).CheckMinMax(balanceDeltas)
 	if len(conflicts) != 1 {
 		t.Error("Error: There is should be a of-limit-error")
 	}

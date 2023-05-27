@@ -28,5 +28,6 @@ func KeepCumulativeNumeric(v ccurlcommon.UnivalueInterface) ccurlcommon.Univalue
 			},
 			nil),
 		[]byte{},
+		v.GetErrorCode(),
 	).(ccurlcommon.UnivalueInterface)
 }

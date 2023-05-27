@@ -11,6 +11,7 @@ import (
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
+	indexer "github.com/arcology-network/concurrenturl/indexer"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 	"github.com/holiman/uint256"
@@ -24,29 +25,29 @@ func TestSimpleBalance(t *testing.T) {
 		t.Error(err)
 	}
 
-	if err := url.Write(0, "blcc://eth1.0/account/"+alice+"/balance",
+	if _, err := url.Write(0, "blcc://eth1.0/account/"+alice+"/balance",
 		commutative.NewU256(commutative.U256_MIN, commutative.U256_MAX)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
 	// Add the first delta
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance",
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance",
 		commutative.NewU256Delta(uint256.NewInt(22), true)); err != nil {
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
 	// Add the second delta
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance",
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance",
 		commutative.NewU256Delta(uint256.NewInt(11), true)); err != nil {
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
 	// Export variables
-	// _, in := url.Export(univalue.Sorter)
-	in := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
+	// _, in := url.Export(indexer.Sorter)
+	in := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.TransitionCodecFilterSet()...)
 
-	buffer := univalue.Univalues(in).Encode()
-	out := univalue.Univalues{}.Decode(buffer).(univalue.Univalues)
+	buffer := indexer.Univalues(in).Encode()
+	out := indexer.Univalues{}.Decode(buffer).(indexer.Univalues)
 	for i := range in {
 		if !in[i].(*univalue.Univalue).Equal(out[i].(*univalue.Univalue)) {
 			t.Error("Accesses don't match")
@@ -71,11 +72,11 @@ func TestSimpleBalance(t *testing.T) {
 		t.Error("Error: Wrong blcc://eth1.0/account/alice/balance value")
 	}
 
-	// records, trans := url2.Export(univalue.Sorter)
-	trans := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
-	records := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.AccessCodecFilterSet()...)
+	// records, trans := url2.Export(indexer.Sorter)
+	trans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.TransitionCodecFilterSet()...)
+	records := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(univalue.AccessCodecFilterSet()...)
 
-	univalue.Univalues(trans).Encode()
+	indexer.Univalues(trans).Encode()
 	for _, v := range records {
 		if v.Writes() == v.Reads() && v.Writes() == 0 && v.DeltaWrites() == 0 {
 			t.Error("Error: Write == Reads == DeltaWrites == 0")
@@ -95,14 +96,14 @@ func TestBalance(t *testing.T) {
 
 	// create a path
 	path := commutative.NewPath()
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		t.Error(err, " Failed to MakePath: blcc://eth1.0/account/alice/storage/ctrn-0/")
 	}
 
 	// create a noncommutative bigint
 	inV := noncommutative.NewBigint(100)
 	value := (*big.Int)(inV.(*noncommutative.Bigint))
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0", inV); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0", inV); err != nil {
 		t.Error(err, " Failed to Write: blcc://eth1.0/account/alice/storage/ctrn-0/elem-0")
 	}
 
@@ -114,19 +115,19 @@ func TestBalance(t *testing.T) {
 
 	// -------------------Create another commutative bigint ------------------------------
 	comtVInit := commutative.NewU256(commutative.U256_MIN, commutative.U256_MAX)
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", comtVInit); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", comtVInit); err != nil {
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256Delta(uint256.NewInt(300), true)); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256Delta(uint256.NewInt(300), true)); err != nil {
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256Delta(uint256.NewInt(1), true)); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256Delta(uint256.NewInt(1), true)); err != nil {
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256Delta(uint256.NewInt(2), true)); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256Delta(uint256.NewInt(2), true)); err != nil {
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
@@ -136,17 +137,17 @@ func TestBalance(t *testing.T) {
 	}
 
 	// ----------------------------U256 ---------------------------------------------------
-	if err := url.Write(0, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(0), true)); err != nil { //initialization
+	if _, err := url.Write(0, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(0), true)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
 	// Add the first delta
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(22), true)); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(22), true)); err != nil {
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
 	// Add the second delta
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(11), true)); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(11), true)); err != nil {
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
@@ -157,7 +158,7 @@ func TestBalance(t *testing.T) {
 	}
 
 	// Export variables
-	transitions := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
+	transitions := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.TransitionCodecFilterSet()...)
 	// for i := range transitions {
 	trans := transitions[9]
 
@@ -177,19 +178,19 @@ func TestNonce(t *testing.T) {
 		t.Error(err)
 	}
 
-	if err := url1.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64(0, math.MaxInt64)); err != nil { //initialization
+	if _, err := url1.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64(0, math.MaxInt64)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
-	if err := url1.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
+	if _, err := url1.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
-	if err := url1.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(2)); err != nil { //initialization
+	if _, err := url1.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(2)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
-	if err := url1.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(3)); err != nil { //initialization
+	if _, err := url1.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(3)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
@@ -199,7 +200,7 @@ func TestNonce(t *testing.T) {
 		t.Error("Error: blcc://eth1.0/account/alice/nonce should be ", 6)
 	}
 
-	trans := univalue.Univalues(common.Clone(url1.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
+	trans := indexer.Univalues(common.Clone(url1.Export(indexer.Sorter))).To(indexer.TransitionCodecFilterSet()...)
 	url1.Import(trans)
 	url1.Sort()
 	url1.Commit([]uint32{0})
@@ -221,17 +222,17 @@ func TestMultipleNonces(t *testing.T) {
 	}
 
 	url0.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64(0, math.MaxInt64))
-	if err := url0.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
+	if _, err := url0.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
-	if err := url0.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
+	if _, err := url0.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
-	// _, trans0 := url0.Export(univalue.Sorter)
+	// _, trans0 := url0.Export(indexer.Sorter)
 	// ccurltype.SetInvariate(trans0, "nonce")
-	trans0 := univalue.Univalues(common.Clone(url0.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
+	trans0 := indexer.Univalues(common.Clone(url0.Export(indexer.Sorter))).To(indexer.TransitionCodecFilterSet()...)
 
 	url1 := ccurl.NewConcurrentUrl(store)
 	bob := BobAccount()
@@ -241,11 +242,11 @@ func TestMultipleNonces(t *testing.T) {
 
 	url0.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64(0, math.MaxInt64))
 
-	if err := url1.Write(0, "blcc://eth1.0/account/"+bob+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
+	if _, err := url1.Write(0, "blcc://eth1.0/account/"+bob+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+bob+"/balance")
 	}
 
-	if err := url1.Write(0, "blcc://eth1.0/account/"+bob+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
+	if _, err := url1.Write(0, "blcc://eth1.0/account/"+bob+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+bob+"/balance")
 	}
 
@@ -255,7 +256,7 @@ func TestMultipleNonces(t *testing.T) {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
 	}
 
-	trans1 := univalue.Univalues(common.Clone(url1.Export(univalue.Sorter))).To(univalue.TransitionCodecFilterSet()...)
+	trans1 := indexer.Univalues(common.Clone(url1.Export(indexer.Sorter))).To(indexer.TransitionCodecFilterSet()...)
 	// ccurltype.SetInvariate(trans1, "nonce")
 
 	nonce, _ = url1.Read(0, "blcc://eth1.0/account/"+bob+"/nonce")

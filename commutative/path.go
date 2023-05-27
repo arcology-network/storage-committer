@@ -26,7 +26,7 @@ func (this *Path) Length() int                                                { 
 func (this *Path) View() *orderedset.OrderedSet                               { return this.value }
 func (this *Path) MemSize() uint32                                            { return codec.Strings(this.value.Keys()).Size() * 2 } // Just an estimate, need to update on fly instead of calculating everytime
 func (this *Path) TypeID() uint8                                              { return PATH }
-func (this *Path) IsSelf(key interface{}) bool                                { return ccurlcommon.IsPath(key.(string)) }
+func (this *Path) IsSelf(key interface{}) bool                                { return common.IsPath(key.(string)) }
 func (this *Path) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }
 
 func (this *Path) IsNumeric() bool     { return false }
@@ -113,7 +113,7 @@ func (this *Path) Set(value interface{}, source interface{}) (interface{}, uint3
 	tx := source.([]interface{})[2].(uint32)
 	writeCache := source.([]interface{})[3].(ccurlcommon.WriteCacheInterface)
 
-	if ccurlcommon.IsPath(targetPath) && len(targetPath) == len(myPath) { // Delete or rewrite the path
+	if common.IsPath(targetPath) && len(targetPath) == len(myPath) { // Delete or rewrite the path
 		if value == nil { // Delete the path and all its elements
 			for _, subpath := range this.value.Keys() { // Get all the sub paths
 				writeCache.Write(tx, targetPath+subpath, nil) //FIXME: THIS EMITS SOME ERROR MESSAGEES BUT DON't SEEM HARMFUL

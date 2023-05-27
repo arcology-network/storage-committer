@@ -6,7 +6,7 @@ import (
 
 	common "github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
-	univalue "github.com/arcology-network/concurrenturl/univalue"
+	"github.com/arcology-network/concurrenturl/indexer"
 )
 
 type Arbitrator struct{}
@@ -17,7 +17,7 @@ func (this *Arbitrator) Detect(newTrans []ccurlcommon.UnivalueInterface) []*Conf
 	}
 
 	t0 := time.Now()
-	univalue.Univalues(newTrans).Sort()
+	indexer.Univalues(newTrans).Sort()
 	fmt.Println("Sort: ", time.Since(t0))
 
 	ranges := common.FindRange(newTrans, func(lhv, rhv ccurlcommon.UnivalueInterface) bool { return *lhv.GetPath() == *rhv.GetPath() })
@@ -28,7 +28,7 @@ func (this *Arbitrator) Detect(newTrans []ccurlcommon.UnivalueInterface) []*Conf
 			continue // Only one entry
 		}
 
-		var offset int
+		offset := int(1)
 		if newTrans[ranges[i]].Writes() == 0 {
 			if newTrans[ranges[i]].IsConcurrentWritable() { // Delta write only
 				offset = common.LocateFirstIf(newTrans[ranges[i]+1:ranges[i+1]], func(v ccurlcommon.UnivalueInterface) bool { return !v.IsConcurrentWritable() })
@@ -36,8 +36,6 @@ func (this *Arbitrator) Detect(newTrans []ccurlcommon.UnivalueInterface) []*Conf
 				offset = common.LocateFirstIf(newTrans[ranges[i]+1:ranges[i+1]], func(v ccurlcommon.UnivalueInterface) bool { return v.Writes() > 0 || v.DeltaWrites() > 0 })
 			}
 			offset = common.IfThen(offset < 0, ranges[i+1]-ranges[i], offset+1) // offset == -1 means no conflict found
-		} else {
-			offset = ranges[i] + 1
 		}
 
 		if ranges[i]+offset == ranges[i+1] {

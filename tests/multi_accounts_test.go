@@ -10,7 +10,6 @@ import (
 	ccurl "github.com/arcology-network/concurrenturl"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
-	univalue "github.com/arcology-network/concurrenturl/univalue"
 )
 
 func TestMultiAccountCreation(t *testing.T) {
@@ -25,8 +24,8 @@ func TestMultiAccountCreation(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	raw := url.Export(univalue.Sorter)
-	acctTrans := univalue.Univalues(common.Clone(raw)).To(univalue.TransitionCodecFilterSet()...)
+	raw := url.Export(indexer.Sorter)
+	acctTrans := indexer.Univalues(common.Clone(raw)).To(indexer.TransitionCodecFilterSet()...)
 
 	paths := concurrenturl.NewPlatform().GetSysPaths()
 
@@ -38,10 +37,10 @@ func TestMultiAccountCreation(t *testing.T) {
 	url.Sort()
 	url.Commit([]uint32{0})
 
-	acctTrans = univalue.Univalues(common.Clone(raw)).To(univalue.TransitionCodecFilterSet()...)
-	encoded := univalue.Univalues(acctTrans).Encode()
+	acctTrans = indexer.Univalues(common.Clone(raw)).To(indexer.TransitionCodecFilterSet()...)
+	encoded := indexer.Univalues(acctTrans).Encode()
 
-	out := univalue.Univalues{}.Decode(encoded).(univalue.Univalues)
+	out := indexer.Univalues{}.Decode(encoded).(indexer.Univalues)
 	if len(acctTrans) != len(out) {
 		t.Error("Error: Transition counts don't match up")
 	}

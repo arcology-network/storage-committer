@@ -60,13 +60,9 @@ func (this Codec) Decode(buffer []byte) interface{} {
 	return nil
 }
 
-// func (Decoder) Decode(buffer []byte, vType uint8) interface{} {
-// 	if len(buffer) == 0 {
-// 		return nil
-// 	}
-
-// 	switch vType {
-// 	case noncommutative.STRING: // delta big int
+// func (Codec) Size(v interface{}) uint64 {
+// 	switch v.(type) {
+// 	case int64: // delta big int
 // 		stringer := noncommutative.String("")
 // 		return stringer.Decode(buffer)
 

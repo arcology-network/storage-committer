@@ -1,4 +1,4 @@
-package univalue
+package indexer
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	univalue "github.com/arcology-network/concurrenturl/univalue"
 )
 
 func (this Univalues) Size() int {
@@ -63,7 +64,7 @@ func (Univalues) Decode(bytes []byte) interface{} {
 	univalues := make([]ccurlcommon.UnivalueInterface, len(buffers))
 	worker := func(start, end, index int, args ...interface{}) {
 		for i := start; i < end; i++ {
-			v := (&Univalue{}).Decode(buffers[i])
+			v := (&univalue.Univalue{}).Decode(buffers[i])
 			univalues[i] = v.(ccurlcommon.UnivalueInterface)
 		}
 	}

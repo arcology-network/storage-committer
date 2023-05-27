@@ -9,8 +9,6 @@ import (
 	"time"
 
 	"github.com/arcology-network/common-lib/common"
-
-	// performance "github.com/arcology-network/common-lib/mhasher"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
@@ -24,7 +22,7 @@ type ConcurrentUrl struct {
 	invImporter *indexer.Importer // transitions that will take effect anyway regardless of execution failures or conflicts
 	Platform    *Platform
 
-	ImportFilters []func(unival ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface
+	// ImportFilters []func(unival ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface
 }
 
 func NewConcurrentUrl(store ccurlcommon.DatastoreInterface, args ...interface{}) *ConcurrentUrl {
@@ -33,11 +31,7 @@ func NewConcurrentUrl(store ccurlcommon.DatastoreInterface, args ...interface{})
 		writeCache:  indexer.NewWriteCache(store, platform),
 		importer:    indexer.NewImporter(store, platform),
 		invImporter: indexer.NewImporter(store, platform),
-		ImportFilters: []func(unival ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface{
-			univalue.KeepNonce,
-			univalue.KeepBalance,
-		},
-		Platform: platform, //[]ccurlcommon.FilteredTransitionsInterface{&indexer.NonceFilter{}, &indexer.BalanceFilter{}},
+		Platform:    platform, //[]ccurlcommon.FilteredTransitionsInterface{&indexer.NonceFilter{}, &indexer.BalanceFilter{}},
 	}
 }
 
@@ -52,11 +46,13 @@ func (this *ConcurrentUrl) WriteCache() *indexer.WriteCache { return this.writeC
 func (this *ConcurrentUrl) Importer() *indexer.Importer     { return this.importer }
 
 // Get data from the DB direcly, still under conflict protection
-func (this *ConcurrentUrl) ReadCommitted(tx uint32, key string) (interface{}, error) {
-	if _, err := this.Read(tx, key); err != nil { // For conflict detection
-		return nil, err
+func (this *ConcurrentUrl) ReadCommitted(tx uint32, key string) (interface{}, uint64) {
+	if v, cost := this.Read(tx, key); v != nil { // For conflict detection
+		return v, cost
 	}
-	return this.Importer().Store().Retrive(key)
+
+	v, _ := this.Importer().Store().Retrive(key)
+	return v, Cost{}.Reader(uint64(v.(ccurlcommon.TypeInterface).Size()), true)
 }
 
 func (this *ConcurrentUrl) Init(store ccurlcommon.DatastoreInterface) {
@@ -115,106 +111,115 @@ func (this *ConcurrentUrl) IfExists(path string) bool {
 	return this.writeCache.IfExists(path)
 }
 
-func (this *ConcurrentUrl) Peek(path string) (interface{}, error) {
-	value, _ := this.writeCache.Peek(path)
-	return value, nil
+func (this *ConcurrentUrl) Peek(path string) (interface{}, uint64) {
+	typedv, univ := this.writeCache.Peek(path)
+	dataSize := common.IfThenDo1st(typedv != nil, func() uint64 {
+		return uint64(univ.(ccurlcommon.UnivalueInterface).Value().(ccurlcommon.TypeInterface).Size())
+	}, 0)
+	return typedv, Cost{}.Reader(dataSize, univ.(ccurlcommon.UnivalueInterface).IsHotLoaded())
+}
+
+func (this *ConcurrentUrl) Read(tx uint32, path string) (interface{}, uint64) {
+	typedv, univ := this.writeCache.Read(tx, path)
+	dataSize := common.IfThenDo1st(typedv != nil, func() uint64 {
+		return uint64(univ.(ccurlcommon.UnivalueInterface).Value().(ccurlcommon.TypeInterface).Size())
+	}, 0)
+	return typedv, Cost{}.Reader(dataSize, univ.(ccurlcommon.UnivalueInterface).IsHotLoaded())
+}
+
+func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}) (int64, error) {
+	dataSize := common.IfThenDo1st(
+		value != nil,
+		func() uint64 { return uint64(value.(ccurlcommon.TypeInterface).Size()) },
+		0,
+	)
+
+	return Cost{}.Writer(dataSize, dataSize), // FIXME: The second should be the committed size
+		common.IfThenDo1st(
+			value == nil || (value != nil && value.(ccurlcommon.TypeInterface).TypeID() != uint8(reflect.Invalid)),
+			func() error { return this.writeCache.Write(tx, path, value) },
+			errors.New("Error: Unknown data type !"),
+		)
 }
 
 func (this *ConcurrentUrl) Do(tx uint32, path string, do interface{}) (interface{}, error) {
 	return this.writeCache.Do(tx, path, do), nil
 }
 
-func (this *ConcurrentUrl) Read(tx uint32, path string) (interface{}, error) {
-	return this.writeCache.Read(tx, path), nil
-}
+// Read th Nth element under a path
+func (this *ConcurrentUrl) at(tx uint32, path string, idx uint64) (interface{}, uint64, error) {
+	if !common.IsPath(path) {
+		return nil, IS_PATH, errors.New("Error: Not a path!!!")
+	}
 
-func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}) error {
-	return common.IfThenDo1st(
-		value == nil || (value != nil && value.(ccurlcommon.TypeInterface).TypeID() != uint8(reflect.Invalid)),
-		func() error { return this.writeCache.Write(tx, path, value) },
-		errors.New("Error: Unknown data type !"),
-	)
+	meta, readCost := this.Read(tx, path) // read the container meta
+	return common.IfThen(meta == nil,
+		meta,
+		common.IfThenDo1st(idx < uint64(len(meta.([]string))), func() interface{} { return path + meta.([]string)[idx] }, nil),
+	), readCost, nil
 }
 
 // Read th Nth element under a path
-func (this *ConcurrentUrl) at(tx uint32, path string, idx uint64) (interface{}, error) {
-	if !ccurlcommon.IsPath(path) {
-		return nil, errors.New("Error: Not a path!!!")
-	}
-
-	meta, err := this.Read(tx, path) // read the container meta
-	if err != nil {
-		return nil, err
-	}
-
-	keys := meta.([]string)
-	return common.IfThenDo1st(idx < uint64(len(keys)), func() interface{} { return path + keys[idx] }, nil), nil
-}
-
-// Read th Nth element under a path
-func (this *ConcurrentUrl) ReadAt(tx uint32, path string, idx uint64) (interface{}, error) {
-	if key, err := this.at(tx, path, idx); err == nil && key != nil {
-		return this.Read(tx, key.(string))
+func (this *ConcurrentUrl) ReadAt(tx uint32, path string, idx uint64) (interface{}, uint64, error) {
+	if key, cost, err := this.at(tx, path, idx); err == nil && key != nil {
+		v, cost := this.Read(tx, key.(string))
+		return v, cost, nil
 	} else {
-		return key, err
+		return key, cost, err
 	}
 }
 
 // Read th Nth element under a path
-func (this *ConcurrentUrl) DoAt(tx uint32, path string, idx uint64, do interface{}) (interface{}, error) {
-	if key, err := this.at(tx, path, idx); err == nil && key != nil {
-		return this.Do(tx, key.(string), do)
+func (this *ConcurrentUrl) DoAt(tx uint32, path string, idx uint64, do interface{}) (interface{}, uint64, error) {
+	if key, cost, err := this.at(tx, path, idx); err == nil && key != nil {
+		v, err := this.Do(tx, key.(string), do)
+		return v, cost, err
 	} else {
-		return key, err
+		return key, cost, err
 	}
 }
 
 // Read th Nth element under a path
-func (this *ConcurrentUrl) PopBack(tx uint32, path string) (interface{}, error) {
-	if !ccurlcommon.IsPath(path) {
-		return nil, errors.New("Error: Not a path!!!")
+func (this *ConcurrentUrl) PopBack(tx uint32, path string) (interface{}, int64, error) {
+	if !common.IsPath(path) {
+		return nil, int64(IS_PATH), errors.New("Error: Not a path!!!")
 	}
 
-	subkeys, err := this.Read(tx, path) // read the container meta
-	if subkeys == nil || len(subkeys.([]string)) == 0 || err != nil {
-		return nil, common.IfThen(err == nil, errors.New("Error: The path is either empty or doesn't exist"), err)
+	subkeys, cost := this.Read(tx, path) // read the container meta
+	if subkeys == nil || len(subkeys.([]string)) == 0 {
+		return nil, int64(cost), errors.New("Error: The path is either empty or doesn't exist")
 	}
 
 	key := path + subkeys.([]string)[len(subkeys.([]string))-1]
 
-	value, err := this.Read(tx, key)
-	if value == nil || err != nil {
-		return nil, errors.New("Error: Empty container!")
+	value, cost := this.Read(tx, key)
+	if value == nil {
+		return nil, int64(cost), errors.New("Error: Empty container!")
 	}
-	return value, this.Write(tx, key, nil)
+
+	writecost, err := this.Write(tx, key, nil)
+	return value, writecost, err
 }
 
 // Read th Nth element under a path
-func (this *ConcurrentUrl) WriteAt(tx uint32, path string, idx uint64, value interface{}) error {
-	if !ccurlcommon.IsPath(path) {
-		return errors.New("Error: Not a path!!!")
+func (this *ConcurrentUrl) WriteAt(tx uint32, path string, idx uint64, value interface{}) (int64, error) {
+	if !common.IsPath(path) {
+		return int64(IS_PATH), errors.New("Error: Not a path!!!")
 	}
 
-	if key, err := this.at(tx, path, idx); err == nil {
+	if key, cost, err := this.at(tx, path, idx); err == nil {
 		return this.Write(tx, key.(string), value)
 	} else {
-		return err
+		return int64(cost), err
 	}
-}
-
-func (this *ConcurrentUrl) keep(transition ccurlcommon.UnivalueInterface) bool {
-	for i := 0; i < len(this.ImportFilters); i++ {
-		if this.ImportFilters[i](transition) != nil {
-			return true
-		}
-	}
-	return false
 }
 
 func (this *ConcurrentUrl) Import(transitions []ccurlcommon.UnivalueInterface, args ...interface{}) *ConcurrentUrl {
 	invTransitions := make([]ccurlcommon.UnivalueInterface, 0, len(transitions))
+
+	Conflicted := indexer.Conflicted{}
 	for i := 0; i < len(transitions); i++ {
-		if this.keep(transitions[i]) {
+		if Conflicted.Is(transitions[i]) {
 			invTransitions = append(invTransitions, transitions[i]) //
 			transitions[i] = nil
 		}
@@ -326,11 +331,11 @@ func (this *ConcurrentUrl) Export(preprocessors ...func([]ccurlcommon.UnivalueIn
 }
 
 func (this *ConcurrentUrl) ExportAll(preprocessors ...func([]ccurlcommon.UnivalueInterface) []ccurlcommon.UnivalueInterface) ([]ccurlcommon.UnivalueInterface, []ccurlcommon.UnivalueInterface) {
-	all := common.Clone(this.Export(univalue.Sorter))
-	univalue.Univalues(all).Print()
+	all := common.Clone(this.Export(indexer.Sorter))
+	indexer.Univalues(all).Print()
 
-	accesses := univalue.Univalues(all).To(univalue.AccessCodecFilterSet()...)
-	transitions := univalue.Univalues(all).To(univalue.TransitionCodecFilterSet()...)
+	accesses := indexer.Univalues(all).To(univalue.AccessCodecFilterSet()...)
+	transitions := indexer.Univalues(all).To(indexer.TransitionCodecFilterSet()...)
 
 	return accesses, transitions
 }

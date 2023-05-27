@@ -35,22 +35,22 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 	}
 
 	path := commutative.NewPath() // create a path
-	if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		b.Error(err)
 	}
 
 	for i := 0; i < 1; i++ {
-		if err := url.Write(0, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0"+fmt.Sprint(i), noncommutative.NewString("fmt.Sprint(i)")); err != nil { /* The first Element */
+		if _, err := url.Write(0, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0"+fmt.Sprint(i), noncommutative.NewString("fmt.Sprint(i)")); err != nil { /* The first Element */
 			b.Error(err)
 		}
 	}
 
 	//t0 = time.Now()
 	// _, transitions := url.Export(nil)
-	transitions := univalue.Univalues(common.Clone(url.Export())).To(univalue.AccessCodecFilterSet()...)
+	transitions := indexer.Univalues(common.Clone(url.Export())).To(univalue.AccessCodecFilterSet()...)
 
-	// in := univalue.Univalues(transitions).Encode()
-	//out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
+	// in := indexer.Univalues(transitions).Encode()
+	//out := indexer.Univalues{}.Decode(in).(indexer.Univalues)
 
 	//fmt.Println("Export:", time.Since(t0))
 
@@ -71,7 +71,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	}
 
 	path := commutative.NewPath() // create a path
-	if err := url.Write(0, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
+	if _, err := url.Write(0, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		b.Error(err)
 	}
 
@@ -83,12 +83,12 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 		}
 
 		path := commutative.NewPath() // create a path
-		if err := url.Write(0, "blcc://eth1.0/account/"+acct+"/storage/ctrn-0/", path); err != nil {
+		if _, err := url.Write(0, "blcc://eth1.0/account/"+acct+"/storage/ctrn-0/", path); err != nil {
 			b.Error(err)
 		}
 
 		for j := 0; j < 4; j++ {
-			if err := url.Write(0, "blcc://eth1.0/account/"+acct+"/storage/ctrn-0/elem-0"+fmt.Sprint(j), noncommutative.NewString("fmt.Sprint(i)")); err != nil { /* The first Element */
+			if _, err := url.Write(0, "blcc://eth1.0/account/"+acct+"/storage/ctrn-0/elem-0"+fmt.Sprint(j), noncommutative.NewString("fmt.Sprint(i)")); err != nil { /* The first Element */
 				b.Error(err)
 			}
 		}
@@ -96,7 +96,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	fmt.Println("Write 2500 accounts in :", time.Since(t0))
 
 	t0 = time.Now()
-	trans := univalue.Univalues(common.Clone(url.Export())).To(univalue.TransitionCodecFilterSet()...)
+	trans := indexer.Univalues(common.Clone(url.Export())).To(indexer.TransitionCodecFilterSet()...)
 	fmt.Println("Export:", time.Since(t0))
 
 	t0 = time.Now()
@@ -121,7 +121,7 @@ func BenchmarkUrlAddThenDelete(b *testing.B) {
 	url := ccurl.NewConcurrentUrl(store)
 	meta := commutative.NewPath()
 	url.Write(ccurlcommon.SYSTEM, ccurl.NewPlatform().Eth10Account(), meta)
-	trans := univalue.Univalues(common.Clone(url.Export())).To(univalue.TransitionCodecFilterSet()...)
+	trans := indexer.Univalues(common.Clone(url.Export())).To(indexer.TransitionCodecFilterSet()...)
 
 	url.Import(trans)
 	url.Sort()
@@ -137,7 +137,7 @@ func BenchmarkUrlAddThenDelete(b *testing.B) {
 
 	t0 := time.Now()
 	for i := 0; i < 50000; i++ {
-		err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-"+fmt.Sprint(i), noncommutative.NewInt64(int64(i)))
+		_, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-"+fmt.Sprint(i), noncommutative.NewInt64(int64(i)))
 		if err != nil {
 			panic(err)
 		}
@@ -146,7 +146,7 @@ func BenchmarkUrlAddThenDelete(b *testing.B) {
 
 	t0 = time.Now()
 	for i := 0; i < 50000; i++ {
-		if err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-"+fmt.Sprint(i), nil); err != nil {
+		if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-"+fmt.Sprint(i), nil); err != nil {
 			panic(err)
 		}
 	}
@@ -159,8 +159,8 @@ func BenchmarkUrlAddThenPop(b *testing.B) {
 	meta := commutative.NewPath()
 	url.Write(ccurlcommon.SYSTEM, ccurl.NewPlatform().Eth10Account(), meta)
 
-	trans := univalue.Univalues(common.Clone(url.Export())).To(univalue.TransitionCodecFilterSet()...)
-	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
+	trans := indexer.Univalues(common.Clone(url.Export())).To(indexer.TransitionCodecFilterSet()...)
+	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans).Encode()).(indexer.Univalues))
 
 	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -176,7 +176,7 @@ func BenchmarkUrlAddThenPop(b *testing.B) {
 	t0 := time.Now()
 	for i := 0; i < 50000; i++ {
 		v := noncommutative.NewBytes([]byte(fmt.Sprint(rand.Float64())))
-		err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-"+fmt.Sprint(i), v)
+		_, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-"+fmt.Sprint(i), v)
 		if err != nil {
 			panic(err)
 		}
@@ -279,11 +279,11 @@ func BenchmarkMetaIterator(b *testing.B) {
 
 	alice := datacompression.RandomAccount()
 	url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice)
-	// acctTrans := univalue.Univalues(common.Clone(url.Export())).To(univalue.AccessCodecFilterSet()...)
+	// acctTrans := indexer.Univalues(common.Clone(url.Export())).To(univalue.AccessCodecFilterSet()...)
 
-	acctTrans := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.AccessCodecFilterSet()...)
+	acctTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(univalue.AccessCodecFilterSet()...)
 
-	url.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
+	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
 
 	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -369,13 +369,13 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	fmt.Println("Write "+fmt.Sprint(100000*9), time.Since(t0))
 
 	t0 = time.Now()
-	acctTrans := univalue.Univalues(common.Clone(url.Export())).To(univalue.TransitionCodecFilterSet()...)
+	acctTrans := indexer.Univalues(common.Clone(url.Export())).To(indexer.TransitionCodecFilterSet()...)
 
 	fmt.Println("Export "+fmt.Sprint(100000*9), time.Since(t0))
 
 	t0 = time.Now()
 
-	// transitions := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues)
+	// transitions := indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues)
 	url.Import(acctTrans)
 	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -399,7 +399,7 @@ func TestAccountMerkleImportPerf(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	acctTrans := univalue.Univalues(common.Clone(url.Export(univalue.Sorter))).To(univalue.AccessCodecFilterSet()...)
+	acctTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(univalue.AccessCodecFilterSet()...)
 
 	for n := 0; n < 10; n++ {
 		accountMerkle := indexer.NewAccountMerkle(ccurl.NewPlatform())
@@ -465,7 +465,8 @@ func BenchmarkStringSort(b *testing.B) {
 	for i := 0; i < 100000; i++ {
 		acct := datacompression.RandomAccount()
 		for j := 9; j >= 1; j-- {
-			paths[i] = append(paths[i], univalue.NewUnivalue(uint32(j), acct, 0, 0, 0, fmt.Sprint(rand.Float64())))
+
+			paths[i] = append(paths[i], univalue.NewUnivalue(uint32(j), acct, 0, 0, 0, noncommutative.NewString(fmt.Sprint(rand.Float64()))))
 		}
 	}
 
@@ -613,7 +614,7 @@ func BenchmarkTransitionImport(b *testing.B) {
 	fmt.Println("Write "+fmt.Sprint(100000*9), time.Since(t0))
 
 	t0 = time.Now()
-	acctTrans := univalue.Univalues(common.Clone(url.Export())).To(univalue.AccessCodecFilterSet()...)
+	acctTrans := indexer.Univalues(common.Clone(url.Export())).To(univalue.AccessCodecFilterSet()...)
 
 	fmt.Println("Export "+fmt.Sprint(150000*9), time.Since(t0))
 
@@ -642,7 +643,7 @@ func BenchmarkConcurrentTransitionImport(b *testing.B) {
 	fmt.Println("Write "+fmt.Sprint(100000*9), time.Since(t0))
 
 	t0 = time.Now()
-	acctTrans := univalue.Univalues(common.Clone(url.Export())).To(univalue.AccessCodecFilterSet()...)
+	acctTrans := indexer.Univalues(common.Clone(url.Export())).To(univalue.AccessCodecFilterSet()...)
 
 	fmt.Println("Export "+fmt.Sprint(150000*9), time.Since(t0))
 

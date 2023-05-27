@@ -8,11 +8,6 @@ const (
 	MAX_DEPTH            uint8 = 12
 	SYSTEM                     = math.MaxInt32
 	ETH10_ACCOUNT_LENGTH       = 40
-
-	ERR_OUT_OF_LOWER_LIMIT = 1
-	ERR_OUT_OF_UPPER_LIMIT = 2
-	ERR_ACCESS_CONFLICT    = 3
-	ERR_EXEC_FAILED        = 4
 )
 
 type PlatformInterface interface { // value type
@@ -66,12 +61,18 @@ type UnivalueInterface interface { // value type
 
 	Do(uint32, string, interface{}) interface{}
 	Clone() interface{}
-	Meta() UnivalueInterface
+	// Meta() UnivalueInterface
+
+	// Is(string) bool
 
 	IncrementReads(uint32)
 	IncrementWrites(uint32)
 	IncrementDelta(uint32)
 
+	GetErrorCode() uint8
+	SetErrorCode(uint8)
+
+	IsHotLoaded() bool
 	Set(uint32, string, interface{}, interface{}) error
 	Get(uint32, string, interface{}) interface{}
 	GetTx() uint32
@@ -84,7 +85,7 @@ type UnivalueInterface interface { // value type
 	WriteTo(WriteCacheInterface)
 	GetUnimeta() interface{}
 	GetCache() interface{}
-	New(interface{}, interface{}, interface{}) interface{}
+	New(interface{}, interface{}, interface{}, interface{}) interface{}
 
 	ApplyDelta(interface{}) error
 	Preexist() bool
@@ -104,8 +105,8 @@ type UnivalueInterface interface { // value type
 }
 
 type WriteCacheInterface interface {
-	Read(uint32, string) interface{}
-	Peek(path string) (interface{}, bool)
+	Read(uint32, string) (interface{}, interface{})
+	Peek(path string) (interface{}, interface{})
 	Write(uint32, string, interface{}) error
 	Insert(string, interface{})
 

@@ -53,9 +53,9 @@ func (this *WriteCache) GetOrInit(tx uint32, path string) ccurlcommon.UnivalueIn
 	return unival
 }
 
-func (this *WriteCache) Read(tx uint32, path string) interface{} {
+func (this *WriteCache) Read(tx uint32, path string) (interface{}, interface{}) {
 	univalue := this.GetOrInit(tx, path)
-	return univalue.Get(tx, path, nil)
+	return univalue.Get(tx, path, nil), univalue
 }
 
 func (this *WriteCache) Do(tx uint32, path string, do interface{}) interface{} {
@@ -64,15 +64,17 @@ func (this *WriteCache) Do(tx uint32, path string, do interface{}) interface{} {
 }
 
 // Get the value directly, skip the access counting at the univalue level
-func (this *WriteCache) Peek(path string) (interface{}, bool) {
+func (this *WriteCache) Peek(path string) (interface{}, interface{}) {
 	if v, ok := this.kvDict[path]; ok {
-		return v.Value(), true
+		return v.Value(), v
 	}
-	return this.RetriveShallow(path), false
+
+	v := this.RetriveShallow(path)
+	return v, univalue.NewUnivalue(ccurlcommon.SYSTEM, path, 1, 0, 0, v, false)
 }
 
 func (this *WriteCache) Write(tx uint32, path string, value interface{}) error {
-	parentPath := ccurlcommon.GetParentPath(path)
+	parentPath := common.GetParentPath(path)
 	if this.IfExists(parentPath) || tx == ccurlcommon.SYSTEM { // The parent path exists or to inject the path directly
 		univalue := this.GetOrInit(tx, path) // Get a univalue wrapper
 

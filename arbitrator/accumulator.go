@@ -86,18 +86,3 @@ func (this *Accumulator) isOutOfLimits(k string, transitions []ccurlcommon.Univa
 		txIDs: txIDs,
 	}
 }
-
-// func (*Accumulator) Categorize(transitions []ccurlcommon.UnivalueInterface) ([]ccurlcommon.UnivalueInterface, []ccurlcommon.UnivalueInterface) {
-// 	negatives, positives := make([]ccurlcommon.UnivalueInterface, 0), make([]ccurlcommon.UnivalueInterface, 0)
-// 	for _, trans := range transitions {
-
-// 		common.IfThenDo(
-// 			trans.Value().(ccurlcommon.TypeInterface).DeltaSign(),
-// 			func() { positives = append(positives, trans) },
-// 			func() { negatives = append(negatives, trans) })
-// 	}
-
-// 	common.RemoveIf(&negatives, func(v ccurlcommon.UnivalueInterface) bool { return v.Value() == nil })
-// 	common.RemoveIf(&positives, func(v ccurlcommon.UnivalueInterface) bool { return v.Value() == nil })
-// 	return negatives, positives
-// }

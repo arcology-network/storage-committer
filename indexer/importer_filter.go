@@ -1,4 +1,4 @@
-package univalue
+package indexer
 
 import (
 	"bytes"
@@ -48,12 +48,13 @@ func ExtractDeltaForEncoding(unival ccurlcommon.UnivalueInterface) ccurlcommon.U
 			v = unival.Value().(ccurlcommon.TypeInterface).New(nil, value.Delta(), value.DeltaSign(), nil, nil)
 		}
 	}
-
-	return &Univalue{
-		unival.GetUnimeta().(Unimeta),
+	// meta := unival.GetUnimeta().(*Unimeta)
+	return unival.New(
+		unival.GetUnimeta(),
 		v,
 		[]byte{},
-	}
+		unival.GetErrorCode(),
+	).(ccurlcommon.UnivalueInterface)
 }
 
 func RemoveNonce(unival ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface {
@@ -76,24 +77,4 @@ func TransitionCodecFilterSet() []func(ccurlcommon.UnivalueInterface) ccurlcommo
 		DelNonExist,
 		ExtractDeltaForEncoding, //
 	}
-}
-
-// func Keep(unival ccurlcommon.UnivalueInterface, conditions ...func(ccurlcommon.UnivalueInterface) bool) ccurlcommon.UnivalueInterface {
-// 	return common.IfThenDo1st(
-// 		unival != nil,
-// 		func() ccurlcommon.UnivalueInterface { return unival.Clone().(ccurlcommon.UnivalueInterface) }, unival)
-// }
-
-func KeepNonce(unival ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface {
-	return common.IfThen(
-		unival != nil && len(*unival.GetPath()) > len("/nonce") && (*unival.GetPath())[len(*unival.GetPath())-len("/nonce"):] == "/nonce",
-		unival,
-		nil)
-}
-
-func KeepBalance(unival ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface {
-	return common.IfThen(
-		unival != nil && len(*unival.GetPath()) > len("/balance") && (*unival.GetPath())[len(*unival.GetPath())-len("/balance"):] == "/balance",
-		unival,
-		nil)
 }

@@ -1,4 +1,4 @@
-package univalue
+package indexer
 
 import (
 	"bytes"
@@ -21,9 +21,9 @@ func (this Univalues) To(filters ...func(ccurlcommon.UnivalueInterface) ccurlcom
 }
 
 // Debugging only
-func (this Univalues) IfContains(condition ccurlcommon.UnivalueInterface) bool {
+func (this Univalues) IfContains(target ccurlcommon.UnivalueInterface) bool {
 	for _, v := range this {
-		if (v).(*Univalue).Equal(condition.(*Univalue)) {
+		if (v).(ccurlcommon.UnivalueInterface).Equal(target.(ccurlcommon.UnivalueInterface)) {
 			return true
 		}
 	}

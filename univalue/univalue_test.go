@@ -1,10 +1,9 @@
 package univalue
 
 import (
-	"fmt"
 	"testing"
-	"time"
 
+	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/datacompression"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
@@ -17,17 +16,26 @@ func TestUnivalueCodecUint64(t *testing.T) {
 	alice := datacompression.RandomAccount()
 
 	// meta:= commutative.NewPath()
-	u256 := commutative.NewUint64(0, 100)
-	in := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, u256)
+	u64 := commutative.NewUint64(0, 100)
+	in := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, u64)
 	in.reads = 1
 	in.writes = 2
 	in.deltaWrites = 3
 
+	in.SetErrorCode(ccurlcommon.ERR_EXEC_FAILED)
+
 	bytes := in.Encode()
 	v := (&Univalue{}).Decode(bytes).(*Univalue)
+
+	unimeta := v.GetUnimeta().(Unimeta)
+	inUnimeta := in.GetUnimeta().(Unimeta)
+	if !inUnimeta.Equal(&unimeta) || in.GetErrorCode() != v.GetErrorCode() {
+		t.Error("Error")
+	}
+
 	out := v.Value()
 
-	if *(in.value.(*commutative.Uint64)) != *(out.(*commutative.Uint64)) {
+	if !(in.value.(*commutative.Uint64)).Equal(out.(*commutative.Uint64)) {
 		t.Error("Error")
 	}
 }
@@ -47,9 +55,13 @@ func TestUnivalueCodecU256(t *testing.T) {
 	v := (&Univalue{}).Decode(bytes).(*Univalue)
 	out := v.Value()
 
-	raw := in.Value().(*commutative.U256).Value()
-	if raw.(*uint256.Int).Cmp(out.(*commutative.U256).Value().(*uint256.Int)) != 0 ||
-		in.Value().(*commutative.U256).Delta().(*uint256.Int).Cmp(out.(*commutative.U256).Delta().(*uint256.Int)) != 0 {
+	raw := (*uint256.Int)(in.Value().(*commutative.U256).Value().(*codec.Uint256))
+
+	outV := out.(*commutative.U256).Value().(*codec.Uint256)
+	deltaV := in.Value().(*commutative.U256).Delta().(*codec.Uint256)
+
+	flag := ((*uint256.Int)(deltaV)).Cmp((*uint256.Int)(out.(*commutative.U256).Delta().(*codec.Uint256))) != 0
+	if raw.Cmp((*uint256.Int)(outV)) != 0 || flag {
 		t.Error("Error")
 	}
 
@@ -105,26 +117,4 @@ func TestUnimetaCodecUint64(t *testing.T) {
 	if in == out {
 		t.Error("Error")
 	}
-}
-
-func BenchmarkUnivalueEncodeDecode(t *testing.B) {
-	/* Commutative Int64 Test */
-	alice := datacompression.RandomAccount()
-	v := commutative.NewPath()
-	bytes := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 1, v).Encode()
-	// bytes := in1.Encode()
-	fmt.Println("Encoded length of one entry:", len(bytes)*4)
-
-	in := make([]ccurlcommon.UnivalueInterface, 1000000)
-	for i := 0; i < len(in); i++ {
-		in[i] = NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 1, v)
-	}
-
-	t0 := time.Now()
-	bytes = Univalues(in).Encode()
-	fmt.Println("Encoded", len(in), "entires in :", time.Since(t0), "Total size: ", len(bytes)*4)
-
-	t0 = time.Now()
-	(Univalues([]ccurlcommon.UnivalueInterface{})).Decode(bytes)
-	fmt.Println("Decoded 100000 entires in :", time.Since(t0))
 }
