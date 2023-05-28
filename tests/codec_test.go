@@ -13,6 +13,7 @@ import (
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
+	"github.com/arcology-network/concurrenturl/interfaces"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 )
@@ -65,17 +66,17 @@ func TestNoncommutativeCodec(t *testing.T) {
 
 func TestUnivalueCodec(t *testing.T) {
 	store := cachedstorage.NewDataStore()
-	transitions := []ccurlcommon.UnivalueInterface{}
+	transitions := []interfaces.Univalue{}
 
 	url := ccurl.NewConcurrentUrl(store)
 	url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), fmt.Sprint("rand.Int()"))
-	transVec := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.TransitionCodecFilterSet()...)
+	transVec := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	transitions = append(transitions, transVec...)
 
 	for i := 0; i < len(transitions); i++ {
 		buffer := transitions[i].Encode()
 		in := transitions[i]
-		out := (&univalue.Univalue{}).Decode(buffer).(ccurlcommon.UnivalueInterface)
+		out := (&univalue.Univalue{}).Decode(buffer).(interfaces.Univalue)
 		// out.(*univalue.Univalue).ClearReserve()
 
 		if !in.Equal(out) {
@@ -86,12 +87,12 @@ func TestUnivalueCodec(t *testing.T) {
 
 func TestUnivaluesCodec(t *testing.T) {
 	store := cachedstorage.NewDataStore()
-	transitions := []ccurlcommon.UnivalueInterface{}
+	transitions := []interfaces.Univalue{}
 	for i := 0; i < 110000; i++ {
 		acct := datacompression.RandomAccount()
 		url := ccurl.NewConcurrentUrl(store)
 		url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), acct)
-		transVec := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.TransitionCodecFilterSet()...)
+		transVec := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 		transitions = append(transitions, transVec...)
 	}
 	t0 := time.Now()
@@ -99,7 +100,7 @@ func TestUnivaluesCodec(t *testing.T) {
 	fmt.Println("Encode() ", len(transitions), " univalue in :", time.Since(t0))
 
 	t0 = time.Now()
-	out := (indexer.Univalues([]ccurlcommon.UnivalueInterface{})).Decode(buffer).(indexer.Univalues)
+	out := (indexer.Univalues([]interfaces.Univalue{})).Decode(buffer).(indexer.Univalues)
 	fmt.Println("Decode() ", len(transitions), " univalue in :", time.Since(t0))
 
 	for i := 0; i < len(transitions); i++ {

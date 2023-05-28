@@ -6,7 +6,7 @@ import (
 	"time"
 
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	"github.com/arcology-network/concurrenturl/interfaces"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	storage "github.com/arcology-network/concurrenturl/storage"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
@@ -109,7 +109,7 @@ func TestCacheWithPersistentStorage(t *testing.T) {
 	for i := 0; i < len(keys); i++ {
 		keys[i] = fmt.Sprint(i)
 		nVals[i] = univalue.NewUnivalue(uint32(i), keys[i], 1, 1, 2, noncommutative.NewInt64(int64(i)))
-		encoded[i] = storage.Codec{}.Encode(nVals[i].(ccurlcommon.UnivalueInterface).Value())
+		encoded[i] = storage.Codec{}.Encode(nVals[i].(interfaces.Univalue).Value())
 	}
 	persistentDB := cachedstorage.NewMemDB()
 	persistentDB.BatchSet(keys, encoded)

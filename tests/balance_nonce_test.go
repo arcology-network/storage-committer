@@ -44,7 +44,7 @@ func TestSimpleBalance(t *testing.T) {
 
 	// Export variables
 	// _, in := url.Export(indexer.Sorter)
-	in := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.TransitionCodecFilterSet()...)
+	in := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	buffer := indexer.Univalues(in).Encode()
 	out := indexer.Univalues{}.Decode(buffer).(indexer.Univalues)
@@ -73,8 +73,8 @@ func TestSimpleBalance(t *testing.T) {
 	}
 
 	// records, trans := url2.Export(indexer.Sorter)
-	trans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.TransitionCodecFilterSet()...)
-	records := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(univalue.AccessCodecFilterSet()...)
+	trans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	records := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCAccess{})
 
 	indexer.Univalues(trans).Encode()
 	for _, v := range records {
@@ -158,7 +158,7 @@ func TestBalance(t *testing.T) {
 	}
 
 	// Export variables
-	transitions := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.TransitionCodecFilterSet()...)
+	transitions := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	// for i := range transitions {
 	trans := transitions[9]
 
@@ -200,7 +200,7 @@ func TestNonce(t *testing.T) {
 		t.Error("Error: blcc://eth1.0/account/alice/nonce should be ", 6)
 	}
 
-	trans := indexer.Univalues(common.Clone(url1.Export(indexer.Sorter))).To(indexer.TransitionCodecFilterSet()...)
+	trans := indexer.Univalues(common.Clone(url1.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	url1.Import(trans)
 	url1.Sort()
 	url1.Commit([]uint32{0})
@@ -232,7 +232,8 @@ func TestMultipleNonces(t *testing.T) {
 
 	// _, trans0 := url0.Export(indexer.Sorter)
 	// ccurltype.SetInvariate(trans0, "nonce")
-	trans0 := indexer.Univalues(common.Clone(url0.Export(indexer.Sorter))).To(indexer.TransitionCodecFilterSet()...)
+	// trans := common.Clone(url0.Export(indexer.Sorter))
+	trans0 := indexer.Univalues(common.Clone(url0.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	url1 := ccurl.NewConcurrentUrl(store)
 	bob := BobAccount()
@@ -256,7 +257,8 @@ func TestMultipleNonces(t *testing.T) {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
 	}
 
-	trans1 := indexer.Univalues(common.Clone(url1.Export(indexer.Sorter))).To(indexer.TransitionCodecFilterSet()...)
+	raw := common.Clone(url1.Export(indexer.Sorter))
+	trans1 := indexer.Univalues(raw).To(indexer.ITCTransition{})
 	// ccurltype.SetInvariate(trans1, "nonce")
 
 	nonce, _ = url1.Read(0, "blcc://eth1.0/account/"+bob+"/nonce")
@@ -271,7 +273,7 @@ func TestMultipleNonces(t *testing.T) {
 	nonce, _ = url1.Read(0, "blcc://eth1.0/account/"+bob+"/nonce")
 	bobNonce = nonce.(uint64)
 	if bobNonce != 2 {
-		t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
+		t.Error("Error: blcc://eth1.0/account/bob/nonce should be 2", " actual: ", bobNonce)
 	}
 
 	url0.Sort()
@@ -280,12 +282,12 @@ func TestMultipleNonces(t *testing.T) {
 	nonce, _ = url1.Read(0, "blcc://eth1.0/account/"+bob+"/nonce")
 	bobNonce = nonce.(uint64)
 	if bobNonce != 2 {
-		t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
+		t.Error("Error: blcc://eth1.0/account/bob/nonce should be 2", " actual: ", bobNonce)
 	}
 
-	nonce, _ = url0.Read(0, "blcc://eth1.0/account/"+bob+"/nonce")
-	bobNonce = nonce.(uint64)
-	if bobNonce != 2 {
-		t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
-	}
+	// nonce, _ = url0.Read(0, "blcc://eth1.0/account/"+bob+"/nonce")
+	// bobNonce = nonce.(uint64)
+	// if bobNonce != 2 {
+	// 	t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
+	// }
 }

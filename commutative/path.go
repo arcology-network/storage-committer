@@ -6,7 +6,7 @@ import (
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	orderedset "github.com/arcology-network/common-lib/container/set"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
 type Path struct {
@@ -68,11 +68,11 @@ func (this *Path) New(value, delta, sign, min, max interface{}) interface{} {
 	}
 }
 
-func (this *Path) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, int, error) { // Apply the transitions to the original value
+func (this *Path) ApplyDelta(v interface{}) (interfaces.Type, int, error) { // Apply the transitions to the original value
 	this.ReInit()
 	toAdd := this.delta.addDict.Keys() // The value should only contain committed keys
 	toRemove := this.delta.Removed()
-	univals := v.([]ccurlcommon.UnivalueInterface)
+	univals := v.([]interfaces.Univalue)
 	for i := 0; i < len(univals); i++ {
 		if univals[i].GetPath() == nil { // Not in the whitelist
 			continue
@@ -82,7 +82,7 @@ func (this *Path) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, int, err
 			return nil, 0, nil
 		}
 
-		delta := univals[i].Value().(ccurlcommon.TypeInterface).Delta().(*PathDelta)
+		delta := univals[i].Value().(interfaces.Type).Delta().(*PathDelta)
 		toAdd = append(toAdd, delta.Added()...)
 		toRemove = append(toRemove, delta.Removed()...)
 	}
@@ -111,7 +111,7 @@ func (this *Path) Set(value interface{}, source interface{}) (interface{}, uint3
 	targetPath := source.([]interface{})[0].(string)
 	myPath := source.([]interface{})[1].(string)
 	tx := source.([]interface{})[2].(uint32)
-	writeCache := source.([]interface{})[3].(ccurlcommon.WriteCacheInterface)
+	writeCache := source.([]interface{})[3].(interfaces.WriteCache)
 
 	if common.IsPath(targetPath) && len(targetPath) == len(myPath) { // Delete or rewrite the path
 		if value == nil { // Delete the path and all its elements

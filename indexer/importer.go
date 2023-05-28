@@ -5,16 +5,17 @@ import (
 	ccmap "github.com/arcology-network/common-lib/container/map"
 	"github.com/arcology-network/common-lib/mempool"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	"github.com/arcology-network/concurrenturl/interfaces"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 )
 
 type Importer struct {
 	numThreads int
-	store      ccurlcommon.DatastoreInterface
-	byTx       map[uint32][]ccurlcommon.UnivalueInterface
+	store      interfaces.Datastore
+	byTx       map[uint32][]interfaces.Univalue
 	byPath     *ccmap.ConcurrentMap
 
-	platform ccurlcommon.PlatformInterface
+	platform interfaces.Platform
 
 	keyBuffer []string      // Keys updated in the cycle
 	valBuffer []interface{} // Value updated in the cycle
@@ -22,12 +23,12 @@ type Importer struct {
 	uniPool   *mempool.Mempool
 }
 
-func NewImporter(store ccurlcommon.DatastoreInterface, platform ccurlcommon.PlatformInterface, args ...interface{}) *Importer {
+func NewImporter(store interfaces.Datastore, platform interfaces.Platform, args ...interface{}) *Importer {
 	var importer Importer
 	importer.numThreads = 8
 	importer.store = store
 
-	importer.byTx = make(map[uint32][]ccurlcommon.UnivalueInterface)
+	importer.byTx = make(map[uint32][]interfaces.Univalue)
 	importer.platform = platform
 	importer.byPath = ccmap.NewConcurrentMap()
 
@@ -41,14 +42,14 @@ func NewImporter(store ccurlcommon.DatastoreInterface, platform ccurlcommon.Plat
 	return &importer
 }
 
-func (this *Importer) Init(store ccurlcommon.DatastoreInterface) {
+func (this *Importer) Init(store interfaces.Datastore) {
 	this.store = store
 	this.Clear()
 }
 
-func (this *Importer) SetStore(store ccurlcommon.DatastoreInterface) { this.store = store }
-func (this *Importer) Store() ccurlcommon.DatastoreInterface         { return this.store }
-func (this *Importer) ByPath() interface{}                           { return this.byPath }
+func (this *Importer) SetStore(store interfaces.Datastore) { this.store = store }
+func (this *Importer) Store() interfaces.Datastore         { return this.store }
+func (this *Importer) ByPath() interface{}                 { return this.byPath }
 
 func (this *Importer) NewUnivalue() *univalue.Univalue {
 	v := this.uniPool.Get().(*univalue.Univalue)
@@ -60,7 +61,7 @@ func (this *Importer) RetriveShallow(key string) interface{} {
 	return ret
 }
 
-func (this *Importer) Import(txTrans []ccurlcommon.UnivalueInterface, args ...interface{}) {
+func (this *Importer) Import(txTrans []interfaces.Univalue, args ...interface{}) {
 	ifCommit := true
 	if len(args) > 0 && args[0] != nil {
 		ifCommit = args[0].(bool)
@@ -118,7 +119,7 @@ func (this *Importer) Import(txTrans []ccurlcommon.UnivalueInterface, args ...in
 		}
 
 		if this.byTx[v.GetTx()] == nil {
-			this.byTx[v.GetTx()] = make([]ccurlcommon.UnivalueInterface, 0, 32)
+			this.byTx[v.GetTx()] = make([]interfaces.Univalue, 0, 32)
 		}
 		this.byTx[v.GetTx()] = append(this.byTx[v.GetTx()], v)
 	}
@@ -167,7 +168,7 @@ func (this *Importer) SortDeltaSequences() {
 			// 	typeValue = deltaSeq.(*DeltaSequence).values[0]
 			// }
 
-			// if typeValue.Value().(ccurlcommon.TypeInterface).TypeID() == commutative.Path() {
+			// if typeValue.Value().(interfaces.Type).TypeID() == commutative.Path() {
 			deltaSeq.(*DeltaSequence).Sort() // Sort the transitions in the sequence
 			// }
 		}
@@ -188,7 +189,7 @@ func (this *Importer) MergeStateDelta() {
 				this.valBuffer[i] = nil
 				continue
 			}
-			this.valBuffer[i] = deltaSeq.(*DeltaSequence).Value().(ccurlcommon.UnivalueInterface)
+			this.valBuffer[i] = deltaSeq.(*DeltaSequence).Value().(interfaces.Univalue)
 		}
 	}
 	common.ParallelWorker(len(this.keyBuffer), this.numThreads, finalizer)

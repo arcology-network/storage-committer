@@ -8,6 +8,7 @@ import (
 	"github.com/arcology-network/common-lib/datacompression"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
+	"github.com/arcology-network/concurrenturl/interfaces"
 	"github.com/holiman/uint256"
 )
 
@@ -89,11 +90,11 @@ func TestUnivalueCodeMeta(t *testing.T) {
 	in.writes = 2
 	in.deltaWrites = 3
 
-	inKeys, _, _ := in.Value().(ccurlcommon.TypeInterface).Get()
+	inKeys, _, _ := in.Value().(interfaces.Type).Get()
 
 	bytes := in.Encode()
 	out := (&Univalue{}).Decode(bytes).(*Univalue)
-	outKeys, _, _ := out.Value().(ccurlcommon.TypeInterface).Get()
+	outKeys, _, _ := out.Value().(interfaces.Type).Get()
 
 	if !common.EqualArray(inKeys.([]string), outKeys.([]string)) {
 		t.Error("Error")

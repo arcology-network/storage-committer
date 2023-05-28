@@ -25,7 +25,7 @@ func TestMultiAccountCreation(t *testing.T) {
 		}
 	}
 	raw := url.Export(indexer.Sorter)
-	acctTrans := indexer.Univalues(common.Clone(raw)).To(indexer.TransitionCodecFilterSet()...)
+	acctTrans := indexer.Univalues(common.Clone(raw)).To(indexer.ITCTransition{})
 
 	paths := concurrenturl.NewPlatform().GetSysPaths()
 
@@ -37,7 +37,7 @@ func TestMultiAccountCreation(t *testing.T) {
 	url.Sort()
 	url.Commit([]uint32{0})
 
-	acctTrans = indexer.Univalues(common.Clone(raw)).To(indexer.TransitionCodecFilterSet()...)
+	acctTrans = indexer.Univalues(common.Clone(raw)).To(indexer.ITCTransition{})
 	encoded := indexer.Univalues(acctTrans).Encode()
 
 	out := indexer.Univalues{}.Decode(encoded).(indexer.Univalues)

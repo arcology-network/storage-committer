@@ -4,15 +4,15 @@ import (
 	"crypto/sha256"
 
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
 type TransientDB struct {
 	*cachedstorage.DataStore
-	parent ccurlcommon.DatastoreInterface
+	parent interfaces.Datastore
 }
 
-func NewTransientDB(parent ccurlcommon.DatastoreInterface) ccurlcommon.DatastoreInterface {
+func NewTransientDB(parent interfaces.Datastore) interfaces.Datastore {
 	return &TransientDB{
 		DataStore: cachedstorage.NewDataStore(),
 		parent:    parent,

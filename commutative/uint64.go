@@ -6,7 +6,7 @@ import (
 
 	codec "github.com/arcology-network/common-lib/codec"
 	common "github.com/arcology-network/common-lib/common"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
 type Selector []bool
@@ -103,9 +103,9 @@ func (this *Uint64) Set(v interface{}, source interface{}) (interface{}, uint32,
 	return this, 0, 0, 1, nil
 }
 
-func (this *Uint64) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, int, error) {
+func (this *Uint64) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
 	this.ReInit()
-	vec := v.([]ccurlcommon.UnivalueInterface)
+	vec := v.([]interfaces.Univalue)
 	for i := 0; i < len(vec); i++ {
 		v := vec[i].Value()
 		if this == nil && v != nil { // New value

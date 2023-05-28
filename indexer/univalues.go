@@ -8,22 +8,24 @@ import (
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
-type Univalues []ccurlcommon.UnivalueInterface
+type Univalues []interfaces.Univalue
 
-func (this Univalues) To(filters ...func(ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface) Univalues {
-	for _, condition := range filters {
-		this = common.CastTo(this, condition)
+func (this Univalues) To(filterType interfaces.Univalue) Univalues {
+	for i, v := range this {
+		v := filterType.From(v)
+		this[i] = common.IfThenDo1st(v != nil, func() interfaces.Univalue { return v.(interfaces.Univalue) }, nil)
 	}
-	common.RemoveIf((*[]ccurlcommon.UnivalueInterface)(&this), func(v ccurlcommon.UnivalueInterface) bool { return v == nil })
+	common.Remove((*[]interfaces.Univalue)(&this), nil)
 	return this
 }
 
 // Debugging only
-func (this Univalues) IfContains(target ccurlcommon.UnivalueInterface) bool {
+func (this Univalues) IfContains(target interfaces.Univalue) bool {
 	for _, v := range this {
-		if (v).(ccurlcommon.UnivalueInterface).Equal(target.(ccurlcommon.UnivalueInterface)) {
+		if (v).(interfaces.Univalue).Equal(target.(interfaces.Univalue)) {
 			return true
 		}
 	}

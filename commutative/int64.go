@@ -6,7 +6,7 @@ import (
 
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
 type Int64 struct {
@@ -116,9 +116,9 @@ func (this *Int64) isUnderflow(delta int64) bool {
 		(*this.min > codec.Int64(delta) || flag)
 }
 
-func (this *Int64) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, int, error) {
+func (this *Int64) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
 	this.ReInit()
-	vec := v.([]ccurlcommon.UnivalueInterface)
+	vec := v.([]interfaces.Univalue)
 	for i := 0; i < len(vec); i++ {
 		v := vec[i].Value()
 		if this == nil && v != nil { // New value

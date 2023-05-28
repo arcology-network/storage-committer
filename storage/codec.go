@@ -1,8 +1,8 @@
 package ccdb
 
 import (
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
+	"github.com/arcology-network/concurrenturl/interfaces"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 )
 
@@ -14,8 +14,8 @@ func (Codec) Encode(value interface{}) []byte {
 	if value == nil {
 		return []byte{} // Deletion
 	}
-	encoded := value.(ccurlcommon.TypeInterface).Encode()
-	encoded = append(encoded, value.(ccurlcommon.TypeInterface).TypeID())
+	encoded := value.(interfaces.Type).Encode()
+	encoded = append(encoded, value.(interfaces.Type).TypeID())
 	return encoded
 }
 

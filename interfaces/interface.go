@@ -1,4 +1,4 @@
-package common
+package interfaces
 
 import (
 	"math"
@@ -10,17 +10,17 @@ const (
 	ETH10_ACCOUNT_LENGTH       = 40
 )
 
-type PlatformInterface interface { // value type
+type Platform interface { // value type
 	IsSysPath(string) bool
 	Eth10Account() string
 }
 
-type TransitionInterface interface { // value type
+type Transition interface { // value type
 	Added() interface{}
 	Removed() interface{}
 }
 
-type TypeInterface interface { // value type
+type Type interface { // value type
 	TypeID() uint8
 	Equal(interface{}) bool
 	Clone() interface{}
@@ -39,7 +39,7 @@ type TypeInterface interface { // value type
 	Get() (interface{}, uint32, uint32)
 	Set(interface{}, interface{}) (interface{}, uint32, uint32, uint32, error)
 	CopyTo(interface{}) (interface{}, uint32, uint32, uint32)
-	ApplyDelta(interface{}) (TypeInterface, int, error)
+	ApplyDelta(interface{}) (Type, int, error)
 	IsSelf(interface{}) bool
 
 	MemSize() uint32 // Size in memory
@@ -53,17 +53,16 @@ type TypeInterface interface { // value type
 	Print()
 }
 
-type UnivalueInterface interface { // value type
+type Univalue interface { // value type
 	TypeID() uint8
 	Reads() uint32
 	Writes() uint32
 	DeltaWrites() uint32
 
+	From(Univalue) interface{}
+
 	Do(uint32, string, interface{}) interface{}
 	Clone() interface{}
-	// Meta() UnivalueInterface
-
-	// Is(string) bool
 
 	IncrementReads(uint32)
 	IncrementWrites(uint32)
@@ -82,7 +81,7 @@ type UnivalueInterface interface { // value type
 	Value() interface{}
 	SetValue(interface{})
 
-	WriteTo(WriteCacheInterface)
+	WriteTo(WriteCache)
 	GetUnimeta() interface{}
 	GetCache() interface{}
 	New(interface{}, interface{}, interface{}, interface{}) interface{}
@@ -100,30 +99,30 @@ type UnivalueInterface interface { // value type
 	Decode([]byte) interface{}
 	ClearCache()
 
-	Equal(UnivalueInterface) bool
+	Equal(Univalue) bool
 	Print()
 }
 
-type WriteCacheInterface interface {
+type WriteCache interface {
 	Read(uint32, string) (interface{}, interface{})
 	Peek(path string) (interface{}, interface{})
 	Write(uint32, string, interface{}) error
 	Insert(string, interface{})
 
 	RetriveShallow(string) interface{}
-	Cache() *map[string]UnivalueInterface
-	Store() DatastoreInterface
+	Cache() *map[string]Univalue
+	Store() Datastore
 }
 
-type ImporterInterface interface {
+type Importer interface {
 	RetriveShallow(string) interface{}
 }
 
-type FilteredTransitionsInterface interface {
-	Is(int, string) bool
-}
+// type FilteredTransitions interface {
+// 	Is(int, string) bool
+// }
 
-type DatastoreInterface interface {
+type Datastore interface {
 	Inject(string, interface{})
 	BatchInject([]string, []interface{})
 	Retrive(string) (interface{}, error)
@@ -140,4 +139,4 @@ type DatastoreInterface interface {
 	CacheRetrive(key string, valueTransformer func(interface{}) interface{}) (interface{}, error)
 }
 
-type Hasher func(TypeInterface) []byte
+type Hasher func(Type) []byte

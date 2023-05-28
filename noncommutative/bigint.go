@@ -6,7 +6,7 @@ import (
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
 // type Bigint codec.Bigint
@@ -62,8 +62,8 @@ func (this *Bigint) Set(value interface{}, _ interface{}) (interface{}, uint32, 
 	return this, 0, 1, 0, nil
 }
 
-func (this *Bigint) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, int, error) {
-	vec := v.([]ccurlcommon.UnivalueInterface)
+func (this *Bigint) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
+	vec := v.([]interfaces.Univalue)
 	for i := 0; i < len(vec); i++ {
 		v := vec[i].Value()
 		if this == nil && v != nil { // New value

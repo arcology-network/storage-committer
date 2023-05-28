@@ -8,7 +8,7 @@ import (
 
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
 type Univalue struct {
@@ -23,7 +23,7 @@ type Univalue struct {
 func NewUnivalue(tx uint32, key string, reads, writes uint32, deltaWrites uint32, args ...interface{}) *Univalue {
 	return &Univalue{
 		Unimeta{
-			vType:       common.IfThenDo1st(args[0] != nil, func() uint8 { return args[0].(ccurlcommon.TypeInterface).TypeID() }, uint8(reflect.Invalid)),
+			vType:       common.IfThenDo1st(args[0] != nil, func() uint8 { return args[0].(interfaces.Type).TypeID() }, uint8(reflect.Invalid)),
 			tx:          tx,
 			path:        &key,
 			reads:       reads,
@@ -46,6 +46,9 @@ func (*Univalue) New(meta, value, cache, errorCode interface{}) interface{} {
 	}
 }
 
+func (this *Univalue) From(v interfaces.Univalue) interface{} { return v }
+
+// func (this *Univalue) Filter() interfaces.Univalue                    { return this }
 func (this *Univalue) GetErrorCode() uint8     { return (uint8)(this.errorCode) }
 func (this *Univalue) SetErrorCode(code uint8) { this.errorCode = codec.Uint8(code) }
 
@@ -59,7 +62,7 @@ func (this *Univalue) GetUnimeta() interface{} { return this.Unimeta }
 func (this *Univalue) GetCache() interface{}   { return this.cache }
 
 func (this *Univalue) Init(tx uint32, key string, reads, writes uint32, v interface{}, args ...interface{}) {
-	this.vType = common.IfThenDo1st(v != nil, func() uint8 { return v.(ccurlcommon.TypeInterface).TypeID() }, uint8(reflect.Invalid))
+	this.vType = common.IfThenDo1st(v != nil, func() uint8 { return v.(interfaces.Type).TypeID() }, uint8(reflect.Invalid))
 	this.tx = tx
 	this.path = &key
 	this.reads = reads
@@ -84,7 +87,7 @@ func (this *Univalue) Do(tx uint32, path string, do interface{}) interface{} {
 
 func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{} {
 	if this.value != nil {
-		tempV, r, w := this.value.(ccurlcommon.TypeInterface).Get() //RW: Affiliated reads and writes
+		tempV, r, w := this.value.(interfaces.Type).Get() //RW: Affiliated reads and writes
 		this.reads += r
 		this.writes += w
 		return tempV
@@ -93,7 +96,7 @@ func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{
 	return this.value
 }
 
-func (this *Univalue) WriteTo(writeCache ccurlcommon.WriteCacheInterface) {
+func (this *Univalue) WriteTo(writeCache interfaces.WriteCache) {
 	common.IfThenDo(this.writes == 0 && this.deltaWrites == 0,
 		func() { writeCache.Read(this.tx, *this.GetPath()) },
 		func() { writeCache.Write(this.tx, *this.GetPath(), this.value) },
@@ -108,8 +111,8 @@ func (this *Univalue) Set(tx uint32, path string, typedV interface{}, indexer in
 	}
 
 	if this.Value() == nil { // Added a new value or try to delete an non-existent value
-		this.vType = typedV.(ccurlcommon.TypeInterface).TypeID()
-		v, r, w, dw := typedV.(ccurlcommon.TypeInterface).CopyTo(typedV)
+		this.vType = typedV.(interfaces.Type).TypeID()
+		v, r, w, dw := typedV.(interfaces.Type).CopyTo(typedV)
 		this.value = v
 		this.writes += w
 		this.reads += r
@@ -118,16 +121,16 @@ func (this *Univalue) Set(tx uint32, path string, typedV interface{}, indexer in
 	}
 
 	if this.writes == 0 && this.value != nil && typedV != nil { // Make a deep copy if haven't done so
-		this.value = this.value.(ccurlcommon.TypeInterface).Clone()
+		this.value = this.value.(interfaces.Type).Clone()
 	}
 
-	v, r, w, dw, err := this.value.(ccurlcommon.TypeInterface).Set(typedV, []interface{}{path, *this.path, tx, indexer}) // Update one the current value
+	v, r, w, dw, err := this.value.(interfaces.Type).Set(typedV, []interface{}{path, *this.path, tx, indexer}) // Update one the current value
 	this.value = v
 	this.writes += w
 	this.reads += r
 	this.deltaWrites += dw
 
-	if typedV == nil && this.Value().(ccurlcommon.TypeInterface).IsSelf(path) { // Delete the entry but keep the access record.
+	if typedV == nil && this.Value().(interfaces.Type).IsSelf(path) { // Delete the entry but keep the access record.
 		this.vType = uint8(reflect.Invalid)
 		this.value = typedV // Delete the value
 		this.writes++
@@ -137,7 +140,7 @@ func (this *Univalue) Set(tx uint32, path string, typedV interface{}, indexer in
 
 // Check & Merge attributes
 func (this *Univalue) ApplyDelta(v interface{}) error {
-	vec := v.([]ccurlcommon.UnivalueInterface)
+	vec := v.([]interfaces.Univalue)
 
 	/* Precheck & Merge attributes*/
 	for i := 0; i < len(vec); i++ {
@@ -149,7 +152,7 @@ func (this *Univalue) ApplyDelta(v interface{}) error {
 	// Apply transitions
 	var err error
 	if this.Value() != nil {
-		if this.value, _, err = this.Value().(ccurlcommon.TypeInterface).ApplyDelta(v); err != nil {
+		if this.value, _, err = this.Value().(interfaces.Type).ApplyDelta(v); err != nil {
 			return err
 		}
 	}
@@ -169,7 +172,7 @@ func (this *Univalue) PrecheckAttributes(other *Univalue) {
 		panic("Error: Value type mismatched!") // Read only variable should never be here.
 	}
 
-	if this.preexists && this.Value().(ccurlcommon.TypeInterface).IsCommutative() && this.Reads() > 0 && this.IsConcurrentWritable() == other.IsConcurrentWritable() {
+	if this.preexists && this.Value().(interfaces.Type).IsCommutative() && this.Reads() > 0 && this.IsConcurrentWritable() == other.IsConcurrentWritable() {
 		this.Print()
 		fmt.Println("================================================================")
 		other.Print()
@@ -188,7 +191,7 @@ func (this *Univalue) PrecheckAttributes(other *Univalue) {
 func (this *Univalue) Clone() interface{} {
 	v := &Univalue{
 		this.Unimeta.Clone(),
-		common.IfThenDo1st(this.value != nil, func() interface{} { return this.value.(ccurlcommon.TypeInterface).Clone() }, this.value),
+		common.IfThenDo1st(this.value != nil, func() interface{} { return this.value.(interfaces.Type).Clone() }, this.value),
 		common.Clone(this.cache),
 		0,
 	}
@@ -209,11 +212,11 @@ func (this *Univalue) Print() {
 	// fmt.Print(spaces+"value: ", this.value)
 	fmt.Println(spaces+"preexists: ", this.preexists)
 
-	//this.value.(ccurlcommon.TypeInterface).Print()
+	//this.value.(interfaces.Type).Print()
 	// fmt.Println("--------------------------------------------------------")
 }
 
-func (this *Univalue) Equal(other ccurlcommon.UnivalueInterface) bool {
+func (this *Univalue) Equal(other interfaces.Univalue) bool {
 	if this.value == nil && other.Value() == nil {
 		return true
 	}
@@ -222,7 +225,7 @@ func (this *Univalue) Equal(other ccurlcommon.UnivalueInterface) bool {
 		return false
 	}
 
-	vFlag := this.value.(ccurlcommon.TypeInterface).Equal(other.Value().(ccurlcommon.TypeInterface))
+	vFlag := this.value.(interfaces.Type).Equal(other.Value().(interfaces.Type))
 	return this.tx == other.GetTx() &&
 		*this.path == *other.GetPath() &&
 		this.reads == other.Reads() &&

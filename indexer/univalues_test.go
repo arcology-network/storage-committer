@@ -7,8 +7,8 @@ import (
 
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/datacompression"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
+	"github.com/arcology-network/concurrenturl/interfaces"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 
 	"github.com/holiman/uint256"
@@ -40,8 +40,8 @@ func TestUnivaluesCodecUint64(t *testing.T) {
 	// in2.writes = 8
 	// in2.deltaWrites = 9
 
-	in := []ccurlcommon.UnivalueInterface{in0, in1, in2}
-	buffer := Univalues([]ccurlcommon.UnivalueInterface{in0, in1, in2}).Encode()
+	in := []interfaces.Univalue{in0, in1, in2}
+	buffer := Univalues([]interfaces.Univalue{in0, in1, in2}).Encode()
 	out := Univalues{}.Decode(buffer).(Univalues)
 
 	if !Univalues(in).Equal(out) {
@@ -93,11 +93,11 @@ func TestUnivaluesCodeMeta(t *testing.T) {
 	// in.writes = 2
 	// in.deltaWrites = 3
 
-	inKeys, _, _ := in.Value().(ccurlcommon.TypeInterface).Get()
+	inKeys, _, _ := in.Value().(interfaces.Type).Get()
 
 	bytes := in.Encode()
 	out := (&univalue.Univalue{}).Decode(bytes).(*univalue.Univalue)
-	outKeys, _, _ := out.Value().(ccurlcommon.TypeInterface).Get()
+	outKeys, _, _ := out.Value().(interfaces.Type).Get()
 
 	if !common.EqualArray(inKeys.([]string), outKeys.([]string)) {
 		t.Error("Error")
@@ -107,7 +107,7 @@ func TestUnivaluesCodeMeta(t *testing.T) {
 func TestUnivaluesSelectiveEncoding(t *testing.T) {
 	// alice := datacompression.RandomAccount()
 
-	// numericU256 := Univalues([]ccurlcommon.UnivalueInterface{ // Commutative numeric new with default and specified limits
+	// numericU256 := Univalues([]interfaces.Univalue{ // Commutative numeric new with default and specified limits
 	// 	(&Univalue{}).New(*NewUnimeta(1, "blcc://eth1.0/account/"+alice+"/balance", 3, 4, 0, commutative.UINT256, false), commutative.NewU256(commutative.U256_MIN, commutative.U256_MAX), []byte{}).(*Univalue),
 	// 	(&Univalue{}).New(*NewUnimeta(1, "blcc://eth1.0/account/"+alice+"/balance", 3, 4, 0, commutative.UINT256, false), commutative.NewU256(uint256.NewInt(111), uint256.NewInt(999)), []byte{}).(*Univalue),
 	// 	(&Univalue{}).New(*NewUnimeta(1, "blcc://eth1.0/account/"+alice+"/balance", 3, 4, 1, commutative.UINT256, false), commutative.NewU256(commutative.U256_MIN, commutative.U256_MAX), []byte{}).(*Univalue),
@@ -172,7 +172,7 @@ func BenchmarkUnivaluesEncodeDecode(t *testing.B) {
 	// bytes := in1.Encode()
 	fmt.Println("Encoded length of one entry:", len(bytes)*4)
 
-	in := make([]ccurlcommon.UnivalueInterface, 1000000)
+	in := make([]interfaces.Univalue, 1000000)
 	for i := 0; i < len(in); i++ {
 		in[i] = univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 1, v)
 	}
@@ -182,6 +182,6 @@ func BenchmarkUnivaluesEncodeDecode(t *testing.B) {
 	fmt.Println("Encoded", len(in), "entires in :", time.Since(t0), "Total size: ", len(bytes)*4)
 
 	t0 = time.Now()
-	(Univalues([]ccurlcommon.UnivalueInterface{})).Decode(bytes)
+	(Univalues([]interfaces.Univalue{})).Decode(bytes)
 	fmt.Println("Decoded 100000 entires in :", time.Since(t0))
 }

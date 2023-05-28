@@ -9,6 +9,7 @@ import (
 	mempool "github.com/arcology-network/common-lib/mempool"
 	merkle "github.com/arcology-network/common-lib/merkle"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
 const (
@@ -18,12 +19,12 @@ const (
 type AccountMerkle struct {
 	branches   uint32
 	merkles    map[string]*merkle.Merkle
-	platform   ccurlcommon.PlatformInterface
+	platform   interfaces.Platform
 	nodePool   *mempool.Mempool
 	merklePool *mempool.Mempool
 }
 
-func NewAccountMerkle(platform ccurlcommon.PlatformInterface) *AccountMerkle {
+func NewAccountMerkle(platform interfaces.Platform) *AccountMerkle {
 	am := &AccountMerkle{
 		branches: 16,
 		merkles:  make(map[string]*merkle.Merkle),
@@ -49,7 +50,7 @@ func (this *AccountMerkle) GetMerkles() *map[string]*merkle.Merkle {
 }
 
 // Insert to the merkle tree
-func (this *AccountMerkle) Import(transitions []ccurlcommon.UnivalueInterface) {
+func (this *AccountMerkle) Import(transitions []interfaces.Univalue) {
 	offset := len(this.platform.Eth10Account())
 	for _, v := range transitions {
 		path := *v.GetPath()

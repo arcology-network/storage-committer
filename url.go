@@ -9,11 +9,10 @@ import (
 	"time"
 
 	"github.com/arcology-network/common-lib/common"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
+	interfaces "github.com/arcology-network/concurrenturl/interfaces"
 	"github.com/arcology-network/concurrenturl/noncommutative"
-	univalue "github.com/arcology-network/concurrenturl/univalue"
 )
 
 type ConcurrentUrl struct {
@@ -22,10 +21,10 @@ type ConcurrentUrl struct {
 	invImporter *indexer.Importer // transitions that will take effect anyway regardless of execution failures or conflicts
 	Platform    *Platform
 
-	// ImportFilters []func(unival ccurlcommon.UnivalueInterface) ccurlcommon.UnivalueInterface
+	// ImportFilters []func(unival interfaces.Univalue) interfaces.Univalue
 }
 
-func NewConcurrentUrl(store ccurlcommon.DatastoreInterface, args ...interface{}) *ConcurrentUrl {
+func NewConcurrentUrl(store interfaces.Datastore, args ...interface{}) *ConcurrentUrl {
 	platform := NewPlatform()
 	return &ConcurrentUrl{
 		writeCache:  indexer.NewWriteCache(store, platform),
@@ -52,10 +51,10 @@ func (this *ConcurrentUrl) ReadCommitted(tx uint32, key string) (interface{}, ui
 	}
 
 	v, _ := this.Importer().Store().Retrive(key)
-	return v, Cost{}.Reader(uint64(v.(ccurlcommon.TypeInterface).Size()), true)
+	return v, Cost{}.Reader(uint64(v.(interfaces.Type).Size()), true)
 }
 
-func (this *ConcurrentUrl) Init(store ccurlcommon.DatastoreInterface) {
+func (this *ConcurrentUrl) Init(store interfaces.Datastore) {
 	this.importer.Init(store)
 	this.invImporter.Init(store)
 }
@@ -114,29 +113,29 @@ func (this *ConcurrentUrl) IfExists(path string) bool {
 func (this *ConcurrentUrl) Peek(path string) (interface{}, uint64) {
 	typedv, univ := this.writeCache.Peek(path)
 	dataSize := common.IfThenDo1st(typedv != nil, func() uint64 {
-		return uint64(univ.(ccurlcommon.UnivalueInterface).Value().(ccurlcommon.TypeInterface).Size())
+		return uint64(univ.(interfaces.Univalue).Value().(interfaces.Type).Size())
 	}, 0)
-	return typedv, Cost{}.Reader(dataSize, univ.(ccurlcommon.UnivalueInterface).IsHotLoaded())
+	return typedv, Cost{}.Reader(dataSize, univ.(interfaces.Univalue).IsHotLoaded())
 }
 
 func (this *ConcurrentUrl) Read(tx uint32, path string) (interface{}, uint64) {
 	typedv, univ := this.writeCache.Read(tx, path)
 	dataSize := common.IfThenDo1st(typedv != nil, func() uint64 {
-		return uint64(univ.(ccurlcommon.UnivalueInterface).Value().(ccurlcommon.TypeInterface).Size())
+		return uint64(univ.(interfaces.Univalue).Value().(interfaces.Type).Size())
 	}, 0)
-	return typedv, Cost{}.Reader(dataSize, univ.(ccurlcommon.UnivalueInterface).IsHotLoaded())
+	return typedv, Cost{}.Reader(dataSize, univ.(interfaces.Univalue).IsHotLoaded())
 }
 
 func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}) (int64, error) {
 	dataSize := common.IfThenDo1st(
 		value != nil,
-		func() uint64 { return uint64(value.(ccurlcommon.TypeInterface).Size()) },
+		func() uint64 { return uint64(value.(interfaces.Type).Size()) },
 		0,
 	)
 
 	return Cost{}.Writer(dataSize, dataSize), // FIXME: The second should be the committed size
 		common.IfThenDo1st(
-			value == nil || (value != nil && value.(ccurlcommon.TypeInterface).TypeID() != uint8(reflect.Invalid)),
+			value == nil || (value != nil && value.(interfaces.Type).TypeID() != uint8(reflect.Invalid)),
 			func() error { return this.writeCache.Write(tx, path, value) },
 			errors.New("Error: Unknown data type !"),
 		)
@@ -214,17 +213,18 @@ func (this *ConcurrentUrl) WriteAt(tx uint32, path string, idx uint64, value int
 	}
 }
 
-func (this *ConcurrentUrl) Import(transitions []ccurlcommon.UnivalueInterface, args ...interface{}) *ConcurrentUrl {
-	invTransitions := make([]ccurlcommon.UnivalueInterface, 0, len(transitions))
+func (this *ConcurrentUrl) Import(transitions []interfaces.Univalue, args ...interface{}) *ConcurrentUrl {
+	invTransitions := make([]interfaces.Univalue, 0, len(transitions))
 
-	Conflicted := indexer.Conflicted{}
+	// Conflicted := indexer.Conflicted{}
 	for i := 0; i < len(transitions); i++ {
-		if Conflicted.Is(transitions[i]) {
-			invTransitions = append(invTransitions, transitions[i]) //
+		immune := indexer.ImmuneTransitions{}.From(transitions[i])
+		if immune != nil {
+			invTransitions = append(invTransitions, immune) //
 			transitions[i] = nil
 		}
 	}
-	common.RemoveIf(&transitions, func(v ccurlcommon.UnivalueInterface) bool { return v == nil })
+	common.RemoveIf(&transitions, func(v interfaces.Univalue) bool { return v == nil })
 
 	common.ParallelExecute(
 		func() { this.invImporter.Import(invTransitions, args...) },
@@ -283,7 +283,7 @@ func (this *ConcurrentUrl) Commit(txs []uint32) *ConcurrentUrl {
 	return this
 }
 
-func (this *ConcurrentUrl) AllInOneCommit(transitions []ccurlcommon.UnivalueInterface, txs []uint32) []error {
+func (this *ConcurrentUrl) AllInOneCommit(transitions []interfaces.Univalue, txs []uint32) []error {
 	t0 := time.Now()
 
 	accountMerkle := indexer.NewAccountMerkle(this.Platform)
@@ -310,7 +310,7 @@ func (this *ConcurrentUrl) AllInOneCommit(transitions []ccurlcommon.UnivalueInte
 	k, v := this.importer.KVs()
 	encoded := make([][]byte, 0, len(v))
 	for _, value := range v {
-		encoded = append(encoded, value.(ccurlcommon.UnivalueInterface).GetEncoded())
+		encoded = append(encoded, value.(interfaces.Univalue).GetEncoded())
 	}
 	accountMerkle.Build(k, encoded)
 	fmt.Println("ComputeMerkle:", time.Since(t0))
@@ -326,16 +326,16 @@ func (this *ConcurrentUrl) AllInOneCommit(transitions []ccurlcommon.UnivalueInte
 	return []error{}
 }
 
-func (this *ConcurrentUrl) Export(preprocessors ...func([]ccurlcommon.UnivalueInterface) []ccurlcommon.UnivalueInterface) []ccurlcommon.UnivalueInterface {
+func (this *ConcurrentUrl) Export(preprocessors ...func([]interfaces.Univalue) []interfaces.Univalue) []interfaces.Univalue {
 	return this.writeCache.Export(preprocessors...)
 }
 
-func (this *ConcurrentUrl) ExportAll(preprocessors ...func([]ccurlcommon.UnivalueInterface) []ccurlcommon.UnivalueInterface) ([]ccurlcommon.UnivalueInterface, []ccurlcommon.UnivalueInterface) {
+func (this *ConcurrentUrl) ExportAll(preprocessors ...func([]interfaces.Univalue) []interfaces.Univalue) ([]interfaces.Univalue, []interfaces.Univalue) {
 	all := common.Clone(this.Export(indexer.Sorter))
 	indexer.Univalues(all).Print()
 
-	accesses := indexer.Univalues(all).To(univalue.AccessCodecFilterSet()...)
-	transitions := indexer.Univalues(all).To(indexer.TransitionCodecFilterSet()...)
+	accesses := indexer.Univalues(all).To(indexer.ITCAccess{})
+	transitions := indexer.Univalues(all).To(indexer.ITCTransition{})
 
 	return accesses, transitions
 }

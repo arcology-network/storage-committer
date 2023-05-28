@@ -11,6 +11,7 @@ import (
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
+	"github.com/arcology-network/concurrenturl/interfaces"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 )
 
@@ -24,7 +25,7 @@ func TestAuxTrans(t *testing.T) {
 	}
 
 	// _, trans00 := url.Export(indexer.Sorter)
-	acctTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.TransitionCodecFilterSet()...)
+	acctTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
 
@@ -83,8 +84,8 @@ func TestAuxTrans(t *testing.T) {
 		}
 	}
 
-	transitions := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.TransitionCodecFilterSet()...)
-	if !reflect.DeepEqual(transitions[0].Value().(ccurlcommon.TypeInterface).Delta().(*commutative.PathDelta).Added(), []string{"elem-000"}) {
+	transitions := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	if !reflect.DeepEqual(transitions[0].Value().(interfaces.Type).Delta().(*commutative.PathDelta).Added(), []string{"elem-000"}) {
 		t.Error("keys don't match")
 	}
 
@@ -115,7 +116,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	}
 
 	// _, trans00 := url.Export(indexer.Sorter)
-	trans00 := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.TransitionCodecFilterSet()...)
+	trans00 := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans00).Encode()).(indexer.Univalues))
 
@@ -129,7 +130,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	}
 
 	// _, trans10 := url.Export(indexer.Sorter)
-	trans10 := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.TransitionCodecFilterSet()...)
+	trans10 := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans10).Encode()).(indexer.Univalues))
 

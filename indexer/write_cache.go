@@ -10,32 +10,33 @@ import (
 	common "github.com/arcology-network/common-lib/common"
 	mempool "github.com/arcology-network/common-lib/mempool"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	"github.com/arcology-network/concurrenturl/interfaces"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 )
 
 type WriteCache struct {
-	store    ccurlcommon.DatastoreInterface
-	kvDict   map[string]ccurlcommon.UnivalueInterface // Local KV lookup
-	platform ccurlcommon.PlatformInterface
-	buffer   []ccurlcommon.UnivalueInterface // Transition + access record buffer
+	store    interfaces.Datastore
+	kvDict   map[string]interfaces.Univalue // Local KV lookup
+	platform interfaces.Platform
+	buffer   []interfaces.Univalue // Transition + access record buffer
 	uniPool  *mempool.Mempool
 }
 
-func NewWriteCache(store ccurlcommon.DatastoreInterface, platform ccurlcommon.PlatformInterface, args ...interface{}) *WriteCache {
+func NewWriteCache(store interfaces.Datastore, platform interfaces.Platform, args ...interface{}) *WriteCache {
 	var writeCache WriteCache
 	writeCache.store = store
-	writeCache.kvDict = make(map[string]ccurlcommon.UnivalueInterface)
+	writeCache.kvDict = make(map[string]interfaces.Univalue)
 	writeCache.store = store
 	writeCache.platform = platform
-	writeCache.buffer = make([]ccurlcommon.UnivalueInterface, 0, 64)
+	writeCache.buffer = make([]interfaces.Univalue, 0, 64)
 
 	writeCache.uniPool = mempool.NewMempool("writecache-univalue", func() interface{} { return new(univalue.Univalue) })
 	return &writeCache
 }
 
-func (this *WriteCache) SetStore(store ccurlcommon.DatastoreInterface)    { this.store = store }
-func (this *WriteCache) Store() ccurlcommon.DatastoreInterface            { return this.store }
-func (this *WriteCache) Cache() *map[string]ccurlcommon.UnivalueInterface { return &this.kvDict }
+func (this *WriteCache) SetStore(store interfaces.Datastore)    { this.store = store }
+func (this *WriteCache) Store() interfaces.Datastore            { return this.store }
+func (this *WriteCache) Cache() *map[string]interfaces.Univalue { return &this.kvDict }
 
 func (this *WriteCache) NewUnivalue() *univalue.Univalue {
 	v := this.uniPool.Get().(*univalue.Univalue)
@@ -43,7 +44,7 @@ func (this *WriteCache) NewUnivalue() *univalue.Univalue {
 }
 
 // If the access has been recorded
-func (this *WriteCache) GetOrInit(tx uint32, path string) ccurlcommon.UnivalueInterface {
+func (this *WriteCache) GetOrInit(tx uint32, path string) interfaces.Univalue {
 	unival := this.kvDict[path]
 	if unival == nil { // Not in the kvDict, check the datastore
 		unival = this.NewUnivalue()
@@ -93,7 +94,7 @@ func (this *WriteCache) IfExists(path string) bool {
 }
 
 func (this *WriteCache) Insert(path string, value interface{}) {
-	this.kvDict[path] = value.(ccurlcommon.UnivalueInterface)
+	this.kvDict[path] = value.(interfaces.Univalue)
 }
 
 func (this *WriteCache) RetriveShallow(key string) interface{} {
@@ -102,12 +103,12 @@ func (this *WriteCache) RetriveShallow(key string) interface{} {
 }
 
 func (this *WriteCache) Clear() {
-	this.kvDict = make(map[string]ccurlcommon.UnivalueInterface)
+	this.kvDict = make(map[string]interfaces.Univalue)
 }
 
 func (this *WriteCache) Equal(other *WriteCache) bool {
-	cache0 := []ccurlcommon.UnivalueInterface{}
-	cache1 := []ccurlcommon.UnivalueInterface{}
+	cache0 := []interfaces.Univalue{}
+	cache1 := []interfaces.Univalue{}
 
 	this.Vectorize(&this.kvDict, &cache0, true)
 	other.Vectorize(&this.kvDict, &cache1, true)
@@ -116,7 +117,7 @@ func (this *WriteCache) Equal(other *WriteCache) bool {
 }
 
 /* Map to array */
-func (*WriteCache) Vectorize(dict *map[string]ccurlcommon.UnivalueInterface, valBuf *[]ccurlcommon.UnivalueInterface, needToSort bool) {
+func (*WriteCache) Vectorize(dict *map[string]interfaces.Univalue, valBuf *[]interfaces.Univalue, needToSort bool) {
 	*valBuf = (*valBuf)[:0]
 	for _, v := range *dict {
 		*valBuf = append((*valBuf), v)
@@ -129,12 +130,12 @@ func (*WriteCache) Vectorize(dict *map[string]ccurlcommon.UnivalueInterface, val
 	}
 }
 
-func (this *WriteCache) Export(preprocessors ...func([]ccurlcommon.UnivalueInterface) []ccurlcommon.UnivalueInterface) []ccurlcommon.UnivalueInterface {
+func (this *WriteCache) Export(preprocessors ...func([]interfaces.Univalue) []interfaces.Univalue) []interfaces.Univalue {
 	this.buffer = this.buffer[:0]
 	this.Vectorize(&this.kvDict, &this.buffer, false) // Export records to the buffer
 
 	for _, processor := range preprocessors {
-		this.buffer = common.IfThenDo1st(processor != nil, func() []ccurlcommon.UnivalueInterface {
+		this.buffer = common.IfThenDo1st(processor != nil, func() []interfaces.Univalue {
 			return processor(this.buffer)
 		}, this.buffer)
 	}
@@ -142,7 +143,7 @@ func (this *WriteCache) Export(preprocessors ...func([]ccurlcommon.UnivalueInter
 }
 
 func (this *WriteCache) Print() {
-	values := []ccurlcommon.UnivalueInterface{}
+	values := []interfaces.Univalue{}
 	this.Vectorize(&this.kvDict, &values, true)
 	for i, elem := range values {
 		fmt.Println("Level : ", i)

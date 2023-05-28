@@ -5,7 +5,7 @@ import (
 
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
 type String codec.String
@@ -54,8 +54,8 @@ func (this *String) Set(value interface{}, source interface{}) (interface{}, uin
 	return this, 0, 1, 0, nil
 }
 
-func (this *String) ApplyDelta(v interface{}) (ccurlcommon.TypeInterface, int, error) {
-	vec := v.([]ccurlcommon.UnivalueInterface)
+func (this *String) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
+	vec := v.([]interfaces.Univalue)
 	for i := 0; i < len(vec); i++ {
 		v := vec[i].Value()
 		if this == nil && v != nil { // New value

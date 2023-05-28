@@ -6,19 +6,20 @@ import (
 
 	"github.com/arcology-network/common-lib/mempool"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	"github.com/arcology-network/concurrenturl/interfaces"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 )
 
 type DeltaSequence struct {
 	key         string
-	transitions []ccurlcommon.UnivalueInterface
-	base        ccurlcommon.UnivalueInterface
+	transitions []interfaces.Univalue
+	base        interfaces.Univalue
 	lock        sync.RWMutex
 }
 
 func NewDeltaSequence() *DeltaSequence {
 	return &DeltaSequence{
-		transitions: make([]ccurlcommon.UnivalueInterface, 0, 16),
+		transitions: make([]interfaces.Univalue, 0, 16),
 	}
 }
 
@@ -31,7 +32,7 @@ func (this *DeltaSequence) Reset(key string, indexer *Importer, mempool *mempool
 func (this *DeltaSequence) Init(key string, indexer *Importer, mempool *mempool.Mempool) {
 	if initialState := indexer.RetriveShallow(key); initialState != nil {
 		nVal := mempool.Get().(*univalue.Univalue)
-		nVal.Init(ccurlcommon.SYSTEM, key, 0, 0, initialState.(ccurlcommon.TypeInterface).Clone(), indexer)
+		nVal.Init(ccurlcommon.SYSTEM, key, 0, 0, initialState.(interfaces.Type).Clone(), indexer)
 		this.transitions = append(this.transitions, nVal) //Transitions are ordered by Tx, -1 will guarantee the initial state is always the first one
 	}
 }
@@ -40,7 +41,7 @@ func (this *DeltaSequence) Value() interface{} {
 	return this.base
 }
 
-func (this *DeltaSequence) Insert(v ccurlcommon.UnivalueInterface) {
+func (this *DeltaSequence) Insert(v interfaces.Univalue) {
 	this.lock.Lock()
 	this.transitions = append(this.transitions, v.(*univalue.Univalue))
 	this.lock.Unlock()

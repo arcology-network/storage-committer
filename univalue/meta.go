@@ -1,8 +1,6 @@
 package univalue
 
-import (
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
-)
+import "github.com/arcology-network/concurrenturl/interfaces"
 
 type Unimeta struct {
 	vType       uint8
@@ -45,7 +43,7 @@ func (this *Unimeta) IsReadOnly() bool { return this.Writes() == 0 && this.Delta
 func (this *Unimeta) Preexist() bool   { return this.preexists } // Exist in cache as a failed read
 
 func (this *Unimeta) CheckPreexist(key string, source interface{}) bool {
-	return source.(ccurlcommon.ImporterInterface).RetriveShallow(key) != nil
+	return source.(interfaces.Importer).RetriveShallow(key) != nil
 }
 
 func (this *Unimeta) Equal(other *Unimeta) bool {

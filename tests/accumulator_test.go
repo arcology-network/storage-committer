@@ -12,6 +12,7 @@ import (
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
+	"github.com/arcology-network/concurrenturl/interfaces"
 	"github.com/holiman/uint256"
 )
 
@@ -23,23 +24,23 @@ func TestAccumulatorUpperLimit(t *testing.T) {
 		t.Error(err)
 	}
 
-	trans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.TransitionCodecFilterSet()...)
-	transV := []ccurlcommon.UnivalueInterface(trans)
-	balanceDeltas := common.CopyIf(transV, func(v ccurlcommon.UnivalueInterface) bool { return strings.LastIndex(*v.GetPath(), "/balance") > 0 })
+	trans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	transV := []interfaces.Univalue(trans)
+	balanceDeltas := common.CopyIf(transV, func(v interfaces.Univalue) bool { return strings.LastIndex(*v.GetPath(), "/balance") > 0 })
 
 	balanceDeltas[0].Value().(*commutative.U256).SetMin((uint256.NewInt(0)))
 	balanceDeltas[0].Value().(*commutative.U256).SetMax((uint256.NewInt(100)))
 	balanceDeltas[0].Value().(*commutative.U256).SetDelta((uint256.NewInt(11)))
 
-	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(ccurlcommon.UnivalueInterface))
-	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(ccurlcommon.UnivalueInterface))
-	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(ccurlcommon.UnivalueInterface))
+	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(interfaces.Univalue))
+	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(interfaces.Univalue))
+	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(interfaces.Univalue))
 
 	balanceDeltas[1].Value().(*commutative.U256).SetDelta((uint256.NewInt(21)))
 	balanceDeltas[2].Value().(*commutative.U256).SetDelta((uint256.NewInt(5)))
 	balanceDeltas[3].Value().(*commutative.U256).SetDelta((uint256.NewInt(63)))
 
-	// dict := make(map[string]*[]ccurlcommon.UnivalueInterface)
+	// dict := make(map[string]*[]interfaces.Univalue)
 	// dict[*(balanceDeltas[0]).GetPath()] = &balanceDeltas
 
 	conflicts := (&arbitrator.Accumulator{}).CheckMinMax(balanceDeltas)
@@ -62,18 +63,18 @@ func TestAccumulatorLowerLimit(t *testing.T) {
 		t.Error(err)
 	}
 
-	trans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.TransitionCodecFilterSet()...)
-	transV := []ccurlcommon.UnivalueInterface(trans)
-	balanceDeltas := common.CopyIf(transV, func(v ccurlcommon.UnivalueInterface) bool { return strings.LastIndex(*v.GetPath(), "/balance") > 0 })
+	trans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	transV := []interfaces.Univalue(trans)
+	balanceDeltas := common.CopyIf(transV, func(v interfaces.Univalue) bool { return strings.LastIndex(*v.GetPath(), "/balance") > 0 })
 
 	balanceDeltas[0].SetTx(0)
 	balanceDeltas[0].Value().(*commutative.U256).SetMin((uint256.NewInt(0)))
 	balanceDeltas[0].Value().(*commutative.U256).SetMax((uint256.NewInt(100)))
 	balanceDeltas[0].Value().(*commutative.U256).SetDelta((uint256.NewInt(11)))
 
-	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(ccurlcommon.UnivalueInterface))
-	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(ccurlcommon.UnivalueInterface))
-	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(ccurlcommon.UnivalueInterface))
+	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(interfaces.Univalue))
+	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(interfaces.Univalue))
+	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(interfaces.Univalue))
 
 	balanceDeltas[1].SetTx(1)
 	balanceDeltas[1].Value().(*commutative.U256).SetDelta((uint256.NewInt(21)))

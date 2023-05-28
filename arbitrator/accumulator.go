@@ -5,19 +5,20 @@ import (
 
 	common "github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
 type Accumulator struct{}
 
-func (this *Accumulator) CheckMinMax(transitions []ccurlcommon.UnivalueInterface) []*Conflict {
+func (this *Accumulator) CheckMinMax(transitions []interfaces.Univalue) []*Conflict {
 	if len(transitions) <= 1 ||
 		(transitions)[0].Value() == nil ||
-		!(transitions)[0].Value().(ccurlcommon.TypeInterface).IsCommutative() ||
-		!(transitions)[0].Value().(ccurlcommon.TypeInterface).IsNumeric() {
+		!(transitions)[0].Value().(interfaces.Type).IsCommutative() ||
+		!(transitions)[0].Value().(interfaces.Type).IsNumeric() {
 		return nil
 	}
 
-	common.RemoveIf(&transitions, func(v ccurlcommon.UnivalueInterface) bool {
+	common.RemoveIf(&transitions, func(v interfaces.Univalue) bool {
 		return v.IsReadOnly()
 	})
 
@@ -26,8 +27,8 @@ func (this *Accumulator) CheckMinMax(transitions []ccurlcommon.UnivalueInterface
 	}
 
 	sort.Slice(transitions, func(i, j int) bool {
-		lhv := transitions[i].Value().(ccurlcommon.TypeInterface)
-		rhv := transitions[i].Value().(ccurlcommon.TypeInterface)
+		lhv := transitions[i].Value().(interfaces.Type)
+		rhv := transitions[i].Value().(interfaces.Type)
 		return lhv.DeltaSign() != rhv.DeltaSign() && !lhv.DeltaSign()
 	})
 
@@ -58,8 +59,8 @@ func (this *Accumulator) CheckMinMax(transitions []ccurlcommon.UnivalueInterface
 	return conflicts
 }
 
-func (*Accumulator) Categorize(transitions []ccurlcommon.UnivalueInterface) ([]ccurlcommon.UnivalueInterface, []ccurlcommon.UnivalueInterface) {
-	offset := common.LocateFirstIf(transitions, func(v ccurlcommon.UnivalueInterface) bool { return v.Value().(ccurlcommon.TypeInterface).DeltaSign() })
+func (*Accumulator) Categorize(transitions []interfaces.Univalue) ([]interfaces.Univalue, []interfaces.Univalue) {
+	offset := common.LocateFirstIf(transitions, func(v interfaces.Univalue) bool { return v.Value().(interfaces.Type).DeltaSign() })
 
 	if offset < 0 {
 		offset = len(transitions)
@@ -67,19 +68,19 @@ func (*Accumulator) Categorize(transitions []ccurlcommon.UnivalueInterface) ([]c
 	return transitions[:offset], transitions[offset:]
 }
 
-func (this *Accumulator) isOutOfLimits(k string, transitions []ccurlcommon.UnivalueInterface) *Conflict {
+func (this *Accumulator) isOutOfLimits(k string, transitions []interfaces.Univalue) *Conflict {
 	if len(transitions) <= 1 {
 		return nil
 	}
 
-	initialv := transitions[0].Value().(ccurlcommon.TypeInterface).Clone().(ccurlcommon.TypeInterface)
+	initialv := transitions[0].Value().(interfaces.Type).Clone().(interfaces.Type)
 	_, length, err := initialv.ApplyDelta(transitions[1:])
 	if err == nil {
 		return nil
 	}
 
 	txIDs := []uint32{}
-	common.Foreach(transitions[length+1:], func(v *ccurlcommon.UnivalueInterface) { txIDs = append(txIDs, (*v).GetTx()) })
+	common.Foreach(transitions[length+1:], func(v *interfaces.Univalue) { txIDs = append(txIDs, (*v).GetTx()) })
 
 	return &Conflict{
 		key:   k,
