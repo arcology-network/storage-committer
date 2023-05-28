@@ -46,11 +46,6 @@ func (this *Path) Clone() interface{} {
 	return meta
 }
 
-func (this *Path) ReInit() {
-	this.value = common.IfThen(this.value == nil, orderedset.NewOrderedSet([]string{}), this.value)
-	this.delta = common.IfThen(this.delta == nil, NewPathDelta([]string{}, []string{}), this.delta)
-}
-
 func (this *Path) Equal(other interface{}) bool {
 	return common.EqualIf(this.value, other.(*Path).value, func(v0, v1 *orderedset.OrderedSet) bool { return v0.Equal(v1) }, func(v *orderedset.OrderedSet) bool { return len(v.Keys()) == 0 }) &&
 		common.EqualIf(this.delta, other.(*Path).delta, func(v0, v1 *PathDelta) bool { return v0.Equal(v1) }, func(v *PathDelta) bool { return len(v.Added()) == 0 && len(v.Removed()) == 0 })
@@ -63,13 +58,14 @@ func (this *Path) Get() (interface{}, uint32, uint32) {
 // For the codec only
 func (this *Path) New(value, delta, sign, min, max interface{}) interface{} {
 	return &Path{
-		value: common.IfThenDo1st(value != nil && value.(*orderedset.OrderedSet) != nil && len(value.(*orderedset.OrderedSet).Keys()) > 0, func() *orderedset.OrderedSet { return value.(*orderedset.OrderedSet) }, nil),
-		delta: common.IfThenDo1st(delta != nil && delta.(*PathDelta) != nil && delta.(*PathDelta).Touched(), func() *PathDelta { return delta.(*PathDelta) }, nil),
+		value: common.IfThenDo1st(value != nil && value.(*orderedset.OrderedSet) != nil && len(value.(*orderedset.OrderedSet).Keys()) > 0,
+			func() *orderedset.OrderedSet { return value.(*orderedset.OrderedSet) }, orderedset.NewOrderedSet([]string{})),
+		delta: common.IfThenDo1st(delta != nil && delta.(*PathDelta) != nil && delta.(*PathDelta).Touched(),
+			func() *PathDelta { return delta.(*PathDelta) }, NewPathDelta([]string{}, []string{})),
 	}
 }
 
 func (this *Path) ApplyDelta(v interface{}) (interfaces.Type, int, error) { // Apply the transitions to the original value
-	this.ReInit()
 	toAdd := this.delta.addDict.Keys() // The value should only contain committed keys
 	toRemove := this.delta.Removed()
 	univals := v.([]interfaces.Univalue)

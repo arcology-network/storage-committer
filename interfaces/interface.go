@@ -34,7 +34,6 @@ type Type interface { // value type
 	Min() interface{}
 	Max() interface{}
 	New(interface{}, interface{}, interface{}, interface{}, interface{}) interface{}
-	ReInit()
 
 	Get() (interface{}, uint32, uint32)
 	Set(interface{}, interface{}) (interface{}, uint32, uint32, uint32, error)

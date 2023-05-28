@@ -55,12 +55,6 @@ func (this *Uint64) Clone() interface{} {
 		max:   common.New(*this.max),
 	}
 }
-func (this *Uint64) ReInit() {
-	this.value = common.IfThen(this.value == nil, common.New(codec.Uint64(0)), this.value)
-	this.delta = common.IfThen(this.delta == nil, common.New(codec.Uint64(0)), this.delta)
-	this.min = common.IfThen(this.min == nil, common.New(codec.Uint64(0)), this.min)
-	this.max = common.IfThen(this.max == nil, common.New(codec.Uint64(math.MaxUint64)), this.max)
-}
 
 func (this *Uint64) Equal(other interface{}) bool {
 	return common.Equal(this.value, other.(*Uint64).value, func(v *codec.Uint64) bool { return *v == 0 }) &&
@@ -104,7 +98,6 @@ func (this *Uint64) Set(v interface{}, source interface{}) (interface{}, uint32,
 }
 
 func (this *Uint64) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
-	this.ReInit()
 	vec := v.([]interfaces.Univalue)
 	for i := 0; i < len(vec); i++ {
 		v := vec[i].Value()

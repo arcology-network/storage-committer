@@ -52,13 +52,6 @@ func (this *Int64) Clone() interface{} {
 	}
 }
 
-func (this *Int64) ReInit() {
-	this.value = common.IfThen(this.value == nil, common.New(codec.Int64(0)), this.value)
-	this.delta = common.IfThen(this.delta == nil, common.New(codec.Int64(0)), this.delta)
-	this.min = common.IfThen(this.min == nil, common.New(codec.Int64(math.MinInt64)), this.min)
-	this.max = common.IfThen(this.max == nil, common.New(codec.Int64(math.MaxInt64)), this.max)
-}
-
 func (this *Int64) Equal(other interface{}) bool {
 	return common.Equal(this.value, other.(*Int64).value, func(v *codec.Int64) bool { return *v == 0 }) &&
 		common.Equal(this.delta, other.(*Int64).delta, func(v *codec.Int64) bool { return *v == 0 }) &&
@@ -117,7 +110,6 @@ func (this *Int64) isUnderflow(delta int64) bool {
 }
 
 func (this *Int64) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
-	this.ReInit()
 	vec := v.([]interfaces.Univalue)
 	for i := 0; i < len(vec); i++ {
 		v := vec[i].Value()

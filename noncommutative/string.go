@@ -25,7 +25,6 @@ func (this *String) Get() (interface{}, uint32, uint32)                         
 func (this *String) IsNumeric() bool     { return false }
 func (this *String) IsCommutative() bool { return false }
 
-func (this *String) ReInit()            {}
 func (this *String) Value() interface{} { return this }
 func (this *String) Delta() interface{} { return this }
 func (this *String) DeltaSign() bool    { return true } // delta sign

@@ -110,15 +110,6 @@ func (this *U256) New(value, delta, sign, min, max interface{}) interface{} {
 	}
 }
 
-// ReInit the fields with default values that were removed before export.
-func (this *U256) ReInit() {
-	this.value = common.IfThen(this.value == nil, (*codec.Uint256)(U256_ZERO.Clone()), this.value)
-	this.delta = common.IfThen(this.delta == nil, (*codec.Uint256)(U256_ZERO.Clone()), this.delta)
-	this.deltaPositive = common.IfThen(this.delta == nil, true, this.deltaPositive)
-	this.min = common.IfThen(this.min == nil, (*codec.Uint256)(U256_ZERO.Clone()), this.min)
-	this.max = common.IfThen(this.max == nil, (*codec.Uint256)(U256_MAX.Clone()), this.max)
-}
-
 func (this *U256) IsNumeric() bool     { return true }
 func (this *U256) IsCommutative() bool { return true }
 
@@ -212,7 +203,6 @@ func (this *U256) Set(newDelta interface{}, source interface{}) (interface{}, ui
 }
 
 func (this *U256) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
-	this.ReInit()
 	vec := v.([]interfaces.Univalue)
 	for i := 0; i < len(vec); i++ {
 		v := vec[i].Value()

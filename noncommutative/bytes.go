@@ -51,8 +51,6 @@ func (this *Bytes) Equal(other interface{}) bool {
 func (this *Bytes) IsNumeric() bool     { return false }
 func (this *Bytes) IsCommutative() bool { return false }
 
-func (this *Bytes) ReInit() {}
-
 func (this *Bytes) Value() interface{} { return this.value }
 func (this *Bytes) Delta() interface{} { return this.value }
 func (this *Bytes) DeltaSign() bool    { return true } // delta sign

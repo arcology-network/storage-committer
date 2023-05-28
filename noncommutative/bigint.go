@@ -36,7 +36,6 @@ func (this *Bigint) Clone() interface{} {
 
 func (this *Bigint) IsNumeric() bool     { return true }
 func (this *Bigint) IsCommutative() bool { return false }
-func (this *Bigint) ReInit()             {}
 
 func (this *Bigint) Value() interface{} { return (this) }
 func (this *Bigint) Delta() interface{} { return (this) }

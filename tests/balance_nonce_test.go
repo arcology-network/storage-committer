@@ -285,9 +285,9 @@ func TestMultipleNonces(t *testing.T) {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be 2", " actual: ", bobNonce)
 	}
 
-	// nonce, _ = url0.Read(0, "blcc://eth1.0/account/"+bob+"/nonce")
-	// bobNonce = nonce.(uint64)
-	// if bobNonce != 2 {
-	// 	t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
-	// }
+	nonce, _ = url0.Read(0, "blcc://eth1.0/account/"+bob+"/nonce")
+	bobNonce = nonce.(uint64)
+	if bobNonce != 2 {
+		t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
+	}
 }
