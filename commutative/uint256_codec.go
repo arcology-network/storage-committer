@@ -11,11 +11,11 @@ func (this *U256) HeaderSize() uint32 {
 
 func (this *U256) Size() uint32 {
 	return this.HeaderSize() +
-		common.IfThen(this.value != nil, uint32(32), 0) + // Values
-		common.IfThen(this.delta != nil, uint32(32), 0) + // delta
+		common.IfThen(this.value != nil && !this.value.Eq((*codec.Uint256)(U256_ZERO)), uint32(32), 0) + // Values
+		common.IfThen(this.delta != nil && !this.delta.Eq((*codec.Uint256)(U256_ZERO)), uint32(32), 0) + // delta
 		common.IfThen(this.delta != nil, uint32(1), 0) + // delta sign
-		common.IfThen(this.min != nil, uint32(32), 0) + // Min
-		common.IfThen(this.max != nil, uint32(32), 0) // Max
+		common.IfThen(this.min != nil && !this.min.Eq((*codec.Uint256)(U256_ZERO)), uint32(32), 0) + // Min
+		common.IfThen(this.max != nil && !this.max.Eq((*codec.Uint256)(U256_MAX)), uint32(32), 0) // Max
 }
 
 func (this *U256) Encode() []byte {
@@ -23,11 +23,11 @@ func (this *U256) Encode() []byte {
 	offset := codec.Encoder{}.FillHeader(
 		buffer,
 		[]uint32{
-			common.IfThen(this.value != nil, uint32(32), 0),
-			common.IfThen(this.delta != nil, uint32(32), 0),
+			common.IfThen(this.value != nil && !this.value.Eq((*codec.Uint256)(U256_ZERO)), uint32(32), 0),
+			common.IfThen(this.delta != nil && !this.delta.Eq((*codec.Uint256)(U256_ZERO)), uint32(32), 0),
 			common.IfThen(this.delta != nil, uint32(1), 0),
-			common.IfThen(this.min != nil, uint32(32), 0),
-			common.IfThen(this.max != nil, uint32(32), 0),
+			common.IfThen(this.min != nil && !this.min.Eq((*codec.Uint256)(U256_ZERO)), uint32(32), 0),
+			common.IfThen(this.max != nil && !this.max.Eq((*codec.Uint256)(U256_MAX)), uint32(32), 0),
 		},
 	)
 	this.EncodeToBuffer(buffer[offset:])
@@ -35,11 +35,11 @@ func (this *U256) Encode() []byte {
 }
 
 func (this *U256) EncodeToBuffer(buffer []byte) int {
-	offset := common.IfThenDo1st(this.value != nil, func() int { return codec.Uint64s(this.value[:]).EncodeToBuffer(buffer) }, 0)
-	offset += common.IfThenDo1st(this.delta != nil, func() int { return codec.Uint64s(this.delta[:]).EncodeToBuffer(buffer[offset:]) }, 0)
+	offset := common.IfThenDo1st(this.value != nil && !this.value.Eq((*codec.Uint256)(U256_ZERO)), func() int { return codec.Uint64s(this.value[:]).EncodeToBuffer(buffer) }, 0)
+	offset += common.IfThenDo1st(this.delta != nil && !this.delta.Eq((*codec.Uint256)(U256_ZERO)), func() int { return codec.Uint64s(this.delta[:]).EncodeToBuffer(buffer[offset:]) }, 0)
 	offset += common.IfThenDo1st(this.delta != nil, func() int { return codec.Bool(this.deltaPositive).EncodeToBuffer(buffer[offset:]) }, 0)
-	offset += common.IfThenDo1st(this.min != nil, func() int { return codec.Uint64s(this.min[:]).EncodeToBuffer(buffer[offset:]) }, 0)
-	offset += common.IfThenDo1st(this.max != nil, func() int { return codec.Uint64s(this.max[:]).EncodeToBuffer(buffer[offset:]) }, 0)
+	offset += common.IfThenDo1st(this.min != nil && !this.min.Eq((*codec.Uint256)(U256_ZERO)), func() int { return codec.Uint64s(this.min[:]).EncodeToBuffer(buffer[offset:]) }, 0)
+	offset += common.IfThenDo1st(this.max != nil && !this.max.Eq((*codec.Uint256)(U256_MAX)), func() int { return codec.Uint64s(this.max[:]).EncodeToBuffer(buffer[offset:]) }, 0)
 	return offset
 }
 

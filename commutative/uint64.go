@@ -40,10 +40,10 @@ func NewUint64Delta(delta uint64) interface{} {
 // For the codec only, don't use it for other purposes
 func (this *Uint64) New(value, delta, sign, min, max interface{}) interface{} {
 	return &Uint64{
-		common.IfThenDo1st(value != nil && value.(*codec.Uint64) != nil && *value.(*codec.Uint64) != 0, func() *codec.Uint64 { return value.(*codec.Uint64) }, nil),
-		common.IfThenDo1st(delta != nil && delta.(*codec.Uint64) != nil && *delta.(*codec.Uint64) != 0, func() *codec.Uint64 { return delta.(*codec.Uint64) }, nil),
-		common.IfThenDo1st(min != nil && min.(*codec.Uint64) != nil && *min.(*codec.Uint64) != 0, func() *codec.Uint64 { return min.(*codec.Uint64) }, nil),
-		common.IfThenDo1st(max != nil && max.(*codec.Uint64) != nil && *max.(*codec.Uint64) != math.MaxUint64, func() *codec.Uint64 { return max.(*codec.Uint64) }, nil),
+		common.IfThenDo1st(value != nil, func() *codec.Uint64 { return value.(*codec.Uint64) }, common.New(codec.Uint64(0))),
+		common.IfThenDo1st(delta != nil, func() *codec.Uint64 { return delta.(*codec.Uint64) }, common.New(codec.Uint64(0))),
+		common.IfThenDo1st(min != nil, func() *codec.Uint64 { return min.(*codec.Uint64) }, common.New(codec.Uint64(0))),
+		common.IfThenDo1st(max != nil, func() *codec.Uint64 { return max.(*codec.Uint64) }, common.New(codec.Uint64(math.MaxUint64))),
 	}
 }
 

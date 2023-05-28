@@ -62,14 +62,6 @@ func (this *Uint64) Decode(buffer []byte) interface{} {
 	return this
 }
 
-// func (this *Uint64) Encode() []byte {
-// 	return this.Encode()
-// }
-
-// func (this *Uint64) DecodeCompact(buffer []byte) interface{} {
-// 	return (&Uint64{}).Decode(buffer)
-// }
-
 func (this *Uint64) Print() {
 	fmt.Println("Value: ", this.value)
 	fmt.Println("Delta: ", this.delta)

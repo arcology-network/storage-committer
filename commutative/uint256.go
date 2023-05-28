@@ -89,13 +89,24 @@ func (*U256) NewU256(value, delta, min, max *uint256.Int, sign bool) *U256 {
 }
 
 // For the codec only, don't use it for other purposes
+// func (this *U256) New(value, delta, sign, min, max interface{}) interface{} {
+// 	return &U256{
+// 		value:         common.IfThenDo1st(value != nil && value.(*codec.Uint256) != nil && !value.(*codec.Uint256).Eq((*codec.Uint256)(U256_ZERO)), func() *codec.Uint256 { return (*codec.Uint256)(value.(*codec.Uint256)) }, nil),
+// 		delta:         common.IfThenDo1st(delta != nil && delta.(*codec.Uint256) != nil && !delta.(*codec.Uint256).Eq((*codec.Uint256)(U256_ZERO)), func() *codec.Uint256 { return (*codec.Uint256)(delta.(*codec.Uint256)) }, nil),
+// 		deltaPositive: common.IfThenDo1st(sign != nil, func() bool { return sign.(bool) }, true),
+// 		min:           common.IfThenDo1st(min != nil && min.(*codec.Uint256) != nil && !min.(*codec.Uint256).Eq((*codec.Uint256)(U256_MIN)), func() *codec.Uint256 { return (*codec.Uint256)(min.(*codec.Uint256)) }, nil),
+// 		max:           common.IfThenDo1st(max != nil && max.(*codec.Uint256) != nil && !max.(*codec.Uint256).Eq((*codec.Uint256)(U256_MAX)), func() *codec.Uint256 { return (*codec.Uint256)(max.(*codec.Uint256)) }, nil),
+// 	}
+// }
+// value.(*codec.Uint256) != nil && !value.(*codec.Uint256).Eq((*codec.Uint256)(U256_ZERO)), func() *codec.Uint256 { return (*codec.Uint256)(value.(*codec.Uint256)) }, nil
+
 func (this *U256) New(value, delta, sign, min, max interface{}) interface{} {
 	return &U256{
-		value:         common.IfThenDo1st(value != nil && value.(*codec.Uint256) != nil && !value.(*codec.Uint256).Eq((*codec.Uint256)(U256_ZERO)), func() *codec.Uint256 { return (*codec.Uint256)(value.(*codec.Uint256)) }, nil),
-		delta:         common.IfThenDo1st(delta != nil && delta.(*codec.Uint256) != nil && !delta.(*codec.Uint256).Eq((*codec.Uint256)(U256_ZERO)), func() *codec.Uint256 { return (*codec.Uint256)(delta.(*codec.Uint256)) }, nil),
+		value:         common.IfThenDo1st(value != nil, func() *codec.Uint256 { return value.(*codec.Uint256) }, (*codec.Uint256)(U256_ZERO.Clone())),
+		delta:         common.IfThenDo1st(delta != nil, func() *codec.Uint256 { return delta.(*codec.Uint256) }, (*codec.Uint256)(U256_ZERO.Clone())),
 		deltaPositive: common.IfThenDo1st(sign != nil, func() bool { return sign.(bool) }, true),
-		min:           common.IfThenDo1st(min != nil && min.(*codec.Uint256) != nil && !min.(*codec.Uint256).Eq((*codec.Uint256)(U256_MIN)), func() *codec.Uint256 { return (*codec.Uint256)(min.(*codec.Uint256)) }, nil),
-		max:           common.IfThenDo1st(max != nil && max.(*codec.Uint256) != nil && !max.(*codec.Uint256).Eq((*codec.Uint256)(U256_MAX)), func() *codec.Uint256 { return (*codec.Uint256)(max.(*codec.Uint256)) }, nil),
+		min:           common.IfThenDo1st(min != nil, func() *codec.Uint256 { return min.(*codec.Uint256) }, (*codec.Uint256)(U256_ZERO.Clone())),
+		max:           common.IfThenDo1st(max != nil, func() *codec.Uint256 { return max.(*codec.Uint256) }, (*codec.Uint256)(U256_MAX.Clone())),
 	}
 }
 
