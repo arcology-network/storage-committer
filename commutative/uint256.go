@@ -119,11 +119,17 @@ func (this *U256) DeltaSign() bool    { return this.delta.Cmp((*codec.Uint256)(U
 func (this *U256) Min() interface{}   { return this.min }
 func (this *U256) Max() interface{}   { return this.max }
 
-func (this *U256) SetValue(v interface{})     { this.value = (*codec.Uint256)(v.(*uint256.Int)) }
-func (this *U256) SetDelta(v interface{})     { this.delta = (*codec.Uint256)(v.(*uint256.Int)) }
+// func (this *U256) SetValue(v interface{})     { this.value = (*codec.Uint256)(v.(*uint256.Int)) }
+// func (this *U256) SetDelta(v interface{})     { this.delta = (*codec.Uint256)(v.(*uint256.Int)) }
+// func (this *U256) SetDeltaSign(v interface{}) { this.deltaPositive = (v.(bool)) }
+// func (this *U256) SetMin(v interface{})       { this.min = (*codec.Uint256)(v.(*uint256.Int)) }
+// func (this *U256) SetMax(v interface{})       { this.max = (*codec.Uint256)(v.(*uint256.Int)) }
+
+func (this *U256) SetValue(v interface{})     { this.value = (v.(*codec.Uint256)) }
+func (this *U256) SetDelta(v interface{})     { this.delta = (v.(*codec.Uint256)) }
 func (this *U256) SetDeltaSign(v interface{}) { this.deltaPositive = (v.(bool)) }
-func (this *U256) SetMin(v interface{})       { this.min = (*codec.Uint256)(v.(*uint256.Int)) }
-func (this *U256) SetMax(v interface{})       { this.max = (*codec.Uint256)(v.(*uint256.Int)) }
+func (this *U256) SetMin(v interface{})       { this.min = (v.(*codec.Uint256)) }
+func (this *U256) SetMax(v interface{})       { this.max = (v.(*codec.Uint256)) }
 
 func (this *U256) MemSize() uint32                                            { return 32*4 + 1 }
 func (this *U256) IsSelf(key interface{}) bool                                { return true }

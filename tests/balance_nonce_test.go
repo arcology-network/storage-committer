@@ -102,13 +102,13 @@ func TestBalance(t *testing.T) {
 
 	// create a noncommutative bigint
 	inV := noncommutative.NewBigint(100)
-	value := (*big.Int)(inV.(*noncommutative.Bigint))
 	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0", inV); err != nil {
 		t.Error(err, " Failed to Write: blcc://eth1.0/account/alice/storage/ctrn-0/elem-0")
 	}
 
 	v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0")
 	outV := v.(*big.Int)
+	value := (*big.Int)(inV.(*noncommutative.Bigint))
 	if outV.Cmp(value) != 0 {
 		t.Error("Failed to read: blcc://eth1.0/account/alice/storage/ctrn-0/elem-0")
 	}

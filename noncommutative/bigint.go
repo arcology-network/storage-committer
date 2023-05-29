@@ -43,8 +43,8 @@ func (this *Bigint) DeltaSign() bool    { return true } // delta sign
 func (this *Bigint) Min() interface{}   { return nil }
 func (this *Bigint) Max() interface{}   { return nil }
 
-func (this *Bigint) SetValue(v interface{})     { *this = Bigint(*(v.(*big.Int))) }
-func (this *Bigint) SetDelta(v interface{})     {}
+func (this *Bigint) SetValue(v interface{})     { this.SetDelta(v) }
+func (this *Bigint) SetDelta(v interface{})     { (*big.Int)(this).Set((*big.Int)(v.(*Bigint))) }
 func (this *Bigint) SetDeltaSign(v interface{}) {}
 func (this *Bigint) SetMin(v interface{})       {}
 func (this *Bigint) SetMax(v interface{})       {}

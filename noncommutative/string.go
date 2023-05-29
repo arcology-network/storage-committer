@@ -31,8 +31,8 @@ func (this *String) DeltaSign() bool    { return true } // delta sign
 func (this *String) Min() interface{}   { return nil }
 func (this *String) Max() interface{}   { return nil }
 
-func (this *String) SetValue(v interface{})     { *this = String(v.(string)) }
-func (this *String) SetDelta(v interface{})     { *this = String(v.(string)) }
+func (this *String) SetValue(v interface{})     { this.SetDelta(v) }
+func (this *String) SetDelta(v interface{})     { *this = (*v.(*String)) }
 func (this *String) SetDeltaSign(v interface{}) {}
 func (this *String) SetMin(v interface{})       {}
 func (this *String) SetMax(v interface{})       {}

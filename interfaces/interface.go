@@ -35,6 +35,12 @@ type Type interface { // value type
 	Max() interface{}
 	New(interface{}, interface{}, interface{}, interface{}, interface{}) interface{}
 
+	SetValue(v interface{})
+	SetDelta(v interface{})
+	SetDeltaSign(v interface{})
+	SetMin(v interface{})
+	SetMax(v interface{})
+
 	Get() (interface{}, uint32, uint32)
 	Set(interface{}, interface{}) (interface{}, uint32, uint32, uint32, error)
 	CopyTo(interface{}) (interface{}, uint32, uint32, uint32)

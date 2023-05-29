@@ -38,6 +38,12 @@ func (this *Path) DeltaSign() bool    { return true }
 func (this *Path) Min() interface{}   { return nil }
 func (this *Path) Max() interface{}   { return nil }
 
+func (this *Path) SetValue(v interface{})     { this.value = v.(*orderedset.OrderedSet) }
+func (this *Path) SetDelta(v interface{})     { this.delta = v.(*PathDelta) }
+func (this *Path) SetDeltaSign(v interface{}) {}
+func (this *Path) SetMin(v interface{})       {}
+func (this *Path) SetMax(v interface{})       {}
+
 func (this *Path) Clone() interface{} {
 	meta := &Path{
 		value: this.value.Clone().(*orderedset.OrderedSet),

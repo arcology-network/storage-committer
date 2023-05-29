@@ -25,21 +25,20 @@ func (IPCTransitions) From(v interfaces.Univalue) interface{} {
 		strings.HasSuffix(*v.GetPath(), "/nonce") {
 		return nil
 	}
-	return v
 
-	// typed := v.Value().(interfaces.Type)
-	// typed = typed.New(
-	// 	nil,
-	// 	typed.Delta(),
-	// 	typed.DeltaSign(),
-	// 	typed.Min(),
-	// 	typed.Max(),
-	// ).(interfaces.Type)
+	typed := v.Value().(interfaces.Type)
+	typed = typed.New(
+		nil,
+		typed.Delta(),
+		typed.DeltaSign(),
+		typed.Min(),
+		typed.Max(),
+	).(interfaces.Type)
 
-	// return v.New(
-	// 	v.GetUnimeta(),
-	// 	typed,
-	// 	[]byte{},
-	// 	v.GetErrorCode(),
-	// )
+	return v.New(
+		v.GetUnimeta(),
+		typed,
+		[]byte{},
+		v.GetErrorCode(),
+	)
 }

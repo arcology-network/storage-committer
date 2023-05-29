@@ -20,7 +20,6 @@ func (this ITCTransition) From(v interfaces.Univalue) interface{} {
 	}
 
 	typed := converted.Value().(interfaces.Type)
-
 	typed = typed.New(
 		nil,
 		codec.Clone(typed.Delta()),
@@ -29,10 +28,7 @@ func (this ITCTransition) From(v interfaces.Univalue) interface{} {
 		typed.Max(),
 	).(interfaces.Type)
 
-	return converted.New(
-		converted.GetUnimeta(),
-		typed,
-		[]byte{},
-		converted.GetErrorCode(),
-	)
+	converted.SetValue(typed) // Reuse the univalue wrapper
+	// converted.Value().(interfaces.Type).SetDelta(codec.Clone(typed.Delta()))
+	return converted
 }
