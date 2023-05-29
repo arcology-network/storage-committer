@@ -71,7 +71,7 @@ func (this *WriteCache) Peek(path string) (interface{}, interface{}) {
 	}
 
 	v := this.RetriveShallow(path)
-	return v, univalue.NewUnivalue(ccurlcommon.SYSTEM, path, 1, 0, 0, v, false)
+	return v, univalue.NewUnivalue(ccurlcommon.SYSTEM, path, 1, 0, 0, v)
 }
 
 func (this *WriteCache) Write(tx uint32, path string, value interface{}) error {

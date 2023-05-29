@@ -13,6 +13,7 @@ import (
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 	interfaces "github.com/arcology-network/concurrenturl/interfaces"
 	"github.com/arcology-network/concurrenturl/noncommutative"
+	"github.com/arcology-network/concurrenturl/univalue"
 )
 
 type ConcurrentUrl struct {
@@ -50,8 +51,8 @@ func (this *ConcurrentUrl) ReadCommitted(tx uint32, key string) (interface{}, ui
 		return v, cost
 	}
 
-	v, _ := this.Importer().Store().Retrive(key)
-	return v, Cost{}.Reader(uint64(v.(interfaces.Type).Size()), true)
+	v, _ := this.WriteCache().Store().Retrive(key)
+	return v, Cost{}.Reader(univalue.NewUnivalue(tx, key, 1, 0, 0, v))
 }
 
 func (this *ConcurrentUrl) Init(store interfaces.Datastore) {
@@ -112,28 +113,16 @@ func (this *ConcurrentUrl) IfExists(path string) bool {
 
 func (this *ConcurrentUrl) Peek(path string) (interface{}, uint64) {
 	typedv, univ := this.writeCache.Peek(path)
-	dataSize := common.IfThenDo1st(typedv != nil, func() uint64 {
-		return uint64(univ.(interfaces.Univalue).Value().(interfaces.Type).Size())
-	}, 0)
-	return typedv, Cost{}.Reader(dataSize, univ.(interfaces.Univalue).IsHotLoaded())
+	return typedv, Cost{}.Reader(univ.(interfaces.Univalue))
 }
 
 func (this *ConcurrentUrl) Read(tx uint32, path string) (interface{}, uint64) {
 	typedv, univ := this.writeCache.Read(tx, path)
-	dataSize := common.IfThenDo1st(typedv != nil, func() uint64 {
-		return uint64(univ.(interfaces.Univalue).Value().(interfaces.Type).Size())
-	}, 0)
-	return typedv, Cost{}.Reader(dataSize, univ.(interfaces.Univalue).IsHotLoaded())
+	return typedv, Cost{}.Reader(univ.(interfaces.Univalue))
 }
 
 func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}) (int64, error) {
-	dataSize := common.IfThenDo1st(
-		value != nil,
-		func() uint64 { return uint64(value.(interfaces.Type).Size()) },
-		0,
-	)
-
-	return Cost{}.Writer(dataSize, dataSize), // FIXME: The second should be the committed size
+	return Cost{}.Writer(path, value, this.writeCache), // FIXME: The second should be the committed size
 		common.IfThenDo1st(
 			value == nil || (value != nil && value.(interfaces.Type).TypeID() != uint8(reflect.Invalid)),
 			func() error { return this.writeCache.Write(tx, path, value) },
@@ -331,11 +320,11 @@ func (this *ConcurrentUrl) Export(preprocessors ...func([]interfaces.Univalue) [
 }
 
 func (this *ConcurrentUrl) ExportAll(preprocessors ...func([]interfaces.Univalue) []interfaces.Univalue) ([]interfaces.Univalue, []interfaces.Univalue) {
-	all := common.Clone(this.Export(indexer.Sorter))
+	all := this.Export(indexer.Sorter)
 	indexer.Univalues(all).Print()
 
-	accesses := indexer.Univalues(all).To(indexer.ITCAccess{})
-	transitions := indexer.Univalues(all).To(indexer.ITCTransition{})
+	accesses := indexer.Univalues(common.Clone(all)).To(indexer.ITCAccess{})
+	transitions := indexer.Univalues(common.Clone(all)).To(indexer.ITCTransition{})
 
 	return accesses, transitions
 }
