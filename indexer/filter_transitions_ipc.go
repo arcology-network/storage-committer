@@ -7,9 +7,9 @@ import (
 	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
-type IPCTransitions struct{ interfaces.Univalue }
+type IPCTransition struct{ interfaces.Univalue }
 
-func (IPCTransitions) From(v interfaces.Univalue) interface{} {
+func (IPCTransition) From(v interfaces.Univalue) interface{} {
 	if v == nil ||
 		v.IsReadOnly() ||
 		(v.Value() == nil && !v.Preexist()) { // Del Non Exist

@@ -16,6 +16,10 @@ func NewPathDelta(add []string, del []string) *PathDelta {
 	}
 }
 
+func (this *PathDelta) IsEmpty() bool {
+	return this.addDict.Length() == 0 && this.delDict.Length() == 0
+}
+
 func (this *PathDelta) Clone() interface{} {
 	if this == nil {
 		return this

@@ -6,10 +6,10 @@ import (
 	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
-type ITCTransition struct{ IPCTransitions }
+type ITCTransition struct{ IPCTransition }
 
 func (this ITCTransition) From(v interfaces.Univalue) interface{} {
-	value := this.IPCTransitions.From(v)
+	value := this.IPCTransition.From(v)
 	converted := common.IfThenDo1st(value != nil, func() interfaces.Univalue { return value.(interfaces.Univalue) }, nil)
 	if converted == nil {
 		return nil
@@ -20,7 +20,7 @@ func (this ITCTransition) From(v interfaces.Univalue) interface{} {
 	}
 
 	typed := converted.Value().(interfaces.Type)
-	typed = typed.New(
+	typedNew := typed.New(
 		nil,
 		codec.Clone(typed.Delta()),
 		typed.DeltaSign(),
@@ -28,7 +28,7 @@ func (this ITCTransition) From(v interfaces.Univalue) interface{} {
 		typed.Max(),
 	).(interfaces.Type)
 
-	converted.SetValue(typed) // Reuse the univalue wrapper
-	// converted.Value().(interfaces.Type).SetDelta(codec.Clone(typed.Delta()))
+	// typedNew.SetDelta(codec.Clone(typedNew.Delta()))
+	converted.SetValue(typedNew) // Reuse the univalue wrapper
 	return converted
 }
