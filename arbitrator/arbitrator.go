@@ -43,17 +43,20 @@ func (this *Arbitrator) Detect(newTrans []interfaces.Univalue) []*Conflict {
 			continue
 		}
 
-		ids := []uint32{}
-		common.Foreach(newTrans[ranges[i]+offset:ranges[i+1]], func(v *interfaces.Univalue) { ids = append(ids, (*v).GetTx()) })
+		conflictTxs := []uint32{}
+		common.Foreach(newTrans[ranges[i]+offset:ranges[i+1]], func(v *interfaces.Univalue) { conflictTxs = append(conflictTxs, (*v).GetTx()) })
 		conflicts = append(conflicts,
 			&Conflict{
 				key:     *newTrans[ranges[i]].GetPath(),
-				txIDs:   ids,
+				txIDs:   conflictTxs,
 				ErrCode: ccurlcommon.ERR_ACCESS_CONFLICT,
 			},
 		)
 
-		if outOfLimits := (&Accumulator{}).CheckMinMax(newTrans[offset:ranges[i+1]]); outOfLimits != nil {
+		dict := common.MapFromArray(conflictTxs, true) //Conflict dict
+		trans := common.CopyIf(newTrans[ranges[i]+offset:ranges[i+1]], func(v interfaces.Univalue) bool { return (*dict)[v.GetTx()] })
+
+		if outOfLimits := (&Accumulator{}).CheckMinMax(trans); outOfLimits != nil {
 			conflicts = append(conflicts, outOfLimits...)
 		}
 	}
