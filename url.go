@@ -229,7 +229,7 @@ func (this *ConcurrentUrl) Snapshot() interfaces.Datastore {
 	snapshotUrl := NewConcurrentUrl(transientDB).Import(transitions).Sort()
 
 	ids := indexer.Univalues(transitions).UniqueTXs()
-	return snapshotUrl.Commit(ids).WriteCache().Store() // Commit these changes to the a transient DB
+	return snapshotUrl.Commit(ids).Importer().Store() // Commit these changes to the a transient DB
 }
 
 // Call this as s

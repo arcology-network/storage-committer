@@ -56,7 +56,11 @@ func (this Univalues) Equal(other Univalues) bool {
 
 func (this Univalues) UniqueTXs() []uint32 {
 	var ids []uint32
-	common.Foreach(this, func(v *interfaces.Univalue) { ids = append(ids, (*v).GetTx()) })
+	for i := 0; i < len(this); i++ {
+		if this[i] != nil {
+			ids = append(ids, this[i].GetTx())
+		}
+	}
 	return common.UniqueInts(ids)
 }
 
