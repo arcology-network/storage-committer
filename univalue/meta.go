@@ -35,9 +35,9 @@ func (this *Unimeta) Reads() uint32       { return this.reads }
 func (this *Unimeta) Writes() uint32      { return this.writes } // Exist in cache as a failed read
 func (this *Unimeta) DeltaWrites() uint32 { return this.deltaWrites }
 
-func (this *Unimeta) IncrementReads(reads uint32)       { this.reads += reads }
-func (this *Unimeta) IncrementWrites(writes uint32)     { this.writes += writes }
-func (this *Unimeta) IncrementDelta(deltaWrites uint32) { this.deltaWrites += deltaWrites }
+func (this *Unimeta) IncrementReads(reads uint32)             { this.reads += reads }
+func (this *Unimeta) IncrementWrites(writes uint32)           { this.writes += writes }
+func (this *Unimeta) IncrementDeltaWrites(deltaWrites uint32) { this.deltaWrites += deltaWrites }
 
 func (this *Unimeta) IsReadOnly() bool { return this.Writes() == 0 && this.DeltaWrites() == 0 }
 func (this *Unimeta) Preexist() bool   { return this.preexists } // Exist in cache as a failed read

@@ -1,6 +1,7 @@
 package univalue
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"errors"
 	"fmt"
@@ -196,6 +197,38 @@ func (this *Univalue) Clone() interface{} {
 		0,
 	}
 	return v
+}
+
+func (this *Univalue) Less(other *Univalue) bool {
+	if *this.path != *other.path {
+		return bytes.Compare([]byte(*this.path), []byte(*other.path)) < 0
+	}
+
+	if this.tx != other.tx {
+		return this.tx < other.tx
+	}
+
+	if (this.value == nil || other.value == nil) && (this.value != other.value) {
+		return this.value == nil
+	}
+
+	if this.writes != other.writes {
+		return this.writes > other.writes
+	}
+
+	if this.reads != other.reads {
+		return this.reads > other.reads
+	}
+
+	if this.deltaWrites != other.deltaWrites {
+		return this.deltaWrites > other.deltaWrites
+	}
+
+	if (!this.preexists || !other.preexists) && (this.preexists != other.preexists) {
+		return this.preexists
+	}
+
+	return true
 }
 
 func (this *Univalue) Checksum() [32]byte {

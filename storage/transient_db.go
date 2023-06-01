@@ -34,8 +34,9 @@ func (this *TransientDB) Checksum() [32]byte {
 func (db *TransientDB) Retrive(path string) (interface{}, error) {
 	v, err := db.DataStore.Retrive(path)
 	if err != nil {
-		//return nil, err
+		return nil, err
 	}
+
 	if v == nil {
 		v, err = db.parent.Retrive(path)
 		if err != nil {

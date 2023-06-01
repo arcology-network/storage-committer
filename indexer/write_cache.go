@@ -71,7 +71,7 @@ func (this *WriteCache) Peek(path string) (interface{}, interface{}) {
 	}
 
 	v := this.RetriveShallow(path)
-	return v, univalue.NewUnivalue(ccurlcommon.SYSTEM, path, 1, 0, 0, v)
+	return v, univalue.NewUnivalue(ccurlcommon.SYSTEM, path, 0, 0, 0, v)
 }
 
 func (this *WriteCache) Write(tx uint32, path string, value interface{}) error {
@@ -86,6 +86,7 @@ func (this *WriteCache) Write(tx uint32, path string, value interface{}) error {
 		}
 		return err
 	}
+
 	return errors.New("Error: The parent path doesn't exist: " + parentPath)
 }
 

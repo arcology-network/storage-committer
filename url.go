@@ -13,6 +13,7 @@ import (
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 	interfaces "github.com/arcology-network/concurrenturl/interfaces"
 	"github.com/arcology-network/concurrenturl/noncommutative"
+	ccurlstorage "github.com/arcology-network/concurrenturl/storage"
 	"github.com/arcology-network/concurrenturl/univalue"
 )
 
@@ -122,12 +123,12 @@ func (this *ConcurrentUrl) Read(tx uint32, path string) (interface{}, uint64) {
 }
 
 func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}) (int64, error) {
-	return Cost{}.Writer(path, value, this.writeCache), // FIXME: The second should be the committed size
-		common.IfThenDo1st(
-			value == nil || (value != nil && value.(interfaces.Type).TypeID() != uint8(reflect.Invalid)),
-			func() error { return this.writeCache.Write(tx, path, value) },
-			errors.New("Error: Unknown data type !"),
-		)
+	c := Cost{}.Writer(path, value, this.writeCache)
+	if value == nil || (value != nil && value.(interfaces.Type).TypeID() != uint8(reflect.Invalid)) {
+		return c, this.writeCache.Write(tx, path, value)
+	}
+
+	return c, errors.New("Error: Unknown data type !")
 }
 
 func (this *ConcurrentUrl) Do(tx uint32, path string, do interface{}) (interface{}, error) {
@@ -219,6 +220,16 @@ func (this *ConcurrentUrl) Import(transitions []interfaces.Univalue, args ...int
 		func() { this.invImporter.Import(invTransitions, args...) },
 		func() { this.importer.Import(transitions, args...) })
 	return this
+}
+
+func (this *ConcurrentUrl) Snapshot() interfaces.Datastore {
+	transitions := indexer.Univalues(this.Export()).To(indexer.ITCTransition{})
+
+	transientDB := ccurlstorage.NewTransientDB(this.WriteCache().Store()) // Should be the same as Importer().Store()
+	snapshotUrl := NewConcurrentUrl(transientDB).Import(transitions).Sort()
+
+	ids := indexer.Univalues(transitions).UniqueTXs()
+	return snapshotUrl.Commit(ids).WriteCache().Store() // Commit these changes to the a transient DB
 }
 
 // Call this as s

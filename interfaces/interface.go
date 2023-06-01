@@ -71,7 +71,7 @@ type Univalue interface { // value type
 
 	IncrementReads(uint32)
 	IncrementWrites(uint32)
-	IncrementDelta(uint32)
+	IncrementDeltaWrites(uint32)
 
 	GetErrorCode() uint8
 	SetErrorCode(uint8)

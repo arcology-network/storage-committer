@@ -108,13 +108,6 @@ func (this *U256) IsSelf(key interface{}) bool                                { 
 func (this *U256) TypeID() uint8                                              { return UINT256 }
 func (this *U256) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }
 
-// func (this *U256) FromBytes(value []byte, min, max []byte) {
-// 	(*uint256.Int)(this.value).SetBytes(value)
-// 	(*uint256.Int)(this.min).SetBytes(min)
-// 	(*uint256.Int)(this.max).SetBytes(max)
-// 	this.deltaPositive = true
-// }
-
 func (this *U256) Clone() interface{} {
 	return &U256{
 		value:         common.IfThenDo1st(this.value != nil, func() *codec.Uint256 { return this.value.Clone().(*codec.Uint256) }, nil),
@@ -163,7 +156,7 @@ func (this *U256) isOverflowed(lhv *codec.Uint256, lhvSign bool, rhv *codec.Uint
 // Set delta
 func (this *U256) Set(newDelta interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
 	if newDelta.(*U256).delta.Eq((*codec.Uint256)(U256_ZERO)) {
-		return this, 1, 0, 0, nil
+		return this, 0, 0, 0, nil
 	}
 
 	accumDelta, deltaSign := this.isOverflowed(this.delta.Clone().(*codec.Uint256), this.deltaPositive, newDelta.(*U256).delta, newDelta.(*U256).deltaPositive)
