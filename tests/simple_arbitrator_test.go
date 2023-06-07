@@ -36,24 +36,19 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	url.CreateAccount(1, url.Platform.Eth10(), alice) // CreateAccount account structure {
 	// accesses1, transitions1 := url.Export(indexer.Sorter)
 	accesses1 := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCAccess{})
-	transitions1 := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	bob := datacompression.RandomAccount()
 	url2 := ccurl.NewConcurrentUrl(store)
 	url2.CreateAccount(2, url.Platform.Eth10(), bob) // CreateAccount account structure {
 
 	accesses2 := indexer.Univalues(common.Clone(url2.Export(indexer.Sorter))).To(indexer.ITCAccess{})
-	transitions2 := indexer.Univalues(common.Clone(url2.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	indexer.Univalues(common.Clone(url2.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	arib := (&arbitrator.Arbitrator{})
 	ids := arib.Detect(append(accesses1, accesses2...))
 
-	conflictTx := arbitrator.Conflicts(ids).TxIDs()
-	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(append(transitions1, transitions2...)).Encode()).(indexer.Univalues))
-
-	url.Sort()
-	url.Commit(conflictTx)
-
+	conflictTx := arbitrator.Conflicts(ids).ToDict()
 	if len(conflictTx) != 0 {
 		t.Error("Error: There shouldn be 0 conflict")
 	}
@@ -91,9 +86,8 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 
 	arib := (&arbitrator.Arbitrator{})
 	ids := arib.Detect(append(accesses1, accesses2...))
-	conflictTx := arbitrator.Conflicts(ids).TxIDs()
+	conflictTx := arbitrator.Conflicts(ids).ToDict()
 
-	conflictTx = common.UniqueInts(conflictTx)
 	if len(conflictTx) != 1 {
 		t.Error("Error: There shouldn 1 conflict")
 	}
@@ -139,13 +133,13 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	// _, conflictTx := aribi.Detect(append(accesses1, accesses2...))
 
 	ids := (&arbitrator.Arbitrator{}).Detect(append(accesses1, accesses2...))
-	conflictTx := arbitrator.Conflicts(ids).TxIDs()
+	conflictDict := arbitrator.Conflicts(ids).ToDict()
 
-	if len(conflictTx) != 1 {
+	if len(conflictDict) != 1 {
 		t.Error("Error: There shouldn 1 conflict")
 	}
 
-	toCommit := common.Exclude([]uint32{1, 2}, conflictTx)
+	toCommit := common.Exclude([]uint32{1, 2}, common.MapKeys(conflictDict))
 
 	in := indexer.Univalues(append(transitions1, transitions2...)).Encode()
 	out := indexer.Univalues{}.Decode(in).(indexer.Univalues)
@@ -171,9 +165,10 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	transitions4 := indexer.Univalues(common.Clone(url4.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	ids = (&arbitrator.Arbitrator{}).Detect(append(accesses3, accesses4...))
-	conflictTx = arbitrator.Conflicts(ids).TxIDs()
+	conflictDict = arbitrator.Conflicts(ids).ToDict()
 
-	if len(conflictTx) != 1 || conflictTx[0] != 4 {
+	conflictTx := common.MapKeys(conflictDict)
+	if len(conflictDict) != 1 || conflictTx[0] != 4 {
 		t.Error("Error: There should be only 1 conflict")
 	}
 	toCommit = common.Exclude([]uint32{3, 4}, conflictTx)

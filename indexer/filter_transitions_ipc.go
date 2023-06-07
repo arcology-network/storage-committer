@@ -7,9 +7,12 @@ import (
 	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
-type IPCTransition struct{ interfaces.Univalue }
+type IPCTransition struct {
+	interfaces.Univalue
+	Status uint8
+}
 
-func (IPCTransition) From(v interfaces.Univalue) interface{} {
+func (this IPCTransition) From(v interfaces.Univalue) interface{} {
 	if v == nil ||
 		v.IsReadOnly() ||
 		(v.Value() == nil && !v.Preexist()) { // Del Non Exist
@@ -20,7 +23,7 @@ func (IPCTransition) From(v interfaces.Univalue) interface{} {
 		return v
 	}
 
-	if v.GetErrorCode() != ccurlcommon.SUCCESSFUL &&
+	if this.Status != ccurlcommon.SUCCESSFUL &&
 		strings.HasSuffix(*v.GetPath(), "/balance") &&
 		strings.HasSuffix(*v.GetPath(), "/nonce") {
 		return nil
@@ -39,6 +42,5 @@ func (IPCTransition) From(v interfaces.Univalue) interface{} {
 		v.GetUnimeta(),
 		typed,
 		[]byte{},
-		v.GetErrorCode(),
 	)
 }

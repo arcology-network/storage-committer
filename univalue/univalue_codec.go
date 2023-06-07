@@ -14,7 +14,7 @@ func (this *Univalue) Encode() []byte {
 }
 
 func (this *Univalue) HeaderSize() uint32 {
-	return uint32(4 * codec.UINT32_LEN)
+	return uint32(3 * codec.UINT32_LEN)
 }
 
 func (this *Univalue) Sizes() []uint32 {
@@ -22,15 +22,13 @@ func (this *Univalue) Sizes() []uint32 {
 		this.HeaderSize(),
 		this.Unimeta.Size(),
 		this.value.(interfaces.Type).Size(),
-		this.errorCode.Size(),
 	}
 }
 
 func (this *Univalue) Size() uint32 {
 	return this.HeaderSize() +
 		this.Unimeta.Size() +
-		common.IfThenDo1st(this.value != nil, func() uint32 { return this.value.(interfaces.Type).Size() }, 0) +
-		this.errorCode.Size()
+		common.IfThenDo1st(this.value != nil, func() uint32 { return this.value.(interfaces.Type).Size() }, 0)
 }
 
 func (this *Univalue) FillHeader(buffer []byte) int {
@@ -39,7 +37,6 @@ func (this *Univalue) FillHeader(buffer []byte) int {
 		[]uint32{
 			this.Unimeta.Size(),
 			common.IfThenDo1st(this.value != nil, func() uint32 { return this.value.(interfaces.Type).Size() }, 0),
-			this.errorCode.Size(),
 		},
 	)
 }
@@ -51,7 +48,6 @@ func (this *Univalue) EncodeToBuffer(buffer []byte) int {
 	offset += common.IfThenDo1st(this.value != nil, func() int {
 		return codec.Bytes(this.value.(interfaces.Type).Encode()).EncodeToBuffer(buffer[offset:])
 	}, 0)
-	offset += this.errorCode.EncodeToBuffer(buffer[offset:])
 
 	return offset
 }
@@ -65,7 +61,6 @@ func (this *Univalue) Decode(buffer []byte) interface{} {
 		*unimeta,
 		(&storage.Codec{unimeta.vType}).Decode(fields[1]),
 		fields[1], // Keep copy, should expire as soon as the value is updated
-		codec.Uint8(0).Decode(fields[2]).(codec.Uint8),
 	}
 }
 

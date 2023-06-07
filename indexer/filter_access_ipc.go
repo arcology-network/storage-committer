@@ -6,10 +6,13 @@ import (
 	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
-type IPCAccess struct{ interfaces.Univalue }
+type IPCAccess struct {
+	interfaces.Univalue
+	Status uint8
+}
 
-func (IPCAccess) From(v interfaces.Univalue) interface{} {
-	if int(v.GetErrorCode()) != ccurlcommon.SUCCESSFUL {
+func (this IPCAccess) From(v interfaces.Univalue) interface{} {
+	if this.Status != ccurlcommon.SUCCESSFUL {
 		return nil
 	}
 
@@ -22,6 +25,5 @@ func (IPCAccess) From(v interfaces.Univalue) interface{} {
 		v.GetUnimeta(),
 		common.IfThen(value.IsCommutative() && value.IsNumeric(), value, nil), // commutative but not meta, for the accumulator
 		[]byte{},
-		v.GetErrorCode(),
 	)
 }

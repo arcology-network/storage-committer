@@ -6,10 +6,13 @@ import (
 	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
-type ITCTransition struct{ IPCTransition }
+type ITCTransition struct {
+	IPCTransition
+	status uint8
+}
 
 func (this ITCTransition) From(v interfaces.Univalue) interface{} {
-	value := this.IPCTransition.From(v)
+	value := IPCTransition{}.From(v)
 	converted := common.IfThenDo1st(value != nil, func() interfaces.Univalue { return value.(interfaces.Univalue) }, nil)
 	if converted == nil {
 		return nil

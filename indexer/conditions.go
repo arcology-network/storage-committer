@@ -49,7 +49,6 @@ func ExtractDeltaForEncoding(unival interfaces.Univalue) interfaces.Univalue {
 		unival.GetUnimeta(),
 		v,
 		[]byte{},
-		unival.GetErrorCode(),
 	).(interfaces.Univalue)
 }
 

@@ -42,6 +42,5 @@ func (this ITCAccess) From(v interfaces.Univalue) interface{} {
 		converted.GetUnimeta(),
 		typed,
 		[]byte{},
-		converted.GetErrorCode(),
 	)
 }

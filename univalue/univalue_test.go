@@ -6,7 +6,6 @@ import (
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/datacompression"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	"github.com/holiman/uint256"
@@ -23,14 +22,12 @@ func TestUnivalueCodecUint64(t *testing.T) {
 	in.writes = 2
 	in.deltaWrites = 3
 
-	in.SetErrorCode(ccurlcommon.ERR_EXEC_FAILED)
-
 	bytes := in.Encode()
 	v := (&Univalue{}).Decode(bytes).(*Univalue)
 
 	unimeta := v.GetUnimeta().(Unimeta)
 	inUnimeta := in.GetUnimeta().(Unimeta)
-	if !inUnimeta.Equal(&unimeta) || in.GetErrorCode() != v.GetErrorCode() {
+	if !inUnimeta.Equal(&unimeta) {
 		t.Error("Error")
 	}
 

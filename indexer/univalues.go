@@ -25,7 +25,7 @@ func (this Univalues) To(filterType interfaces.Univalue) Univalues {
 // Debugging only
 func (this Univalues) IfContains(target interfaces.Univalue) bool {
 	for _, v := range this {
-		if (v).(interfaces.Univalue).Equal(target.(interfaces.Univalue)) {
+		if v.Equal(target) {
 			return true
 		}
 	}
@@ -77,36 +77,6 @@ func (this Univalues) Sort() Univalues {
 		}
 
 		return (this[i].(*univalue.Univalue)).Less(this[j].(*univalue.Univalue))
-
-		// if *this[i].GetPath() != *this[j].GetPath() {
-		// 	return bytes.Compare([]byte(*this[i].GetPath()), []byte(*this[j].GetPath())) < 0
-		// }
-
-		// if this[i].GetTx() != this[j].GetTx() {
-		// 	return this[i].GetTx() < this[j].GetTx()
-		// }
-
-		// if (this[i].Value() == nil || this[j].Value() == nil) && (this[i].Value() != this[j].Value()) {
-		// 	return this[i].Value() == nil
-		// }
-
-		// if this[i].Writes() != this[j].Writes() {
-		// 	return this[i].Writes() > this[j].Writes()
-		// }
-
-		// if this[i].Reads() != this[j].Reads() {
-		// 	return this[i].Reads() > this[j].Reads()
-		// }
-
-		// if this[i].DeltaWrites() != this[j].DeltaWrites() {
-		// 	return this[i].DeltaWrites() > this[j].DeltaWrites()
-		// }
-
-		// if (!this[i].Preexist() || !this[j].Preexist()) && (this[i].Preexist() != this[j].Preexist()) {
-		// 	return this[i].Preexist()
-		// }
-
-		// return true
 	})
 	return this
 }

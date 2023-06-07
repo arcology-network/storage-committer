@@ -7,16 +7,14 @@ import (
 	"fmt"
 	"reflect"
 
-	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
 type Univalue struct {
 	Unimeta
-	value     interface{}
-	cache     []byte
-	errorCode codec.Uint8
+	value interface{}
+	cache []byte
 }
 
 // func NewUnivalue
@@ -34,24 +32,20 @@ func NewUnivalue(tx uint32, key string, reads, writes uint32, deltaWrites uint32
 		},
 		args[0],
 		[]byte{},
-		0,
 	}
 }
 
-func (*Univalue) New(meta, value, cache, errorCode interface{}) interface{} {
+func (*Univalue) New(meta, value, cache interface{}) interface{} {
 	return &Univalue{
 		meta.(Unimeta),
 		value,
 		cache.([]byte),
-		codec.Uint8(errorCode.(uint8)),
 	}
 }
 
 func (this *Univalue) From(v interfaces.Univalue) interface{} { return v }
 
 // func (this *Univalue) Filter() interfaces.Univalue                    { return this }
-func (this *Univalue) GetErrorCode() uint8     { return (uint8)(this.errorCode) }
-func (this *Univalue) SetErrorCode(code uint8) { this.errorCode = codec.Uint8(code) }
 
 func (this *Univalue) IsHotLoaded() bool             { return this.reads > 1 }
 func (this *Univalue) SetTx(txId uint32)             { this.tx = txId }
@@ -194,7 +188,6 @@ func (this *Univalue) Clone() interface{} {
 		this.Unimeta.Clone(),
 		common.IfThenDo1st(this.value != nil, func() interface{} { return this.value.(interfaces.Type).Clone() }, this.value),
 		common.Clone(this.cache),
-		0,
 	}
 	return v
 }

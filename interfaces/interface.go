@@ -73,9 +73,6 @@ type Univalue interface { // value type
 	IncrementWrites(uint32)
 	IncrementDeltaWrites(uint32)
 
-	GetErrorCode() uint8
-	SetErrorCode(uint8)
-
 	IsHotLoaded() bool
 	Set(uint32, string, interface{}, interface{}) error
 	Get(uint32, string, interface{}) interface{}
@@ -89,7 +86,7 @@ type Univalue interface { // value type
 	WriteTo(WriteCache)
 	GetUnimeta() interface{}
 	GetCache() interface{}
-	New(interface{}, interface{}, interface{}, interface{}) interface{}
+	New(interface{}, interface{}, interface{}) interface{}
 
 	ApplyDelta(interface{}) error
 	Preexist() bool

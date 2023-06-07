@@ -1,9 +1,5 @@
 package indexer
 
-import (
-	"github.com/arcology-network/common-lib/common"
-)
-
 type Conflict struct {
 	key     string
 	txIDs   []uint32
@@ -12,12 +8,14 @@ type Conflict struct {
 
 type Conflicts []*Conflict
 
-func (this Conflicts) TxIDs() []uint32 {
-	txIDs := make([]uint32, 0, len(this))
+func (this Conflicts) ToDict() map[uint32]uint64 {
+	dict := make(map[uint32]uint64)
 	for _, v := range this {
-		txIDs = append(txIDs, v.txIDs...)
+		for i := 0; i < len(v.txIDs); i++ {
+			dict[v.txIDs[i]] += 1
+		}
 	}
-	return common.UniqueInts(txIDs)
+	return dict
 }
 
 func (this Conflicts) Keys() []string {

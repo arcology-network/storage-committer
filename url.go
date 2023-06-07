@@ -214,7 +214,7 @@ func (this *ConcurrentUrl) Import(transitions []interfaces.Univalue, args ...int
 			transitions[i] = nil
 		}
 	}
-	common.RemoveIf(&transitions, func(v interfaces.Univalue) bool { return v == nil })
+	common.Remove(&transitions, nil)
 
 	common.ParallelExecute(
 		func() { this.invImporter.Import(invTransitions, args...) },
