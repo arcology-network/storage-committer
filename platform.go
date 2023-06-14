@@ -80,3 +80,13 @@ func (this *Platform) IsSysPath(path string) bool {
 func (this *Platform) GetSysPaths() []string {
 	return common.MapKeys(this.syspaths)
 }
+
+func (this *Platform) Builtins(acct string) []string {
+	paths, _ := common.MapKVs(this.syspaths)
+	// common.SortBy1st(paths, typeIds, func(lhv, rhv string) bool { return lhv < rhv })
+
+	for i, path := range paths {
+		paths[i] = this.Eth10Account() + acct + path
+	}
+	return paths
+}
