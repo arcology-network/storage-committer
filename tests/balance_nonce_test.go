@@ -20,7 +20,7 @@ func TestSimpleBalance(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 	alice := datacompression.RandomAccount()
-	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // CreateAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -89,7 +89,7 @@ func TestBalance(t *testing.T) {
 
 	url := ccurl.NewConcurrentUrl(store)
 	alice := datacompression.RandomAccount()
-	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // CreateAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -173,7 +173,7 @@ func TestNonce(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	url1 := ccurl.NewConcurrentUrl(store)
 	alice := datacompression.RandomAccount()
-	if err := url1.CreateAccount(ccurlcommon.SYSTEM, url1.Platform.Eth10(), alice); err != nil { // CreateAccount account structure {
+	if err := url1.NewAccount(ccurlcommon.SYSTEM, url1.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -216,7 +216,7 @@ func TestMultipleNonces(t *testing.T) {
 
 	url0 := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
-	if err := url0.CreateAccount(ccurlcommon.SYSTEM, url0.Platform.Eth10(), alice); err != nil { // CreateAccount account structure {
+	if err := url0.NewAccount(ccurlcommon.SYSTEM, url0.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -236,7 +236,7 @@ func TestMultipleNonces(t *testing.T) {
 
 	url1 := ccurl.NewConcurrentUrl(store)
 	bob := BobAccount()
-	if err := url1.CreateAccount(ccurlcommon.SYSTEM, url1.Platform.Eth10(), bob); err != nil { // CreateAccount account structure {
+	if err := url1.NewAccount(ccurlcommon.SYSTEM, url1.Platform.Eth10(), bob); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 

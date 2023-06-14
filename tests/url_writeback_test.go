@@ -18,7 +18,7 @@ func TestAddAndDelete(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 	alice := datacompression.RandomAccount()
-	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // CreateAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -49,7 +49,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 	alice := datacompression.RandomAccount()
-	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // CreateAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -111,7 +111,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 	alice := datacompression.RandomAccount()
-	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // CreateAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -144,7 +144,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 	alice := datacompression.RandomAccount()
-	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // CreateAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -192,7 +192,7 @@ func TestStateUpdate(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 	alice := datacompression.RandomAccount()
-	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // CreateAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	// _, initTrans := url.Export(indexer.Sorter)
@@ -267,7 +267,7 @@ func TestStateUpdate(t *testing.T) {
 // 	store := cachedstorage.NewDataStore()
 // 	url := ccurl.NewConcurrentUrl(store)
 // 	alice := datacompression.RandomAccount()
-// 	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // CreateAccount account structure {
+// 	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
 // 		t.Error(err)
 // 	}
 
@@ -337,7 +337,7 @@ func TestStateUpdate(t *testing.T) {
 // 	store := cachedstorage.NewDataStore()
 // 	url := ccurl.NewConcurrentUrl(store)
 // 	alice := datacompression.RandomAccount()
-// 	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // CreateAccount account structure {
+// 	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
 // 		t.Error(err)
 // 	}
 
