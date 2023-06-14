@@ -20,7 +20,7 @@ func TestAccumulatorUpperLimit(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	alice := datacompression.RandomAccount()
 	url := ccurl.NewConcurrentUrl(store)
-	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // CreateAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -60,7 +60,7 @@ func TestAccumulatorLowerLimit(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	alice := datacompression.RandomAccount()
 	url := ccurl.NewConcurrentUrl(store)
-	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // CreateAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 

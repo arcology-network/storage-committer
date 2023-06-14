@@ -33,20 +33,22 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 
 	alice := datacompression.RandomAccount()
 	url.Init(store)
-	url.CreateAccount(1, url.Platform.Eth10(), alice) // CreateAccount account structure {
+	url.NewAccount(1, url.Platform.Eth10(), alice) // NewAccount account structure {
 	// accesses1, transitions1 := url.Export(indexer.Sorter)
 	accesses1 := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCAccess{})
 	indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	bob := datacompression.RandomAccount()
 	url2 := ccurl.NewConcurrentUrl(store)
-	url2.CreateAccount(2, url.Platform.Eth10(), bob) // CreateAccount account structure {
+	url2.NewAccount(2, url.Platform.Eth10(), bob) // NewAccount account structure {
 
 	accesses2 := indexer.Univalues(common.Clone(url2.Export(indexer.Sorter))).To(indexer.ITCAccess{})
 	indexer.Univalues(common.Clone(url2.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	arib := (&arbitrator.Arbitrator{})
-	ids := arib.Detect(append(accesses1, accesses2...))
+
+	IDVec := append(common.Fill(make([]uint32, len(accesses1)), 0), common.Fill(make([]uint32, len(accesses2)), 1)...)
+	ids := arib.Detect(IDVec, append(accesses1, accesses2...))
 
 	conflictTx := arbitrator.Conflicts(ids).ToDict()
 	if len(conflictTx) != 0 {
@@ -67,25 +69,29 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 
 	url.Init(store)
 	alice := datacompression.RandomAccount()
-	url.CreateAccount(1, url.Platform.Eth10(), alice)                      // CreateAccount account structure {
+	url.NewAccount(1, url.Platform.Eth10(), alice)                         // NewAccount account structure {
 	path1 := commutative.NewPath()                                         // create a path
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path1) // create a path
-	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-1"))
-	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-1"))
+	// url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-1"))
+	// url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-1"))
 	// accesses1, _ := url.Export(indexer.Sorter)
 	accesses1 := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCAccess{})
 
 	url2 := ccurl.NewConcurrentUrl(store)
-	url2.CreateAccount(2, url.Platform.Eth10(), alice) // CreateAccount account structure {
-	path2 := commutative.NewPath()                     // create a path
+	url2.NewAccount(2, url.Platform.Eth10(), alice) // NewAccount account structure {
+	path2 := commutative.NewPath()                  // create a path
 	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path2)
-	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-2"))
-	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-2"))
+	// url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-2"))
+	// url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-2"))
 	// accesses2, _ := url2.Export(indexer.Sorter)
 	accesses2 := indexer.Univalues(common.Clone(url2.Export(indexer.Sorter))).To(indexer.ITCAccess{})
 
-	arib := (&arbitrator.Arbitrator{})
-	ids := arib.Detect(append(accesses1, accesses2...))
+	accesses1.Print()
+	fmt.Print(" ++++++++++++++++++++++++++++++++++++++++++++++++ ")
+	accesses2.Print()
+
+	IDVec := append(common.Fill(make([]uint32, len(accesses1)), 0), common.Fill(make([]uint32, len(accesses2)), 1)...)
+	ids := (&arbitrator.Arbitrator{}).Detect(IDVec, append(accesses1, accesses2...))
 	conflictTx := arbitrator.Conflicts(ids).ToDict()
 
 	if len(conflictTx) != 1 {
@@ -97,7 +103,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	alice := datacompression.RandomAccount()
 	url := ccurl.NewConcurrentUrl(store)
-	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // CreateAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -108,7 +114,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 	url.Init(store)
 
-	url.CreateAccount(1, url.Platform.Eth10(), alice)
+	url.NewAccount(1, url.Platform.Eth10(), alice)
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", commutative.NewPath()) // create a path
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-1"))
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-1"))
@@ -117,8 +123,8 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	transitions1 := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	url2 := ccurl.NewConcurrentUrl(store)
-	url2.CreateAccount(2, url.Platform.Eth10(), alice) // CreateAccount account structure {
-	path2 := commutative.NewPath()                     // create a path
+	url2.NewAccount(2, url.Platform.Eth10(), alice) // NewAccount account structure {
+	path2 := commutative.NewPath()                  // create a path
 
 	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path2)
 	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-2"))
@@ -128,11 +134,8 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	accesses2 := indexer.Univalues(common.Clone(url2.Export(indexer.Sorter))).To(indexer.ITCAccess{})
 	transitions2 := indexer.Univalues(common.Clone(url2.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
-	// aribi := (&arbitrator.Arbitrator{})
-
-	// _, conflictTx := aribi.Detect(append(accesses1, accesses2...))
-
-	ids := (&arbitrator.Arbitrator{}).Detect(append(accesses1, accesses2...))
+	IDVec := append(common.Fill(make([]uint32, len(accesses1)), 0), common.Fill(make([]uint32, len(accesses2)), 1)...)
+	ids := (&arbitrator.Arbitrator{}).Detect(IDVec, append(accesses1, accesses2...))
 	conflictDict := arbitrator.Conflicts(ids).ToDict()
 
 	if len(conflictDict) != 1 {
@@ -164,7 +167,8 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	accesses4 := indexer.Univalues(common.Clone(url4.Export(indexer.Sorter))).To(indexer.ITCAccess{})
 	transitions4 := indexer.Univalues(common.Clone(url4.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
-	ids = (&arbitrator.Arbitrator{}).Detect(append(accesses3, accesses4...))
+	IDVec = append(common.Fill(make([]uint32, len(accesses3)), 0), common.Fill(make([]uint32, len(accesses4)), 1)...)
+	ids = (&arbitrator.Arbitrator{}).Detect(IDVec, append(accesses3, accesses4...))
 	conflictDict = arbitrator.Conflicts(ids).ToDict()
 
 	conflictTx := common.MapKeys(conflictDict)
@@ -202,12 +206,15 @@ func TestTimeSimpleArbitrator(b *testing.T) {
 		univalues[i*5+3] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
 		univalues[i*5+4] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
 		tx[i] = uint32(i)
+		tx[i] = uint32(i)
+		tx[i] = uint32(i)
+		tx[i] = uint32(i)
+		tx[i] = uint32(i)
 	}
 	// fmt.Println("Create "+fmt.Sprint(len(univalues)), "path in ", time.Since(t0))
 
 	t0 := time.Now()
-	arib := (&arbitrator.Arbitrator{})
-	arib.Detect(univalues)
+	(&arbitrator.Arbitrator{}).Detect(tx, univalues)
 	fmt.Println("Detect "+fmt.Sprint(len(univalues)), "path in ", time.Since(t0))
 }
 
@@ -224,11 +231,14 @@ func BenchmarkSimpleArbitrator(b *testing.B) {
 		univalues[i*5+3] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
 		univalues[i*5+4] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
 		tx[i] = uint32(i)
+		tx[i] = uint32(i)
+		tx[i] = uint32(i)
+		tx[i] = uint32(i)
+		tx[i] = uint32(i)
 	}
 	// fmt.Println("Create "+fmt.Sprint(len(univalues)), "path in ", time.Since(t0))
 
 	t0 := time.Now()
-	arib := (&arbitrator.Arbitrator{})
-	arib.Detect(univalues)
+	(&arbitrator.Arbitrator{}).Detect(tx, univalues)
 	fmt.Println("Detect "+fmt.Sprint(len(univalues)), "path in ", time.Since(t0))
 }

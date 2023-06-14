@@ -1,6 +1,7 @@
 package indexer
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"sort"
 
@@ -64,7 +65,32 @@ func (this Univalues) UniqueTXs() []uint32 {
 	return common.UniqueInts(ids)
 }
 
-func (this Univalues) Sort() Univalues {
+func (this Univalues) Sort(equal func(i, j int) bool, compare func(i, j int) bool) Univalues {
+	summed := make([]uint64, len(this))
+	for i := ccurlcommon.ETH10_ACCOUNT_LENGTH; i < len(this); i++ {
+		summed[i] = codec.String(*this[i].GetPath()).Sum(uint64(0))
+	}
+
+	// Don't switch the order
+	sort.Slice(this, func(i, j int) bool {
+		if summed[i] != summed[j] {
+			return summed[i] < summed[j]
+		}
+
+		if *this[i].GetPath() != *this[j].GetPath() {
+			return bytes.Compare([]byte(*this[i].GetPath()), []byte(*this[j].GetPath())) < 0
+		}
+
+		if !equal(i, j) {
+			return compare(i, j)
+		}
+
+		return (this[i].(*univalue.Univalue)).Less(this[j].(*univalue.Univalue))
+	})
+	return this
+}
+
+func (this Univalues) SortByDefault() Univalues {
 	summed := make([]uint64, len(this))
 	for i := ccurlcommon.ETH10_ACCOUNT_LENGTH; i < len(this); i++ {
 		summed[i] = codec.String(*this[i].GetPath()).Sum(uint64(0))

@@ -30,7 +30,7 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 	store := cachedstorage.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 	alice := datacompression.RandomAccount()
-	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // CreateAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -66,7 +66,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	store := cachedstorage.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 	alice := datacompression.RandomAccount()
-	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // CreateAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -78,7 +78,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	t0 := time.Now()
 	for i := 0; i < 2500; i++ {
 		acct := fmt.Sprint(rand.Int())
-		if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), acct); err != nil { // CreateAccount account structure {
+		if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), acct); err != nil { // NewAccount account structure {
 			fmt.Println(err)
 		}
 
@@ -128,7 +128,7 @@ func BenchmarkUrlAddThenDelete(b *testing.B) {
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	alice := datacompression.RandomAccount()
-	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // CreateAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -166,7 +166,7 @@ func BenchmarkUrlAddThenPop(b *testing.B) {
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	alice := datacompression.RandomAccount()
-	if err := url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // CreateAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -278,7 +278,7 @@ func BenchmarkMetaIterator(b *testing.B) {
 	url := ccurl.NewConcurrentUrl(store)
 
 	alice := datacompression.RandomAccount()
-	url.CreateAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice)
+	url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice)
 	// acctTrans := indexer.Univalues(common.Clone(url.Export())).To(indexer.ITCAccess{})
 
 	acctTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCAccess{})
@@ -362,7 +362,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	url := ccurl.NewConcurrentUrl(store)
 	for i := 0; i < 10; i++ {
 		acct := datacompression.RandomAccount()
-		if err := url.CreateAccount(0, (url.Platform.Eth10()), acct); err != nil { // Preload account structure {
+		if err := url.NewAccount(0, (url.Platform.Eth10()), acct); err != nil { // Preload account structure {
 			b.Error(err)
 		}
 	}
@@ -395,7 +395,7 @@ func TestAccountMerkleImportPerf(t *testing.T) {
 
 	url := ccurl.NewConcurrentUrl(store)
 	for i := 0; i < 100000; i++ {
-		if err := url.CreateAccount(0, (url.Platform.Eth10()), fmt.Sprint(rand.Float64())); err != nil { // Preload account structure {
+		if err := url.NewAccount(0, (url.Platform.Eth10()), fmt.Sprint(rand.Float64())); err != nil { // Preload account structure {
 			t.Error(err)
 		}
 	}
@@ -607,7 +607,7 @@ func BenchmarkTransitionImport(b *testing.B) {
 	url := ccurl.NewConcurrentUrl(store)
 	for i := 0; i < 150000; i++ {
 		acct := datacompression.RandomAccount()
-		if err := url.CreateAccount(0, (url.Platform.Eth10()), acct); err != nil { // Preload account structure {
+		if err := url.NewAccount(0, (url.Platform.Eth10()), acct); err != nil { // Preload account structure {
 			b.Error(err)
 		}
 	}
@@ -636,7 +636,7 @@ func BenchmarkConcurrentTransitionImport(b *testing.B) {
 	url := ccurl.NewConcurrentUrl(store)
 	for i := 0; i < 90000; i++ {
 		acct := datacompression.RandomAccount()
-		if err := url.CreateAccount(0, (url.Platform.Eth10()), acct); err != nil { // Preload account structure {
+		if err := url.NewAccount(0, (url.Platform.Eth10()), acct); err != nil { // Preload account structure {
 			b.Error(err)
 		}
 	}

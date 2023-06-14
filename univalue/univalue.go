@@ -1,7 +1,6 @@
 package univalue
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"errors"
 	"fmt"
@@ -155,7 +154,7 @@ func (this *Univalue) ApplyDelta(v interface{}) error {
 }
 
 func (this *Univalue) IsConcurrentWritable() bool { // Call this before setting the value attribute to nil
-	return (this.value != nil && this.Writes() == 0 && this.Reads() == 0)
+	return (this.Writes() == 0 && this.Reads() == 0)
 }
 
 func (this *Univalue) PrecheckAttributes(other *Univalue) {
@@ -193,9 +192,13 @@ func (this *Univalue) Clone() interface{} {
 }
 
 func (this *Univalue) Less(other *Univalue) bool {
-	if *this.path != *other.path {
-		return bytes.Compare([]byte(*this.path), []byte(*other.path)) < 0
-	}
+	// if *this.path != *other.path {
+	// 	return bytes.Compare([]byte(*this.path), []byte(*other.path)) < 0
+	// }
+
+	// if !equal(i, j) {
+	// 	return compare(i, j)
+	// }
 
 	if this.tx != other.tx {
 		return this.tx < other.tx
