@@ -72,13 +72,17 @@ func (this Univalues) Sort(equal func(i, j int) bool, compare func(i, j int) boo
 	}
 
 	// Don't switch the order
-	sort.Slice(this, func(i, j int) bool {
+	sort.SliceStable(this, func(i, j int) bool {
 		if summed[i] != summed[j] {
 			return summed[i] < summed[j]
 		}
 
 		if *this[i].GetPath() != *this[j].GetPath() {
 			return bytes.Compare([]byte(*this[i].GetPath()), []byte(*this[j].GetPath())) < 0
+		}
+
+		if this[i].GetTx() != this[j].GetTx() {
+			return this[i].GetTx() < this[j].GetTx()
 		}
 
 		if !equal(i, j) {
