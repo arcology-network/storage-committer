@@ -200,9 +200,9 @@ func (this *Univalue) Less(other *Univalue) bool {
 	// 	return compare(i, j)
 	// }
 
-	if this.tx != other.tx {
-		return this.tx < other.tx
-	}
+	// if this.tx != other.tx {
+	// 	return this.tx < other.tx
+	// }
 
 	if (this.value == nil || other.value == nil) && (this.value != other.value) {
 		return this.value == nil
