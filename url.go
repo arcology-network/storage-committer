@@ -222,15 +222,9 @@ func (this *ConcurrentUrl) Import(transitions []interfaces.Univalue, args ...int
 	return this
 }
 
-func (this *ConcurrentUrl) Snapshot(txIDs ...uint32) interfaces.Datastore {
+func (this *ConcurrentUrl) Snapshot(preTransitions []interfaces.Univalue) interfaces.Datastore {
 	transitions := []interfaces.Univalue(indexer.Univalues(this.Export()).To(indexer.ITCTransition{}))
-	if len(txIDs) > 0 {
-		dict := common.MapFromArray(txIDs, true)
-		common.RemoveIf(&transitions, func(v interfaces.Univalue) bool {
-			_, ok := (*dict)[v.GetTx()]
-			return ok
-		})
-	}
+	transitions = append(transitions, preTransitions...)
 
 	transientDB := ccurlstorage.NewTransientDB(this.WriteCache().Store()) // Should be the same as Importer().Store()
 	snapshotUrl := NewConcurrentUrl(transientDB).Import(transitions).Sort()
