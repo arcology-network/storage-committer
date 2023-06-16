@@ -12,6 +12,12 @@ const (
 	MAX_DEPTH            uint8 = 12
 	SYSTEM                     = math.MaxInt32
 	ETH10_ACCOUNT_LENGTH       = 40
+
+	Idx_PathKey_Code      = 1
+	Idx_PathKey_Nonce     = 2
+	Idx_PathKey_Balance   = 3
+	Idx_PathKey_Container = 5
+	Idx_PathKey_Native    = 6
 )
 
 type Platform struct {
@@ -81,12 +87,7 @@ func (this *Platform) GetSysPaths() []string {
 	return common.MapKeys(this.syspaths)
 }
 
-func (this *Platform) Builtins(acct string) []string {
+func (this *Platform) Builtins(acct string, idx int) string {
 	paths, _ := common.MapKVs(this.syspaths)
-	// common.SortBy1st(paths, typeIds, func(lhv, rhv string) bool { return lhv < rhv })
-
-	for i, path := range paths {
-		paths[i] = this.Eth10Account() + acct + path
-	}
-	return paths
+	return this.Eth10Account() + acct + paths[idx]
 }
