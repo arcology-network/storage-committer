@@ -50,8 +50,8 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	IDVec := append(common.Fill(make([]uint32, len(accesses1)), 0), common.Fill(make([]uint32, len(accesses2)), 1)...)
 	ids := arib.Detect(IDVec, append(accesses1, accesses2...))
 
-	conflictTx := arbitrator.Conflicts(ids).ToDict()
-	if len(conflictTx) != 0 {
+	conflictdict := arbitrator.Conflicts(ids).ToDict()
+	if len(*conflictdict) != 0 {
 		t.Error("Error: There shouldn be 0 conflict")
 	}
 }
@@ -92,9 +92,9 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 
 	IDVec := append(common.Fill(make([]uint32, len(accesses1)), 0), common.Fill(make([]uint32, len(accesses2)), 1)...)
 	ids := (&arbitrator.Arbitrator{}).Detect(IDVec, append(accesses1, accesses2...))
-	conflictTx := arbitrator.Conflicts(ids).ToDict()
+	conflictdict := arbitrator.Conflicts(ids).ToDict()
 
-	if len(conflictTx) != 1 {
+	if len(*conflictdict) != 1 {
 		t.Error("Error: There shouldn 1 conflict")
 	}
 }
@@ -138,11 +138,11 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	ids := (&arbitrator.Arbitrator{}).Detect(IDVec, append(accesses1, accesses2...))
 	conflictDict := arbitrator.Conflicts(ids).ToDict()
 
-	if len(conflictDict) != 1 {
+	if len(*conflictDict) != 1 {
 		t.Error("Error: There shouldn 1 conflict")
 	}
 
-	toCommit := common.Exclude([]uint32{1, 2}, common.MapKeys(conflictDict))
+	toCommit := common.Exclude([]uint32{1, 2}, common.MapKeys(*conflictDict))
 
 	in := indexer.Univalues(append(transitions1, transitions2...)).Encode()
 	out := indexer.Univalues{}.Decode(in).(indexer.Univalues)
@@ -171,8 +171,8 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	ids = (&arbitrator.Arbitrator{}).Detect(IDVec, append(accesses3, accesses4...))
 	conflictDict = arbitrator.Conflicts(ids).ToDict()
 
-	conflictTx := common.MapKeys(conflictDict)
-	if len(conflictDict) != 1 || conflictTx[0] != 4 {
+	conflictTx := common.MapKeys(*conflictDict)
+	if len(*conflictDict) != 1 || conflictTx[0] != 4 {
 		t.Error("Error: There should be only 1 conflict")
 	}
 	toCommit = common.Exclude([]uint32{3, 4}, conflictTx)

@@ -1,6 +1,7 @@
 package indexer
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -15,14 +16,14 @@ type Arbitrator struct {
 	transitions []interfaces.Univalue
 }
 
-func (this *Arbitrator) Insert(groupIDs []uint32, newTrans []interfaces.Univalue) {
+func (this *Arbitrator) Insert(groupIDs []uint32, newTrans []interfaces.Univalue) int {
 	this.transitions = append(this.transitions, newTrans...)
 	this.groupIDs = append(this.groupIDs, groupIDs...)
+	return len(this.groupIDs)
 }
 
 func (this *Arbitrator) Detect(groupIDs []uint32, newTrans []interfaces.Univalue) []*Conflict {
-	this.Insert(groupIDs, newTrans)
-	if len(this.transitions) == 0 {
+	if this.Insert(groupIDs, newTrans) == 0 {
 		return []*Conflict{}
 	}
 
@@ -72,9 +73,9 @@ func (this *Arbitrator) Detect(groupIDs []uint32, newTrans []interfaces.Univalue
 
 		conflicts = append(conflicts,
 			&Conflict{
-				key:     *newTrans[ranges[i]].GetPath(),
-				txIDs:   conflictTxs,
-				ErrCode: ccurlcommon.ERR_ACCESS_CONFLICT,
+				key:   *newTrans[ranges[i]].GetPath(),
+				txIDs: conflictTxs,
+				Err:   errors.New(ccurlcommon.ERR_ACCESS_CONFLICT),
 			},
 		)
 

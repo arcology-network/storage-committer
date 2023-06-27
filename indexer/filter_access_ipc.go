@@ -2,17 +2,16 @@ package indexer
 
 import (
 	"github.com/arcology-network/common-lib/common"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
 type IPCAccess struct {
 	interfaces.Univalue
-	Status uint8
+	Err error
 }
 
 func (this IPCAccess) From(v interfaces.Univalue) interface{} {
-	if this.Status != ccurlcommon.SUCCESSFUL {
+	if this.Err != nil {
 		return nil
 	}
 

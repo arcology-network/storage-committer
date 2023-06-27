@@ -32,7 +32,7 @@ func (this *DeltaSequence) Reset(key string, indexer *Importer, mempool *mempool
 func (this *DeltaSequence) Init(key string, indexer *Importer, mempool *mempool.Mempool) {
 	if initialState := indexer.RetriveShallow(key); initialState != nil {
 		nVal := mempool.Get().(*univalue.Univalue)
-		nVal.Init(ccurlcommon.SYSTEM, key, 0, 0, initialState.(interfaces.Type).Clone(), indexer)
+		nVal.Init(ccurlcommon.SYSTEM, key, 0, 0, 0, initialState.(interfaces.Type).Clone(), indexer)
 		this.transitions = append(this.transitions, nVal) //Transitions are ordered by Tx, -1 will guarantee the initial state is always the first one
 	}
 }

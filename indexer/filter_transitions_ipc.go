@@ -3,13 +3,12 @@ package indexer
 import (
 	"strings"
 
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
 type IPCTransition struct {
 	interfaces.Univalue
-	Status uint8
+	Err error
 }
 
 func (this IPCTransition) From(v interfaces.Univalue) interface{} {
@@ -23,7 +22,7 @@ func (this IPCTransition) From(v interfaces.Univalue) interface{} {
 		return v
 	}
 
-	if this.Status != ccurlcommon.SUCCESSFUL &&
+	if this.Err == nil &&
 		strings.HasSuffix(*v.GetPath(), "/balance") &&
 		strings.HasSuffix(*v.GetPath(), "/nonce") {
 		return nil

@@ -77,12 +77,12 @@ func (this *ConcurrentUrl) Importer() *indexer.Importer     { return this.import
 
 // Get data from the DB direcly, still under conflict protection
 func (this *ConcurrentUrl) ReadCommitted(tx uint32, key string) (interface{}, uint64) {
-	if v, cost := this.Read(tx, key); v != nil { // For conflict detection
-		return v, cost
+	if v, Fee := this.Read(tx, key); v != nil { // For conflict detection
+		return v, Fee
 	}
 
 	v, _ := this.WriteCache().Store().Retrive(key)
-	return v, Cost{}.Reader(univalue.NewUnivalue(tx, key, 1, 0, 0, v))
+	return v, Fee{}.Reader(univalue.NewUnivalue(tx, key, 1, 0, 0, v))
 }
 
 func (this *ConcurrentUrl) Init(store interfaces.Datastore) {
@@ -143,16 +143,21 @@ func (this *ConcurrentUrl) IfExists(path string) bool {
 
 func (this *ConcurrentUrl) Peek(path string) (interface{}, uint64) {
 	typedv, univ := this.writeCache.Peek(path)
-	return typedv, Cost{}.Reader(univ.(interfaces.Univalue))
+	return typedv, Fee{}.Reader(univ.(interfaces.Univalue))
+}
+
+func (this *ConcurrentUrl) PeekCommitted(path string) (interface{}, uint64) {
+	v := this.writeCache.RetriveShallow(path)
+	return v, READ_COMMITTED_FROM_DB
 }
 
 func (this *ConcurrentUrl) Read(tx uint32, path string) (interface{}, uint64) {
 	typedv, univ := this.writeCache.Read(tx, path)
-	return typedv, Cost{}.Reader(univ.(interfaces.Univalue))
+	return typedv, Fee{}.Reader(univ.(interfaces.Univalue))
 }
 
 func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}) (int64, error) {
-	c := Cost{}.Writer(path, value, this.writeCache)
+	c := Fee{}.Writer(path, value, this.writeCache)
 	if value == nil || (value != nil && value.(interfaces.Type).TypeID() != uint8(reflect.Invalid)) {
 		return c, this.writeCache.Write(tx, path, value)
 	}
@@ -167,68 +172,68 @@ func (this *ConcurrentUrl) Do(tx uint32, path string, do interface{}) (interface
 // Read th Nth element under a path
 func (this *ConcurrentUrl) at(tx uint32, path string, idx uint64) (interface{}, uint64, error) {
 	if !common.IsPath(path) {
-		return nil, IS_PATH, errors.New("Error: Not a path!!!")
+		return nil, READ_NONEXIST, errors.New("Error: Not a path!!!")
 	}
 
-	meta, readCost := this.Read(tx, path) // read the container meta
+	meta, readFee := this.Read(tx, path) // read the container meta
 	return common.IfThen(meta == nil,
 		meta,
 		common.IfThenDo1st(idx < uint64(len(meta.([]string))), func() interface{} { return path + meta.([]string)[idx] }, nil),
-	), readCost, nil
+	), readFee, nil
 }
 
 // Read th Nth element under a path
 func (this *ConcurrentUrl) ReadAt(tx uint32, path string, idx uint64) (interface{}, uint64, error) {
-	if key, cost, err := this.at(tx, path, idx); err == nil && key != nil {
-		v, cost := this.Read(tx, key.(string))
-		return v, cost, nil
+	if key, Fee, err := this.at(tx, path, idx); err == nil && key != nil {
+		v, Fee := this.Read(tx, key.(string))
+		return v, Fee, nil
 	} else {
-		return key, cost, err
+		return key, Fee, err
 	}
 }
 
 // Read th Nth element under a path
 func (this *ConcurrentUrl) DoAt(tx uint32, path string, idx uint64, do interface{}) (interface{}, uint64, error) {
-	if key, cost, err := this.at(tx, path, idx); err == nil && key != nil {
+	if key, Fee, err := this.at(tx, path, idx); err == nil && key != nil {
 		v, err := this.Do(tx, key.(string), do)
-		return v, cost, err
+		return v, Fee, err
 	} else {
-		return key, cost, err
+		return key, Fee, err
 	}
 }
 
 // Read th Nth element under a path
 func (this *ConcurrentUrl) PopBack(tx uint32, path string) (interface{}, int64, error) {
 	if !common.IsPath(path) {
-		return nil, int64(IS_PATH), errors.New("Error: Not a path!!!")
+		return nil, int64(READ_NONEXIST), errors.New("Error: Not a path!!!")
 	}
 
-	subkeys, cost := this.Read(tx, path) // read the container meta
+	subkeys, Fee := this.Read(tx, path) // read the container meta
 	if subkeys == nil || len(subkeys.([]string)) == 0 {
-		return nil, int64(cost), errors.New("Error: The path is either empty or doesn't exist")
+		return nil, int64(Fee), errors.New("Error: The path is either empty or doesn't exist")
 	}
 
 	key := path + subkeys.([]string)[len(subkeys.([]string))-1]
 
-	value, cost := this.Read(tx, key)
+	value, Fee := this.Read(tx, key)
 	if value == nil {
-		return nil, int64(cost), errors.New("Error: Empty container!")
+		return nil, int64(Fee), errors.New("Error: Empty container!")
 	}
 
-	writecost, err := this.Write(tx, key, nil)
-	return value, writecost, err
+	writeFee, err := this.Write(tx, key, nil)
+	return value, writeFee, err
 }
 
 // Read th Nth element under a path
 func (this *ConcurrentUrl) WriteAt(tx uint32, path string, idx uint64, value interface{}) (int64, error) {
 	if !common.IsPath(path) {
-		return int64(IS_PATH), errors.New("Error: Not a path!!!")
+		return int64(READ_NONEXIST), errors.New("Error: Not a path!!!")
 	}
 
-	if key, cost, err := this.at(tx, path, idx); err == nil {
+	if key, Fee, err := this.at(tx, path, idx); err == nil {
 		return this.Write(tx, key.(string), value)
 	} else {
-		return int64(cost), err
+		return int64(Fee), err
 	}
 }
 
@@ -252,13 +257,14 @@ func (this *ConcurrentUrl) Import(transitions []interfaces.Univalue, args ...int
 }
 
 func (this *ConcurrentUrl) Snapshot(preTransitions []interfaces.Univalue) interfaces.Datastore {
-	transitions := []interfaces.Univalue(indexer.Univalues(this.Export()).To(indexer.ITCTransition{}))
-	transitions = append(transitions, preTransitions...)
+	// transitions := []interfaces.Univalue(indexer.Univalues(common.Clone(this.Export())).To(indexer.ITCTransition{}))
+	// transitions = append(transitions, preTransitions...)
 
 	transientDB := ccurlstorage.NewTransientDB(this.WriteCache().Store()) // Should be the same as Importer().Store()
-	snapshotUrl := NewConcurrentUrl(transientDB).Import(transitions).Sort()
+	preTransitions = common.Remove(&preTransitions, nil)
+	snapshotUrl := NewConcurrentUrl(transientDB).Import(preTransitions).Sort()
 
-	ids := indexer.Univalues(transitions).UniqueTXs()
+	ids := indexer.Univalues(preTransitions).UniqueTXs()
 	return snapshotUrl.Commit(ids).Importer().Store() // Commit these changes to the a transient DB
 }
 

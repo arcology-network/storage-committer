@@ -73,7 +73,7 @@ type Univalue interface { // value type
 	IncrementWrites(uint32)
 	IncrementDeltaWrites(uint32)
 
-	IsHotLoaded() bool
+	// IsHotLoaded() bool
 	Set(uint32, string, interface{}, interface{}) error
 	Get(uint32, string, interface{}) interface{}
 	GetTx() uint32

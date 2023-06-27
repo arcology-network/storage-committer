@@ -46,7 +46,7 @@ func (this *Univalue) From(v interfaces.Univalue) interface{} { return v }
 
 // func (this *Univalue) Filter() interfaces.Univalue                    { return this }
 
-func (this *Univalue) IsHotLoaded() bool             { return this.reads > 1 }
+// func (this *Univalue) IsHotLoaded() bool             { return this.reads > 1 }
 func (this *Univalue) SetTx(txId uint32)             { this.tx = txId }
 func (this *Univalue) ClearCache()                   { this.cache = this.cache[:0] }
 func (this *Univalue) Value() interface{}            { return this.value }
@@ -55,12 +55,13 @@ func (this *Univalue) SetValue(newValue interface{}) { this.value = newValue }
 func (this *Univalue) GetUnimeta() interface{} { return this.Unimeta }
 func (this *Univalue) GetCache() interface{}   { return this.cache }
 
-func (this *Univalue) Init(tx uint32, key string, reads, writes uint32, v interface{}, args ...interface{}) {
+func (this *Univalue) Init(tx uint32, key string, reads, writes, deltaWrites uint32, v interface{}, args ...interface{}) {
 	this.vType = common.IfThenDo1st(v != nil, func() uint8 { return v.(interfaces.Type).TypeID() }, uint8(reflect.Invalid))
 	this.tx = tx
 	this.path = &key
 	this.reads = reads
 	this.writes = writes
+	this.deltaWrites = deltaWrites
 	this.value = v
 	this.preexists = common.IfThenDo1st(len(args) > 0, func() bool { return (&Unimeta{}).CheckPreexist(key, args[0]) }, false)
 }
@@ -174,7 +175,7 @@ func (this *Univalue) PrecheckAttributes(other *Univalue) {
 	}
 
 	if this.Value() == nil && this.IsConcurrentWritable() {
-		panic("Error: A deleted value cann't be composite")
+		// panic("Error: A deleted value cann't be composite")
 	}
 
 	if !this.preexists && this.IsConcurrentWritable() {

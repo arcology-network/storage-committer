@@ -48,7 +48,7 @@ func (this *WriteCache) GetOrInit(tx uint32, path string) interfaces.Univalue {
 	unival := this.kvDict[path]
 	if unival == nil { // Not in the kvDict, check the datastore
 		unival = this.NewUnivalue()
-		unival.(*univalue.Univalue).Init(tx, path, 0, 0, this.RetriveShallow(path), this)
+		unival.(*univalue.Univalue).Init(tx, path, 0, 0, 0, this.RetriveShallow(path), this)
 		this.kvDict[path] = unival // Adding to kvDict
 	}
 	return unival
@@ -140,6 +140,8 @@ func (this *WriteCache) Export(preprocessors ...func([]interfaces.Univalue) []in
 			return processor(this.buffer)
 		}, this.buffer)
 	}
+
+	common.RemoveIf(&this.buffer, func(v interfaces.Univalue) bool { return v.Reads() == 0 && v.IsReadOnly() }) // Remove peeks
 	return this.buffer
 }
 
