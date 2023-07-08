@@ -104,7 +104,7 @@ func TestUnimetaCodecUint64(t *testing.T) {
 
 	// meta:= commutative.NewPath()
 	u256 := commutative.NewUint64(0, 100).(*commutative.Uint64)
-	in := NewUnimeta(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, u256.TypeID(), false)
+	in := NewUnimeta(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, u256.TypeID(), true, false)
 	in.reads = 1
 	in.writes = 2
 	in.deltaWrites = 3

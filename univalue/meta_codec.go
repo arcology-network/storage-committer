@@ -14,7 +14,7 @@ func (this *Unimeta) Encode() []byte {
 }
 
 func (this *Unimeta) HeaderSize() uint32 {
-	return uint32(8 * codec.UINT32_LEN)
+	return uint32(9 * codec.UINT32_LEN)
 }
 
 func (this *Unimeta) Size() uint32 {
@@ -25,7 +25,8 @@ func (this *Unimeta) Size() uint32 {
 		uint32(4) + // codec.Uint32(this.reads).Size() +
 		uint32(4) + // codec.Uint32(this.writes).Size() +
 		uint32(4) + // codec.Uint32(this.deltaWrites).Size() +
-		uint32(1) //+  codec.Bool(this.preexists).Size() +
+		uint32(1) + //+  codec.Bool(this.preexists).Size() +
+		uint32(1) //+  codec.Bool(this.persistent).Size() +
 }
 
 func (this *Unimeta) FillHeader(buffer []byte) int {
@@ -39,6 +40,7 @@ func (this *Unimeta) FillHeader(buffer []byte) int {
 			codec.Uint32(this.writes).Size(),
 			codec.Uint32(this.deltaWrites).Size(),
 			codec.Bool(this.preexists).Size(),
+			codec.Bool(this.persistent).Size(),
 		},
 	)
 }
@@ -52,6 +54,7 @@ func (this *Unimeta) EncodeToBuffer(buffer []byte) int {
 	offset += codec.Uint32(this.writes).EncodeToBuffer(buffer[offset:])
 	offset += codec.Uint32(this.deltaWrites).EncodeToBuffer(buffer[offset:])
 	offset += codec.Bool(this.preexists).EncodeToBuffer(buffer[offset:])
+	offset += codec.Bool(this.persistent).EncodeToBuffer(buffer[offset:])
 
 	return offset
 }
@@ -70,6 +73,9 @@ func (this *Unimeta) Decode(buffer []byte) interface{} {
 	this.writes = uint32(codec.Uint32(1).Decode(fields[4]).(codec.Uint32))
 	this.deltaWrites = uint32(codec.Uint32(1).Decode(fields[5]).(codec.Uint32))
 
+	this.preexists = bool(codec.Bool(false).Decode(fields[6]).(codec.Bool))
+	this.persistent = bool(codec.Bool(true).Decode(fields[7]).(codec.Bool))
+
 	return this
 }
 
@@ -82,6 +88,7 @@ func (this *Unimeta) GobDecode(data []byte) error {
 	this.vType = v.vType
 	this.path = v.path
 	this.preexists = v.preexists
+	this.persistent = v.persistent
 	this.tx = v.tx
 	this.reads = v.reads
 	this.writes = v.writes

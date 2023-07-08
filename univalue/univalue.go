@@ -94,7 +94,7 @@ func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{
 func (this *Univalue) WriteTo(writeCache interfaces.WriteCache) {
 	common.IfThenDo(this.writes == 0 && this.deltaWrites == 0,
 		func() { writeCache.Read(this.tx, *this.GetPath()) },
-		func() { writeCache.Write(this.tx, *this.GetPath(), this.value) },
+		func() { writeCache.Write(this.tx, *this.GetPath(), this.value, this.GetPersistent()) },
 	)
 }
 
@@ -238,10 +238,11 @@ func (this *Univalue) Print() {
 	fmt.Print(spaces+"reads: ", this.reads)
 	fmt.Print(spaces+"writes: ", this.writes)
 	fmt.Print(spaces+"DeltaWrites: ", this.deltaWrites)
-	fmt.Print(spaces+"path: ", *this.path)
-	// fmt.Print(spaces+"value: ", this.value)
-	fmt.Println(spaces+"preexists: ", this.preexists)
+	fmt.Print(spaces+"persistent: ", this.persistent)
+	fmt.Print(spaces+"preexists: ", this.preexists)
 
+	fmt.Println(spaces+"path: ", *this.path)
+	// fmt.Print(spaces+"value: ", this.value)
 	//this.value.(interfaces.Type).Print()
 	// fmt.Println("--------------------------------------------------------")
 }

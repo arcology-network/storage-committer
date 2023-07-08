@@ -12,12 +12,6 @@ const (
 	MAX_DEPTH            uint8 = 12
 	SYSTEM                     = math.MaxInt32
 	ETH10_ACCOUNT_LENGTH       = 40
-
-	Idx_PathKey_Code      = 1
-	Idx_PathKey_Nonce     = 2
-	Idx_PathKey_Balance   = 3
-	Idx_PathKey_Container = 5
-	Idx_PathKey_Native    = 6
 )
 
 type Platform struct {
@@ -27,21 +21,28 @@ type Platform struct {
 func NewPlatform() *Platform {
 	return &Platform{
 		map[string]uint8{
-			"/":                    commutative.PATH,
-			"/code":                noncommutative.BYTES,
-			"/nonce":               commutative.UINT64,
-			"/balance":             commutative.UINT256,
-			"/storage/":            commutative.PATH,
-			"/storage/containers/": commutative.PATH,
-			"/storage/native/":     commutative.PATH,
+			"/":                      commutative.PATH,
+			"/code":                  noncommutative.BYTES,
+			"/nonce":                 commutative.UINT64,
+			"/balance":               commutative.UINT256,
+			"/storage/":              commutative.PATH,
+			"/storage/containers/":   commutative.PATH,
+			"/storage/native/":       commutative.PATH,
+			"/storage/native/local/": commutative.PATH,
 		},
 	}
 }
 
 func (this *Platform) Eth10() string        { return "blcc://eth1.0/" }
 func (this *Platform) Eth10Account() string { return this.Eth10() + "account/" }
+
 func (this *Platform) Eth10AccountLenght() int {
 	return len(this.Eth10()+"account/") + ETH10_ACCOUNT_LENGTH
+}
+
+func (this *Platform) GetAccountAddr(path string) string {
+	length := this.Eth10AccountLenght()
+	return common.IfThenDo1st(len(path) >= length, func() string { return path[:length] }, "")
 }
 
 func Eth10AccountShard(numOfShard int, key string) int {

@@ -74,7 +74,7 @@ func (this *WriteCache) Peek(path string) (interface{}, interface{}) {
 	return v, univalue.NewUnivalue(ccurlcommon.SYSTEM, path, 0, 0, 0, v)
 }
 
-func (this *WriteCache) Write(tx uint32, path string, value interface{}) error {
+func (this *WriteCache) Write(tx uint32, path string, value interface{}, persistent bool) error {
 	parentPath := common.GetParentPath(path)
 	if this.IfExists(parentPath) || tx == ccurlcommon.SYSTEM { // The parent path exists or to inject the path directly
 		univalue := this.GetOrInit(tx, path) // Get a univalue wrapper

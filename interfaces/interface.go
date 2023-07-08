@@ -90,6 +90,7 @@ type Univalue interface { // value type
 
 	ApplyDelta(interface{}) error
 	Preexist() bool
+	Persistent() bool
 	IsReadOnly() bool
 	IsConcurrentWritable() bool
 	// Clone() interface{}
@@ -108,7 +109,7 @@ type Univalue interface { // value type
 type WriteCache interface {
 	Read(uint32, string) (interface{}, interface{})
 	Peek(path string) (interface{}, interface{})
-	Write(uint32, string, interface{}) error
+	Write(uint32, string, interface{}, bool) error
 	Insert(string, interface{})
 
 	RetriveShallow(string) interface{}
@@ -119,10 +120,6 @@ type WriteCache interface {
 type Importer interface {
 	RetriveShallow(string) interface{}
 }
-
-// type FilteredTransitions interface {
-// 	Is(int, string) bool
-// }
 
 type Datastore interface {
 	Inject(string, interface{})

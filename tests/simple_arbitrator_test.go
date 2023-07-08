@@ -24,7 +24,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	url := ccurl.NewConcurrentUrl(store)
 
 	meta := commutative.NewPath()
-	url.Write(ccurlcommon.SYSTEM, ccurl.NewPlatform().Eth10Account(), meta)
+	url.Write(ccurlcommon.SYSTEM, ccurl.NewPlatform().Eth10Account(), meta, true)
 	trans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans).Encode()).(indexer.Univalues))
 
@@ -61,7 +61,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	url := ccurl.NewConcurrentUrl(store)
 
 	meta := commutative.NewPath()
-	url.Write(ccurlcommon.SYSTEM, ccurl.NewPlatform().Eth10Account(), meta)
+	url.Write(ccurlcommon.SYSTEM, ccurl.NewPlatform().Eth10Account(), meta, true)
 	trans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans).Encode()).(indexer.Univalues))
 	url.Sort()
@@ -69,9 +69,9 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 
 	url.Init(store)
 	alice := datacompression.RandomAccount()
-	url.NewAccount(1, url.Platform.Eth10(), alice)                         // NewAccount account structure {
-	path1 := commutative.NewPath()                                         // create a path
-	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path1) // create a path
+	url.NewAccount(1, url.Platform.Eth10(), alice)                               // NewAccount account structure {
+	path1 := commutative.NewPath()                                               // create a path
+	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path1, true) // create a path
 	// url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-1"))
 	// url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-1"))
 	// accesses1, _ := url.Export(indexer.Sorter)
@@ -80,7 +80,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	url2 := ccurl.NewConcurrentUrl(store)
 	url2.NewAccount(2, url.Platform.Eth10(), alice) // NewAccount account structure {
 	path2 := commutative.NewPath()                  // create a path
-	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path2)
+	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path2, true)
 	// url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-2"))
 	// url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-2"))
 	// accesses2, _ := url2.Export(indexer.Sorter)
@@ -115,9 +115,9 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	url.Init(store)
 
 	url.NewAccount(1, url.Platform.Eth10(), alice)
-	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", commutative.NewPath()) // create a path
-	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-1"))
-	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-1"))
+	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", commutative.NewPath(), true) // create a path
+	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-1"), true)
+	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-1"), true)
 	// accesses1, transitions1 := url.Export(indexer.Sorter)
 	accesses1 := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCAccess{})
 	transitions1 := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
@@ -126,9 +126,9 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	url2.NewAccount(2, url.Platform.Eth10(), alice) // NewAccount account structure {
 	path2 := commutative.NewPath()                  // create a path
 
-	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path2)
-	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-2"))
-	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-2"))
+	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path2, true)
+	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-2"), true)
+	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-2"), true)
 
 	// accesses2, transitions2 := url2.Export(indexer.Sorter)
 	accesses2 := indexer.Univalues(common.Clone(url2.Export(indexer.Sorter))).To(indexer.ITCAccess{})
@@ -151,7 +151,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	url.Commit(toCommit)
 
 	url3 := ccurl.NewConcurrentUrl(store)
-	if _, err := url3.Write(3, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("url3-1-by-tx-3")); err != nil {
+	if _, err := url3.Write(3, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("url3-1-by-tx-3"), true); err != nil {
 		t.Error(err)
 	}
 
@@ -160,7 +160,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	transitions3 := indexer.Univalues(common.Clone(url3.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	url4 := ccurl.NewConcurrentUrl(store)
-	if _, err := url4.Write(4, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("url4-1-by-tx-3")); err != nil {
+	if _, err := url4.Write(4, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("url4-1-by-tx-3"), true); err != nil {
 		t.Error(err)
 	}
 	// accesses4, transitions4 := url4.Export(indexer.Sorter)

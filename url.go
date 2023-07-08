@@ -125,12 +125,12 @@ func (this *ConcurrentUrl) NewAccount(tx uint32, platform string, acct string) e
 		}
 
 		if !this.writeCache.IfExists(path) {
-			if err := this.writeCache.Write(tx, path, v); err != nil { // root path
+			if err := this.writeCache.Write(tx, path, v, true); err != nil { // root path
 				return err
 			}
 
 			if !this.writeCache.IfExists(path) {
-				return this.writeCache.Write(tx, path, v) // root path
+				return this.writeCache.Write(tx, path, v, true) // root path
 			}
 		}
 	}
@@ -156,13 +156,13 @@ func (this *ConcurrentUrl) Read(tx uint32, path string) (interface{}, uint64) {
 	return typedv, Fee{}.Reader(univ.(interfaces.Univalue))
 }
 
-func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}) (int64, error) {
-	c := Fee{}.Writer(path, value, this.writeCache)
+func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}, persistent bool) (int64, error) {
+	fee := Fee{}.Writer(path, value, this.writeCache)
 	if value == nil || (value != nil && value.(interfaces.Type).TypeID() != uint8(reflect.Invalid)) {
-		return c, this.writeCache.Write(tx, path, value)
+		return fee, this.writeCache.Write(tx, path, value, persistent)
 	}
 
-	return c, errors.New("Error: Unknown data type !")
+	return fee, errors.New("Error: Unknown data type !")
 }
 
 func (this *ConcurrentUrl) Do(tx uint32, path string, do interface{}) (interface{}, error) {
@@ -203,7 +203,7 @@ func (this *ConcurrentUrl) DoAt(tx uint32, path string, idx uint64, do interface
 }
 
 // Read th Nth element under a path
-func (this *ConcurrentUrl) PopBack(tx uint32, path string) (interface{}, int64, error) {
+func (this *ConcurrentUrl) PopBack(tx uint32, path string, persistent bool) (interface{}, int64, error) {
 	if !common.IsPath(path) {
 		return nil, int64(READ_NONEXIST), errors.New("Error: Not a path!!!")
 	}
@@ -220,18 +220,18 @@ func (this *ConcurrentUrl) PopBack(tx uint32, path string) (interface{}, int64, 
 		return nil, int64(Fee), errors.New("Error: Empty container!")
 	}
 
-	writeFee, err := this.Write(tx, key, nil)
+	writeFee, err := this.Write(tx, key, nil, persistent)
 	return value, writeFee, err
 }
 
 // Read th Nth element under a path
-func (this *ConcurrentUrl) WriteAt(tx uint32, path string, idx uint64, value interface{}) (int64, error) {
+func (this *ConcurrentUrl) WriteAt(tx uint32, path string, idx uint64, value interface{}, persistent bool) (int64, error) {
 	if !common.IsPath(path) {
 		return int64(READ_NONEXIST), errors.New("Error: Not a path!!!")
 	}
 
 	if key, Fee, err := this.at(tx, path, idx); err == nil {
-		return this.Write(tx, key.(string), value)
+		return this.Write(tx, key.(string), value, persistent)
 	} else {
 		return int64(Fee), err
 	}

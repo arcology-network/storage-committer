@@ -118,7 +118,7 @@ func (this *Path) Set(value interface{}, source interface{}) (interface{}, uint3
 	if common.IsPath(targetPath) && len(targetPath) == len(myPath) { // Delete or rewrite the path
 		if value == nil { // Delete the path and all its elements
 			for _, subpath := range this.value.Keys() { // Get all the sub paths
-				writeCache.Write(tx, targetPath+subpath, nil) //FIXME: THIS EMITS SOME ERROR MESSAGEES BUT DON't SEEM HARMFUL
+				writeCache.Write(tx, targetPath+subpath, nil, true) //FIXME: THIS EMITS SOME ERROR MESSAGEES BUT DON't SEEM HARMFUL
 			}
 			return this, 0, 1, 0, nil
 		}
