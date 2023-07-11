@@ -368,7 +368,7 @@ func (this *ConcurrentUrl) Export(preprocessors ...func([]interfaces.Univalue) [
 
 func (this *ConcurrentUrl) ExportAll(preprocessors ...func([]interfaces.Univalue) []interfaces.Univalue) ([]interfaces.Univalue, []interfaces.Univalue) {
 	all := this.Export(indexer.Sorter)
-	indexer.Univalues(all).Print()
+	// indexer.Univalues(all).Print()
 
 	accesses := indexer.Univalues(common.Clone(all)).To(indexer.ITCAccess{})
 	transitions := indexer.Univalues(common.Clone(all)).To(indexer.ITCTransition{})

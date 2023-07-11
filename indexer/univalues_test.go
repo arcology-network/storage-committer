@@ -164,7 +164,7 @@ func TestUnivaluesSelectiveEncoding(t *testing.T) {
 	// }
 }
 
-func BenchmarkUnivaluesEncodeDecode(t *testing.B) {
+func BenchmarkUnivaluesEncodeDecodeAndSort(t *testing.B) {
 	/* Commutative Int64 Test */
 	alice := datacompression.RandomAccount()
 	v := commutative.NewPath()
@@ -184,4 +184,18 @@ func BenchmarkUnivaluesEncodeDecode(t *testing.B) {
 	t0 = time.Now()
 	(Univalues([]interfaces.Univalue{})).Decode(bytes)
 	fmt.Println("Decoded 100000 entires in :", time.Since(t0))
+	fmt.Println("=========================================")
+
+	t0 = time.Now()
+	Univalues(in).Sort(nil, nil)
+	fmt.Println("Univalues(in).Sort()", len(in), "entires in :", time.Since(t0), "Total size: ", len(bytes)*4)
+
+	t0 = time.Now()
+	Univalues(in).SortByDefault()
+	fmt.Println("Univalues(in).SortByDefault()", len(in), "entires in :", time.Since(t0), "Total size: ", len(bytes)*4)
+
+	t0 = time.Now()
+	Univalues(in).SortWithQuickMethod()
+	fmt.Println("Univalues(in).SortWithQuickMethod()", len(in), "entires in :", time.Since(t0), "Total size: ", len(bytes)*4)
+
 }

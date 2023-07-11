@@ -26,7 +26,7 @@ func NewPlatform() *Platform {
 			"/nonce":                 commutative.UINT64,
 			"/balance":               commutative.UINT256,
 			"/storage/":              commutative.PATH,
-			"/storage/containers/":   commutative.PATH,
+			"/storage/container/":    commutative.PATH,
 			"/storage/native/":       commutative.PATH,
 			"/storage/native/local/": commutative.PATH,
 		},
@@ -36,12 +36,12 @@ func NewPlatform() *Platform {
 func (this *Platform) Eth10() string        { return "blcc://eth1.0/" }
 func (this *Platform) Eth10Account() string { return this.Eth10() + "account/" }
 
-func (this *Platform) Eth10AccountLenght() int {
+func (this *Platform) Eth10AccountLength() int {
 	return len(this.Eth10()+"account/") + ETH10_ACCOUNT_LENGTH
 }
 
 func (this *Platform) GetAccountAddr(path string) string {
-	length := this.Eth10AccountLenght()
+	length := this.Eth10AccountLength()
 	return common.IfThenDo1st(len(path) >= length, func() string { return path[:length] }, "")
 }
 
@@ -75,11 +75,11 @@ func (this *Platform) GetBuiltins(acct string) ([]string, []uint8) {
 
 // These paths won't keep the sub elements
 func (this *Platform) IsSysPath(path string) bool {
-	if len(path) <= this.Eth10AccountLenght() {
+	if len(path) <= this.Eth10AccountLength() {
 		return path == this.Eth10() || path == this.Eth10Account()
 	}
 
-	subPath := path[this.Eth10AccountLenght():] // Removed the shared part
+	subPath := path[this.Eth10AccountLength():] // Removed the shared part
 	_, ok := this.syspaths[subPath]
 	return ok
 }

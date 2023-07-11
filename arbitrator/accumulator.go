@@ -27,7 +27,7 @@ func (this *Accumulator) CheckMinMax(transitions []interfaces.Univalue) []*Confl
 		return nil
 	}
 
-	sort.Slice(transitions, func(i, j int) bool {
+	sort.SliceStable(transitions, func(i, j int) bool {
 		lhv := transitions[i].Value().(interfaces.Type)
 		rhv := transitions[i].Value().(interfaces.Type)
 		return lhv.DeltaSign() != rhv.DeltaSign() && !lhv.DeltaSign()

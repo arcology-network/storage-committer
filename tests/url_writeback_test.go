@@ -121,7 +121,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 
 	url.Init(store)
 	path := commutative.NewPath()
-	_, err := url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/containers/ctrn-0/", path, true)
+	_, err := url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", path, true)
 
 	if err != nil {
 		t.Error("error")

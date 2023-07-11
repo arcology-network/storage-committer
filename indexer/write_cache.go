@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strings"
 
 	common "github.com/arcology-network/common-lib/common"
 	mempool "github.com/arcology-network/common-lib/mempool"
@@ -80,12 +81,17 @@ func (this *WriteCache) Write(tx uint32, path string, value interface{}, persist
 		univalue := this.GetOrInit(tx, path) // Get a univalue wrapper
 
 		err := univalue.Set(tx, path, value, this)
-		if !this.platform.IsSysPath(parentPath) && tx != ccurlcommon.SYSTEM && err == nil { // System paths don't keep track of child paths
-			parentMeta := this.GetOrInit(tx, parentPath)
-			err = parentMeta.Set(tx, path, univalue.Value(), this)
+		if err == nil {
+			if strings.HasSuffix(parentPath, "container/") || (!this.platform.IsSysPath(parentPath) &&
+				tx != ccurlcommon.SYSTEM) { // System paths don't keep track of child paths
+				parentMeta := this.GetOrInit(tx, parentPath)
+				err = parentMeta.Set(tx, path, univalue.Value(), this)
+			}
 		}
 		return err
 	}
+
+	// strings.HasPrefix(parentPath, "container/") &&
 
 	return errors.New("Error: The parent path doesn't exist: " + parentPath)
 }

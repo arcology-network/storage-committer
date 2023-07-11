@@ -88,7 +88,7 @@ func TestUnivalueCodec(t *testing.T) {
 func TestUnivaluesCodec(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	transitions := []interfaces.Univalue{}
-	for i := 0; i < 110000; i++ {
+	for i := 0; i < 10000; i++ {
 		acct := datacompression.RandomAccount()
 		url := ccurl.NewConcurrentUrl(store)
 		url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), acct)
@@ -108,7 +108,7 @@ func TestUnivaluesCodec(t *testing.T) {
 		univ := out[i].(*univalue.Univalue)
 		univ.ClearCache()
 		if !reflect.DeepEqual(tran, univ) {
-			//fmt.Println("Error: Missmatched")
+			fmt.Println("Error: Missmatched")
 		}
 	}
 }

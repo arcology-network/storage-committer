@@ -66,16 +66,22 @@ func (this Univalues) UniqueTXs() []uint32 {
 }
 
 func (this Univalues) Sort(equal func(i, j int) bool, compare func(i, j int) bool) Univalues {
-	summed := make([]uint64, len(this))
-	for i := ccurlcommon.ETH10_ACCOUNT_LENGTH; i < len(this); i++ {
-		summed[i] = codec.String(*this[i].GetPath()).Sum(uint64(0))
-	}
+	// lengths := make([]int, len(this))
+	// summed := make([]uint64, len(this))
+	// for i := ccurlcommon.ETH10_ACCOUNT_LENGTH; i < len(this); i++ {
+	// 	lengths[i] = len(*this[i].GetPath())
+	// 	summed[i] = codec.String(*this[i].GetPath()).Sum(uint64(0))
+	// }
 
 	// Don't switch the order
 	sort.SliceStable(this, func(i, j int) bool {
-		if summed[i] != summed[j] {
-			return summed[i] < summed[j]
-		}
+		// if lengths[i] != lengths[j] {
+		// 	return lengths[i] < lengths[j]
+		// }
+
+		// if summed[i] != summed[j] {
+		// 	return summed[i] < summed[j]
+		// }
 
 		if *this[i].GetPath() != *this[j].GetPath() {
 			return bytes.Compare([]byte(*this[i].GetPath()), []byte(*this[j].GetPath())) < 0
@@ -95,18 +101,63 @@ func (this Univalues) Sort(equal func(i, j int) bool, compare func(i, j int) boo
 }
 
 func (this Univalues) SortByDefault() Univalues {
+	lengths := make([]int, len(this))
 	summed := make([]uint64, len(this))
 	for i := ccurlcommon.ETH10_ACCOUNT_LENGTH; i < len(this); i++ {
+		lengths[i] = len(*this[i].GetPath())
 		summed[i] = codec.String(*this[i].GetPath()).Sum(uint64(0))
 	}
 
 	// Don't switch the order
-	sort.Slice(this, func(i, j int) bool {
-		if summed[i] != summed[j] {
-			return summed[i] < summed[j]
+	sort.SliceStable(this, func(i, j int) bool {
+		// if lengths[i] != lengths[j] {
+		// 	return lengths[i] < lengths[j]
+		// }
+
+		// if summed[i] != summed[j] {
+		// 	return summed[i] < summed[j]
+		// }
+
+		if *this[i].GetPath() != *this[j].GetPath() {
+			return bytes.Compare([]byte(*this[i].GetPath()), []byte(*this[j].GetPath())) < 0
 		}
 
-		return (this[i].(*univalue.Univalue)).Less(this[j].(*univalue.Univalue))
+		if this[i].GetTx() != this[j].GetTx() {
+			return this[i].GetTx() < this[j].GetTx()
+		}
+
+		return true
+	})
+	return this
+}
+
+func (this Univalues) SortWithQuickMethod() Univalues {
+	// lengths := make([]int, len(this))
+	// summed := make([]uint64, len(this))
+	// for i := ccurlcommon.ETH10_ACCOUNT_LENGTH; i < len(this); i++ {
+	// 	// lengths[i] = len(*this[i].GetPath())
+	// 	summed[i] = codec.String(*this[i].GetPath()).Sum(uint64(0))
+	// }
+
+	// Don't switch the order
+	sort.SliceStable(this, func(i, j int) bool {
+		// if lengths[i] != lengths[j] {
+		// 	return lengths[i] < lengths[j]
+		// }
+
+		// if summed[i] != summed[j] {
+		// 	return summed[i] < summed[j]
+		// }
+
+		if *this[i].GetPath() != *this[j].GetPath() {
+			return bytes.Compare([]byte(*this[i].GetPath()), []byte(*this[j].GetPath())) < 0
+		}
+
+		if this[i].GetTx() != this[j].GetTx() {
+			return this[i].GetTx() < this[j].GetTx()
+		}
+
+		return true
 	})
 	return this
 }
