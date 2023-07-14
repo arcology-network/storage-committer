@@ -12,7 +12,7 @@ const (
 
 type Platform interface { // value type
 	IsSysPath(string) bool
-	Eth10Account() string
+	// Eth10Account() string
 }
 
 type Transition interface { // value type

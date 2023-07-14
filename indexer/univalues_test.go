@@ -1,9 +1,7 @@
 package indexer
 
 import (
-	"fmt"
 	"testing"
-	"time"
 
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/datacompression"
@@ -162,40 +160,4 @@ func TestUnivaluesSelectiveEncoding(t *testing.T) {
 	// if (codec.Byteset{}.Decode(codec.Byteset{}.Decode(encodedValues[7]).(codec.Byteset)[1]).(codec.Byteset).Size()) != commutative.NewU256().(*commutative.U256).HeaderSize()+32+32+32+1 {
 	// 	t.Error("Error")
 	// }
-}
-
-func BenchmarkUnivaluesEncodeDecodeAndSort(t *testing.B) {
-	/* Commutative Int64 Test */
-	alice := datacompression.RandomAccount()
-	v := commutative.NewPath()
-	bytes := univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 1, v).Encode()
-	// bytes := in1.Encode()
-	fmt.Println("Encoded length of one entry:", len(bytes)*4)
-
-	in := make([]interfaces.Univalue, 1000000)
-	for i := 0; i < len(in); i++ {
-		in[i] = univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 1, v)
-	}
-
-	t0 := time.Now()
-	bytes = Univalues(in).Encode()
-	fmt.Println("Encoded", len(in), "entires in :", time.Since(t0), "Total size: ", len(bytes)*4)
-
-	t0 = time.Now()
-	(Univalues([]interfaces.Univalue{})).Decode(bytes)
-	fmt.Println("Decoded 100000 entires in :", time.Since(t0))
-	fmt.Println("=========================================")
-
-	t0 = time.Now()
-	Univalues(in).Sort(nil, nil)
-	fmt.Println("Univalues(in).Sort()", len(in), "entires in :", time.Since(t0), "Total size: ", len(bytes)*4)
-
-	t0 = time.Now()
-	Univalues(in).SortByDefault()
-	fmt.Println("Univalues(in).SortByDefault()", len(in), "entires in :", time.Since(t0), "Total size: ", len(bytes)*4)
-
-	t0 = time.Now()
-	Univalues(in).SortWithQuickMethod()
-	fmt.Println("Univalues(in).SortWithQuickMethod()", len(in), "entires in :", time.Since(t0), "Total size: ", len(bytes)*4)
-
 }

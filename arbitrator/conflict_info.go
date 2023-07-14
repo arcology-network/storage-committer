@@ -1,5 +1,7 @@
 package indexer
 
+import "fmt"
+
 type Conflict struct {
 	key   string
 	txIDs []uint32
@@ -24,4 +26,10 @@ func (this Conflicts) Keys() []string {
 		keys = append(keys, v.key)
 	}
 	return keys
+}
+
+func (this Conflicts) Print() {
+	for _, v := range this {
+		fmt.Println(v.key, "      ", v.txIDs)
+	}
 }

@@ -51,7 +51,7 @@ func (this *AccountMerkle) GetMerkles() *map[string]*merkle.Merkle {
 
 // Insert to the merkle tree
 func (this *AccountMerkle) Import(transitions []interfaces.Univalue) {
-	offset := len(this.platform.Eth10Account())
+	offset := ccurlcommon.ETH10_ACCOUNT_PREFIX_LENGTH
 	for _, v := range transitions {
 		path := *v.GetPath()
 		pos := strings.Index(path[offset:], "/")
@@ -75,7 +75,7 @@ func (this *AccountMerkle) Build(keys []string, values [][]byte) []*string {
 	}
 
 	t0 := time.Now()
-	offset := len(this.platform.Eth10Account())
+	offset := ccurlcommon.ETH10_ACCOUNT_PREFIX_LENGTH
 	ranges, accountKeys := this.markAccountRange(keys)
 	hasher := func(start, end, index int, args ...interface{}) {
 		mempool := this.nodePool.GetTlsMempool(index)
@@ -115,8 +115,8 @@ func (this *AccountMerkle) markAccountRange(paths []string) ([]int, []*string) {
 	positions = append(positions, 0)
 	current := paths[0]
 	for i := 1; i < len(paths); i++ {
-		p0 := current[:len(this.platform.Eth10Account())+ccurlcommon.ETH10_ACCOUNT_LENGTH]
-		p1 := paths[i][:len(this.platform.Eth10Account())+ccurlcommon.ETH10_ACCOUNT_LENGTH]
+		p0 := current[:ccurlcommon.ETH10_ACCOUNT_PREFIX_LENGTH+ccurlcommon.ETH10_ACCOUNT_LENGTH]
+		p1 := paths[i][:ccurlcommon.ETH10_ACCOUNT_PREFIX_LENGTH+ccurlcommon.ETH10_ACCOUNT_LENGTH]
 		if p0 != p1 {
 			current = paths[i]
 			positions = append(positions, i)

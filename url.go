@@ -99,7 +99,7 @@ func (this *ConcurrentUrl) Clear() {
 }
 
 // load accounts
-func (this *ConcurrentUrl) NewAccount(tx uint32, platform string, acct string) error {
+func (this *ConcurrentUrl) NewAccount(tx uint32, acct string) error {
 	paths, typeids := this.Platform.GetBuiltins(acct)
 
 	for i, path := range paths {

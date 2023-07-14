@@ -24,7 +24,8 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	url := ccurl.NewConcurrentUrl(store)
 
 	meta := commutative.NewPath()
-	url.Write(ccurlcommon.SYSTEM, ccurl.NewPlatform().Eth10Account(), meta, true)
+
+	url.Write(ccurlcommon.SYSTEM, ccurlcommon.ETH10_ACCOUNT_PREFIX, meta, true)
 	trans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans).Encode()).(indexer.Univalues))
 
@@ -33,14 +34,14 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 
 	alice := datacompression.RandomAccount()
 	url.Init(store)
-	url.NewAccount(1, url.Platform.Eth10(), alice) // NewAccount account structure {
+	url.NewAccount(1, alice) // NewAccount account structure {
 	// accesses1, transitions1 := url.Export(indexer.Sorter)
 	accesses1 := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCAccess{})
 	indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	bob := datacompression.RandomAccount()
 	url2 := ccurl.NewConcurrentUrl(store)
-	url2.NewAccount(2, url.Platform.Eth10(), bob) // NewAccount account structure {
+	url2.NewAccount(2, bob) // NewAccount account structure {
 
 	accesses2 := indexer.Univalues(common.Clone(url2.Export(indexer.Sorter))).To(indexer.ITCAccess{})
 	indexer.Univalues(common.Clone(url2.Export(indexer.Sorter))).To(indexer.ITCTransition{})
@@ -61,7 +62,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	url := ccurl.NewConcurrentUrl(store)
 
 	meta := commutative.NewPath()
-	url.Write(ccurlcommon.SYSTEM, ccurl.NewPlatform().Eth10Account(), meta, true)
+	url.Write(ccurlcommon.SYSTEM, ccurlcommon.ETH10_ACCOUNT_PREFIX, meta, true)
 	trans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans).Encode()).(indexer.Univalues))
 	url.Sort()
@@ -69,7 +70,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 
 	url.Init(store)
 	alice := datacompression.RandomAccount()
-	url.NewAccount(1, url.Platform.Eth10(), alice)                               // NewAccount account structure {
+	url.NewAccount(1, alice)                                                     // NewAccount account structure {
 	path1 := commutative.NewPath()                                               // create a path
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path1, true) // create a path
 	// url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-1"))
@@ -78,8 +79,8 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	accesses1 := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCAccess{})
 
 	url2 := ccurl.NewConcurrentUrl(store)
-	url2.NewAccount(2, url.Platform.Eth10(), alice) // NewAccount account structure {
-	path2 := commutative.NewPath()                  // create a path
+	url2.NewAccount(2, alice)      // NewAccount account structure {
+	path2 := commutative.NewPath() // create a path
 	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path2, true)
 	// url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-2"))
 	// url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-2"))
@@ -103,18 +104,18 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	alice := datacompression.RandomAccount()
 	url := ccurl.NewConcurrentUrl(store)
-	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
-	// url.Write(ccurlcommon.SYSTEM, ccurl.NewPlatform().Eth10Account(), commutative.NewPath())
+	// url.Write(ccurlcommon.SYSTEM, ccurlcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
 	acctTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
 	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 	url.Init(store)
 
-	url.NewAccount(1, url.Platform.Eth10(), alice)
+	url.NewAccount(1, alice)
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", commutative.NewPath(), true) // create a path
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-1"), true)
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-1"), true)
@@ -123,8 +124,8 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	transitions1 := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	url2 := ccurl.NewConcurrentUrl(store)
-	url2.NewAccount(2, url.Platform.Eth10(), alice) // NewAccount account structure {
-	path2 := commutative.NewPath()                  // create a path
+	url2.NewAccount(2, alice)      // NewAccount account structure {
+	path2 := commutative.NewPath() // create a path
 
 	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path2, true)
 	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-2"), true)
@@ -230,11 +231,11 @@ func BenchmarkSimpleArbitrator(b *testing.B) {
 		univalues[i*5+2] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
 		univalues[i*5+3] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
 		univalues[i*5+4] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
-		tx[i] = uint32(i)
-		tx[i] = uint32(i)
-		tx[i] = uint32(i)
-		tx[i] = uint32(i)
-		tx[i] = uint32(i)
+		// tx[i] = uint32(i)
+		// tx[i] = uint32(i)
+		// tx[i] = uint32(i)
+		// tx[i] = uint32(i)
+		// tx[i] = uint32(i)
 	}
 	// fmt.Println("Create "+fmt.Sprint(len(univalues)), "path in ", time.Since(t0))
 
