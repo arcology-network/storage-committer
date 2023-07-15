@@ -60,9 +60,9 @@ func (this *WriteCache) Read(tx uint32, path string) (interface{}, interface{}) 
 	return univalue.Get(tx, path, nil), univalue
 }
 
-func (this *WriteCache) Do(tx uint32, path string, do interface{}) interface{} {
+func (this *WriteCache) Do(tx uint32, path string, doer interface{}) interface{} {
 	univalue := this.GetOrInit(tx, path)
-	return univalue.Do(tx, path, do)
+	return univalue.Do(tx, path, doer)
 }
 
 // Get the value directly, skip the access counting at the univalue level
@@ -90,9 +90,7 @@ func (this *WriteCache) Write(tx uint32, path string, value interface{}, persist
 		}
 		return err
 	}
-
 	// strings.HasPrefix(parentPath, "container/") &&
-
 	return errors.New("Error: The parent path doesn't exist: " + parentPath)
 }
 

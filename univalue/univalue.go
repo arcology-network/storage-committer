@@ -72,12 +72,12 @@ func (this *Univalue) Reclaim() {
 	}
 }
 
-func (this *Univalue) Do(tx uint32, path string, do interface{}) interface{} {
-	ret := do.(func(interface{}) interface{})(this).([]interface{})
-	this.reads += ret[0].(uint32)
-	this.writes += ret[1].(uint32)
-	this.deltaWrites += ret[2].(uint32)
-	return ret[3]
+func (this *Univalue) Do(tx uint32, path string, doer interface{}) interface{} {
+	r, w, dw, ret := doer.(func(interface{}) (uint32, uint32, uint32, interface{}))(this)
+	this.reads += r
+	this.writes += w
+	this.deltaWrites += dw
+	return ret
 }
 
 func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{} {

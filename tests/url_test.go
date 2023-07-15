@@ -205,6 +205,10 @@ func TestBasic(t *testing.T) {
 		t.Error("Error: Failed to write blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-111")
 	}
 
+	if v, _ := url.Find(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", noncommutative.NewInt64(1111)); v != nil {
+		t.Error("Error: The path should have been deleted")
+	}
+
 	// Read the entry back
 	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"); value.(int64) != 1111 {
 		t.Error("Error: Wrong value")

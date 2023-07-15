@@ -141,6 +141,21 @@ func (this *ConcurrentUrl) IfExists(path string) bool {
 	return this.writeCache.IfExists(path)
 }
 
+func (this *ConcurrentUrl) Find(tx uint32, path string, value interface{}) (interface{}, uint64) {
+	if !common.IsPath(path) {
+		return nil, READ_NONEXIST //, errors.New("Error: Not a path!!!")
+	}
+
+	getter := func(v interface{}) (uint32, uint32, uint32, interface{}) { return 1, 0, 0, v }
+	if v, err := this.Do(tx, path, getter); err == nil {
+		pathInfo := v.(interfaces.Univalue).Value()
+		if common.IsType[*commutative.Path](pathInfo) && common.IsType[string](value) {
+			return pathInfo.(*commutative.Path).View().IdxOf(value.(string)), 0
+		}
+	}
+	return nil, READ_NONEXIST
+}
+
 func (this *ConcurrentUrl) Peek(path string) (interface{}, uint64) {
 	typedv, univ := this.writeCache.Peek(path)
 	return typedv, Fee{}.Reader(univ.(interfaces.Univalue))
@@ -165,8 +180,8 @@ func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}, pers
 	return fee, errors.New("Error: Unknown data type !")
 }
 
-func (this *ConcurrentUrl) Do(tx uint32, path string, do interface{}) (interface{}, error) {
-	return this.writeCache.Do(tx, path, do), nil
+func (this *ConcurrentUrl) Do(tx uint32, path string, doer interface{}) (interface{}, error) {
+	return this.writeCache.Do(tx, path, doer), nil
 }
 
 // Read th Nth element under a path
