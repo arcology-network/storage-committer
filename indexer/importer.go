@@ -62,9 +62,11 @@ func (this *Importer) RetriveShallow(key string) interface{} {
 }
 
 func (this *Importer) Import(txTrans []interfaces.Univalue, args ...interface{}) {
-	ifCommit := true
+	//txTrans = common.RemoveIf(&txTrans, func(v interfaces.Univalue) bool { return v.Persistent() })
+
+	commitIfAbsent := true // Write if absent from the local cache, this may happen with a partial cache
 	if len(args) > 0 && args[0] != nil {
-		ifCommit = args[0].(bool)
+		commitIfAbsent = args[0].(bool)
 	}
 
 	nKeys := make([]string, len(txTrans))
@@ -82,7 +84,7 @@ func (this *Importer) Import(txTrans []interfaces.Univalue, args ...interface{})
 		for i := start; i < end; i++ {
 			if deltaSeq[i] == nil { // The entry does't exist in the RWCache
 				preexist := txTrans[i].Preexist()
-				if inLocalCache[i] == nil && ifCommit && preexist { //preexists but not available locally
+				if inLocalCache[i] == nil && commitIfAbsent && preexist { //preexists, but not available locally
 					nKeys[i] = ""
 					txTrans[i] = nil
 					continue

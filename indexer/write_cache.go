@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strings"
 
 	common "github.com/arcology-network/common-lib/common"
 	mempool "github.com/arcology-network/common-lib/mempool"
@@ -59,9 +60,9 @@ func (this *WriteCache) Read(tx uint32, path string) (interface{}, interface{}) 
 	return univalue.Get(tx, path, nil), univalue
 }
 
-func (this *WriteCache) Do(tx uint32, path string, do interface{}) interface{} {
+func (this *WriteCache) Do(tx uint32, path string, doer interface{}) interface{} {
 	univalue := this.GetOrInit(tx, path)
-	return univalue.Do(tx, path, do)
+	return univalue.Do(tx, path, doer)
 }
 
 // Get the value directly, skip the access counting at the univalue level
@@ -74,19 +75,22 @@ func (this *WriteCache) Peek(path string) (interface{}, interface{}) {
 	return v, univalue.NewUnivalue(ccurlcommon.SYSTEM, path, 0, 0, 0, v)
 }
 
-func (this *WriteCache) Write(tx uint32, path string, value interface{}) error {
+func (this *WriteCache) Write(tx uint32, path string, value interface{}, persistent bool) error {
 	parentPath := common.GetParentPath(path)
 	if this.IfExists(parentPath) || tx == ccurlcommon.SYSTEM { // The parent path exists or to inject the path directly
 		univalue := this.GetOrInit(tx, path) // Get a univalue wrapper
 
 		err := univalue.Set(tx, path, value, this)
-		if !this.platform.IsSysPath(parentPath) && tx != ccurlcommon.SYSTEM && err == nil { // System paths don't keep track of child paths
-			parentMeta := this.GetOrInit(tx, parentPath)
-			err = parentMeta.Set(tx, path, univalue.Value(), this)
+		if err == nil {
+			if strings.HasSuffix(parentPath, "container/") || (!this.platform.IsSysPath(parentPath) &&
+				tx != ccurlcommon.SYSTEM) { // System paths don't keep track of child paths
+				parentMeta := this.GetOrInit(tx, parentPath)
+				err = parentMeta.Set(tx, path, univalue.Value(), this)
+			}
 		}
 		return err
 	}
-
+	// strings.HasPrefix(parentPath, "container/") &&
 	return errors.New("Error: The parent path doesn't exist: " + parentPath)
 }
 

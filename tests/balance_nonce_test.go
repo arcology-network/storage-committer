@@ -20,24 +20,24 @@ func TestSimpleBalance(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 	alice := datacompression.RandomAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
 	if _, err := url.Write(0, "blcc://eth1.0/account/"+alice+"/balance",
-		commutative.NewU256(commutative.U256_MIN, commutative.U256_MAX)); err != nil { //initialization
+		commutative.NewU256(commutative.U256_MIN, commutative.U256_MAX), true); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
 	// Add the first delta
 	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance",
-		commutative.NewU256Delta(uint256.NewInt(22), true)); err != nil {
+		commutative.NewU256Delta(uint256.NewInt(22), true), true); err != nil {
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
 	// Add the second delta
 	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance",
-		commutative.NewU256Delta(uint256.NewInt(11), true)); err != nil {
+		commutative.NewU256Delta(uint256.NewInt(11), true), true); err != nil {
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
@@ -65,7 +65,7 @@ func TestSimpleBalance(t *testing.T) {
 		t.Error("Error: Wrong blcc://eth1.0/account/alice/balance value")
 	}
 
-	url2.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(10), true))
+	url2.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(10), true), true)
 	balance, _ = url2.Read(1, "blcc://eth1.0/account/"+alice+"/balance")
 	if balance.(*uint256.Int).Cmp(uint256.NewInt(43)) != 0 {
 		t.Error("Error: Wrong blcc://eth1.0/account/alice/balance value")
@@ -89,19 +89,19 @@ func TestBalance(t *testing.T) {
 
 	url := ccurl.NewConcurrentUrl(store)
 	alice := datacompression.RandomAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
 	// create a path
 	path := commutative.NewPath()
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path, true); err != nil {
 		t.Error(err, " Failed to MakePath: blcc://eth1.0/account/alice/storage/ctrn-0/")
 	}
 
 	// create a noncommutative bigint
 	inV := noncommutative.NewBigint(100)
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0", inV); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0", inV, true); err != nil {
 		t.Error(err, " Failed to Write: blcc://eth1.0/account/alice/storage/ctrn-0/elem-0")
 	}
 
@@ -114,19 +114,19 @@ func TestBalance(t *testing.T) {
 
 	// -------------------Create another commutative bigint ------------------------------
 	comtVInit := commutative.NewU256(commutative.U256_MIN, commutative.U256_MAX)
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", comtVInit); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", comtVInit, true); err != nil {
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256Delta(uint256.NewInt(300), true)); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256Delta(uint256.NewInt(300), true), true); err != nil {
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256Delta(uint256.NewInt(1), true)); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256Delta(uint256.NewInt(1), true), true); err != nil {
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256Delta(uint256.NewInt(2), true)); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256Delta(uint256.NewInt(2), true), true); err != nil {
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
@@ -136,17 +136,17 @@ func TestBalance(t *testing.T) {
 	}
 
 	// ----------------------------U256 ---------------------------------------------------
-	if _, err := url.Write(0, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(0), true)); err != nil { //initialization
+	if _, err := url.Write(0, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(0), true), true); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
 	// Add the first delta
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(22), true)); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(22), true), true); err != nil {
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
 	// Add the second delta
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(11), true)); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(11), true), true); err != nil {
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
@@ -173,23 +173,23 @@ func TestNonce(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	url1 := ccurl.NewConcurrentUrl(store)
 	alice := datacompression.RandomAccount()
-	if err := url1.NewAccount(ccurlcommon.SYSTEM, url1.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
+	if err := url1.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
-	if _, err := url1.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64(0, math.MaxInt64)); err != nil { //initialization
+	if _, err := url1.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64(0, math.MaxInt64), true); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
-	if _, err := url1.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
+	if _, err := url1.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(1), true); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
-	if _, err := url1.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(2)); err != nil { //initialization
+	if _, err := url1.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(2), true); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
-	if _, err := url1.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(3)); err != nil { //initialization
+	if _, err := url1.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(3), true); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
@@ -216,16 +216,16 @@ func TestMultipleNonces(t *testing.T) {
 
 	url0 := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
-	if err := url0.NewAccount(ccurlcommon.SYSTEM, url0.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
+	if err := url0.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
-	url0.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64(0, math.MaxInt64))
-	if _, err := url0.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
+	url0.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64(0, math.MaxInt64), true)
+	if _, err := url0.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(1), true); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
-	if _, err := url0.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
+	if _, err := url0.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(1), true); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
@@ -236,17 +236,17 @@ func TestMultipleNonces(t *testing.T) {
 
 	url1 := ccurl.NewConcurrentUrl(store)
 	bob := BobAccount()
-	if err := url1.NewAccount(ccurlcommon.SYSTEM, url1.Platform.Eth10(), bob); err != nil { // NewAccount account structure {
+	if err := url1.NewAccount(ccurlcommon.SYSTEM, bob); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
-	url0.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64(0, math.MaxInt64))
+	url0.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64(0, math.MaxInt64), true)
 
-	if _, err := url1.Write(0, "blcc://eth1.0/account/"+bob+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
+	if _, err := url1.Write(0, "blcc://eth1.0/account/"+bob+"/nonce", commutative.NewUint64Delta(1), true); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+bob+"/balance")
 	}
 
-	if _, err := url1.Write(0, "blcc://eth1.0/account/"+bob+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
+	if _, err := url1.Write(0, "blcc://eth1.0/account/"+bob+"/nonce", commutative.NewUint64Delta(1), true); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+bob+"/balance")
 	}
 

@@ -13,8 +13,7 @@ import (
 )
 
 func TestCachePolicyLowScore(t *testing.T) {
-	/*
-		keys := make([]string, 5)
+	/*	keys := make([]string, 5)
 		nVals := make([]interface{}, len(keys))
 		for i := 0; i < len(keys); i++ {
 			keys[i] = fmt.Sprint(i)
@@ -119,10 +118,10 @@ func TestCacheWithPersistentStorage(t *testing.T) {
 	// First insertion
 	dataStore.BatchInject(keys, nVals)
 	//dataStore.CachePolicy().AddToBuffer(keys, nVals)
-	dataStore.CachePolicy().Refresh(dataStore.WriteCache())
+	dataStore.CachePolicy().Refresh(dataStore.Cache())
 	dataStore.CachePolicy().PrintScores()
 
-	dataStore.CachePolicy().Refresh(dataStore.WriteCache())
+	dataStore.CachePolicy().Refresh(dataStore.Cache())
 	dataStore.CachePolicy().PrintScores()
 
 	v := dataStore.BatchRetrive(keys)
@@ -151,10 +150,10 @@ func BenchmarkCachePolicy(b *testing.B) {
 
 	t0 := time.Now()
 	//dataStore.CachePolicy().AddToBuffer(keys, nVals)
-	dataStore.CachePolicy().Refresh(dataStore.WriteCache())
+	dataStore.CachePolicy().Refresh(dataStore.Cache())
 	fmt.Println("CachePolicy Refresh:", time.Since(t0))
 
 	t0 = time.Now()
-	dataStore.CachePolicy().Refresh(dataStore.WriteCache())
+	dataStore.CachePolicy().Refresh(dataStore.Cache())
 	fmt.Println("CachePolicy FreeMemory:", time.Since(t0))
 }

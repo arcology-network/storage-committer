@@ -25,7 +25,7 @@ func TestSize(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	alice := datacompression.RandomAccount()
 	url := ccurl.NewConcurrentUrl(store)
-	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -48,7 +48,7 @@ func TestAddThenDeletePath(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	alice := datacompression.RandomAccount()
 	url := ccurl.NewConcurrentUrl(store)
-	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -66,7 +66,7 @@ func TestAddThenDeletePath(t *testing.T) {
 	url.Init(store)
 	// create a path
 	path := commutative.NewPath()
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path, true); err != nil {
 		t.Error(err)
 	}
 
@@ -81,7 +81,7 @@ func TestAddThenDeletePath(t *testing.T) {
 	}
 
 	url.Init(store)
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil); err != nil { // Delete the path
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil, true); err != nil { // Delete the path
 		t.Error(err)
 	}
 
@@ -101,7 +101,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	alice := datacompression.RandomAccount()
 	url := ccurl.NewConcurrentUrl(store)
-	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -118,7 +118,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 	url.Init(store)
 	// create a path
 	path := commutative.NewPath()
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path, true); err != nil {
 		t.Error(err)
 	}
 
@@ -134,7 +134,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 	}
 
 	url.Init(store)
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil); err != nil { // Delete the path
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil, true); err != nil { // Delete the path
 		t.Error(err)
 	}
 
@@ -153,7 +153,7 @@ func TestBasic(t *testing.T) {
 
 	alice := datacompression.RandomAccount()
 	url := ccurl.NewConcurrentUrl(store)
-	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -165,13 +165,13 @@ func TestBasic(t *testing.T) {
 	url.Init(store)
 	// create a path
 	path := commutative.NewPath()
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path, true); err != nil {
 		t.Error(err)
 	}
 
 	// Try to rewrite a path, should fail !
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", noncommutative.NewString("path")); err == nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", noncommutative.NewString("path"), true); err == nil {
 		t.Error(err)
 	}
 
@@ -196,14 +196,18 @@ func TestBasic(t *testing.T) {
 	}
 
 	// Write the entry
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", noncommutative.NewInt64(1111)); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", noncommutative.NewInt64(1111), true); err != nil {
 		t.Error("Error: Failed to write blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-000")
 	}
 
 	// Write the entry
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-111", noncommutative.NewInt64(9999)); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-111", noncommutative.NewInt64(9999), true); err != nil {
 		t.Error("Error: Failed to write blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-111")
 	}
+
+	// if v, _ := url.Find(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", noncommutative.NewInt64(1111)); v != nil {
+	// 	t.Error("Error: The path should have been deleted")
+	// }
 
 	// Read the entry back
 	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"); value.(int64) != 1111 {
@@ -256,7 +260,7 @@ func TestPathAddThenDelete(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 	alice := datacompression.RandomAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -269,25 +273,25 @@ func TestPathAddThenDelete(t *testing.T) {
 	// url.Init(store)
 	// create a path
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.NewPath()); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.NewPath(), true); err != nil {
 		t.Error(err)
 	}
 
 	// Try to rewrite a path, should fail !
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", noncommutative.NewString("path")); err == nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", noncommutative.NewString("path"), true); err == nil {
 		t.Error(err)
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", noncommutative.NewInt64(0)); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", noncommutative.NewInt64(0), true); err != nil {
 		t.Error(err)
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", noncommutative.NewInt64(2222)); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", noncommutative.NewInt64(2222), true); err != nil {
 		t.Error(err)
 	}
 
 	// Write an entry having the the same name of a path, should go through
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil, true); err != nil {
 		t.Error(err)
 	}
 
@@ -304,15 +308,15 @@ func TestPathAddThenDelete(t *testing.T) {
 	}
 
 	// Write an entry having the the same name of a path, should go through
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.NewPath()); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.NewPath(), true); err != nil {
 		t.Error(err)
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-888", noncommutative.NewInt64(888)); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-888", noncommutative.NewInt64(888), true); err != nil {
 		t.Error(err)
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-999", noncommutative.NewInt64(999)); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-999", noncommutative.NewInt64(999), true); err != nil {
 		t.Error(err)
 	}
 
@@ -337,7 +341,7 @@ func TestUrl1(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 	alice := datacompression.RandomAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -351,40 +355,40 @@ func TestUrl1(t *testing.T) {
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	// url.Init(store)
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.NewPath()); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.NewPath(), true); err != nil {
 		t.Error(err)
 	}
 
 	// Write an entry having the the same name of a path, should go through
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0", noncommutative.NewString("ctrn-0")); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0", noncommutative.NewString("ctrn-0"), true); err != nil {
 		t.Error(err)
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/elem-0", noncommutative.NewString("elem-0")); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/elem-0", noncommutative.NewString("elem-0"), true); err != nil {
 		t.Error(err)
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", noncommutative.NewInt64(0)); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", noncommutative.NewInt64(0), true); err != nil {
 		t.Error(err)
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", noncommutative.NewInt64(2222)); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", noncommutative.NewInt64(2222), true); err != nil {
 		t.Error(err)
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-002", noncommutative.NewInt64(3333)); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-002", noncommutative.NewInt64(3333), true); err != nil {
 		t.Error(err)
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", noncommutative.NewInt64(5555)); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", noncommutative.NewInt64(5555), true); err != nil {
 		t.Error(err)
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", noncommutative.NewInt64(6666)); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", noncommutative.NewInt64(6666), true); err != nil {
 		t.Error(err)
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-002", noncommutative.NewInt64(7777)); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-002", noncommutative.NewInt64(7777), true); err != nil {
 		t.Error(err)
 	}
 
@@ -425,7 +429,7 @@ func TestUrl2(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 	alice := datacompression.RandomAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -437,31 +441,31 @@ func TestUrl2(t *testing.T) {
 	url.Init(store)
 	// Create a new container
 	path := commutative.NewPath()
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path, true); err != nil {
 		t.Error(err, "Error:  Failed to MakePath: "+"/ctrn-0/")
 	}
 
 	// Add a vaiable directly
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/elem-0", noncommutative.NewString("0000")); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/elem-0", noncommutative.NewString("0000"), true); err != nil {
 		t.Error(err, "Error:  Failed to Write: "+"/elem-0")
 	}
 
 	// Add the first element
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", noncommutative.NewInt64(1111)); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", noncommutative.NewInt64(1111), true); err != nil {
 		t.Error(err, "Error: Failed to Write: "+"/ctrn-0/elem-000")
 	}
 
 	// Add the second element
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", noncommutative.NewInt64(2222)); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", noncommutative.NewInt64(2222), true); err != nil {
 		t.Error(err, "Error:  Failed to Write: "+"/ctrn-0/elem-001")
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-002", noncommutative.NewInt64(3333)); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-002", noncommutative.NewInt64(3333), true); err != nil {
 		t.Error(err, "Error:  Failed to Write: "+"/ctrn-0/elem-002")
 	}
 
 	// Write to an nonexistent path, will fail, but leave a couple of access records
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-1/elem-002", noncommutative.NewInt64(3333)); err == nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-1/elem-002", noncommutative.NewInt64(3333), true); err == nil {
 		t.Error(err, "Error:    /ctrn-1/ does not exist, the Write should fail!!")
 	}
 
@@ -498,11 +502,11 @@ func TestUrl2(t *testing.T) {
 	}
 
 	// Delete elem-00
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", nil); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", nil, true); err != nil {
 		t.Error("Error: Failed to delete: " + "blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-000")
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", nil); err == nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", nil, true); err == nil {
 		t.Error("Error: Failed to delete: " + "blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-000")
 	}
 
@@ -522,7 +526,7 @@ func TestUrl2(t *testing.T) {
 	}
 
 	// Readd elem-00 back
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", noncommutative.NewInt64(9999)); err != nil { // delete
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", noncommutative.NewInt64(9999), true); err != nil { // delete
 		t.Error("Error: Failed to write: " + "/ctrn-0/elem-000")
 	}
 
@@ -547,7 +551,7 @@ func TestUrl2(t *testing.T) {
 	// }
 
 	/* Remove the path and all the elements underneath */
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil); err != nil { // Delete the path and its sub paths
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil, true); err != nil { // Delete the path and its sub paths
 		t.Error(err, "Failed to remove path: "+"/ctrn-0/")
 	}
 
@@ -606,7 +610,7 @@ func TestUrl2(t *testing.T) {
 // 	store := cachedstorage.NewDataStore()
 // 	url := ccurl.NewConcurrentUrl(store)
 // 	alice := datacompression.RandomAccount()
-// 	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
+// 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 // 		t.Error(err)
 // 	}
 
@@ -650,20 +654,20 @@ func TestCommutative(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 	alice := datacompression.RandomAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
 	// create a path
 	path := commutative.NewPath()
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path, true); err != nil {
 		t.Error(err, " Failed to MakePath: blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
 	}
 
 	// create a noncommutative bigint
 	inV := noncommutative.NewBigint(100)
 	value := (*big.Int)(inV.(*noncommutative.Bigint))
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0", inV); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0", inV, true); err != nil {
 		t.Error(err, " Failed to Write: blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0")
 	}
 
@@ -674,27 +678,27 @@ func TestCommutative(t *testing.T) {
 	}
 
 	// -------------------Create a commutative UINT256 ------------------------------
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256(commutative.U256_MIN, commutative.U256_MAX)); err != nil { // 0
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256(commutative.U256_MIN, commutative.U256_MAX), true); err != nil { // 0
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256Delta(uint256.NewInt(300), true)); err != nil { // 300
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256Delta(uint256.NewInt(300), true), true); err != nil { // 300
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256(commutative.U256_MIN, commutative.U256_MAX)); err != nil { // still 300
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256(commutative.U256_MIN, commutative.U256_MAX), true); err != nil { // still 300
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256Delta(uint256.NewInt(300), true)); err != nil { //  600
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256Delta(uint256.NewInt(300), true), true); err != nil { //  600
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256(commutative.U256_MIN, commutative.U256_MAX)); err != nil { // still 300
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256(commutative.U256_MIN, commutative.U256_MAX), true); err != nil { // still 300
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256Delta(uint256.NewInt(300), false)); err != nil { // 600 - 300 = 300
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256Delta(uint256.NewInt(300), false), true); err != nil { // 600 - 300 = 300
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
@@ -705,17 +709,17 @@ func TestCommutative(t *testing.T) {
 
 	// ----------------------------U256 ---------------------------------------------------
 	if _, err := url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/balance",
-		commutative.NewU256(commutative.U256_MIN, commutative.U256_MAX)); err != nil { //initialization
+		commutative.NewU256(commutative.U256_MIN, commutative.U256_MAX), true); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
 	// Add the first delta
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(22), true)); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(22), true), true); err != nil {
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
 	// Add the second delta
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(11), true)); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(11), true), true); err != nil {
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
@@ -759,40 +763,40 @@ func TestNestedPath(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 	alice := datacompression.RandomAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
 	// create a path
 	path := commutative.NewPath()
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path, true); err != nil {
 		t.Error(err)
 	}
 
 	// create a sub path
 	path = commutative.NewPath()
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/ctrn-00/", path); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/ctrn-00/", path, true); err != nil {
 		t.Error(err)
 	}
 
 	// Try to rewrite a path, should fail !
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-00", noncommutative.NewString("elem-00")); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-00", noncommutative.NewString("elem-00"), true); err != nil {
 		t.Error(err)
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-01", noncommutative.NewInt64(1234)); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-01", noncommutative.NewInt64(1234), true); err != nil {
 		t.Error(err)
 	}
 
 	// The first element !
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/ctrn-00/elem-00", noncommutative.NewString("elem-00")); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/ctrn-00/elem-00", noncommutative.NewString("elem-00"), true); err != nil {
 		t.Error(err)
 	}
 
 	// The second element
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/ctrn-00/elem-01", noncommutative.NewString("elem-01")); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/ctrn-00/elem-01", noncommutative.NewString("elem-01"), true); err != nil {
 		t.Error(err)
 	}
 
@@ -808,7 +812,7 @@ func TestNestedPath(t *testing.T) {
 	}
 
 	/* Remove the path */
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil, true); err != nil {
 		t.Error(err)
 	}
 

@@ -20,11 +20,11 @@ func TestPartialCache(t *testing.T) {
 	store := cachedstorage.NewDataStore(nil, policy, memDB, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
 	alice := datacompression.RandomAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
-	url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
+	url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"), true)
 	acctTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
 	url.Sort()
@@ -36,9 +36,9 @@ func TestPartialCache(t *testing.T) {
 		return name != "*cachedstorage.MemDB"
 	}
 
-	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999"))
+	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999"), true)
 	acctTrans = indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
-	url.Importer().Store().(*cachedstorage.DataStore).WriteCache().Clear()
+	url.Importer().Store().(*cachedstorage.DataStore).Cache().Clear()
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues), true, excludeMemDB) // The changes will be discarded.
 	url.Sort()
 	url.Commit([]uint32{1})
@@ -52,8 +52,8 @@ func TestPartialCache(t *testing.T) {
 	// }
 
 	/* Don't filter persistent data source	*/
-	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999"))
-	url.Importer().Store().(*cachedstorage.DataStore).WriteCache().Clear()                            // Make sure only the persistent storage has the data.
+	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999"), true)
+	url.Importer().Store().(*cachedstorage.DataStore).Cache().Clear()                                 // Make sure only the persistent storage has the data.
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues)) // This should take effect
 	url.Sort()
 	url.Commit([]uint32{1})
@@ -79,24 +79,30 @@ func TestPartialCacheWithFilter(t *testing.T) {
 	store := cachedstorage.NewDataStore(nil, policy, memDB, storage.Codec{}.Encode, storage.Codec{}.Decode, excludeMemDB)
 	url := ccurl.NewConcurrentUrl(store)
 	alice := datacompression.RandomAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
-	url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
+	url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"), true)
 	acctTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
 	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999")); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999"), true); err != nil {
 		t.Error(err)
 	}
 
 	acctTrans = indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
-	url.Importer().Store().(*cachedstorage.DataStore).WriteCache().Clear()
-	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues), true, excludeMemDB) // The changes will be discarded.
+	// url := ccurl.NewConcurrentUrl(store)
+
+	url.WriteCache().Clear()
+
+	// ccmap2 := url.Importer().Store().(*cachedstorage.DataStore).Cache()
+	// fmt.Print(ccmap2)
+	out := indexer.Univalues{}.Decode(indexer.Univalues(common.Clone(acctTrans)).Encode()).(indexer.Univalues)
+	url.Import(out, true, excludeMemDB) // The changes will be discarded.
 	url.Sort()
 	url.Commit([]uint32{1})
 

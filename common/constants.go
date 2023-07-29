@@ -5,12 +5,17 @@ import (
 )
 
 const (
-	MAX_DEPTH            uint8 = 12
-	SYSTEM                     = math.MaxInt32
-	ETH10_ACCOUNT_LENGTH       = 40
+	MAX_DEPTH uint8 = 12
+	SYSTEM          = math.MaxInt32
+
+	ETH10                       = "blcc://eth1.0/"
+	ETH10_ACCOUNT_PREFIX        = ETH10 + "account/"
+	ETH10_ACCOUNT_PREFIX_LENGTH = len(ETH10_ACCOUNT_PREFIX)
+	ETH10_ACCOUNT_LENGTH        = 40
+	ETH10_ACCOUNT_FULL_LENGTH   = ETH10_ACCOUNT_PREFIX_LENGTH + ETH10_ACCOUNT_LENGTH
 )
 
-var ERR_OUT_OF_LOWER_LIMIT string = "Error: Out of the lower limit!"
-var ERR_OUT_OF_UPPER_LIMIT string = "Error: Out of the upper limit!"
-var ERR_ACCESS_CONFLICT = "Error: State access conflict detected!"
-var ERR_EXEC_FAILED = "Error: Execution execution failed!"
+var WARN_OUT_OF_LOWER_LIMIT string = "Warning: Out of the lower limit!"
+var WARN_OUT_OF_UPPER_LIMIT string = "Warning: Out of the upper limit!"
+var WARN_ACCESS_CONFLICT = "Warning: State access conflict detected!"
+var WARN_EXEC_FAILED = "Warning: Execution execution failed!"

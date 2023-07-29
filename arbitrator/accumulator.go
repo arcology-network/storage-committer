@@ -27,7 +27,7 @@ func (this *Accumulator) CheckMinMax(transitions []interfaces.Univalue) []*Confl
 		return nil
 	}
 
-	sort.Slice(transitions, func(i, j int) bool {
+	sort.SliceStable(transitions, func(i, j int) bool {
 		lhv := transitions[i].Value().(interfaces.Type)
 		rhv := transitions[i].Value().(interfaces.Type)
 		return lhv.DeltaSign() != rhv.DeltaSign() && !lhv.DeltaSign()
@@ -37,12 +37,12 @@ func (this *Accumulator) CheckMinMax(transitions []interfaces.Univalue) []*Confl
 
 	underflown := this.isOutOfLimits(*(transitions)[0].GetPath(), negatives)
 	if underflown != nil {
-		underflown.Err = errors.New(ccurlcommon.ERR_OUT_OF_LOWER_LIMIT)
+		underflown.Err = errors.New(ccurlcommon.WARN_OUT_OF_LOWER_LIMIT)
 	}
 
 	overflown := this.isOutOfLimits(*(transitions)[0].GetPath(), positives)
 	if overflown != nil {
-		overflown.Err = errors.New(ccurlcommon.ERR_OUT_OF_UPPER_LIMIT)
+		overflown.Err = errors.New(ccurlcommon.WARN_OUT_OF_UPPER_LIMIT)
 	}
 
 	if overflown == nil && underflown == nil {

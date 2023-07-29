@@ -18,7 +18,7 @@ func TestAddAndDelete(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 	alice := datacompression.RandomAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -29,7 +29,7 @@ func TestAddAndDelete(t *testing.T) {
 
 	url.Init(store)
 	path := commutative.NewPath()
-	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
+	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path, true)
 
 	acctTrans = indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
@@ -37,7 +37,7 @@ func TestAddAndDelete(t *testing.T) {
 	url.Commit([]uint32{1})
 
 	url.Init(store)
-	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/4", nil) // Delete an non-existing entry, should NOT appear in the transitions
+	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/4", nil, true) // Delete an non-existing entry, should NOT appear in the transitions
 
 	raw := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	if acctTrans := raw; len(acctTrans) != 0 {
@@ -49,7 +49,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 	alice := datacompression.RandomAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -62,7 +62,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 	url.Init(store)
 	// create a path
 	path := commutative.NewPath()
-	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
+	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path, true)
 	// _, addPath := url.Export(indexer.Sorter)
 	addPath := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
@@ -72,7 +72,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 	url.Commit([]uint32{1})
 
 	url.Init(store)
-	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewInt64(1))
+	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewInt64(1), true)
 	// _, addTrans := url.Export(indexer.Sorter)
 	addTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	// url.Import(url.Decode(indexer.Univalues(addTrans).Encode()))
@@ -89,7 +89,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 		t.Error("Error: Failed to read the key !")
 	}
 
-	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", nil)
+	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", nil, true)
 	// _, deleteTrans := url2.Export(indexer.Sorter)
 	deleteTrans := indexer.Univalues(common.Clone(url2.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
@@ -111,7 +111,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 	alice := datacompression.RandomAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -121,7 +121,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 
 	url.Init(store)
 	path := commutative.NewPath()
-	_, err := url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/containers/ctrn-0/", path)
+	_, err := url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", path, true)
 
 	if err != nil {
 		t.Error("error")
@@ -133,7 +133,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 	url.Commit([]uint32{1})
 
 	url.Init(store)
-	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/4", nil)
+	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/4", nil, true)
 
 	if acctTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{}); len(acctTrans) != 0 {
 		t.Error("Error: Wrong number of transitions")
@@ -144,7 +144,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 	alice := datacompression.RandomAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -161,9 +161,9 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	url.Init(store)
 	// create a path
 	path := commutative.NewPath()
-	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
-	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewString("1"))
-	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/2", noncommutative.NewString("2"))
+	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path, true)
+	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewString("1"), true)
+	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/2", noncommutative.NewString("2"), true)
 
 	acctTrans = indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	in = indexer.Univalues(acctTrans).Encode()
@@ -174,15 +174,15 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	url.Commit([]uint32{1})
 
 	url.Init(store)
-	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewString("3"))
-	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/2", noncommutative.NewString("4"))
+	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewString("3"), true)
+	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/2", noncommutative.NewString("4"), true)
 
 	path, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
 	if reflect.DeepEqual(path.([]string), []string{"1", "2", "3", "4"}) {
 		t.Error("Error: Not match")
 	}
 
-	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil) // delete the path
+	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil, true) // delete the path
 	if acctTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{}); len(acctTrans) != 3 {
 		t.Error("Error: Wrong number of transitions")
 	}
@@ -192,7 +192,7 @@ func TestStateUpdate(t *testing.T) {
 	store := cachedstorage.NewDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 	alice := datacompression.RandomAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
+	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	// _, initTrans := url.Export(indexer.Sorter)
@@ -243,7 +243,7 @@ func TestStateUpdate(t *testing.T) {
 	}
 
 	// Delete the container-0
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil, true); err != nil {
 		t.Error("Error: Cann't delete a path twice !")
 	}
 
@@ -267,7 +267,7 @@ func TestStateUpdate(t *testing.T) {
 // 	store := cachedstorage.NewDataStore()
 // 	url := ccurl.NewConcurrentUrl(store)
 // 	alice := datacompression.RandomAccount()
-// 	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
+// 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 // 		t.Error(err)
 // 	}
 
@@ -337,7 +337,7 @@ func TestStateUpdate(t *testing.T) {
 // 	store := cachedstorage.NewDataStore()
 // 	url := ccurl.NewConcurrentUrl(store)
 // 	alice := datacompression.RandomAccount()
-// 	if err := url.NewAccount(ccurlcommon.SYSTEM, url.Platform.Eth10(), alice); err != nil { // NewAccount account structure {
+// 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 // 		t.Error(err)
 // 	}
 

@@ -1,23 +1,10 @@
 package concurrenturl
 
 import (
-	"math"
-
 	common "github.com/arcology-network/common-lib/common"
+	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
-)
-
-const (
-	MAX_DEPTH            uint8 = 12
-	SYSTEM                     = math.MaxInt32
-	ETH10_ACCOUNT_LENGTH       = 40
-
-	Idx_PathKey_Code      = 1
-	Idx_PathKey_Nonce     = 2
-	Idx_PathKey_Balance   = 3
-	Idx_PathKey_Container = 5
-	Idx_PathKey_Native    = 6
 )
 
 type Platform struct {
@@ -27,21 +14,16 @@ type Platform struct {
 func NewPlatform() *Platform {
 	return &Platform{
 		map[string]uint8{
-			"/":                    commutative.PATH,
-			"/code":                noncommutative.BYTES,
-			"/nonce":               commutative.UINT64,
-			"/balance":             commutative.UINT256,
-			"/storage/":            commutative.PATH,
-			"/storage/containers/": commutative.PATH,
-			"/storage/native/":     commutative.PATH,
+			"/":                      commutative.PATH,
+			"/code":                  noncommutative.BYTES,
+			"/nonce":                 commutative.UINT64,
+			"/balance":               commutative.UINT256,
+			"/storage/":              commutative.PATH,
+			"/storage/container/":    commutative.PATH,
+			"/storage/native/":       commutative.PATH,
+			"/storage/native/local/": commutative.PATH,
 		},
 	}
-}
-
-func (this *Platform) Eth10() string        { return "blcc://eth1.0/" }
-func (this *Platform) Eth10Account() string { return this.Eth10() + "account/" }
-func (this *Platform) Eth10AccountLenght() int {
-	return len(this.Eth10()+"account/") + ETH10_ACCOUNT_LENGTH
 }
 
 func Eth10AccountShard(numOfShard int, key string) int {
@@ -51,7 +33,7 @@ func Eth10AccountShard(numOfShard int, key string) int {
 	return (hex2int(key[22])*16 + hex2int(key[23])) % numOfShard
 }
 
-func (this *Platform) RootLength() int { return len(this.Eth10Account()) + ETH10_ACCOUNT_LENGTH }
+// func (this *Platform) RootLength() int { return len(this.Eth10Account()) + 40 }
 
 func hex2int(c byte) int {
 	if c >= 'a' {
@@ -67,18 +49,18 @@ func (this *Platform) GetBuiltins(acct string) ([]string, []uint8) {
 	common.SortBy1st(paths, typeIds, func(lhv, rhv string) bool { return lhv < rhv })
 
 	for i, path := range paths {
-		paths[i] = this.Eth10Account() + acct + path
+		paths[i] = ccurlcommon.ETH10_ACCOUNT_PREFIX + acct + path
 	}
 	return paths, typeIds
 }
 
 // These paths won't keep the sub elements
 func (this *Platform) IsSysPath(path string) bool {
-	if len(path) <= this.Eth10AccountLenght() {
-		return path == this.Eth10() || path == this.Eth10Account()
+	if len(path) <= ccurlcommon.ETH10_ACCOUNT_FULL_LENGTH {
+		return path == ccurlcommon.ETH10 || path == ccurlcommon.ETH10_ACCOUNT_PREFIX
 	}
 
-	subPath := path[this.Eth10AccountLenght():] // Removed the shared part
+	subPath := path[ccurlcommon.ETH10_ACCOUNT_FULL_LENGTH:] // Removed the shared part
 	_, ok := this.syspaths[subPath]
 	return ok
 }
@@ -89,5 +71,5 @@ func (this *Platform) GetSysPaths() []string {
 
 func (this *Platform) Builtins(acct string, idx int) string {
 	paths, _ := common.MapKVs(this.syspaths)
-	return this.Eth10Account() + acct + paths[idx]
+	return ccurlcommon.ETH10_ACCOUNT_PREFIX + acct + paths[idx]
 }

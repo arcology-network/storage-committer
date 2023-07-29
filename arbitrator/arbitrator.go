@@ -2,8 +2,6 @@ package indexer
 
 import (
 	"errors"
-	"fmt"
-	"time"
 
 	common "github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
@@ -27,14 +25,14 @@ func (this *Arbitrator) Detect(groupIDs []uint32, newTrans []interfaces.Univalue
 		return []*Conflict{}
 	}
 
-	t0 := time.Now()
+	// t0 := time.Now()
 	indexer.Univalues(newTrans).Sort(
 		func(i, j int) bool { return this.groupIDs[i] == this.groupIDs[j] },
 		func(i, j int) bool { return this.groupIDs[i] < this.groupIDs[j] },
 	)
 
 	//by gas used first
-	fmt.Println("Sort: ", time.Since(t0))
+	// fmt.Println("Sort:")
 
 	ranges := common.FindRange(newTrans, func(lhv, rhv interfaces.Univalue) bool {
 		return *lhv.GetPath() == *rhv.GetPath()
@@ -75,7 +73,7 @@ func (this *Arbitrator) Detect(groupIDs []uint32, newTrans []interfaces.Univalue
 			&Conflict{
 				key:   *newTrans[ranges[i]].GetPath(),
 				txIDs: conflictTxs,
-				Err:   errors.New(ccurlcommon.ERR_ACCESS_CONFLICT),
+				Err:   errors.New(ccurlcommon.WARN_ACCESS_CONFLICT),
 			},
 		)
 
@@ -99,9 +97,19 @@ func (this *Arbitrator) Detect(groupIDs []uint32, newTrans []interfaces.Univalue
 		dict := common.MapFromArray(conflictTxs, true) //Conflict dict
 		trans := common.CopyIf(newTrans[ranges[i]+offset:ranges[i+1]], func(v interfaces.Univalue) bool { return (*dict)[v.GetTx()] })
 
+		// if len(*dict) > 0 {
+		// 	fmt.Println("Conflict Detected: ", len(*dict))
+		// 	fmt.Println("index: ", i)
+		// 	indexer.Univalues(newTrans[ranges[i]+offset : ranges[i+1]]).Print()
+		// }
+
 		if outOfLimits := (&Accumulator{}).CheckMinMax(trans); outOfLimits != nil {
 			conflicts = append(conflicts, outOfLimits...)
 		}
 	}
+
+	// if len(conflicts) > 0 {
+	// 	fmt.Println("range: ", ranges)
+	// }
 	return conflicts
 }

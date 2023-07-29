@@ -8,19 +8,20 @@ import (
 	datacompression "github.com/arcology-network/common-lib/datacompression"
 	"github.com/arcology-network/concurrenturl"
 	ccurl "github.com/arcology-network/concurrenturl"
+	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 )
 
 func TestMultiAccountCreation(t *testing.T) {
 	store := cachedstorage.NewDataStore()
-	store.Inject((ccurl.NewPlatform().Eth10Account()), commutative.NewPath())
+	store.Inject((ccurlcommon.ETH10_ACCOUNT_PREFIX), commutative.NewPath())
 	url := ccurl.NewConcurrentUrl(store)
 
 	accounts := make([]string, 10)
 	for i := 0; i < len(accounts); i++ {
 		accounts[i] = datacompression.RandomAccount()
-		if err := url.NewAccount(0, (url.Platform.Eth10()), accounts[i]); err != nil { // Preload account structure {
+		if err := url.NewAccount(0, accounts[i]); err != nil { // Preload account structure {
 			t.Error(err)
 		}
 	}
