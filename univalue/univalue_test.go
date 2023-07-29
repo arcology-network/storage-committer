@@ -21,6 +21,7 @@ func TestUnivalueCodecUint64(t *testing.T) {
 	in.reads = 1
 	in.writes = 2
 	in.deltaWrites = 3
+	in.preexists = true
 
 	bytes := in.Encode()
 	v := (&Univalue{}).Decode(bytes).(*Univalue)

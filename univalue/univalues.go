@@ -9,8 +9,7 @@ func UnivaluesDecode(bytesset [][]byte, get func() interface{}, put func(interfa
 	for i := range bytesset {
 		v := get().(*Univalue)
 		v.reclaimFunc = put
-		v.Decode(bytesset[i])
-		univalues[i] = v
+		univalues[i] = v.Decode(bytesset[i]).(interfaces.Univalue)
 	}
 	return univalues
 }

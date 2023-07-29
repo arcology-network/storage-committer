@@ -69,7 +69,7 @@ func (this *Unimeta) Decode(buffer []byte) interface{} {
 	this.reads = uint32(codec.Uint32(1).Decode(fields[3]).(codec.Uint32))
 	this.writes = uint32(codec.Uint32(1).Decode(fields[4]).(codec.Uint32))
 	this.deltaWrites = uint32(codec.Uint32(1).Decode(fields[5]).(codec.Uint32))
-
+	this.preexists = bool(codec.Bool(false).Decode(fields[6]).(codec.Bool))
 	return this
 }
 
