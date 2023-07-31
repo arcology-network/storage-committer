@@ -36,7 +36,7 @@ func NewUnivalue(tx uint32, key string, reads, writes uint32, deltaWrites uint32
 
 func (*Univalue) New(meta, value, cache interface{}) interface{} {
 	return &Univalue{
-		meta.(Unimeta),
+		*meta.(*Unimeta),
 		value,
 		cache.([]byte),
 	}
@@ -52,7 +52,7 @@ func (this *Univalue) ClearCache()                   { this.cache = this.cache[:
 func (this *Univalue) Value() interface{}            { return this.value }
 func (this *Univalue) SetValue(newValue interface{}) { this.value = newValue }
 
-func (this *Univalue) GetUnimeta() interface{} { return this.Unimeta }
+func (this *Univalue) GetUnimeta() interface{} { return &this.Unimeta }
 func (this *Univalue) GetCache() interface{}   { return this.cache }
 
 func (this *Univalue) Init(tx uint32, key string, reads, writes, deltaWrites uint32, v interface{}, args ...interface{}) {

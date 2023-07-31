@@ -28,7 +28,7 @@ func TestUnivalueCodecUint64(t *testing.T) {
 
 	unimeta := v.GetUnimeta().(*Unimeta)
 	inUnimeta := in.GetUnimeta().(*Unimeta)
-	if !inUnimeta.Equal(unimeta) {
+	if !(*inUnimeta).Equal(unimeta) {
 		t.Error("Error")
 	}
 
