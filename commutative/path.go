@@ -39,6 +39,7 @@ func (this *Path) Min() interface{}   { return nil }
 func (this *Path) Max() interface{}   { return nil }
 
 func (this *Path) SetValue(v interface{})     { this.value = v.(*orderedset.OrderedSet) }
+func (this *Path) ResetDelta()                { this.SetDelta(NewPathDelta([]string{}, []string{})) }
 func (this *Path) SetDelta(v interface{})     { this.delta = v.(*PathDelta) }
 func (this *Path) SetDeltaSign(v interface{}) {}
 func (this *Path) SetMin(v interface{})       {}

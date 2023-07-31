@@ -97,7 +97,9 @@ func (this *U256) DeltaSign() bool    { return this.deltaPositive }
 func (this *U256) Min() interface{}   { return this.min }
 func (this *U256) Max() interface{}   { return this.max }
 
-func (this *U256) SetValue(v interface{})     { this.value = (v.(*codec.Uint256)) }
+func (this *U256) SetValue(v interface{}) { this.value = (v.(*codec.Uint256)) }
+
+func (this *U256) ResetDelta()                { this.SetDelta((*codec.Uint256)(U256_ZERO.Clone())) }
 func (this *U256) SetDelta(v interface{})     { this.delta = (v.(*codec.Uint256)) }
 func (this *U256) SetDeltaSign(v interface{}) { this.deltaPositive = (v.(bool)) }
 func (this *U256) SetMin(v interface{})       { this.min = (v.(*codec.Uint256)) }

@@ -193,18 +193,6 @@ func (this *Univalue) Clone() interface{} {
 }
 
 func (this *Univalue) Less(other *Univalue) bool {
-	// if *this.path != *other.path {
-	// 	return bytes.Compare([]byte(*this.path), []byte(*other.path)) < 0
-	// }
-
-	// if !equal(i, j) {
-	// 	return compare(i, j)
-	// }
-
-	// if this.tx != other.tx {
-	// 	return this.tx < other.tx
-	// }
-
 	if (this.value == nil || other.value == nil) && (this.value != other.value) {
 		return this.value == nil
 	}

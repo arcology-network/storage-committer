@@ -57,7 +57,9 @@ func (this *Bytes) DeltaSign() bool    { return true } // delta sign
 func (this *Bytes) Min() interface{}   { return nil }
 func (this *Bytes) Max() interface{}   { return nil }
 
-func (this *Bytes) SetValue(v interface{})     { this.SetDelta(v) }
+func (this *Bytes) SetValue(v interface{}) { this.SetDelta(v) }
+
+func (this *Bytes) ResetDelta()                { this.SetDelta(codec.Bytes([]byte{})) }
 func (this *Bytes) SetDelta(v interface{})     { copy(this.value, v.(codec.Bytes)) }
 func (this *Bytes) SetDeltaSign(v interface{}) {}
 func (this *Bytes) SetMin(v interface{})       {}

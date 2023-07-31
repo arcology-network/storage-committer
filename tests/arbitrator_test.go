@@ -140,7 +140,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	conflictDict := arbitrator.Conflicts(ids).ToDict()
 
 	if len(*conflictDict) != 1 {
-		t.Error("Error: There shouldn 1 conflict")
+		t.Error("Error: There should be 1 conflict")
 	}
 
 	toCommit := common.Exclude([]uint32{1, 2}, common.MapKeys(*conflictDict))
@@ -194,52 +194,53 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	}
 }
 
-func TestTimeSimpleArbitrator(b *testing.T) {
-	// t0 := time.Now()
-	alice := datacompression.RandomAccount()
-	univalues := make([]interfaces.Univalue, 5*200000)
-	v := commutative.NewPath()
-	tx := make([]uint32, len(univalues)/5)
-	for i := 0; i < len(univalues)/5; i++ {
-		univalues[i*5] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
-		univalues[i*5+1] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
-		univalues[i*5+2] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
-		univalues[i*5+3] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
-		univalues[i*5+4] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
-		tx[i] = uint32(i)
-		tx[i] = uint32(i)
-		tx[i] = uint32(i)
-		tx[i] = uint32(i)
-		tx[i] = uint32(i)
-	}
-	// fmt.Println("Create "+fmt.Sprint(len(univalues)), "path in ", time.Since(t0))
+// func TestTimeSimpleArbitrator(b *testing.T) {
+// 	// t0 := time.Now()
+// 	alice := datacompression.RandomAccount()
+// 	univalues := make([]interfaces.Univalue, 0, 5*10000)
+// 	v := commutative.NewPath()
+// 	tx := make([]uint32, 0, len(univalues)/5)
+// 	for i := 0; i < len(univalues)/5; i++ {
+// 		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v))
+// 		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v))
+// 		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v))
+// 		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v))
+// 		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v))
 
-	t0 := time.Now()
-	(&arbitrator.Arbitrator{}).Detect(tx, univalues)
-	fmt.Println("Detect "+fmt.Sprint(len(univalues)), "path in ", time.Since(t0))
-}
+// 		tx = append(tx, uint32(i))
+// 		tx = append(tx, uint32(i))
+// 		tx = append(tx, uint32(i))
+// 		tx = append(tx, uint32(i))
+// 		tx = append(tx, uint32(i))
+// 	}
+// 	// fmt.Println("Create "+fmt.Sprint(len(univalues)), "path in ", time.Since(t0))
+
+// 	t0 := time.Now()
+// 	(&arbitrator.Arbitrator{}).Detect(tx, univalues)
+// 	fmt.Println("Detect "+fmt.Sprint(len(univalues)), "path in ", time.Since(t0))
+// }
 
 func BenchmarkSimpleArbitrator(b *testing.B) {
-	// t0 := time.Now()
 	alice := datacompression.RandomAccount()
-	univalues := make([]interfaces.Univalue, 5*200000)
+	univalues := make([]interfaces.Univalue, 0, 5*200000)
+	groupIDs := make([]uint32, 0, len(univalues))
+
 	v := commutative.NewPath()
-	tx := make([]uint32, len(univalues)/5)
 	for i := 0; i < len(univalues)/5; i++ {
-		univalues[i*5] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
-		univalues[i*5+1] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
-		univalues[i*5+2] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
-		univalues[i*5+3] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
-		univalues[i*5+4] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
-		// tx[i] = uint32(i)
-		// tx[i] = uint32(i)
-		// tx[i] = uint32(i)
-		// tx[i] = uint32(i)
-		// tx[i] = uint32(i)
+		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v))
+		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v))
+		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v))
+		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v))
+		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v))
+
+		groupIDs = append(groupIDs, uint32(i))
+		groupIDs = append(groupIDs, uint32(i))
+		groupIDs = append(groupIDs, uint32(i))
+		groupIDs = append(groupIDs, uint32(i))
+		groupIDs = append(groupIDs, uint32(i))
 	}
-	// fmt.Println("Create "+fmt.Sprint(len(univalues)), "path in ", time.Since(t0))
 
 	t0 := time.Now()
-	(&arbitrator.Arbitrator{}).Detect(tx, univalues)
+	(&arbitrator.Arbitrator{}).Detect(groupIDs, univalues)
 	fmt.Println("Detect "+fmt.Sprint(len(univalues)), "path in ", time.Since(t0))
 }

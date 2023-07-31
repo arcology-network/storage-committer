@@ -55,6 +55,10 @@ func (this Univalues) Equal(other Univalues) bool {
 	return true
 }
 
+func (this Univalues) Clone() Univalues {
+	return common.Clone(this)
+}
+
 func (this Univalues) UniqueTXs() []uint32 {
 	var ids []uint32
 	for i := 0; i < len(this); i++ {
@@ -65,13 +69,14 @@ func (this Univalues) UniqueTXs() []uint32 {
 	return common.UniqueInts(ids)
 }
 
-func (this Univalues) Sort(equal func(i, j int) bool, compare func(i, j int) bool) Univalues {
+func (this Univalues) Sort(groupIDs []uint32) Univalues {
 	sortees := make([]struct {
-		length int
-		str    string
-		bytes  []byte
-		tx     uint32
-		value  interfaces.Univalue
+		groupID uint32
+		length  int
+		str     string
+		bytes   []byte
+		tx      uint32
+		value   interfaces.Univalue
 	}, len(this))
 
 	// t0 := time.Now()
@@ -80,11 +85,12 @@ func (this Univalues) Sort(equal func(i, j int) bool, compare func(i, j int) boo
 		bytes := *codec.UnsafeStringToBytes(str) // 100% faster than ([]byte(*str))
 
 		sortees[i] = struct {
-			length int
-			str    string
-			bytes  []byte
-			tx     uint32
-			value  interfaces.Univalue
+			groupID uint32
+			length  int
+			str     string
+			bytes   []byte
+			tx      uint32
+			value   interfaces.Univalue
 		}{
 			length: len(bytes),
 			str:    *str,
@@ -92,8 +98,11 @@ func (this Univalues) Sort(equal func(i, j int) bool, compare func(i, j int) boo
 			tx:     this[i].GetTx(),
 			value:  this[i],
 		}
+
+		if groupIDs != nil {
+			sortees[i].groupID = groupIDs[i]
+		}
 	}
-	// fmt.Println("Sorted ", len(this), "entires in :", time.Since(t0), "Total size: ")
 
 	sorter := func(i, j int) bool {
 		if sortees[i].length != sortees[j].length {
@@ -108,79 +117,15 @@ func (this Univalues) Sort(equal func(i, j int) bool, compare func(i, j int) boo
 			return sortees[i].tx < sortees[j].tx
 		}
 
-		if equal != nil && compare != nil && !equal(i, j) {
-			return compare(i, j)
+		if sortees[i].groupID != sortees[j].groupID {
+			return sortees[i].groupID < sortees[j].groupID
 		}
-
 		return (this[i].(*univalue.Univalue)).Less(this[j].(*univalue.Univalue))
 	}
 
 	sort.Slice(sortees, sorter)
-
 	for i := 0; i < len(sortees); i++ {
 		this[i] = sortees[i].value
 	}
-	return this
-}
-
-func (this Univalues) SortByDefault() Univalues {
-	// lengths := make([]int, len(this))
-	// summed := make([]uint64, len(this))
-	// for i := ccurlcommon.ETH10_ACCOUNT_LENGTH; i < len(this); i++ {
-	// 	lengths[i] = len(*this[i].GetPath())
-	// 	summed[i] = codec.String(*this[i].GetPath()).Sum(uint64(0))
-	// }
-
-	// Don't switch the order
-	sort.Slice(this, func(i, j int) bool {
-		// if lengths[i] != lengths[j] {
-		// 	return lengths[i] < lengths[j]
-		// }
-
-		// if summed[i] != summed[j] {
-		// 	return summed[i] < summed[j]
-		// }
-
-		if *this[i].GetPath() != *this[j].GetPath() {
-			return bytes.Compare([]byte(*this[i].GetPath()), []byte(*this[j].GetPath())) < 0
-		}
-
-		if this[i].GetTx() != this[j].GetTx() {
-			return this[i].GetTx() < this[j].GetTx()
-		}
-
-		return true
-	})
-	return this
-}
-
-func (this Univalues) SortWithQuickMethod() Univalues {
-	// lengths := make([]int, len(this))
-	// summed := make([]uint64, len(this))
-	// for i := ccurlcommon.ETH10_ACCOUNT_LENGTH; i < len(this); i++ {
-	// 	// lengths[i] = len(*this[i].GetPath())
-	// 	summed[i] = codec.String(*this[i].GetPath()).Sum(uint64(0))
-	// }
-
-	// Don't switch the order
-	sort.Slice(this, func(i, j int) bool {
-		// if lengths[i] != lengths[j] {
-		// 	return lengths[i] < lengths[j]
-		// }
-
-		// if summed[i] != summed[j] {
-		// 	return summed[i] < summed[j]
-		// }
-
-		if *this[i].GetPath() != *this[j].GetPath() {
-			return bytes.Compare([]byte(*this[i].GetPath()), []byte(*this[j].GetPath())) < 0
-		}
-
-		if this[i].GetTx() != this[j].GetTx() {
-			return this[i].GetTx() < this[j].GetTx()
-		}
-
-		return true
-	})
 	return this
 }

@@ -25,9 +25,9 @@ func TestUnivalueCodecUint64(t *testing.T) {
 	bytes := in.Encode()
 	v := (&Univalue{}).Decode(bytes).(*Univalue)
 
-	unimeta := v.GetUnimeta().(Unimeta)
-	inUnimeta := in.GetUnimeta().(Unimeta)
-	if !inUnimeta.Equal(&unimeta) {
+	unimeta := v.GetUnimeta().(*Unimeta)
+	inUnimeta := in.GetUnimeta().(*Unimeta)
+	if !inUnimeta.Equal(unimeta) {
 		t.Error("Error")
 	}
 
@@ -100,7 +100,7 @@ func TestUnivalueCodeMeta(t *testing.T) {
 
 func TestUnimetaCodecUint64(t *testing.T) {
 	/* Commutative Int64 Test */
-	alice := datacompression.RandomAccount()
+	alice := datacompression.AliceAccount()
 
 	// meta:= commutative.NewPath()
 	u256 := commutative.NewUint64(0, 100).(*commutative.Uint64)
