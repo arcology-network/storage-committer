@@ -91,12 +91,6 @@ func (this *Arbitrator) Detect(groupIDs []uint32, newTrans []interfaces.Univalue
 		dict := common.MapFromArray(conflictTxs, true) //Conflict dict
 		trans := common.CopyIf(newTrans[ranges[i]+offset:ranges[i+1]], func(v interfaces.Univalue) bool { return (*dict)[v.GetTx()] })
 
-		// if len(*dict) > 0 {
-		// 	fmt.Println("Conflict Detected: ", len(*dict))
-		// 	fmt.Println("index: ", i)
-		// 	indexer.Univalues(newTrans[ranges[i]+offset : ranges[i+1]]).Print()
-		// }
-
 		if outOfLimits := (&Accumulator{}).CheckMinMax(trans); outOfLimits != nil {
 			conflicts = append(conflicts, outOfLimits...)
 		}

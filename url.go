@@ -272,9 +272,10 @@ func (this *ConcurrentUrl) Import(transitions []interfaces.Univalue, args ...int
 
 	// Conflicted := indexer.Conflicted{}
 	for i := 0; i < len(transitions); i++ {
-		immune := indexer.ImmuneTransitions{}.From(transitions[i])
-		if immune != nil {
-			invTransitions = append(invTransitions, immune) //
+		// immune := indexer.ImmuneTransitions{}.From(transitions[i])
+
+		if transitions[i].Persistent() {
+			invTransitions = append(invTransitions, transitions[i]) //
 			transitions[i] = nil
 		}
 	}

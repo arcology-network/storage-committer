@@ -91,6 +91,7 @@ type Univalue interface { // value type
 
 	ApplyDelta(interface{}) error
 	Preexist() bool
+
 	Persistent() bool
 	IsReadOnly() bool
 	IsConcurrentWritable() bool
