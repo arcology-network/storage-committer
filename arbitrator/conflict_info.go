@@ -8,16 +8,15 @@ import (
 
 type Conflict struct {
 	key   string
+	self  uint32
 	txIDs []uint32
 	Err   error
 }
 
 func (this Conflict) ToPairs() [][2]uint32 {
-	pairs := make([][2]uint32, len(this.txIDs)*(len(this.txIDs)+1)/2-len(this.txIDs))
+	pairs := make([][2]uint32, 0, len(this.txIDs)*(len(this.txIDs)+1)/2-len(this.txIDs))
 	for i := 0; i < len(this.txIDs); i++ {
-		for j := 0; j < len(this.txIDs); j++ {
-			pairs = append(pairs, [2]uint32{this.txIDs[i], this.txIDs[j]})
-		}
+		pairs = append(pairs, [2]uint32{this.self, this.txIDs[i]})
 	}
 	return pairs
 }

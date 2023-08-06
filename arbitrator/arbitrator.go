@@ -66,6 +66,7 @@ func (this *Arbitrator) Detect(groupIDs []uint32, newTrans []interfaces.Univalue
 		conflicts = append(conflicts,
 			&Conflict{
 				key:   *newTrans[ranges[i]].GetPath(),
+				self:  newTrans[ranges[i]].GetTx(),
 				txIDs: conflictTxs,
 				Err:   errors.New(ccurlcommon.WARN_ACCESS_CONFLICT),
 			},
