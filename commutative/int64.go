@@ -69,6 +69,7 @@ func (this *Int64) Min() interface{}   { return (this.min) }
 func (this *Int64) Max() interface{}   { return (this.max) }
 
 func (this *Int64) SetValue(v interface{})     { *this.value = *(v.(*codec.Int64)) }
+func (this *Int64) ResetDelta()                { this.SetDelta(common.New[codec.Int64](0)) }
 func (this *Int64) SetDelta(v interface{})     { *this.delta = *(v.(*codec.Int64)) }
 func (this *Int64) SetDeltaSign(v interface{}) {}
 func (this *Int64) SetMin(v interface{})       { *this.min = *(v.(*codec.Int64)) }

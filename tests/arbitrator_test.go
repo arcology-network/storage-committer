@@ -51,7 +51,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	IDVec := append(common.Fill(make([]uint32, len(accesses1)), 0), common.Fill(make([]uint32, len(accesses2)), 1)...)
 	ids := arib.Detect(IDVec, append(accesses1, accesses2...))
 
-	conflictdict := arbitrator.Conflicts(ids).ToDict()
+	conflictdict, _ := arbitrator.Conflicts(ids).ToDict()
 	if len(*conflictdict) != 0 {
 		t.Error("Error: There shouldn be 0 conflict")
 	}
@@ -93,7 +93,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 
 	IDVec := append(common.Fill(make([]uint32, len(accesses1)), 0), common.Fill(make([]uint32, len(accesses2)), 1)...)
 	ids := (&arbitrator.Arbitrator{}).Detect(IDVec, append(accesses1, accesses2...))
-	conflictdict := arbitrator.Conflicts(ids).ToDict()
+	conflictdict, _ := arbitrator.Conflicts(ids).ToDict()
 
 	if len(*conflictdict) != 1 {
 		t.Error("Error: There shouldn 1 conflict")
@@ -137,10 +137,12 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 
 	IDVec := append(common.Fill(make([]uint32, len(accesses1)), 0), common.Fill(make([]uint32, len(accesses2)), 1)...)
 	ids := (&arbitrator.Arbitrator{}).Detect(IDVec, append(accesses1, accesses2...))
-	conflictDict := arbitrator.Conflicts(ids).ToDict()
+	conflictDict, pairs := arbitrator.Conflicts(ids).ToDict()
 
-	if len(*conflictDict) != 1 {
-		t.Error("Error: There shouldn 1 conflict")
+	// pairs := arbitrator.Conflicts(ids).ToPairs()
+
+	if len(*conflictDict) != 1 || len(pairs) != 1 {
+		t.Error("Error: There should be 1 conflict")
 	}
 
 	toCommit := common.Exclude([]uint32{1, 2}, common.MapKeys(*conflictDict))
@@ -170,7 +172,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 
 	IDVec = append(common.Fill(make([]uint32, len(accesses3)), 0), common.Fill(make([]uint32, len(accesses4)), 1)...)
 	ids = (&arbitrator.Arbitrator{}).Detect(IDVec, append(accesses3, accesses4...))
-	conflictDict = arbitrator.Conflicts(ids).ToDict()
+	conflictDict, _ = arbitrator.Conflicts(ids).ToDict()
 
 	conflictTx := common.MapKeys(*conflictDict)
 	if len(*conflictDict) != 1 || conflictTx[0] != 4 {
@@ -194,52 +196,53 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	}
 }
 
-func TestTimeSimpleArbitrator(b *testing.T) {
-	// t0 := time.Now()
-	alice := datacompression.RandomAccount()
-	univalues := make([]interfaces.Univalue, 5*200000)
-	v := commutative.NewPath()
-	tx := make([]uint32, len(univalues)/5)
-	for i := 0; i < len(univalues)/5; i++ {
-		univalues[i*5] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
-		univalues[i*5+1] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
-		univalues[i*5+2] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
-		univalues[i*5+3] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
-		univalues[i*5+4] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
-		tx[i] = uint32(i)
-		tx[i] = uint32(i)
-		tx[i] = uint32(i)
-		tx[i] = uint32(i)
-		tx[i] = uint32(i)
-	}
-	// fmt.Println("Create "+fmt.Sprint(len(univalues)), "path in ", time.Since(t0))
+// func TestTimeSimpleArbitrator(b *testing.T) {
+// 	// t0 := time.Now()
+// 	alice := datacompression.RandomAccount()
+// 	univalues := make([]interfaces.Univalue, 0, 5*10000)
+// 	v := commutative.NewPath()
+// 	tx := make([]uint32, 0, len(univalues)/5)
+// 	for i := 0; i < len(univalues)/5; i++ {
+// 		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v))
+// 		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v))
+// 		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v))
+// 		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v))
+// 		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v))
 
-	t0 := time.Now()
-	(&arbitrator.Arbitrator{}).Detect(tx, univalues)
-	fmt.Println("Detect "+fmt.Sprint(len(univalues)), "path in ", time.Since(t0))
-}
+// 		tx = append(tx, uint32(i))
+// 		tx = append(tx, uint32(i))
+// 		tx = append(tx, uint32(i))
+// 		tx = append(tx, uint32(i))
+// 		tx = append(tx, uint32(i))
+// 	}
+// 	// fmt.Println("Create "+fmt.Sprint(len(univalues)), "path in ", time.Since(t0))
+
+// 	t0 := time.Now()
+// 	(&arbitrator.Arbitrator{}).Detect(tx, univalues)
+// 	fmt.Println("Detect "+fmt.Sprint(len(univalues)), "path in ", time.Since(t0))
+// }
 
 func BenchmarkSimpleArbitrator(b *testing.B) {
-	// t0 := time.Now()
 	alice := datacompression.RandomAccount()
-	univalues := make([]interfaces.Univalue, 5*200000)
+	univalues := make([]interfaces.Univalue, 0, 5*200000)
+	groupIDs := make([]uint32, 0, len(univalues))
+
 	v := commutative.NewPath()
-	tx := make([]uint32, len(univalues)/5)
 	for i := 0; i < len(univalues)/5; i++ {
-		univalues[i*5] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
-		univalues[i*5+1] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
-		univalues[i*5+2] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
-		univalues[i*5+3] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
-		univalues[i*5+4] = univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v)
-		// tx[i] = uint32(i)
-		// tx[i] = uint32(i)
-		// tx[i] = uint32(i)
-		// tx[i] = uint32(i)
-		// tx[i] = uint32(i)
+		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v))
+		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v))
+		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v))
+		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v))
+		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v))
+
+		groupIDs = append(groupIDs, uint32(i))
+		groupIDs = append(groupIDs, uint32(i))
+		groupIDs = append(groupIDs, uint32(i))
+		groupIDs = append(groupIDs, uint32(i))
+		groupIDs = append(groupIDs, uint32(i))
 	}
-	// fmt.Println("Create "+fmt.Sprint(len(univalues)), "path in ", time.Since(t0))
 
 	t0 := time.Now()
-	(&arbitrator.Arbitrator{}).Detect(tx, univalues)
+	(&arbitrator.Arbitrator{}).Detect(groupIDs, univalues)
 	fmt.Println("Detect "+fmt.Sprint(len(univalues)), "path in ", time.Since(t0))
 }

@@ -27,7 +27,7 @@ func NewUnimeta(tx uint32, key string, reads, writes uint32, deltaWrites uint32,
 }
 
 func (this *Unimeta) GetPersistent() bool  { return this.persistent }
-func (this *Unimeta) SetGersistent(v bool) { this.persistent = v }
+func (this *Unimeta) SetPersistent(v bool) { this.persistent = v }
 
 func (this *Unimeta) GetTx() uint32     { return this.tx }
 func (this *Unimeta) SetTx(txId uint32) { this.tx = txId }

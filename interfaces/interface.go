@@ -36,6 +36,7 @@ type Type interface { // value type
 	New(interface{}, interface{}, interface{}, interface{}, interface{}) interface{}
 
 	SetValue(v interface{})
+	ResetDelta()
 	SetDelta(v interface{})
 	SetDeltaSign(v interface{})
 	SetMin(v interface{})
@@ -90,6 +91,7 @@ type Univalue interface { // value type
 
 	ApplyDelta(interface{}) error
 	Preexist() bool
+
 	Persistent() bool
 	IsReadOnly() bool
 	IsConcurrentWritable() bool

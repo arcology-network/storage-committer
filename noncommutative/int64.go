@@ -31,6 +31,8 @@ func (this *Int64) Min() interface{}   { return nil }
 func (this *Int64) Max() interface{}   { return nil }
 
 func (this *Int64) SetValue(v interface{}) { this.SetDelta(v) }
+
+func (this *Int64) ResetDelta()            { this.SetDelta(common.New[Int64](0)) }
 func (this *Int64) SetDelta(v interface{}) { *this = (*v.(*Int64)) }
 func (this *Int64) SetDeltaSign(v interface{}) {
 	(*this) *= (common.IfThen(v.(bool), Int64(1), Int64(-1)))

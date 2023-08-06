@@ -82,8 +82,7 @@ func (this *WriteCache) Write(tx uint32, path string, value interface{}, persist
 
 		err := univalue.Set(tx, path, value, this)
 		if err == nil {
-			if strings.HasSuffix(parentPath, "container/") || (!this.platform.IsSysPath(parentPath) &&
-				tx != ccurlcommon.SYSTEM) { // System paths don't keep track of child paths
+			if strings.HasSuffix(parentPath, "container/") || (!this.platform.IsSysPath(parentPath) && tx != ccurlcommon.SYSTEM) { // Don't keep track of the system children
 				parentMeta := this.GetOrInit(tx, parentPath)
 				err = parentMeta.Set(tx, path, univalue.Value(), this)
 			}

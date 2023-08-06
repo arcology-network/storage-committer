@@ -1,8 +1,6 @@
 package indexer
 
 import (
-	"strings"
-
 	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
@@ -22,9 +20,7 @@ func (this IPCTransition) From(v interfaces.Univalue) interface{} {
 		return v
 	}
 
-	if this.Err != nil && // Keep balance and nonce transitions for failed ones.
-		!strings.HasSuffix(*v.GetPath(), "/balance") &&
-		!strings.HasSuffix(*v.GetPath(), "/nonce") {
+	if this.Err != nil && !v.Persistent() { // Keep balance and nonce transitions for failed ones.
 		return nil
 	}
 

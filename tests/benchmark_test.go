@@ -674,7 +674,7 @@ func BenchmarkRandomAccountSort(t *testing.B) {
 	in := indexer.Univalues(common.Clone(url.Export())).To(indexer.ITCAccess{})
 
 	t0 = time.Now()
-	indexer.Univalues(in).Sort(nil, nil)
+	indexer.Univalues(in).Sort(nil)
 	fmt.Println("Univalues(in).Sort()", len(in), "entires in :", time.Since(t0))
 
 	// t0 = time.Now()
