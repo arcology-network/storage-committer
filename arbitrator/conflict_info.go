@@ -10,6 +10,14 @@ type Conflict struct {
 
 type Conflicts []*Conflict
 
+func (this Conflicts) Txids() []uint32 {
+	r := []uint32{}
+	for _, c := range this {
+		r = append(r, c.txIDs...)
+	}
+	return r
+}
+
 func (this Conflicts) ToDict() *map[uint32]uint64 {
 	dict := make(map[uint32]uint64)
 	for _, v := range this {
