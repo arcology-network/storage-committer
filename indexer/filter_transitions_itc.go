@@ -8,11 +8,11 @@ import (
 
 type ITCTransition struct {
 	IPCTransition
-	status uint8
+	Err error
 }
 
 func (this ITCTransition) From(v interfaces.Univalue) interface{} {
-	value := IPCTransition{}.From(v)
+	value := IPCTransition{Err: this.Err}.From(v)
 	converted := common.IfThenDo1st(value != nil, func() interfaces.Univalue { return value.(interfaces.Univalue) }, nil)
 	if converted == nil {
 		return nil

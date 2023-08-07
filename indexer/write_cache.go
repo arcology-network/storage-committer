@@ -1,7 +1,6 @@
 package indexer
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"reflect"
@@ -111,32 +110,22 @@ func (this *WriteCache) Clear() {
 }
 
 func (this *WriteCache) Equal(other *WriteCache) bool {
-	cache0 := []interfaces.Univalue{}
-	cache1 := []interfaces.Univalue{}
+	thisBuffer := common.MapValues(this.kvDict)
+	sort.SliceStable(thisBuffer, func(i, j int) bool {
+		return *thisBuffer[i].GetPath() < *thisBuffer[j].GetPath()
+	})
 
-	this.Vectorize(&this.kvDict, &cache0, true)
-	other.Vectorize(&this.kvDict, &cache1, true)
-	cacheFlag := reflect.DeepEqual(cache0, cache1)
+	otherBuffer := common.MapValues(other.kvDict)
+	sort.SliceStable(otherBuffer, func(i, j int) bool {
+		return *otherBuffer[i].GetPath() < *otherBuffer[j].GetPath()
+	})
+
+	cacheFlag := reflect.DeepEqual(thisBuffer, otherBuffer)
 	return cacheFlag
 }
 
-/* Map to array */
-func (*WriteCache) Vectorize(dict *map[string]interfaces.Univalue, valBuf *[]interfaces.Univalue, needToSort bool) {
-	*valBuf = (*valBuf)[:0]
-	for _, v := range *dict {
-		*valBuf = append((*valBuf), v)
-	}
-
-	if needToSort { // Sort by path
-		sort.SliceStable(*valBuf, func(i, j int) bool {
-			return bytes.Compare([]byte(*(*valBuf)[i].GetPath())[:], []byte(*(*valBuf)[j].GetPath())[:]) < 0
-		})
-	}
-}
-
 func (this *WriteCache) Export(preprocessors ...func([]interfaces.Univalue) []interfaces.Univalue) []interfaces.Univalue {
-	this.buffer = this.buffer[:0]
-	this.Vectorize(&this.kvDict, &this.buffer, false) // Export records to the buffer
+	this.buffer = common.MapValues(this.kvDict) //this.buffer[:0]
 
 	for _, processor := range preprocessors {
 		this.buffer = common.IfThenDo1st(processor != nil, func() []interfaces.Univalue {
@@ -149,8 +138,11 @@ func (this *WriteCache) Export(preprocessors ...func([]interfaces.Univalue) []in
 }
 
 func (this *WriteCache) Print() {
-	values := []interfaces.Univalue{}
-	this.Vectorize(&this.kvDict, &values, true)
+	values := common.MapValues(this.kvDict)
+	sort.SliceStable(values, func(i, j int) bool {
+		return *values[i].GetPath() < *values[j].GetPath()
+	})
+
 	for i, elem := range values {
 		fmt.Println("Level : ", i)
 		elem.Print()
