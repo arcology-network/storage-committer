@@ -24,6 +24,7 @@ func (this Conflict) ToPairs() [][2]uint32 {
 type Conflicts []*Conflict
 
 func (this Conflicts) ToDict() (*map[uint32]uint64, [][2]uint32) {
+
 	dict := make(map[uint32]uint64)
 	for _, v := range this {
 		for i := 0; i < len(v.txIDs); i++ {

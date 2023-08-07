@@ -229,10 +229,10 @@ func (this *Univalue) Print() {
 	fmt.Print(spaces+"persistent: ", this.persistent)
 	fmt.Print(spaces+"preexists: ", this.preexists)
 
-	fmt.Println(spaces+"path: ", *this.path)
-	// fmt.Print(spaces+"value: ", this.value)
-	//this.value.(interfaces.Type).Print()
-	// fmt.Println("--------------------------------------------------------")
+	fmt.Print(spaces+"path: ", *this.path)
+	fmt.Println(spaces+"value: ", this.value)
+	// this.value.(interfaces.Type).Print()
+	// fmt.Println("")
 }
 
 func (this *Univalue) Equal(other interfaces.Univalue) bool {
