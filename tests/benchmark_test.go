@@ -14,6 +14,7 @@ import (
 	"github.com/arcology-network/common-lib/merkle"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	concurrenturlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
@@ -400,7 +401,7 @@ func BenchmarkAccountMerkleImportPerf(t *testing.B) {
 	acctTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCAccess{})
 
 	for n := 0; n < 10; n++ {
-		accountMerkle := indexer.NewAccountMerkle(ccurl.NewPlatform())
+		accountMerkle := indexer.NewAccountMerkle(concurrenturlcommon.NewPlatform())
 		t0 := time.Now()
 		for i := 0; i < 100; i++ {
 			accountMerkle.Import(acctTrans[i*len(acctTrans)/100 : (i+1)*len(acctTrans)/100])
@@ -616,7 +617,7 @@ func BenchmarkTransitionImport(b *testing.B) {
 
 	fmt.Println("Export "+fmt.Sprint(150000*9), time.Since(t0))
 
-	accountMerkle := indexer.NewAccountMerkle(ccurl.NewPlatform())
+	accountMerkle := indexer.NewAccountMerkle(ccurlcommon.NewPlatform())
 
 	fmt.Println("-------------")
 	t0 = time.Now()
@@ -645,7 +646,7 @@ func BenchmarkConcurrentTransitionImport(b *testing.B) {
 
 	fmt.Println("Export "+fmt.Sprint(150000*9), time.Since(t0))
 
-	accountMerkle := indexer.NewAccountMerkle(ccurl.NewPlatform())
+	accountMerkle := indexer.NewAccountMerkle(ccurlcommon.NewPlatform())
 
 	t0 = time.Now()
 	common.ParallelExecute(

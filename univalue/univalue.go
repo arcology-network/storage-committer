@@ -21,7 +21,7 @@ type Univalue struct {
 func NewUnivalue(tx uint32, key string, reads, writes uint32, deltaWrites uint32, args ...interface{}) *Univalue {
 	return &Univalue{
 		Unimeta{
-			vType:       common.IfThenDo1st(args[0] != nil, func() uint8 { return args[0].(interfaces.Type).TypeID() }, uint8(reflect.Invalid)),
+			vType:       common.IfThenDo1st(len(args) > 0 && args[0] != nil, func() uint8 { return args[0].(interfaces.Type).TypeID() }, uint8(reflect.Invalid)),
 			tx:          tx,
 			path:        &key,
 			reads:       reads,

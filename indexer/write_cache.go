@@ -10,6 +10,7 @@ import (
 	common "github.com/arcology-network/common-lib/common"
 	mempool "github.com/arcology-network/common-lib/mempool"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	concurrenturlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 )
@@ -22,12 +23,12 @@ type WriteCache struct {
 	uniPool  *mempool.Mempool
 }
 
-func NewWriteCache(store interfaces.Datastore, platform interfaces.Platform, args ...interface{}) *WriteCache {
+func NewWriteCache(store interfaces.Datastore, args ...interface{}) *WriteCache {
 	var writeCache WriteCache
 	writeCache.store = store
 	writeCache.kvDict = make(map[string]interfaces.Univalue)
 	writeCache.store = store
-	writeCache.platform = platform
+	writeCache.platform = concurrenturlcommon.NewPlatform()
 	writeCache.buffer = make([]interfaces.Univalue, 0, 64)
 
 	writeCache.uniPool = mempool.NewMempool("writecache-univalue", func() interface{} { return new(univalue.Univalue) })

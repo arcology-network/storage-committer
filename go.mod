@@ -5,18 +5,18 @@ go 1.20
 replace github.com/arcology-network/common-lib => ../common-lib/
 
 require (
-	github.com/arcology-network/common-lib v1.7.1
+	// github.com/arcology-network/common-lib
 	github.com/elliotchance/orderedmap v1.5.0
 	github.com/google/btree v1.1.2
 	github.com/holiman/uint256 v1.2.2
-	github.com/petar/GoLLRB v0.0.0-20210522233825-ae3b015fd3e9
-	github.com/segmentio/fasthash v1.0.3
-	github.com/spaolacci/murmur3 v1.1.0
 )
+
+require github.com/arcology-network/common-lib v0.0.0-00010101000000-000000000000
 
 require (
 	github.com/AndreasBriese/bbloom v0.0.0-20190825152654-46b345b51c96 // indirect
-	github.com/arcology-network/3rd-party v1.7.1 // indirect
+	github.com/arcology-network/evm v1.7.1 // indirect
+	github.com/btcsuite/btcd v0.20.1-beta // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/dgraph-io/badger v1.6.2 // indirect
 	github.com/dgraph-io/ristretto v0.0.2 // indirect
@@ -24,6 +24,7 @@ require (
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/stretchr/testify v1.8.1 // indirect
 	golang.org/x/crypto v0.2.0 // indirect
 	golang.org/x/exp v0.0.0-20221109205753-fc8884afc316 // indirect
 	golang.org/x/net v0.2.0 // indirect

@@ -6,7 +6,6 @@ import (
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
 	"github.com/arcology-network/common-lib/common"
 	datacompression "github.com/arcology-network/common-lib/datacompression"
-	"github.com/arcology-network/concurrenturl"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
@@ -28,7 +27,7 @@ func TestMultiAccountCreation(t *testing.T) {
 	raw := url.Export(indexer.Sorter)
 	acctTrans := indexer.Univalues(common.Clone(raw)).To(indexer.ITCTransition{})
 
-	paths := concurrenturl.NewPlatform().GetSysPaths()
+	paths := ccurlcommon.NewPlatform().GetSysPaths()
 
 	if len(acctTrans) != len(paths)*len(accounts) {
 		t.Error("Error: Transition counts don't match up")

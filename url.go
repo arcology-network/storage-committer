@@ -10,6 +10,7 @@ import (
 
 	"github.com/arcology-network/common-lib/common"
 	performance "github.com/arcology-network/common-lib/mhasher"
+	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 	interfaces "github.com/arcology-network/concurrenturl/interfaces"
@@ -22,13 +23,13 @@ type ConcurrentUrl struct {
 	writeCache  *indexer.WriteCache
 	importer    *indexer.Importer
 	invImporter *indexer.Importer // transitions that will take effect anyway regardless of execution failures or conflicts
-	Platform    *Platform
+	Platform    *ccurlcommon.Platform
 
 	// ImportFilters []func(unival interfaces.Univalue) interfaces.Univalue
 }
 
 func NewConcurrentUrl(store interfaces.Datastore, args ...interface{}) *ConcurrentUrl {
-	platform := NewPlatform()
+	platform := ccurlcommon.NewPlatform()
 	return &ConcurrentUrl{
 		writeCache:  indexer.NewWriteCache(store, platform),
 		importer:    indexer.NewImporter(store, platform),
@@ -65,10 +66,10 @@ func (this *ConcurrentUrl) KVs() ([]string, []interface{}) {
 
 	return sortedKeys, sortedVals
 }
-func (this *ConcurrentUrl) New(args ...interface{}) *ConcurrentUrl {
+func (this *ConcurrentUrl) New2(args ...interface{}) *ConcurrentUrl {
 	return &ConcurrentUrl{
 		writeCache: args[0].(*indexer.WriteCache),
-		Platform:   args[1].(*Platform),
+		Platform:   ccurlcommon.NewPlatform(),
 	}
 }
 
@@ -270,10 +271,7 @@ func (this *ConcurrentUrl) WriteAt(tx uint32, path string, idx uint64, value int
 func (this *ConcurrentUrl) Import(transitions []interfaces.Univalue, args ...interface{}) *ConcurrentUrl {
 	invTransitions := make([]interfaces.Univalue, 0, len(transitions))
 
-	// Conflicted := indexer.Conflicted{}
 	for i := 0; i < len(transitions); i++ {
-		// immune := indexer.ImmuneTransitions{}.From(transitions[i])
-
 		if transitions[i].Persistent() {
 			invTransitions = append(invTransitions, transitions[i]) //
 			transitions[i] = nil
