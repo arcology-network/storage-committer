@@ -15,7 +15,6 @@ import (
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 	interfaces "github.com/arcology-network/concurrenturl/interfaces"
 	"github.com/arcology-network/concurrenturl/noncommutative"
-	ccurlstorage "github.com/arcology-network/concurrenturl/storage"
 	"github.com/arcology-network/concurrenturl/univalue"
 )
 
@@ -28,7 +27,7 @@ type ConcurrentUrl struct {
 	// ImportFilters []func(unival interfaces.Univalue) interfaces.Univalue
 }
 
-func NewConcurrentUrl(store interfaces.Datastore, args ...interface{}) *ConcurrentUrl {
+func NewConcurrentUrl(store interfaces.Datastore) *ConcurrentUrl {
 	platform := ccurlcommon.NewPlatform()
 	return &ConcurrentUrl{
 		writeCache:  indexer.NewWriteCache(store, platform),
@@ -37,6 +36,7 @@ func NewConcurrentUrl(store interfaces.Datastore, args ...interface{}) *Concurre
 		Platform:    platform, //[]ccurlcommon.FilteredTransitionsInterface{&indexer.NonceFilter{}, &indexer.BalanceFilter{}},
 	}
 }
+
 func (this *ConcurrentUrl) KVs() ([]string, []interface{}) {
 	keys, values := this.importer.KVs()
 	invKeys, invVals := this.invImporter.KVs()
@@ -66,7 +66,7 @@ func (this *ConcurrentUrl) KVs() ([]string, []interface{}) {
 
 	return sortedKeys, sortedVals
 }
-func (this *ConcurrentUrl) New2(args ...interface{}) *ConcurrentUrl {
+func (this *ConcurrentUrl) New(args ...interface{}) *ConcurrentUrl {
 	return &ConcurrentUrl{
 		writeCache: args[0].(*indexer.WriteCache),
 		Platform:   ccurlcommon.NewPlatform(),
@@ -285,17 +285,17 @@ func (this *ConcurrentUrl) Import(transitions []interfaces.Univalue, args ...int
 	return this
 }
 
-func (this *ConcurrentUrl) Snapshot(preTransitions []interfaces.Univalue) interfaces.Datastore {
-	// transitions := []interfaces.Univalue(indexer.Univalues(common.Clone(this.Export())).To(indexer.ITCTransition{}))
-	// transitions = append(transitions, preTransitions...)
+// func (this *ConcurrentUrl) Snapshot(preTransitions []interfaces.Univalue) interfaces.Datastore {
+// 	// transitions := []interfaces.Univalue(indexer.Univalues(common.Clone(this.Export())).To(indexer.ITCTransition{}))
+// 	// transitions = append(transitions, preTransitions...)
 
-	transientDB := ccurlstorage.NewTransientDB(this.WriteCache().Store()) // Should be the same as Importer().Store()
-	preTransitions = common.Remove(&preTransitions, nil)
-	snapshotUrl := NewConcurrentUrl(transientDB).Import(preTransitions).Sort()
+// 	transientDB := ccurlstorage.NewTransientDB(this.WriteCache().Store()) // Should be the same as Importer().Store()
+// 	preTransitions = common.Remove(&preTransitions, nil)
+// 	Url := NewConcurrentUrl(transientDB).Import(preTransitions).Sort()
 
-	ids := indexer.Univalues(preTransitions).UniqueTXs()
-	return snapshotUrl.Commit(ids).Importer().Store() // Commit these changes to the a transient DB
-}
+// 	ids := indexer.Univalues(preTransitions).UniqueTXs()
+// 	return snapshotUrl.Commit(ids).Importer().Store() // Commit these changes to the a transient DB
+// }
 
 // Call this as s
 func (this *ConcurrentUrl) Sort() *ConcurrentUrl {

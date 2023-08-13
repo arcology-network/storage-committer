@@ -26,6 +26,13 @@ func NewUnimeta(tx uint32, key string, reads, writes uint32, deltaWrites uint32,
 	}
 }
 
+func (this *Unimeta) Merge(other *Unimeta) {
+	this.reads += other.reads
+	this.writes += other.writes
+	this.deltaWrites += other.deltaWrites
+	this.persistent = this.persistent || other.persistent
+}
+
 func (this *Unimeta) GetPersistent() bool  { return this.persistent }
 func (this *Unimeta) SetPersistent(v bool) { this.persistent = v }
 

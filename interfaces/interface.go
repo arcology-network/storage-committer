@@ -84,7 +84,7 @@ type Univalue interface { // value type
 	Value() interface{}
 	SetValue(interface{})
 
-	WriteTo(WriteCache)
+	Merge(WriteCache)
 	GetUnimeta() interface{}
 	GetCache() interface{}
 	New(interface{}, interface{}, interface{}) interface{}
@@ -112,15 +112,20 @@ type WriteCache interface {
 	Read(uint32, string) (interface{}, interface{})
 	Peek(path string) (interface{}, interface{})
 	Write(uint32, string, interface{}, bool) error
-	Insert(string, interface{})
+	AddTransitions([]Univalue)
 
+	Retrive(string) (interface{}, error)
 	RetriveShallow(string) interface{}
 	Cache() *map[string]Univalue
-	Store() Datastore
+	Store() ReadonlyDatastore
 }
 
 type Importer interface {
 	RetriveShallow(string) interface{}
+}
+
+type ReadonlyDatastore interface {
+	Retrive(string) (interface{}, error)
 }
 
 type Datastore interface {

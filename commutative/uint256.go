@@ -161,19 +161,19 @@ func (this *U256) Set(newDelta interface{}, source interface{}) (interface{}, ui
 		return this, 0, 0, 0, nil
 	}
 
-	accumDelta, deltaSign := this.isOverflowed(this.delta.Clone().(*codec.Uint256), this.deltaPositive, newDelta.(*U256).delta, newDelta.(*U256).deltaPositive)
+	accumDelta, isDeltaPositive := this.isOverflowed(this.delta.Clone().(*codec.Uint256), this.deltaPositive, newDelta.(*U256).delta, newDelta.(*U256).deltaPositive)
 	if accumDelta == nil {
 		return this, 0, 0, 1, errors.New("Error: Value out of range")
 	}
 
-	tempV, possitive := this.isOverflowed(this.value.Clone().(*codec.Uint256), true, accumDelta.Clone().(*codec.Uint256), deltaSign)
+	tempV, possitive := this.isOverflowed(this.value.Clone().(*codec.Uint256), true, accumDelta.Clone().(*codec.Uint256), isDeltaPositive)
 	if tempV == nil || !possitive { // Result must be possitive
 		return this, 0, 0, 1, errors.New("Error: Value out of range")
 	}
 
 	if this.min.Cmp(tempV) < 1 && tempV.Cmp(this.max) < 1 {
 		this.delta = accumDelta
-		this.deltaPositive = deltaSign
+		this.deltaPositive = isDeltaPositive
 		return this, 0, 0, 1, nil
 	}
 	return this, 0, 0, 1, errors.New("Error: Value out of range")
@@ -217,7 +217,5 @@ func (this *U256) Hash(hasher func([]byte) []byte) []byte {
 }
 
 func (this *U256) Print() {
-	fmt.Println("Value: ", this.value)
-	fmt.Println("Delta: ", this.delta)
-	fmt.Println()
+	fmt.Println(" Value: ", *this.value, " Delta: ", *this.delta)
 }

@@ -51,7 +51,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	IDVec := append(common.Fill(make([]uint32, len(accesses1)), 0), common.Fill(make([]uint32, len(accesses2)), 1)...)
 	ids := arib.Detect(IDVec, append(accesses1, accesses2...))
 
-	conflictdict, _ := arbitrator.Conflicts(ids).ToDict()
+	conflictdict, _, _ := arbitrator.Conflicts(ids).ToDict()
 	if len(*conflictdict) != 0 {
 		t.Error("Error: There shouldn be 0 conflict")
 	}
@@ -93,7 +93,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 
 	IDVec := append(common.Fill(make([]uint32, len(accesses1)), 0), common.Fill(make([]uint32, len(accesses2)), 1)...)
 	ids := (&arbitrator.Arbitrator{}).Detect(IDVec, append(accesses1, accesses2...))
-	conflictdict, _ := arbitrator.Conflicts(ids).ToDict()
+	conflictdict, _, _ := arbitrator.Conflicts(ids).ToDict()
 
 	if len(*conflictdict) != 1 {
 		t.Error("Error: There shouldn 1 conflict")
@@ -137,7 +137,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 
 	IDVec := append(common.Fill(make([]uint32, len(accesses1)), 0), common.Fill(make([]uint32, len(accesses2)), 1)...)
 	ids := (&arbitrator.Arbitrator{}).Detect(IDVec, append(accesses1, accesses2...))
-	conflictDict, pairs := arbitrator.Conflicts(ids).ToDict()
+	conflictDict, _, pairs := arbitrator.Conflicts(ids).ToDict()
 
 	// pairs := arbitrator.Conflicts(ids).ToPairs()
 
@@ -172,7 +172,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 
 	IDVec = append(common.Fill(make([]uint32, len(accesses3)), 0), common.Fill(make([]uint32, len(accesses4)), 1)...)
 	ids = (&arbitrator.Arbitrator{}).Detect(IDVec, append(accesses3, accesses4...))
-	conflictDict, _ = arbitrator.Conflicts(ids).ToDict()
+	conflictDict, _, _ = arbitrator.Conflicts(ids).ToDict()
 
 	conflictTx := common.MapKeys(*conflictDict)
 	if len(*conflictDict) != 1 || conflictTx[0] != 4 {

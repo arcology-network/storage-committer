@@ -7,10 +7,11 @@ import (
 )
 
 type Conflict struct {
-	key   string
-	self  uint32
-	txIDs []uint32
-	Err   error
+	key     string
+	self    uint32
+	groupID []uint32
+	txIDs   []uint32
+	Err     error
 }
 
 func (this Conflict) ToPairs() [][2]uint32 {
@@ -23,15 +24,17 @@ func (this Conflict) ToPairs() [][2]uint32 {
 
 type Conflicts []*Conflict
 
-func (this Conflicts) ToDict() (*map[uint32]uint64, [][2]uint32) {
-
-	dict := make(map[uint32]uint64)
+func (this Conflicts) ToDict() (*map[uint32]uint64, *map[uint32]uint64, [][2]uint32) {
+	txDict := make(map[uint32]uint64)
+	groupIDdict := make(map[uint32]uint64)
 	for _, v := range this {
 		for i := 0; i < len(v.txIDs); i++ {
-			dict[v.txIDs[i]] += 1
+			txDict[v.txIDs[i]] += 1
+			groupIDdict[v.groupID[i]] += 1
 		}
 	}
-	return &dict, this.ToPairs()
+
+	return &txDict, &groupIDdict, this.ToPairs()
 }
 
 func (this Conflicts) Keys() []string {

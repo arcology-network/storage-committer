@@ -47,10 +47,15 @@ func (this *Univalue) From(v interfaces.Univalue) interface{} { return v }
 // func (this *Univalue) Filter() interfaces.Univalue                    { return this }
 
 // func (this *Univalue) IsHotLoaded() bool             { return this.reads > 1 }
-func (this *Univalue) SetTx(txId uint32)             { this.tx = txId }
-func (this *Univalue) ClearCache()                   { this.cache = this.cache[:0] }
-func (this *Univalue) Value() interface{}            { return this.value }
-func (this *Univalue) SetValue(newValue interface{}) { this.value = newValue }
+func (this *Univalue) SetTx(txId uint32)  { this.tx = txId }
+func (this *Univalue) ClearCache()        { this.cache = this.cache[:0] }
+func (this *Univalue) Value() interface{} { return this.value }
+func (this *Univalue) SetValue(newValue interface{}) {
+	if reflect.TypeOf(this.value) != reflect.TypeOf(newValue) {
+		panic("Wrong type")
+	}
+	this.value = newValue
+}
 
 func (this *Univalue) GetUnimeta() interface{} { return &this.Unimeta }
 func (this *Univalue) GetCache() interface{}   { return this.cache }
@@ -91,7 +96,7 @@ func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{
 	return this.value
 }
 
-func (this *Univalue) WriteTo(writeCache interfaces.WriteCache) {
+func (this *Univalue) Merge(writeCache interfaces.WriteCache) {
 	common.IfThenDo(this.writes == 0 && this.deltaWrites == 0,
 		func() { writeCache.Read(this.tx, *this.GetPath()) },
 		func() { writeCache.Write(this.tx, *this.GetPath(), this.value, this.GetPersistent()) },
@@ -229,10 +234,8 @@ func (this *Univalue) Print() {
 	fmt.Print(spaces+"persistent: ", this.persistent)
 	fmt.Print(spaces+"preexists: ", this.preexists)
 
-	fmt.Print(spaces+"path: ", *this.path)
-	fmt.Println(spaces+"value: ", this.value)
-	// this.value.(interfaces.Type).Print()
-	// fmt.Println("")
+	fmt.Print(spaces+"path: ", *this.path, "      ")
+	common.IfThenDo(this.value != nil, func() { this.value.(interfaces.Type).Print() }, func() { fmt.Print("nil") })
 }
 
 func (this *Univalue) Equal(other interfaces.Univalue) bool {

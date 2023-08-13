@@ -16,18 +16,17 @@ import (
 )
 
 type WriteCache struct {
-	store    interfaces.Datastore
+	store    interfaces.ReadonlyDatastore
 	kvDict   map[string]interfaces.Univalue // Local KV lookup
 	platform interfaces.Platform
 	buffer   []interfaces.Univalue // Transition + access record buffer
 	uniPool  *mempool.Mempool
 }
 
-func NewWriteCache(store interfaces.Datastore, args ...interface{}) *WriteCache {
+func NewWriteCache(store interfaces.ReadonlyDatastore, args ...interface{}) *WriteCache {
 	var writeCache WriteCache
 	writeCache.store = store
 	writeCache.kvDict = make(map[string]interfaces.Univalue)
-	writeCache.store = store
 	writeCache.platform = concurrenturlcommon.NewPlatform()
 	writeCache.buffer = make([]interfaces.Univalue, 0, 64)
 
@@ -35,9 +34,9 @@ func NewWriteCache(store interfaces.Datastore, args ...interface{}) *WriteCache 
 	return &writeCache
 }
 
-func (this *WriteCache) SetStore(store interfaces.Datastore)    { this.store = store }
-func (this *WriteCache) Store() interfaces.Datastore            { return this.store }
-func (this *WriteCache) Cache() *map[string]interfaces.Univalue { return &this.kvDict }
+func (this *WriteCache) SetStore(store interfaces.ReadonlyDatastore) { this.store = store }
+func (this *WriteCache) Store() interfaces.ReadonlyDatastore         { return this.store }
+func (this *WriteCache) Cache() *map[string]interfaces.Univalue      { return &this.kvDict }
 
 func (this *WriteCache) NewUnivalue() *univalue.Univalue {
 	v := this.uniPool.Get().(*univalue.Univalue)
@@ -58,6 +57,11 @@ func (this *WriteCache) GetOrInit(tx uint32, path string) interfaces.Univalue {
 func (this *WriteCache) Read(tx uint32, path string) (interface{}, interface{}) {
 	univalue := this.GetOrInit(tx, path)
 	return univalue.Get(tx, path, nil), univalue
+}
+
+func (this *WriteCache) Retrive(path string) (interface{}, error) {
+	v, _ := this.Peek(path)
+	return v, nil
 }
 
 func (this *WriteCache) Do(tx uint32, path string, doer interface{}) interface{} {
@@ -97,13 +101,33 @@ func (this *WriteCache) IfExists(path string) bool {
 	return this.kvDict[path] != nil || this.RetriveShallow(path) != nil
 }
 
-func (this *WriteCache) Insert(path string, value interface{}) {
-	this.kvDict[path] = value.(interfaces.Univalue)
-}
-
 func (this *WriteCache) RetriveShallow(key string) interface{} {
 	ret, _ := this.store.Retrive(key)
 	return ret
+}
+
+func (this *WriteCache) AddTransitions(transitions []interfaces.Univalue) {
+	newPathCreations := common.MoveIf(&transitions, func(v interfaces.Univalue) bool {
+		return common.IsPath(*v.GetPath()) && !v.Preexist()
+	})
+
+	// Remove the changes from the existing paths, as they will be updated automatically when inserting sub elements.
+	transitions = common.RemoveIf(&transitions, func(v interfaces.Univalue) bool {
+		return common.IsPath(*v.GetPath())
+	})
+
+	// Not necessary at the moment, but good for the future if multiple level containers are available
+	newPathCreations = Univalues(Sorter(newPathCreations))
+	common.Foreach(newPathCreations, func(v *interfaces.Univalue) {
+		(*v).Merge(this) // Write back to the parent writecache
+	})
+
+	common.Foreach(transitions, func(v *interfaces.Univalue) {
+		if existing, ok := this.kvDict[*(*v).GetPath()]; ok {
+			(*v).GetUnimeta().(*univalue.Unimeta).Merge((existing).GetUnimeta().(*univalue.Unimeta))
+		}
+		this.kvDict[*(*v).GetPath()] = *v
+	})
 }
 
 func (this *WriteCache) Clear() {
