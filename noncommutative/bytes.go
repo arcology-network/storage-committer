@@ -77,10 +77,6 @@ func (this *Bytes) FromRawType(v interface{}) interface{} {
 }
 
 func (this *Bytes) New(_, delta, _, _, _ interface{}) interface{} {
-	if common.IsType[*big.Int](delta) {
-		delta = ([]byte)(delta.(codec.Bytes))
-	}
-
 	v := common.IfThenDo1st(delta != nil && delta.(codec.Bytes) != nil, func() codec.Bytes { return delta.(codec.Bytes).Clone().(codec.Bytes) }, this.value)
 	return &Bytes{
 		true,
