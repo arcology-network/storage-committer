@@ -28,6 +28,7 @@ type Type interface { // value type
 	IsNumeric() bool
 	IsCommutative() bool
 
+	FromRawType(v interface{}) interface{}
 	Value() interface{} // Get() - read/write count
 	Delta() interface{}
 	DeltaSign() bool
@@ -36,13 +37,14 @@ type Type interface { // value type
 	New(interface{}, interface{}, interface{}, interface{}, interface{}) interface{}
 
 	SetValue(v interface{})
+	IsDeltaApplied() bool
 	ResetDelta()
 	SetDelta(v interface{})
 	SetDeltaSign(v interface{})
 	SetMin(v interface{})
 	SetMax(v interface{})
 
-	Get() (interface{}, uint32, uint32)
+	Get() (interface{}, uint32, uint32) // Value, reads and writes, no deltawrites.
 	Set(interface{}, interface{}) (interface{}, uint32, uint32, uint32, error)
 	CopyTo(interface{}) (interface{}, uint32, uint32, uint32)
 	ApplyDelta(interface{}) (Type, int, error)
@@ -66,7 +68,6 @@ type Univalue interface { // value type
 	DeltaWrites() uint32
 
 	From(Univalue) interface{}
-
 	Do(uint32, string, interface{}) interface{}
 	Clone() interface{}
 

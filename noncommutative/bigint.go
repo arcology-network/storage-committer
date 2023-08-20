@@ -45,6 +45,7 @@ func (this *Bigint) Max() interface{}   { return nil }
 
 func (this *Bigint) SetValue(v interface{}) { this.SetDelta(v) }
 
+func (this *Bigint) IsDeltaApplied() bool       { return true }
 func (this *Bigint) ResetDelta()                { this.SetDelta(big.NewInt(0)) }
 func (this *Bigint) SetDelta(v interface{})     { (*big.Int)(this).Set((*big.Int)(v.(*Bigint))) }
 func (this *Bigint) SetDeltaSign(v interface{}) {}
@@ -52,6 +53,14 @@ func (this *Bigint) SetMin(v interface{})       {}
 func (this *Bigint) SetMax(v interface{})       {}
 
 func (this *Bigint) Get() (interface{}, uint32, uint32) { return (*big.Int)(this), 1, 0 }
+
+func (this *Bigint) FromRawType(v interface{}) interface{} {
+	if common.IsType[*big.Int](v) {
+		v = (*codec.Bigint)(v.(*big.Int))
+	}
+	return v
+}
+
 func (this *Bigint) New(_, delta, _, _, _ interface{}) interface{} {
 	return common.IfThenDo1st(delta != nil && delta.(*Bigint) != nil, func() interface{} { return delta.(*Bigint).Clone() }, interface{}(this))
 }

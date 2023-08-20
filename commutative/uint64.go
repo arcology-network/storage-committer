@@ -37,6 +37,13 @@ func NewUint64Delta(delta uint64) interface{} {
 	return &Uint64{delta: &deltaV}
 }
 
+func (this *Uint64) FromRawType(value interface{}) interface{} {
+	if common.IsType[uint64](value) {
+		value = common.New(codec.Uint64(value.(uint64)))
+	}
+	return value
+}
+
 // For the codec only, don't use it for other purposes
 func (this *Uint64) New(value, delta, sign, min, max interface{}) interface{} {
 	return &Uint64{
@@ -75,6 +82,7 @@ func (this *Uint64) Min() interface{}   { return (this.min) }
 func (this *Uint64) Max() interface{}   { return (this.max) }
 
 func (this *Uint64) SetValue(v interface{}) { *this.value = *v.(*codec.Uint64) }
+func (this *Uint64) IsDeltaApplied() bool   { return *(this.delta) == 0 }
 
 func (this *Uint64) ResetDelta()                { this.SetDelta(common.New[codec.Uint64](0)) }
 func (this *Uint64) SetDelta(v interface{})     { *this.delta = *v.(*codec.Uint64) }

@@ -61,7 +61,13 @@ func (this *WriteCache) Read(tx uint32, path string) (interface{}, interface{}) 
 
 func (this *WriteCache) Retrive(path string) (interface{}, error) {
 	v, _ := this.Peek(path)
-	return v, nil
+	if v == nil || v.(interfaces.Type).IsDeltaApplied() {
+		return v, nil
+	}
+
+	rawv, _, _ := v.(interfaces.Type).Get()
+	value := v.(interfaces.Type).FromRawType(rawv)
+	return v.(interfaces.Type).New(value, nil, nil, v.(interfaces.Type).Min(), v.(interfaces.Type).Max()), nil
 }
 
 func (this *WriteCache) Do(tx uint32, path string, doer interface{}) interface{} {
@@ -79,7 +85,7 @@ func (this *WriteCache) Peek(path string) (interface{}, interface{}) {
 	return v, univalue.NewUnivalue(ccurlcommon.SYSTEM, path, 0, 0, 0, v)
 }
 
-func (this *WriteCache) Write(tx uint32, path string, value interface{}, persistent bool) error {
+func (this *WriteCache) Write(tx uint32, path string, value interface{}, _ bool) error {
 	parentPath := common.GetParentPath(path)
 	if this.IfExists(parentPath) || tx == ccurlcommon.SYSTEM { // The parent path exists or to inject the path directly
 		univalue := this.GetOrInit(tx, path) // Get a univalue wrapper
@@ -107,6 +113,10 @@ func (this *WriteCache) RetriveShallow(key string) interface{} {
 }
 
 func (this *WriteCache) AddTransitions(transitions []interfaces.Univalue) {
+	if len(transitions) == 0 {
+		return
+	}
+
 	newPathCreations := common.MoveIf(&transitions, func(v interfaces.Univalue) bool {
 		return common.IsPath(*v.GetPath()) && !v.Preexist()
 	})
@@ -123,10 +133,7 @@ func (this *WriteCache) AddTransitions(transitions []interfaces.Univalue) {
 	})
 
 	common.Foreach(transitions, func(v *interfaces.Univalue) {
-		if existing, ok := this.kvDict[*(*v).GetPath()]; ok {
-			(*v).GetUnimeta().(*univalue.Unimeta).Merge((existing).GetUnimeta().(*univalue.Unimeta))
-		}
-		this.kvDict[*(*v).GetPath()] = *v
+		(*v).Merge(this) // Write back to the parent writecache
 	})
 }
 

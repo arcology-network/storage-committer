@@ -78,6 +78,13 @@ func (*U256) NewU256(value, delta, min, max *uint256.Int, sign bool) *U256 {
 	}
 }
 
+func (this *U256) FromRawType(v interface{}) interface{} {
+	if common.IsType[*uint256.Int](v) {
+		v = (*codec.Uint256)(v.(*uint256.Int))
+	}
+	return v
+}
+
 func (this *U256) New(value, delta, sign, min, max interface{}) interface{} {
 	return &U256{
 		value:         common.IfThenDo1st(value != nil, func() *codec.Uint256 { return value.(*codec.Uint256) }, (*codec.Uint256)(U256_ZERO.Clone())),
@@ -99,6 +106,7 @@ func (this *U256) Max() interface{}   { return this.max }
 
 func (this *U256) SetValue(v interface{}) { this.value = (v.(*codec.Uint256)) }
 
+func (this *U256) IsDeltaApplied() bool       { return this.delta.Eq((*codec.Uint256)(U256_ZERO)) }
 func (this *U256) ResetDelta()                { this.SetDelta((*codec.Uint256)(U256_ZERO.Clone())) }
 func (this *U256) SetDelta(v interface{})     { this.delta = (v.(*codec.Uint256)) }
 func (this *U256) SetDeltaSign(v interface{}) { this.deltaPositive = (v.(bool)) }

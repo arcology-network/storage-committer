@@ -126,6 +126,7 @@ func (this Univalues) Sort(groupIDs []uint32) Univalues {
 	sort.Slice(sortees, sorter)
 	for i := 0; i < len(sortees); i++ {
 		this[i] = sortees[i].value
+		groupIDs[i] = sortees[i].groupID
 	}
 	return this
 }

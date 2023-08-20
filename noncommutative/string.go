@@ -33,11 +33,19 @@ func (this *String) Max() interface{}   { return nil }
 
 func (this *String) SetValue(v interface{}) { this.SetDelta(v) }
 
+func (this *String) IsDeltaApplied() bool       { return true }
 func (this *String) ResetDelta()                { this.SetDelta(common.New[String]("")) }
 func (this *String) SetDelta(v interface{})     { *this = (*v.(*String)) }
 func (this *String) SetDeltaSign(v interface{}) {}
 func (this *String) SetMin(v interface{})       {}
 func (this *String) SetMax(v interface{})       {}
+
+func (this *String) FromRawType(v interface{}) interface{} {
+	if common.IsType[string](v) {
+		v = common.New[codec.String]((codec.String)(v.(string)))
+	}
+	return v
+}
 
 func (this *String) New(_, delta, _, _, _ interface{}) interface{} {
 	return common.IfThenDo1st(delta != nil && delta.(*String) != nil, func() interface{} { return delta.(*String).Clone() }, interface{}(this))

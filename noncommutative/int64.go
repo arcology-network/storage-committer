@@ -32,6 +32,7 @@ func (this *Int64) Max() interface{}   { return nil }
 
 func (this *Int64) SetValue(v interface{}) { this.SetDelta(v) }
 
+func (this *Int64) IsDeltaApplied() bool   { return true }
 func (this *Int64) ResetDelta()            { this.SetDelta(common.New[Int64](0)) }
 func (this *Int64) SetDelta(v interface{}) { *this = (*v.(*Int64)) }
 func (this *Int64) SetDeltaSign(v interface{}) {
@@ -40,7 +41,18 @@ func (this *Int64) SetDeltaSign(v interface{}) {
 func (this *Int64) SetMin(v interface{}) {}
 func (this *Int64) SetMax(v interface{}) {}
 
+func (this *Int64) FromRawType(v interface{}) interface{} {
+	if common.IsType[int64](v) {
+		v = common.New[codec.Int64](codec.Int64(v.(int64)))
+	}
+	return v
+}
+
 func (this *Int64) New(_, delta, _, _, _ interface{}) interface{} {
+	if common.IsType[int64](delta) {
+		delta = common.New[codec.Int64](codec.Int64(delta.(int64)))
+	}
+
 	return common.IfThenDo1st(delta != nil && delta.(*Int64) != nil, func() interface{} { return delta.(*Int64).Clone() }, interface{}(this))
 }
 

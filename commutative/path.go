@@ -38,6 +38,7 @@ func (this *Path) DeltaSign() bool    { return true }
 func (this *Path) Min() interface{}   { return nil }
 func (this *Path) Max() interface{}   { return nil }
 
+func (this *Path) IsDeltaApplied() bool       { return this.delta.IsEmpty() }
 func (this *Path) SetValue(v interface{})     { this.value = v.(*orderedset.OrderedSet) }
 func (this *Path) ResetDelta()                { this.SetDelta(NewPathDelta([]string{}, []string{})) }
 func (this *Path) SetDelta(v interface{})     { this.delta = v.(*PathDelta) }
@@ -60,6 +61,13 @@ func (this *Path) Equal(other interface{}) bool {
 
 func (this *Path) Get() (interface{}, uint32, uint32) {
 	return this.value.Keys(), 1, common.IfThen(!this.value.Touched(), uint32(0), uint32(1))
+}
+
+func (this *Path) FromRawType(value interface{}) interface{} {
+	if common.IsType[[]string](value) {
+		value = orderedset.NewOrderedSet(value.([]string))
+	}
+	return value
 }
 
 // For the codec only

@@ -2,6 +2,7 @@ package noncommutative
 
 import (
 	"bytes"
+	"math/big"
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
@@ -59,6 +60,7 @@ func (this *Bytes) Max() interface{}   { return nil }
 
 func (this *Bytes) SetValue(v interface{}) { this.SetDelta(v) }
 
+func (this *Bytes) IsDeltaApplied() bool       { return true }
 func (this *Bytes) ResetDelta()                { this.SetDelta(codec.Bytes([]byte{})) }
 func (this *Bytes) SetDelta(v interface{})     { copy(this.value, v.(codec.Bytes)) }
 func (this *Bytes) SetDeltaSign(v interface{}) {}
@@ -66,7 +68,19 @@ func (this *Bytes) SetMin(v interface{})       {}
 func (this *Bytes) SetMax(v interface{})       {}
 
 func (this *Bytes) Get() (interface{}, uint32, uint32) { return []byte(this.value), 1, 0 }
+
+func (this *Bytes) FromRawType(v interface{}) interface{} {
+	if common.IsType[*big.Int](v) {
+		v = ([]byte)(v.(codec.Bytes))
+	}
+	return v
+}
+
 func (this *Bytes) New(_, delta, _, _, _ interface{}) interface{} {
+	if common.IsType[*big.Int](delta) {
+		delta = ([]byte)(delta.(codec.Bytes))
+	}
+
 	v := common.IfThenDo1st(delta != nil && delta.(codec.Bytes) != nil, func() codec.Bytes { return delta.(codec.Bytes).Clone().(codec.Bytes) }, this.value)
 	return &Bytes{
 		true,
