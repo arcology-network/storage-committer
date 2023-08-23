@@ -11,7 +11,7 @@ type IPCAccess struct {
 }
 
 func (this IPCAccess) From(v interfaces.Univalue) interface{} {
-	if this.Err != nil {
+	if this.Err != nil || v.Persistent() {
 		return nil
 	}
 
