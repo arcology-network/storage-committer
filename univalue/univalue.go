@@ -101,6 +101,15 @@ func (this *Univalue) Merge(writeCache interfaces.WriteCache) {
 		func() { writeCache.Read(this.tx, *this.GetPath()) },
 		func() { writeCache.Write(this.tx, *this.GetPath(), this.value, this.GetPersistent()) },
 	)
+
+	_, univ := writeCache.Peek(*this.GetPath())
+	readsDiff := this.Reads() - univ.(interfaces.Univalue).Reads()
+	writesDiff := this.Writes() - univ.(interfaces.Univalue).Writes()
+	deltaWriteDiff := this.DeltaWrites() - univ.(interfaces.Univalue).DeltaWrites()
+
+	univ.(interfaces.Univalue).IncrementReads(readsDiff)
+	univ.(interfaces.Univalue).IncrementWrites(writesDiff)
+	univ.(interfaces.Univalue).IncrementDeltaWrites(deltaWriteDiff)
 }
 
 func (this *Univalue) Set(tx uint32, path string, typedV interface{}, indexer interface{}) error { // update the value

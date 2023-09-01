@@ -28,7 +28,7 @@ func (this *Arbitrator) Detect(groupIDs []uint32, newTrans []interfaces.Univalue
 	// t0 := time.Now()
 	indexer.Univalues(newTrans).Sort(groupIDs)
 
-	ranges := common.FindRange(newTrans, func(lhv, rhv interfaces.Univalue) bool {
+	ranges := common.FindAllIndics(newTrans, func(lhv, rhv interfaces.Univalue) bool {
 		return *lhv.GetPath() == *rhv.GetPath()
 	})
 
