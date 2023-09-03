@@ -92,15 +92,12 @@ func (this Univalues) Sort(groupIDs []uint32) Univalues {
 			tx      uint32
 			value   interfaces.Univalue
 		}{
-			length: len(bytes),
-			str:    *str,
-			bytes:  bytes[ccurlcommon.ETH10_ACCOUNT_PREFIX_LENGTH:],
-			tx:     this[i].GetTx(),
-			value:  this[i],
-		}
-
-		if groupIDs != nil {
-			sortees[i].groupID = groupIDs[i]
+			groupID: groupIDs[i],
+			length:  len(bytes),
+			str:     *str,
+			bytes:   bytes[ccurlcommon.ETH10_ACCOUNT_PREFIX_LENGTH:],
+			tx:      this[i].GetTx(),
+			value:   this[i],
 		}
 	}
 
