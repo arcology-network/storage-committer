@@ -9,21 +9,21 @@ import (
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	"github.com/arcology-network/concurrenturl/noncommutative"
+	storage "github.com/arcology-network/concurrenturl/storage"
 	"github.com/arcology-network/concurrenturl/univalue"
 	"github.com/holiman/uint256"
 )
 
 func TestSize(t *testing.T) {
 	// compressionLut := datacompression.NewCompressionLut()
-	store := cachedstorage.NewDataStore()
-	alice := datacompression.RandomAccount()
+	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
@@ -45,8 +45,8 @@ func TestSize(t *testing.T) {
 
 func TestAddThenDeletePath(t *testing.T) {
 	// compressionLut := datacompression.NewCompressionLut()
-	store := cachedstorage.NewDataStore()
-	alice := datacompression.RandomAccount()
+	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
@@ -98,8 +98,8 @@ func TestAddThenDeletePath(t *testing.T) {
 
 func TestAddThenDeletePath2(t *testing.T) {
 	// compressionLut := datacompression.NewCompressionLut()
-	store := cachedstorage.NewDataStore()
-	alice := datacompression.RandomAccount()
+	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
@@ -149,9 +149,9 @@ func TestAddThenDeletePath2(t *testing.T) {
 }
 
 func TestBasic(t *testing.T) {
-	store := cachedstorage.NewDataStore()
+	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 
-	alice := datacompression.RandomAccount()
+	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
@@ -257,9 +257,9 @@ func TestBasic(t *testing.T) {
 }
 
 func TestPathAddThenDelete(t *testing.T) {
-	store := cachedstorage.NewDataStore()
+	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
-	alice := datacompression.RandomAccount()
+	alice := AliceAccount()
 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
@@ -338,9 +338,9 @@ func TestPathAddThenDelete(t *testing.T) {
 }
 
 func TestUrl1(t *testing.T) {
-	store := cachedstorage.NewDataStore()
+	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
-	alice := datacompression.RandomAccount()
+	alice := AliceAccount()
 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
@@ -426,9 +426,9 @@ func TestUrl1(t *testing.T) {
 }
 
 func TestUrl2(t *testing.T) {
-	store := cachedstorage.NewDataStore()
+	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
-	alice := datacompression.RandomAccount()
+	alice := AliceAccount()
 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -607,9 +607,9 @@ func TestUrl2(t *testing.T) {
 }
 
 // func TestUnivaluesBatchCodec(t *testing.T) {
-// 	store := cachedstorage.NewDataStore()
+// 	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 // 	url := ccurl.NewConcurrentUrl(store)
-// 	alice := datacompression.RandomAccount()
+// 	alice := AliceAccount()
 // 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 // 		t.Error(err)
 // 	}
@@ -651,9 +651,9 @@ func TestUrl2(t *testing.T) {
 // }
 
 func TestCommutative(t *testing.T) {
-	store := cachedstorage.NewDataStore()
+	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
-	alice := datacompression.RandomAccount()
+	alice := AliceAccount()
 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -760,10 +760,14 @@ func TestCommutative(t *testing.T) {
 }
 
 func TestNestedPath(t *testing.T) {
-	store := cachedstorage.NewDataStore()
+	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
-	alice := datacompression.RandomAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	alice := AliceAccount()
+	if err := url.NewAccount(ccurlcommon.SYSTEM, AliceAccount()); err != nil { // NewAccount account structure {
+		t.Error(err)
+	}
+
+	if err := url.NewAccount(ccurlcommon.SYSTEM, BobAccount()); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 

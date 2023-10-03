@@ -6,7 +6,6 @@ import (
 
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
 	"github.com/arcology-network/common-lib/common"
-	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
@@ -19,7 +18,7 @@ func TestPartialCache(t *testing.T) {
 	policy := cachedstorage.NewCachePolicy(10000000, 1.0)
 	store := cachedstorage.NewDataStore(nil, policy, memDB, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
-	alice := datacompression.RandomAccount()
+	alice := AliceAccount()
 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -78,7 +77,7 @@ func TestPartialCacheWithFilter(t *testing.T) {
 
 	store := cachedstorage.NewDataStore(nil, policy, memDB, storage.Codec{}.Encode, storage.Codec{}.Decode, excludeMemDB)
 	url := ccurl.NewConcurrentUrl(store)
-	alice := datacompression.RandomAccount()
+	alice := AliceAccount()
 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}

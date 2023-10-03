@@ -130,15 +130,17 @@ type ReadonlyDatastore interface {
 }
 
 type Datastore interface {
-	Inject(string, interface{})
-	BatchInject([]string, []interface{})
+	Inject(string, interface{}) error
+	BatchInject([]string, []interface{}) error
 	Retrive(string) (interface{}, error)
 	BatchRetrive([]string) []interface{}
 	Precommit([]string, interface{})
 	Commit() error
 	UpdateCacheStats([]interface{})
+
+	Buffers() ([]string, []interface{}, [][]byte)
+
 	Dump() ([]string, []interface{})
-	Checksum() [32]byte
 	Clear()
 	Print()
 	CheckSum() [32]byte

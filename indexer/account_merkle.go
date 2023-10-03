@@ -22,9 +22,10 @@ type AccountMerkle struct {
 	platform   interfaces.Platform
 	nodePool   *mempool.Mempool
 	merklePool *mempool.Mempool
+	encoder    func(...interface{}) []byte
 }
 
-func NewAccountMerkle(platform interfaces.Platform) *AccountMerkle {
+func NewAccountMerkle(platform interfaces.Platform, encoder func(...interface{}) []byte, hashFunc func([]byte) []byte) *AccountMerkle {
 	am := &AccountMerkle{
 		branches: 16,
 		merkles:  make(map[string]*merkle.Merkle),
@@ -33,8 +34,10 @@ func NewAccountMerkle(platform interfaces.Platform) *AccountMerkle {
 			return merkle.NewNode()
 		}),
 		merklePool: mempool.NewMempool("merkle", func() interface{} {
-			return merkle.NewMerkle(16, merkle.Sha256)
+			return merkle.NewMerkle(16, merkle.Concatenator{}, merkle.Keccak256{})
 		}),
+
+		encoder: encoder,
 	}
 	return am
 }
@@ -67,8 +70,8 @@ func (this *AccountMerkle) Import(transitions []interfaces.Univalue) {
 }
 
 // Build a Merkle for every updated account
-func (this *AccountMerkle) Build(keys []string, values [][]byte) []*string {
-	common.SortBy1st(keys, values, func(lhv, rhv string) bool { return lhv < rhv })
+func (this *AccountMerkle) Build(keys []string, encodedVals [][]byte) []*string {
+	common.SortBy1st(keys, encodedVals, func(lhv, rhv string) bool { return lhv < rhv })
 
 	if len(keys) == 0 {
 		return nil
@@ -77,7 +80,7 @@ func (this *AccountMerkle) Build(keys []string, values [][]byte) []*string {
 	t0 := time.Now()
 	offset := ccurlcommon.ETH10_ACCOUNT_PREFIX_LENGTH
 	ranges, accountKeys := this.markAccountRange(keys)
-	hasher := func(start, end, index int, args ...interface{}) {
+	builder := func(start, end, index int, args ...interface{}) {
 		mempool := this.nodePool.GetTlsMempool(index)
 		for i := start; i < end; i++ {
 			path := keys[ranges[i]]
@@ -88,12 +91,14 @@ func (this *AccountMerkle) Build(keys []string, values [][]byte) []*string {
 			pos := strings.Index(path[offset:], "/")
 			acct := path[offset : pos+offset]
 
-			dataSet := make([][]byte, 0, ranges[i+1]-ranges[i])
+			serializedKVs := make([][]byte, 0, ranges[i+1]-ranges[i])
 			for j := ranges[i]; j < ranges[i+1]; j++ {
-				if keys[j][len(keys[j])-1] == '/' {
-					continue // Skip path meta
+				if keys[j][len(keys[j])-1] != '/' { // Skip the path meta
+					// serializedKVs = append(serializedKVs, encodedVals[j])
+					serializedKVs = append(
+						serializedKVs,
+						this.encoder(keys[j], encodedVals[j]))
 				}
-				dataSet = append(dataSet, values[j])
 			}
 
 			// Create a merkle
@@ -101,10 +106,10 @@ func (this *AccountMerkle) Build(keys []string, values [][]byte) []*string {
 				// mk := this.merklePool.Get().(*merkle.Merkle).Reset()
 				this.merkles[acct] = this.merklePool.Get().(*merkle.Merkle).Reset() // one merkle for each account
 			}
-			this.merkles[acct].Init(dataSet, mempool)
+			this.merkles[acct].Init(serializedKVs, mempool)
 		}
 	}
-	common.ParallelWorker(len(ranges)-1, concurrency, hasher)
+	common.ParallelWorker(len(ranges)-1, concurrency, builder)
 	fmt.Println("Build the Tree in:", time.Since(t0))
 	return accountKeys
 }

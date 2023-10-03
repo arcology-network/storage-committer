@@ -5,6 +5,7 @@ import (
 
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
 	"github.com/arcology-network/concurrenturl/interfaces"
+	// storage "github.com/arcology-network/concurrenturl/storage"
 )
 
 type TransientDB struct {
@@ -14,7 +15,7 @@ type TransientDB struct {
 
 func NewTransientDB(parent interfaces.Datastore) interfaces.Datastore {
 	return &TransientDB{
-		DataStore: cachedstorage.NewDataStore(),
+		DataStore: cachedstorage.NewDataStore(nil, nil, nil, Codec{}.Encode, Codec{}.Decode),
 		parent:    parent,
 	}
 }
@@ -23,9 +24,9 @@ func (db *TransientDB) Query(pattern string, condition func(string, string) bool
 	return []string{}, [][]byte{}, nil
 }
 
-func (db *TransientDB) Inject(path string, v interface{}) {
-	db.DataStore.Inject(path, v)
-}
+// func (db *TransientDB) Inject(path string, v interface{}) {
+// 	db.DataStore.Inject(path, v)
+// }
 
 func (this *TransientDB) Checksum() [32]byte {
 	return this.DataStore.Checksum()
@@ -79,6 +80,11 @@ func (db *TransientDB) Commit() error {
 func (this *TransientDB) Print() {
 	this.DataStore.Print()
 }
+
+func (this *TransientDB) Buffers() ([]string, []interface{}, [][]byte) {
+	return this.DataStore.Buffers()
+}
+
 func (this *TransientDB) CheckSum() [32]byte {
 	psum := this.parent.CheckSum()
 	tsum := this.DataStore.CheckSum()

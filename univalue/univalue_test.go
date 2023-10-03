@@ -11,9 +11,19 @@ import (
 	"github.com/holiman/uint256"
 )
 
+func AliceAccount() string {
+	var letters = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
+	// rand.Seed(1)
+	b := make([]rune, 40)
+	for i := range b {
+		b[i] = letters[1]
+	}
+	return string(b)
+}
+
 func TestUnivalueCodecUint64(t *testing.T) {
 	/* Commutative Int64 Test */
-	alice := datacompression.RandomAccount()
+	alice := AliceAccount()
 
 	// meta:= commutative.NewPath()
 	u64 := commutative.NewUint64(0, 100)
@@ -40,7 +50,7 @@ func TestUnivalueCodecUint64(t *testing.T) {
 }
 
 func TestUnivalueCodecU256(t *testing.T) {
-	alice := datacompression.RandomAccount() /* Commutative Int64 Test */
+	alice := AliceAccount() /* Commutative Int64 Test */
 
 	// meta:= commutative.NewPath()
 	u256 := commutative.NewU256(uint256.NewInt(0), uint256.NewInt(100))
@@ -76,7 +86,7 @@ func TestUnivalueCodecU256(t *testing.T) {
 
 func TestUnivalueCodeMeta(t *testing.T) {
 	/* Commutative Int64 Test */
-	alice := datacompression.RandomAccount()
+	alice := AliceAccount()
 
 	meta := commutative.NewPath()
 	meta.(*commutative.Path).SetSubs([]string{"e-01", "e-001", "e-002", "e-002"})

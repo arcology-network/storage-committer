@@ -16,11 +16,12 @@ import (
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
+	storage "github.com/arcology-network/concurrenturl/storage"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 )
 
 func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
-	store := cachedstorage.NewDataStore()
+	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
 
 	meta := commutative.NewPath()
@@ -32,7 +33,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
-	alice := datacompression.RandomAccount()
+	alice := AliceAccount()
 	url.Init(store)
 	url.NewAccount(1, alice) // NewAccount account structure {
 	// accesses1, transitions1 := url.Export(indexer.Sorter)
@@ -58,7 +59,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 }
 
 func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
-	store := cachedstorage.NewDataStore()
+	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
 
 	meta := commutative.NewPath()
@@ -69,7 +70,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Init(store)
-	alice := datacompression.RandomAccount()
+	alice := AliceAccount()
 	url.NewAccount(1, alice)                                                     // NewAccount account structure {
 	path1 := commutative.NewPath()                                               // create a path
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path1, true) // create a path
@@ -101,8 +102,8 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 }
 
 func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
-	store := cachedstorage.NewDataStore()
-	alice := datacompression.RandomAccount()
+	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
@@ -198,7 +199,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 
 // func TestTimeSimpleArbitrator(b *testing.T) {
 // 	// t0 := time.Now()
-// 	alice := datacompression.RandomAccount()
+// 	alice := AliceAccount()
 // 	univalues := make([]interfaces.Univalue, 0, 5*10000)
 // 	v := commutative.NewPath()
 // 	tx := make([]uint32, 0, len(univalues)/5)
@@ -223,7 +224,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 // }
 
 func BenchmarkSimpleArbitrator(b *testing.B) {
-	alice := datacompression.RandomAccount()
+	alice := AliceAccount()
 	univalues := make([]interfaces.Univalue, 0, 5*200000)
 	groupIDs := make([]uint32, 0, len(univalues))
 

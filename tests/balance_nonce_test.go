@@ -6,20 +6,20 @@ import (
 	"testing"
 
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
-	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
+	storage "github.com/arcology-network/concurrenturl/storage"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 	"github.com/holiman/uint256"
 )
 
 func TestSimpleBalance(t *testing.T) {
-	store := cachedstorage.NewDataStore()
+	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
-	alice := datacompression.RandomAccount()
+	alice := AliceAccount()
 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -85,10 +85,10 @@ func TestSimpleBalance(t *testing.T) {
 
 func TestBalance(t *testing.T) {
 	// compressionLut := datacompression.NewCompressionLut()
-	store := cachedstorage.NewDataStore()
+	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 
 	url := ccurl.NewConcurrentUrl(store)
-	alice := datacompression.RandomAccount()
+	alice := AliceAccount()
 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -170,9 +170,9 @@ func TestBalance(t *testing.T) {
 }
 
 func TestNonce(t *testing.T) {
-	store := cachedstorage.NewDataStore()
+	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url1 := ccurl.NewConcurrentUrl(store)
-	alice := datacompression.RandomAccount()
+	alice := AliceAccount()
 	if err := url1.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -212,7 +212,7 @@ func TestNonce(t *testing.T) {
 }
 
 func TestMultipleNonces(t *testing.T) {
-	store := cachedstorage.NewDataStore()
+	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 
 	url0 := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()

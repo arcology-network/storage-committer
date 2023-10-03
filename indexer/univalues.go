@@ -127,3 +127,20 @@ func (this Univalues) Sort(groupIDs []uint32) Univalues {
 	}
 	return this
 }
+
+// func (this Univalues) CompressKeys(dict *ccurlcommon.Dict) {
+// 	for i, univ := range this {
+// 		compressedKey := (*univ.GetPath())[ccurlcommon.ETH10_ACCOUNT_PREFIX_LENGTH:ccurlcommon.ETH10_ACCOUNT_FULL_LENGTH]
+// 		newKey := dict.Compress(compressedKey, nil) + (*univ.GetPath())[ccurlcommon.ETH10_ACCOUNT_FULL_LENGTH:]
+// 		this[i].SetPath(&newKey)
+// 	}
+// }
+
+// func (this Univalues) DecompressKeys(dict *ccurlcommon.Dict) {
+// 	for i := range this {
+// 		key := *this[i].GetPath()
+// 		idx := strings.Index(*this[i].GetPath(), "/")
+// 		newKey := ccurlcommon.ETH10 + dict.Decompress(key[:idx]) + key[idx:]
+// 		this[i].SetPath(&newKey)
+// 	}
+// }

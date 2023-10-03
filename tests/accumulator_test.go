@@ -7,18 +7,18 @@ import (
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl"
 	arbitrator "github.com/arcology-network/concurrenturl/arbitrator"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 	"github.com/arcology-network/concurrenturl/interfaces"
+	storage "github.com/arcology-network/concurrenturl/storage"
 )
 
 func TestAccumulatorUpperLimit(t *testing.T) {
-	store := cachedstorage.NewDataStore()
-	alice := datacompression.RandomAccount()
+	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
 
 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
@@ -58,8 +58,8 @@ func TestAccumulatorUpperLimit(t *testing.T) {
 }
 
 func TestAccumulatorLowerLimit(t *testing.T) {
-	store := cachedstorage.NewDataStore()
-	alice := datacompression.RandomAccount()
+	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)

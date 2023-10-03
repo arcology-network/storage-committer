@@ -15,6 +15,7 @@ import (
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
+	storage "github.com/arcology-network/concurrenturl/storage"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 )
 
@@ -65,7 +66,7 @@ func TestNoncommutativeCodec(t *testing.T) {
 }
 
 func TestUnivalueCodec(t *testing.T) {
-	store := cachedstorage.NewDataStore()
+	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	transitions := []interfaces.Univalue{}
 
 	url := ccurl.NewConcurrentUrl(store)
@@ -86,7 +87,7 @@ func TestUnivalueCodec(t *testing.T) {
 }
 
 func TestUnivaluesCodec(t *testing.T) {
-	store := cachedstorage.NewDataStore()
+	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	transitions := []interfaces.Univalue{}
 	for i := 0; i < 10000; i++ {
 		acct := datacompression.RandomAccount()
