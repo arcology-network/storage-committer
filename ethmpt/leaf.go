@@ -6,18 +6,13 @@ import (
 	"github.com/arcology-network/evm/crypto"
 )
 
-var leafCounter int
-
 type LeafNode struct {
-	visit int
 	Path  []Nibble
 	Value []byte
+	// cache *[]byte
 }
 
 func NewLeafNodeFromNibbleBytes(nibbles []byte, value []byte) (*LeafNode, error) {
-	// leafCounter++
-	fmt.Println(leafCounter)
-
 	ns, err := FromNibbleBytes(nibbles)
 	if err != nil {
 		return nil, fmt.Errorf("could not leaf node from nibbles: %w", err)
@@ -27,9 +22,6 @@ func NewLeafNodeFromNibbleBytes(nibbles []byte, value []byte) (*LeafNode, error)
 }
 
 func NewLeafNodeFromNibbles(nibbles []Nibble, value []byte) *LeafNode {
-	// leafCounter++
-	// fmt.Println(leafCounter)
-
 	return &LeafNode{
 		Path:  nibbles,
 		Value: value,
@@ -37,18 +29,21 @@ func NewLeafNodeFromNibbles(nibbles []Nibble, value []byte) *LeafNode {
 }
 
 func NewLeafNodeFromKeyValue(key, value string) *LeafNode {
-	// leafCounter++
-	// fmt.Println(leafCounter)
-
 	return NewLeafNodeFromBytes([]byte(key), []byte(value))
 }
 
 func NewLeafNodeFromBytes(key, value []byte) *LeafNode {
-	// leafCounter++
-	// fmt.Println(leafCounter)
-
 	return NewLeafNodeFromNibbles(FromBytes(key), value)
 }
+
+// func (l LeafNode) GetCached() *[]byte {
+// 	return l.cache
+// }
+
+// func (l LeafNode) SetCached(this *Node, cache *[]byte) {
+// 	v := (*this).(*LeafNode)
+// 	(*v).cache = cache
+// }
 
 func (l LeafNode) Hash() []byte {
 	return crypto.Keccak256(l.Serialize())
@@ -60,6 +55,7 @@ func (l LeafNode) Raw() []interface{} {
 	return raw
 }
 
+// Encode + Raw
 func (l LeafNode) Serialize() []byte {
 	return Serialize(l)
 }

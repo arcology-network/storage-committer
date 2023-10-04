@@ -27,7 +27,14 @@ func TestSimplePerformance(t *testing.T) {
 		trie.Put(keys[i], data[i])
 	}
 	trie.Hash()
-	fmt.Println("trie put "+fmt.Sprint(len(data)), time.Since(t0))
+	fmt.Println("trie put "+fmt.Sprint(len(data)), time.Since(t0), trie.Hash())
+
+	for i := 0; i < 3; i++ {
+		if _, ok := trie.Prove(keys[i]); !ok {
+			t.Error("Error: Proof not found")
+			return
+		}
+	}
 
 	// t0 = time.Now()
 	// paraTrie := NewParallelMerkles()
@@ -46,5 +53,6 @@ func TestSimplePerformance(t *testing.T) {
 	ParallelInserter{}.Insert(trie, keys, data)
 	// h := trie.Hash()
 	fmt.Println("ParallelInserter put "+fmt.Sprint(len(data)), time.Since(t0), " Hash:")
+	fmt.Print(trie.Hash())
 
 }

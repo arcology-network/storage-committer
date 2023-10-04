@@ -9,6 +9,7 @@ var branchCounter int
 type BranchNode struct {
 	Branches [16]Node
 	Value    []byte
+	cache    *[]byte
 }
 
 func NewBranchNode() *BranchNode {
@@ -47,16 +48,17 @@ func (b BranchNode) Raw() []interface{} {
 			hashes[i] = EmptyNodeRaw
 		} else {
 			node := b.Branches[i]
-			if len(Serialize(node)) >= 32 {
-				hashes[i] = node.Hash()
-			} else {
-				// if node can be serialized to less than 32 bits, then
-				// use Serialized directly.
-				// it has to be ">=", rather than ">",
-				// so that when deserialized, the content can be distinguished
-				// by length
-				hashes[i] = node.Raw()
+			if hashes[i] = Serialize(node); len(hashes[i].([]byte)) >= 32 {
+				hashes[i] = crypto.Keccak256(hashes[i].([]byte))
 			}
+			// } else {
+			// 	// if node can be serialized to less than 32 bits, then
+			// 	// use Serialized directly.
+			// 	// it has to be ">=", rather than ">",
+			// 	// so that when deserialized, the content can be distinguished
+			// 	// by length
+			// 	hashes[i] = serialized //node.Raw()
+			// }
 		}
 	}
 
@@ -70,4 +72,13 @@ func (b BranchNode) Serialize() []byte {
 
 func (b BranchNode) HasValue() bool {
 	return b.Value != nil
+}
+
+func (b BranchNode) SetCached(this *Node, cache *[]byte) {
+	v := (*this).(BranchNode)
+	(v).cache = cache
+}
+
+func (b BranchNode) GetCached() *[]byte {
+	return b.cache
 }
