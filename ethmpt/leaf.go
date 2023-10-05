@@ -3,13 +3,13 @@ package merklepatriciatrie
 import (
 	"fmt"
 
+	ethrlp "github.com/arcology-network/concurrenturl/ethrlp"
 	"github.com/arcology-network/evm/crypto"
 )
 
 type LeafNode struct {
 	Path  []Nibble
 	Value []byte
-	// cache *[]byte
 }
 
 func NewLeafNodeFromNibbleBytes(nibbles []byte, value []byte) (*LeafNode, error) {
@@ -36,23 +36,14 @@ func NewLeafNodeFromBytes(key, value []byte) *LeafNode {
 	return NewLeafNodeFromNibbles(FromBytes(key), value)
 }
 
-// func (l LeafNode) GetCached() *[]byte {
-// 	return l.cache
-// }
-
-// func (l LeafNode) SetCached(this *Node, cache *[]byte) {
-// 	v := (*this).(*LeafNode)
-// 	(*v).cache = cache
-// }
-
 func (l LeafNode) Hash() []byte {
-	return crypto.Keccak256(l.Serialize())
+	return crypto.Keccak256(l.Raw())
 }
 
-func (l LeafNode) Raw() []interface{} {
+func (l LeafNode) Raw() []byte {
 	path := ToBytes(ToPrefixed(l.Path, true))
-	raw := []interface{}{path, l.Value}
-	return raw
+	rlp := ethrlp.Bytes{}.Encode([][]byte{path, l.Value})
+	return rlp
 }
 
 // Encode + Raw

@@ -1,10 +1,8 @@
 package merklepatriciatrie
 
-import "github.com/arcology-network/evm/rlp"
-
 type Node interface {
 	Hash() []byte // common.Hash
-	Raw() []interface{}
+	Raw() []byte
 	// GetCached() *[]byte
 	// SetCached(*Node, *[]byte)
 }
@@ -17,20 +15,8 @@ func Hash(node Node) []byte {
 }
 
 func Serialize(node Node) []byte {
-	var raw interface{}
-
-	if IsEmptyNode(node) {
-		raw = EmptyNodeRaw
-	} else {
-		raw = node.Raw()
+	if node != nil {
+		return node.Raw()
 	}
-
-	// return EmptyNodeRaw
-
-	rlp, err := rlp.EncodeToBytes(raw)
-	if err != nil {
-		panic(err)
-	}
-
-	return rlp
+	return EmptyNodeRaw
 }

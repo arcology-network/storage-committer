@@ -2,6 +2,7 @@ package merklepatriciatrie
 
 import (
 	"github.com/arcology-network/evm/crypto"
+	"github.com/arcology-network/evm/rlp"
 )
 
 var extensionCounter int
@@ -26,7 +27,7 @@ func (e ExtensionNode) Hash() []byte {
 	return crypto.Keccak256(e.Serialize())
 }
 
-func (e ExtensionNode) Raw() []interface{} {
+func (e ExtensionNode) Raw() []byte {
 	hashes := make([]interface{}, 2)
 	hashes[0] = ToBytes(ToPrefixed(e.Path, false))
 
@@ -35,7 +36,13 @@ func (e ExtensionNode) Raw() []interface{} {
 	} else {
 		hashes[1] = cache //e.Next.Raw()
 	}
-	return hashes
+
+	rlp, err := rlp.EncodeToBytes(hashes)
+	if err != nil {
+		panic(err)
+	}
+	return rlp
+	// return hashes
 }
 
 // func (l ExtensionNode) GetCached() *[]byte {

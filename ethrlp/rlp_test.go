@@ -1,4 +1,4 @@
-package ethrlp
+package ethrlpbytes
 
 import (
 	"fmt"

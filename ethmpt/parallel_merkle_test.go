@@ -36,23 +36,8 @@ func TestSimplePerformance(t *testing.T) {
 		}
 	}
 
-	// t0 = time.Now()
-	// paraTrie := NewParallelMerkles()
-	// for i := 0; i < len(data); i++ {
-	// 	paraTrie.Put(keys[i], data[i])
-	// }
-	// trie.Hash()
-	// fmt.Println("paraTrie put "+fmt.Sprint(len(data)), time.Since(t0))
-
-	// t0 = time.Now()
-	// NewParallelMerkles().BatchPut(keys, data)
-	// fmt.Println("paraTrie BatchPut "+fmt.Sprint(len(data)), time.Since(t0))
-
 	t0 = time.Now()
 	trie = NewTrie()
-	ParallelInserter{}.Insert(trie, keys, data)
-	// h := trie.Hash()
-	fmt.Println("ParallelInserter put "+fmt.Sprint(len(data)), time.Since(t0), " Hash:")
-	fmt.Print(trie.Hash())
-
+	v := ParallelInserter{}.Insert(trie, keys, data)
+	fmt.Println("ParallelInserter put "+fmt.Sprint(len(data)), time.Since(t0), " Hash:", v)
 }
