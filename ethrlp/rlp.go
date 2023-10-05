@@ -1,37 +1,79 @@
-package merklepatriciatrie
+package ethrlp
 
 import (
 	"encoding/binary"
 	"errors"
-	"math/big"
+	"math"
 )
 
-func Encode(input [][]byte) []byte {
+type Bytes struct{}
+
+func (Bytes) Encode(input [][]byte) []byte {
 	if len(input) == 0 {
 		return []byte{0xc0} // Empty list
 	}
 
-	total := 0
+	body := 0
 	for i := 0; i < len(input); i++ {
-		total += len(input[i])
-	}
-
-	encodedBytes := make([]byte, 0, total+len(input)+4+8)
-	for _, item := range input {
-		if len(item) == 1 && item[0] < 0x80 {
-			encodedBytes = append(encodedBytes, item[0]) // A single-byte item less than 0x80, encode it as is.
+		if len(input[i]) == 0 {
+			body++
 			continue
 		}
 
-		lengthBytes := encodeLength(len(item), 0x80)
-		encodedBytes = append(encodedBytes, lengthBytes...)
-		encodedBytes = append(encodedBytes, item...)
+		h, b := precalculate(len(input[i]), input[i][0])
+		body += h + b
 	}
-	return append(encodeLength(len(encodedBytes), 0xc0), encodedBytes...)
+
+	var v byte
+	if len(input[0]) > 0 {
+		v = input[0][0]
+	}
+	h, b := precalculate(body, v)
+
+	if len(input) == 1 && len(input[0]) <= 1 {
+		b = 1
+	}
+
+	buffer := make([]byte, h+b)
+	offset := len(encodeLengthToVec(buffer, b, 0xc0))
+	length := 0
+
+	for _, item := range input {
+		length = len(item)
+		if length == 1 && item[0] < 0x80 {
+			buffer[offset] = item[0]
+			offset++
+			continue
+		}
+
+		offset += len(encodeLengthToVec(buffer[offset:], length, 0x80))
+		copy(buffer[offset:], item)
+		offset += length
+	}
+	return buffer
+}
+
+func (Bytes) EncodeSingle(item []byte) []byte {
+	if len(item) == 0 {
+		return []byte{0x80} // Empty list
+	}
+
+	header, body := precalculate(len(item), item[0])
+	buffer := make([]byte, header+body)
+
+	if len(item) == 1 && item[0] < 0x80 {
+		buffer[0] = item[0]
+		return buffer[:1] // A single-byte item less than 0x80, encode it as is.
+	}
+
+	encodeLengthToVec(buffer, body, 0x80)
+	copy(buffer[header:], item)
+
+	return buffer
 }
 
 // Decode decodes an RLP-encoded byte slice into a [][]byte slice.
-func Decode(encodedBytes []byte) ([][]byte, error) {
+func (Bytes) Decode(encodedBytes []byte) ([][]byte, error) {
 	output := make([][]byte, 0, 32)
 
 	for len(encodedBytes) > 0 {
@@ -44,6 +86,33 @@ func Decode(encodedBytes []byte) ([][]byte, error) {
 	}
 
 	return output, nil
+}
+
+func precalculate(length int, v byte) (int, int) {
+	if length == 1 && v < 0x80 {
+		return 1, 0
+	}
+
+	if length < 56 {
+		return 1, length
+	}
+
+	headerBytes := int(math.Ceil(math.Log(float64(length))/math.Log(256))) + 1
+	return headerBytes, length
+}
+
+func encodeLengthToVec(buffer []byte, length int, offset int) []byte {
+	if length < 56 {
+		buffer[0] = byte(length + offset)
+		return buffer[0:1]
+	}
+
+	numBytes := int(math.Ceil(math.Log(float64(length)) / math.Log(256)))
+	buffer[0] = byte(numBytes + offset + 55)
+	binary.BigEndian.PutUint64(buffer[1:], uint64(length))
+
+	copy(buffer[1:], buffer[9-numBytes:])
+	return buffer[:numBytes+1]
 }
 
 // decodeItem decodes a single RLP-encoded item.
@@ -104,35 +173,6 @@ func decodeItem(encodedBytes []byte) ([]byte, int, error) {
 	}
 
 	return nil, 0, errors.New("invalid RLP encoding")
-}
-
-// encodeLength encodes the length of an item for RLP.
-func encodeLength(length int, offset int) []byte {
-	if length < 56 {
-		return []byte{byte(length + offset)}
-	}
-
-	// Add the offset to the length code
-	buffer := make([]byte, 13)
-	binary.LittleEndian.PutUint32(buffer[:4], uint32(8+offset))
-	buffer[4] = 0x38
-
-	// Encode the length as a binary string
-	bigLength := big.NewInt(int64(length))
-
-	lengthBytes := buffer[5:] //make([]byte, 8)
-	bigLength.FillBytes(lengthBytes)
-
-	var i int
-	for i < len(lengthBytes) && lengthBytes[i] == 0 {
-		i++
-	}
-	lengthBytes = lengthBytes[i:] // Remove the leading 0s
-
-	copy(buffer[5:], lengthBytes)
-	buffer = buffer[:5+len(lengthBytes)]
-
-	return buffer //[:5+len(lengthBytes)] //append(buffer[:5 + len(lengthBytes)], lengthBytes...)
 }
 
 // decodeLength decodes the length of an item from RLP.
