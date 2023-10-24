@@ -8,10 +8,10 @@ import (
 	"github.com/arcology-network/common-lib/common"
 	performance "github.com/arcology-network/common-lib/mhasher"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
-	"github.com/arcology-network/concurrenturl/datatypes/commutative"
-	noncommutative "github.com/arcology-network/concurrenturl/datatypes/noncommutative"
+	"github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 	interfaces "github.com/arcology-network/concurrenturl/interfaces"
+	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	"github.com/arcology-network/concurrenturl/univalue"
 )
 

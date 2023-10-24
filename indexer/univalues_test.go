@@ -5,7 +5,7 @@ import (
 
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/datacompression"
-	commutative "github.com/arcology-network/concurrenturl/datatypes/commutative"
+	commutative "github.com/arcology-network/concurrenturl/commutative"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 

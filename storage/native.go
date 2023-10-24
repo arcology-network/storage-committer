@@ -1,9 +1,9 @@
 package ccdb
 
 import (
-	commutative "github.com/arcology-network/concurrenturl/datatypes/commutative"
-	noncommutative "github.com/arcology-network/concurrenturl/datatypes/noncommutative"
+	commutative "github.com/arcology-network/concurrenturl/commutative"
 	"github.com/arcology-network/concurrenturl/interfaces"
+	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 )
 
 type Codec struct {

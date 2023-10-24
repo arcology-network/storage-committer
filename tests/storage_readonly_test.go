@@ -7,7 +7,7 @@ import (
 	"time"
 
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
-	noncommutative "github.com/arcology-network/concurrenturl/datatypes/noncommutative"
+	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	storage "github.com/arcology-network/concurrenturl/storage"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 )

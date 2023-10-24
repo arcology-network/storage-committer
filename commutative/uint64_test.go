@@ -91,10 +91,10 @@ func TestNewUint64Max(t *testing.T) {
 }
 
 func TestUint64Codec(t *testing.T) {
-	val := codec.Uint64(0)
-	del := codec.Uint64(10)
-	min := codec.Uint64(111)
-	max := codec.Uint64(999)
+	val := uint64(0)
+	del := uint64(10)
+	min := uint64(111)
+	max := uint64(999)
 	in := (&Uint64{}).New(&val, &del, nil, &min, &max).(*Uint64)
 
 	buffer := in.Encode()

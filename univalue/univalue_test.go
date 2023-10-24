@@ -10,7 +10,7 @@ import (
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/datacompression"
 	ethrlp "github.com/arcology-network/common-lib/ethrlp"
-	commutative "github.com/arcology-network/concurrenturl/datatypes/commutative"
+	commutative "github.com/arcology-network/concurrenturl/commutative"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	"github.com/arcology-network/evm/rlp"
 	"github.com/holiman/uint256"

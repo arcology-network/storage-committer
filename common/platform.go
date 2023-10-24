@@ -2,8 +2,8 @@ package common
 
 import (
 	common "github.com/arcology-network/common-lib/common"
-	commutative "github.com/arcology-network/concurrenturl/datatypes/commutative"
-	noncommutative "github.com/arcology-network/concurrenturl/datatypes/noncommutative"
+	commutative "github.com/arcology-network/concurrenturl/commutative"
+	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 )
 
 type Platform struct {

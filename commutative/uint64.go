@@ -47,10 +47,10 @@ func (this *Uint64) FromRawType(value interface{}) interface{} {
 // For the codec only, don't use it for other purposes
 func (this *Uint64) New(value, delta, sign, min, max interface{}) interface{} {
 	return &Uint64{
-		common.IfThenDo1st(value != nil, func() *codec.Uint64 { return value.(*codec.Uint64) }, common.New(codec.Uint64(0))),
-		common.IfThenDo1st(delta != nil, func() *codec.Uint64 { return delta.(*codec.Uint64) }, common.New(codec.Uint64(0))),
-		common.IfThenDo1st(min != nil, func() *codec.Uint64 { return min.(*codec.Uint64) }, common.New(codec.Uint64(0))),
-		common.IfThenDo1st(max != nil, func() *codec.Uint64 { return max.(*codec.Uint64) }, common.New(codec.Uint64(math.MaxUint64))),
+		(*codec.Uint64)(common.IfThenDo1st(value != nil, func() *uint64 { return value.(*uint64) }, common.New(uint64(0)))),
+		(*codec.Uint64)(common.IfThenDo1st(delta != nil, func() *uint64 { return delta.(*uint64) }, common.New(uint64(0)))),
+		(*codec.Uint64)(common.IfThenDo1st(min != nil, func() *uint64 { return min.(*uint64) }, common.New(uint64(0)))),
+		(*codec.Uint64)(common.IfThenDo1st(max != nil, func() *uint64 { return max.(*uint64) }, common.New(uint64(math.MaxUint64)))),
 	}
 }
 
@@ -75,20 +75,20 @@ func (this *Uint64) MemSize() uint32 { return 5 * 8 }
 func (this *Uint64) IsNumeric() bool     { return true }
 func (this *Uint64) IsCommutative() bool { return true }
 
-func (this *Uint64) Value() interface{} { return (this.value) }
-func (this *Uint64) Delta() interface{} { return (this.delta) }
+func (this *Uint64) Value() interface{} { return (*uint64)(this.value) }
+func (this *Uint64) Delta() interface{} { return (*uint64)(this.delta) }
 func (this *Uint64) DeltaSign() bool    { return true }
-func (this *Uint64) Min() interface{}   { return (this.min) }
-func (this *Uint64) Max() interface{}   { return (this.max) }
+func (this *Uint64) Min() interface{}   { return (*uint64)(this.min) }
+func (this *Uint64) Max() interface{}   { return (*uint64)(this.max) }
 
 func (this *Uint64) SetValue(v interface{}) { *this.value = *v.(*codec.Uint64) }
 func (this *Uint64) IsDeltaApplied() bool   { return *(this.delta) == 0 }
 
 func (this *Uint64) ResetDelta()                { this.SetDelta(common.New[codec.Uint64](0)) }
-func (this *Uint64) SetDelta(v interface{})     { *this.delta = *v.(*codec.Uint64) }
+func (this *Uint64) SetDelta(v interface{})     { *this.delta = (codec.Uint64)(*v.(*uint64)) }
 func (this *Uint64) SetDeltaSign(v interface{}) {}
-func (this *Uint64) SetMin(v interface{})       { *this.min = *v.(*codec.Uint64) }
-func (this *Uint64) SetMax(v interface{})       { *this.max = *v.(*codec.Uint64) }
+func (this *Uint64) SetMin(v interface{})       { *this.min = (codec.Uint64)(*v.(*uint64)) }
+func (this *Uint64) SetMax(v interface{})       { *this.max = (codec.Uint64)(*v.(*uint64)) }
 
 func (this *Uint64) TypeID() uint8                                              { return UINT64 }
 func (this *Uint64) IsSelf(key interface{}) bool                                { return true }

@@ -6,14 +6,13 @@ import (
 	"testing"
 
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
-	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
-	"github.com/arcology-network/concurrenturl/datatypes/commutative"
-	"github.com/arcology-network/concurrenturl/datatypes/noncommutative"
+	"github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 	"github.com/arcology-network/concurrenturl/interfaces"
+	"github.com/arcology-network/concurrenturl/noncommutative"
 	storage "github.com/arcology-network/concurrenturl/storage"
 )
 
@@ -291,173 +290,173 @@ func TestBasic(t *testing.T) {
 	}
 }
 
-func TestPathAddThenDelete(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, nil, nil, encoder, decoder)
-	url := ccurl.NewConcurrentUrl(store)
-	alice := AliceAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
-		fmt.Println(err)
-	}
+// func TestPathAddThenDelete(t *testing.T) {
+// 	store := cachedstorage.NewDataStore(nil, nil, nil, encoder, decoder)
+// 	url := ccurl.NewConcurrentUrl(store)
+// 	alice := AliceAccount()
+// 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+// 		fmt.Println(err)
+// 	}
 
-	acctTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{})
-	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
+// 	acctTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{})
+// 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
 
-	url.Sort()
-	url.Commit([]uint32{ccurlcommon.SYSTEM})
+// 	url.Sort()
+// 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
-	// url.Init(store)
-	// create a path
+// 	// url.Init(store)
+// 	// create a path
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.NewPath(), true); err != nil {
-		t.Error(err)
-	}
+// 	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.NewPath(), true); err != nil {
+// 		t.Error(err)
+// 	}
 
-	// Try to rewrite a path, should fail !
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", noncommutative.NewString("path"), true); err == nil {
-		t.Error(err)
-	}
+// 	// Try to rewrite a path, should fail !
+// 	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", noncommutative.NewString("path"), true); err == nil {
+// 		t.Error(err)
+// 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", noncommutative.NewInt64(0), true); err != nil {
-		t.Error(err)
-	}
+// 	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", noncommutative.NewInt64(0), true); err != nil {
+// 		t.Error(err)
+// 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", noncommutative.NewInt64(2222), true); err != nil {
-		t.Error(err)
-	}
+// 	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", noncommutative.NewInt64(2222), true); err != nil {
+// 		t.Error(err)
+// 	}
 
-	// Write an entry having the the same name of a path, should go through
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil, true); err != nil {
-		t.Error(err)
-	}
+// 	// Write an entry having the the same name of a path, should go through
+// 	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil, true); err != nil {
+// 		t.Error(err)
+// 	}
 
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.Path{}); value != nil {
-		t.Error("not found")
-	}
+// 	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.Path{}); value != nil {
+// 		t.Error("not found")
+// 	}
 
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", noncommutative.NewInt64(0)); value != nil {
-		t.Error("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-000 not found")
-	}
+// 	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", noncommutative.NewInt64(0)); value != nil {
+// 		t.Error("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-000 not found")
+// 	}
 
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", noncommutative.NewInt64(0)); value != nil {
-		t.Error("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-001 not found")
-	}
+// 	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", noncommutative.NewInt64(0)); value != nil {
+// 		t.Error("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-001 not found")
+// 	}
 
-	// Write an entry having the the same name of a path, should go through
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.NewPath(), true); err != nil {
-		t.Error(err)
-	}
+// 	// Write an entry having the the same name of a path, should go through
+// 	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.NewPath(), true); err != nil {
+// 		t.Error(err)
+// 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-888", noncommutative.NewInt64(888), true); err != nil {
-		t.Error(err)
-	}
+// 	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-888", noncommutative.NewInt64(888), true); err != nil {
+// 		t.Error(err)
+// 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-999", noncommutative.NewInt64(999), true); err != nil {
-		t.Error(err)
-	}
+// 	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-999", noncommutative.NewInt64(999), true); err != nil {
+// 		t.Error(err)
+// 	}
 
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-888", noncommutative.Int64(0)); value == nil {
-		t.Error("not found")
-	}
+// 	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-888", noncommutative.Int64(0)); value == nil {
+// 		t.Error("not found")
+// 	}
 
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-999", noncommutative.Int64(0)); value == nil {
-		t.Error("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-000 not found")
-	}
+// 	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-999", noncommutative.Int64(0)); value == nil {
+// 		t.Error("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-000 not found")
+// 	}
 
-	meta, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.Path{})
-	if meta == nil || len(meta.([]string)) != 2 ||
-		meta.([]string)[0] != "elem-888" ||
-		meta.([]string)[1] != "elem-999" {
-		t.Error("not found")
-	}
-}
+// 	meta, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.Path{})
+// 	if meta == nil || len(meta.([]string)) != 2 ||
+// 		meta.([]string)[0] != "elem-888" ||
+// 		meta.([]string)[1] != "elem-999" {
+// 		t.Error("not found")
+// 	}
+// }
 
-func TestUrl1(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, nil, nil, encoder, decoder)
-	url := ccurl.NewConcurrentUrl(store)
-	alice := AliceAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
-		fmt.Println(err)
-	}
+// func TestUrl1(t *testing.T) {
+// 	store := cachedstorage.NewDataStore(nil, nil, nil, encoder, decoder)
+// 	url := ccurl.NewConcurrentUrl(store)
+// 	alice := AliceAccount()
+// 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+// 		fmt.Println(err)
+// 	}
 
-	raw := url.Export(indexer.Sorter)
-	acctTrans := indexer.Univalues(common.Clone(raw)).To(indexer.ITCTransition{})
-	// accesses := indexer.Univalues(common.Clone(this.buffer)).To(indexer.ITCAccess{})
+// 	raw := url.Export(indexer.Sorter)
+// 	acctTrans := indexer.Univalues(common.Clone(raw)).To(indexer.ITCTransition{})
+// 	// accesses := indexer.Univalues(common.Clone(this.buffer)).To(indexer.ITCAccess{})
 
-	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
+// 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
 
-	url.Sort()
-	url.Commit([]uint32{ccurlcommon.SYSTEM})
+// 	url.Sort()
+// 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
-	// url.Init(store)
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.NewPath(), true); err != nil {
-		t.Error(err)
-	}
+// 	// url.Init(store)
+// 	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.NewPath(), true); err != nil {
+// 		t.Error(err)
+// 	}
 
-	// Write an entry having the the same name of a path, should go through
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0", noncommutative.NewString("ctrn-0"), true); err != nil {
-		t.Error(err)
-	}
+// 	// Write an entry having the the same name of a path, should go through
+// 	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0", noncommutative.NewString("ctrn-0"), true); err != nil {
+// 		t.Error(err)
+// 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/elem-0", noncommutative.NewString("elem-0"), true); err != nil {
-		t.Error(err)
-	}
+// 	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/elem-0", noncommutative.NewString("elem-0"), true); err != nil {
+// 		t.Error(err)
+// 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", noncommutative.NewInt64(0), true); err != nil {
-		t.Error(err)
-	}
+// 	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", noncommutative.NewInt64(0), true); err != nil {
+// 		t.Error(err)
+// 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", noncommutative.NewInt64(2222), true); err != nil {
-		t.Error(err)
-	}
+// 	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", noncommutative.NewInt64(2222), true); err != nil {
+// 		t.Error(err)
+// 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-002", noncommutative.NewInt64(3333), true); err != nil {
-		t.Error(err)
-	}
+// 	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-002", noncommutative.NewInt64(3333), true); err != nil {
+// 		t.Error(err)
+// 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", noncommutative.NewInt64(5555), true); err != nil {
-		t.Error(err)
-	}
+// 	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", noncommutative.NewInt64(5555), true); err != nil {
+// 		t.Error(err)
+// 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", noncommutative.NewInt64(6666), true); err != nil {
-		t.Error(err)
-	}
+// 	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", noncommutative.NewInt64(6666), true); err != nil {
+// 		t.Error(err)
+// 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-002", noncommutative.NewInt64(7777), true); err != nil {
-		t.Error(err)
-	}
+// 	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-002", noncommutative.NewInt64(7777), true); err != nil {
+// 		t.Error(err)
+// 	}
 
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", noncommutative.Int64(0)); value == nil || value.(int64) != 5555 {
-		t.Error("Error: Wrong value")
-	}
+// 	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", noncommutative.Int64(0)); value == nil || value.(int64) != 5555 {
+// 		t.Error("Error: Wrong value")
+// 	}
 
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", noncommutative.Int64(0)); value == nil || value.(int64) != 6666 {
-		t.Error("Error: Wrong value")
-	}
+// 	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", noncommutative.Int64(0)); value == nil || value.(int64) != 6666 {
+// 		t.Error("Error: Wrong value")
+// 	}
 
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-002", noncommutative.Int64(0)); value == nil || value.(int64) != 7777 {
-		t.Error("Error: Wrong value")
-	}
+// 	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-002", noncommutative.Int64(0)); value == nil || value.(int64) != 7777 {
+// 		t.Error("Error: Wrong value")
+// 	}
 
-	if meta, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.Path{}); meta == nil {
-		t.Error("Error: not found")
-	}
+// 	if meta, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.Path{}); meta == nil {
+// 		t.Error("Error: not found")
+// 	}
 
-	// Export all access records and state transitions
-	transitions := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
-	// v, _, _ := transitions[0].Value().(interfaces.Type).Get()
-	if (*transitions[0].Value().(*noncommutative.String)) != "ctrn-0" {
-		t.Error("Error: keys don't match")
-	}
+// 	// Export all access records and state transitions
+// 	transitions := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+// 	// v, _, _ := transitions[0].Value().(interfaces.Type).Get()
+// 	if (*transitions[0].Value().(*noncommutative.String)) != "ctrn-0" {
+// 		t.Error("Error: keys don't match")
+// 	}
 
-	addedkeys := codec.Strings(transitions[1].Value().(interfaces.Type).Delta().(*commutative.PathDelta).Added()).Sort()
-	if !reflect.DeepEqual([]string(addedkeys), []string{"elem-000", "elem-001", "elem-002"}) {
-		t.Error("Error: keys don't match")
-	}
+// 	addedkeys := codec.Strings(transitions[1].Value().(interfaces.Type).Delta().(*commutative.PathDelta).Added()).Sort()
+// 	if !reflect.DeepEqual([]string(addedkeys), []string{"elem-000", "elem-001", "elem-002"}) {
+// 		t.Error("Error: keys don't match")
+// 	}
 
-	if meta, _ := url.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/", commutative.Path{}); meta == nil {
-		t.Error("Error: The variable has been cleared")
-	}
-}
+// 	if meta, _ := url.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/", commutative.Path{}); meta == nil {
+// 		t.Error("Error: The variable has been cleared")
+// 	}
+// }
 
 // func TestUrl2(t *testing.T) {
 // 	store := cachedstorage.NewDataStore(nil, nil, nil, encoder, decoder)

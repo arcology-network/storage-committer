@@ -10,7 +10,7 @@ import (
 	ccurl "github.com/arcology-network/concurrenturl"
 	arbitrator "github.com/arcology-network/concurrenturl/arbitrator"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
-	commutative "github.com/arcology-network/concurrenturl/datatypes/commutative"
+	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	storage "github.com/arcology-network/concurrenturl/storage"
