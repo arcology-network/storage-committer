@@ -1,4 +1,0 @@
-package merklepatriciatrie
-
-// func main() {
-// }
