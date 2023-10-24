@@ -110,36 +110,38 @@ type Univalue interface { // value type
 }
 
 type WriteCache interface {
-	Read(uint32, string) (interface{}, interface{})
-	Peek(path string) (interface{}, interface{})
+	Read(uint32, string, any) (interface{}, interface{})
+	Peek(string, any) (interface{}, interface{})
 	Write(uint32, string, interface{}, bool) error
 	AddTransitions([]Univalue)
 
-	Retrive(string) (interface{}, error)
-	RetriveShallow(string) interface{}
+	Retrive(string, any) (interface{}, error)
+	// RetriveShallow(string, func([]byte) (interface{}, error)) interface{}
 	Cache() *map[string]Univalue
 	Store() ReadonlyDatastore
 }
 
 type Importer interface {
+	IfExists(string) bool
 	RetriveShallow(string) interface{}
 }
 
 type ReadonlyDatastore interface {
-	Retrive(string) (interface{}, error)
+	IfExists(string) bool
+	Retrive(string, any) (interface{}, error)
 }
 
 type Datastore interface {
-	Inject(string, interface{}) error
-	BatchInject([]string, []interface{}) error
-	Retrive(string) (interface{}, error)
-	BatchRetrive([]string) []interface{}
+	IfExists(string) bool
+	Inject(string, any) error
+	BatchInject([]string, []any) error
+	Retrive(string, any) (interface{}, error)
+	BatchRetrive([]string, []any) []interface{}
 	Precommit([]string, interface{})
 	Commit() error
 	UpdateCacheStats([]interface{})
 
-	Buffers() ([]string, []interface{}, [][]byte)
-
+	// Buffers() ([]string, []interface{}, [][]byte)
 	Dump() ([]string, []interface{})
 	Clear()
 	Print()

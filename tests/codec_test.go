@@ -2,21 +2,24 @@ package ccurltest
 
 import (
 	"fmt"
+	"math/big"
 	"reflect"
 	"testing"
 	"time"
 
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
+	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
-	commutative "github.com/arcology-network/concurrenturl/commutative"
+	commutative "github.com/arcology-network/concurrenturl/datatypes/commutative"
+	noncommutative "github.com/arcology-network/concurrenturl/datatypes/noncommutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 	"github.com/arcology-network/concurrenturl/interfaces"
-	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	storage "github.com/arcology-network/concurrenturl/storage"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
+	rlp "github.com/arcology-network/evm/rlp"
 )
 
 func TestNoncommutativeCodec(t *testing.T) {
@@ -112,4 +115,35 @@ func TestUnivaluesCodec(t *testing.T) {
 			fmt.Println("Error: Missmatched")
 		}
 	}
+}
+
+func TestRlpComparePerformance(t *testing.T) {
+	num := big.NewInt(100)
+
+	expected, err := rlp.EncodeToBytes(num)
+	if err != nil {
+		t.Error(expected, err)
+	}
+
+	var decoded big.Int
+	if err := rlp.DecodeBytes(expected, &decoded); err != nil {
+		t.Error(expected, err)
+	}
+
+	if num.Cmp(&decoded) != 0 {
+		t.Error("Mismatch")
+	}
+
+	t0 := time.Now()
+	for i := 0; i < 1000000; i++ {
+		num = big.NewInt(100)
+	}
+	fmt.Println("big NewInt RLP Encode:            "+fmt.Sprint(1000000), time.Since(t0))
+
+	t0 = time.Now()
+	for i := 0; i < 1000000; i++ {
+		v := codec.Bigint(*num)
+		v.Encode()
+	}
+	fmt.Println("big NewInt Codec Encode:            "+fmt.Sprint(1000000), time.Since(t0))
 }

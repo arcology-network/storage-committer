@@ -2,6 +2,7 @@ package ccdb
 
 import (
 	"crypto/sha256"
+	"math"
 
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
 	"github.com/arcology-network/concurrenturl/interfaces"
@@ -15,7 +16,7 @@ type TransientDB struct {
 
 func NewTransientDB(parent interfaces.Datastore) interfaces.Datastore {
 	return &TransientDB{
-		DataStore: cachedstorage.NewDataStore(nil, nil, nil, Codec{}.Encode, Codec{}.Decode),
+		DataStore: cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(math.MaxUint64, 1), nil, nil, nil),
 		parent:    parent,
 	}
 }
@@ -32,14 +33,14 @@ func (this *TransientDB) Checksum() [32]byte {
 	return this.DataStore.Checksum()
 }
 
-func (db *TransientDB) Retrive(path string) (interface{}, error) {
-	v, err := db.DataStore.Retrive(path)
+func (db *TransientDB) Retrive(path string, T any) (interface{}, error) {
+	v, err := db.DataStore.Retrive(path, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	if v == nil {
-		v, err = db.parent.Retrive(path)
+		v, err = db.parent.Retrive(path, T)
 		if err != nil {
 			return nil, err
 		}
@@ -47,10 +48,10 @@ func (db *TransientDB) Retrive(path string) (interface{}, error) {
 	return v, nil
 }
 
-func (db *TransientDB) BatchRetrive(paths []string) []interface{} {
+func (db *TransientDB) BatchRetrive(paths []string, T []any) []interface{} {
 	queryKeys := make([]string, 0, len(paths))
 	queryIdxes := make([]int, 0, len(paths))
-	values := db.DataStore.BatchRetrive(paths)
+	values := db.DataStore.BatchRetrive(paths, T)
 	for i := 0; i < len(paths); i++ {
 		if values[i] == nil {
 			queryKeys = append(queryKeys, paths[i])
@@ -61,7 +62,7 @@ func (db *TransientDB) BatchRetrive(paths []string) []interface{} {
 	if len(queryKeys) == 0 { // No missing values
 		return values
 	}
-	queryvalues := db.parent.BatchRetrive(queryKeys)
+	queryvalues := db.parent.BatchRetrive(queryKeys, T)
 	for i, idx := range queryIdxes {
 		values[idx] = queryvalues[i]
 	}

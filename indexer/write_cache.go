@@ -43,24 +43,35 @@ func (this *WriteCache) NewUnivalue() *univalue.Univalue {
 	return v
 }
 
+// For write cache RetriveShallow() is same os Retrive()
+func (this *WriteCache) RetriveShallow(key string, T any) interface{} {
+	ret, _ := this.store.Retrive(key, T)
+	return ret
+}
+
 // If the access has been recorded
-func (this *WriteCache) GetOrInit(tx uint32, path string) interfaces.Univalue {
+func (this *WriteCache) GetOrInit(tx uint32, path string, T any) interfaces.Univalue {
 	unival := this.kvDict[path]
 	if unival == nil { // Not in the kvDict, check the datastore
 		unival = this.NewUnivalue()
-		unival.(*univalue.Univalue).Init(tx, path, 0, 0, 0, this.RetriveShallow(path), this)
+		unival.(*univalue.Univalue).Init(tx, path, 0, 0, 0, this.RetriveShallow(path, T), this)
 		this.kvDict[path] = unival // Adding to kvDict
 	}
 	return unival
 }
 
-func (this *WriteCache) Read(tx uint32, path string) (interface{}, interface{}) {
-	univalue := this.GetOrInit(tx, path)
+// func (this *WriteCache) Read(tx uint32, path string) (interface{}, interface{}) {
+// 	univalue := this.GetOrInit(tx, path)
+// 	return univalue.Get(tx, path, nil), univalue
+// }
+
+func (this *WriteCache) Read(tx uint32, path string, T any) (interface{}, interface{}) {
+	univalue := this.GetOrInit(tx, path, T)
 	return univalue.Get(tx, path, nil), univalue
 }
 
-func (this *WriteCache) Retrive(path string) (interface{}, error) {
-	v, _ := this.Peek(path)
+func (this *WriteCache) Retrive(path string, T any) (interface{}, error) {
+	v, _ := this.Peek(path, T)
 	if v == nil || v.(interfaces.Type).IsDeltaApplied() {
 		return v, nil
 	}
@@ -70,30 +81,30 @@ func (this *WriteCache) Retrive(path string) (interface{}, error) {
 	return v.(interfaces.Type).New(value, nil, nil, v.(interfaces.Type).Min(), v.(interfaces.Type).Max()), nil
 }
 
-func (this *WriteCache) Do(tx uint32, path string, doer interface{}) interface{} {
-	univalue := this.GetOrInit(tx, path)
+func (this *WriteCache) Do(tx uint32, path string, doer interface{}, T any) interface{} {
+	univalue := this.GetOrInit(tx, path, T)
 	return univalue.Do(tx, path, doer)
 }
 
 // Get the value directly, skip the access counting at the univalue level
-func (this *WriteCache) Peek(path string) (interface{}, interface{}) {
+func (this *WriteCache) Peek(path string, T any) (interface{}, interface{}) {
 	if v, ok := this.kvDict[path]; ok {
 		return v.Value(), v
 	}
 
-	v := this.RetriveShallow(path)
+	v := this.RetriveShallow(path, T)
 	return v, univalue.NewUnivalue(ccurlcommon.SYSTEM, path, 0, 0, 0, v)
 }
 
 func (this *WriteCache) Write(tx uint32, path string, value interface{}, _ bool) error {
 	parentPath := common.GetParentPath(path)
 	if this.IfExists(parentPath) || tx == ccurlcommon.SYSTEM { // The parent path exists or to inject the path directly
-		univalue := this.GetOrInit(tx, path) // Get a univalue wrapper
+		univalue := this.GetOrInit(tx, path, value) // Get a univalue wrapper
 
 		err := univalue.Set(tx, path, value, this)
 		if err == nil {
 			if strings.HasSuffix(parentPath, "container/") || (!this.platform.IsSysPath(parentPath) && tx != ccurlcommon.SYSTEM) { // Don't keep track of the system children
-				parentMeta := this.GetOrInit(tx, parentPath)
+				parentMeta := this.GetOrInit(tx, parentPath, value)
 				err = parentMeta.Set(tx, path, univalue.Value(), this)
 			}
 		}
@@ -104,12 +115,7 @@ func (this *WriteCache) Write(tx uint32, path string, value interface{}, _ bool)
 }
 
 func (this *WriteCache) IfExists(path string) bool {
-	return this.kvDict[path] != nil || this.RetriveShallow(path) != nil
-}
-
-func (this *WriteCache) RetriveShallow(key string) interface{} {
-	ret, _ := this.store.Retrive(key)
-	return ret
+	return this.kvDict[path] != nil || this.RetriveShallow(path, nil) != nil
 }
 
 func (this *WriteCache) AddTransitions(transitions []interfaces.Univalue) {

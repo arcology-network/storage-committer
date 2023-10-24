@@ -11,10 +11,10 @@ type ReadonlyServer struct {
 	addr      string
 	dataStore *cachedstorage.DataStore
 	encoder   func(interface{}) []byte
-	decoder   func([]byte) interface{}
+	decoder   func([]byte) (interface{}, error)
 }
 
-func NewReadonlyServer(addr string, encoder func(interface{}) []byte, decoder func([]byte) interface{}, dataStore *cachedstorage.DataStore) *ReadonlyServer {
+func NewReadonlyServer(addr string, encoder func(interface{}) []byte, decoder func([]byte) (interface{}, error), dataStore *cachedstorage.DataStore) *ReadonlyServer {
 	return &ReadonlyServer{
 		addr:      addr,
 		dataStore: dataStore,
@@ -24,7 +24,7 @@ func NewReadonlyServer(addr string, encoder func(interface{}) []byte, decoder fu
 }
 
 func (this *ReadonlyServer) Get(path string) ([]byte, error) {
-	val, err := this.dataStore.Retrive(path)
+	val, err := this.dataStore.Retrive(path, nil)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -35,7 +35,7 @@ func (this *ReadonlyServer) Get(path string) ([]byte, error) {
 func (this *ReadonlyServer) BatchGet(paths []string) ([][]byte, error) {
 	bytes := make([][]byte, len(paths))
 	for i, v := range paths {
-		val, err := this.dataStore.Retrive(v)
+		val, err := this.dataStore.Retrive(v, nil)
 		if err != nil {
 			fmt.Printf("ReadonlyServer BatchGet err: %v k: %v\n", err, v)
 			continue
@@ -50,7 +50,7 @@ func (this *ReadonlyServer) Receive(writer http.ResponseWriter, request *http.Re
 	case "GET":
 		if err := request.ParseForm(); err == nil {
 			key := request.FormValue("key")
-			if v, _ := this.dataStore.Retrive(key); v != nil {
+			if v, _ := this.dataStore.Retrive(key, nil); v != nil {
 				writer.Write(this.encoder(v))
 			}
 		}

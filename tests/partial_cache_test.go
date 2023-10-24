@@ -8,8 +8,8 @@ import (
 	"github.com/arcology-network/common-lib/common"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	noncommutative "github.com/arcology-network/concurrenturl/datatypes/noncommutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
-	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	storage "github.com/arcology-network/concurrenturl/storage"
 )
 

@@ -56,10 +56,17 @@ func (this *Importer) NewUnivalue() *univalue.Univalue {
 	return v
 }
 
-func (this *Importer) RetriveShallow(key string) interface{} {
-	ret, _ := this.store.Retrive(key)
-	return ret
+func (this *Importer) IfExists(key string) bool {
+	if _, ok := this.byPath.Get(key); !ok {
+		return this.store.IfExists(key)
+	}
+	return false
 }
+
+// func (this *Importer) RetriveShallow(key string, decoder func([]byte) (interface{}, error)) interface{} {
+// 	ret, _ := this.store.Retrive(key, decoder)
+// 	return ret
+// }
 
 func (this *Importer) Import(txTrans []interfaces.Univalue, args ...interface{}) {
 	//txTrans = common.RemoveIf(&txTrans, func(v interfaces.Univalue) bool { return v.Persistent() })
@@ -77,10 +84,10 @@ func (this *Importer) Import(txTrans []interfaces.Univalue, args ...interface{})
 	// Create delta sequences all at once
 	deltaSeq := this.byPath.BatchGet(nKeys) // If the entries exist in the RWCache already
 
-	inLocalCache := this.store.BatchRetrive(nKeys)
+	inLocalCache := this.store.BatchRetrive(nKeys, nil)
 	worker := func(start, end, index int, args ...interface{}) {
 		seqPool := this.seqPool.GetTlsMempool(index)
-		uniPool := this.uniPool.GetTlsMempool(index)
+		// uniPool := this.uniPool.GetTlsMempool(index)
 		for i := start; i < end; i++ {
 			if deltaSeq[i] == nil { // The entry does't exist in the RWCache
 				preexist := txTrans[i].Preexist()
@@ -90,12 +97,12 @@ func (this *Importer) Import(txTrans []interfaces.Univalue, args ...interface{})
 					continue
 				}
 
-				deltaSeq[i] = seqPool.Get().(*DeltaSequence)                // create a new delta sequence from the pool
-				deltaSeq[i].(*DeltaSequence).Reset(nKeys[i], this, uniPool) // Reset the sequence in case it was used before
+				deltaSeq[i] = seqPool.Get().(*DeltaSequence) // create a new delta sequence from the pool
+				deltaSeq[i].(*DeltaSequence).Reset(nKeys[i]) // Reset the sequence in case it was used before
 
-				if preexist {
-					deltaSeq[i].(*DeltaSequence).Init(nKeys[i], this, uniPool) // Get the initial value from the cache / persistent DB
-				}
+				// if preexist {
+				// 	deltaSeq[i].(*DeltaSequence).Init(nKeys[i], this, uniPool) // Get the initial value from the cache / persistent DB
+				// }
 			}
 		}
 	}
@@ -109,7 +116,13 @@ func (this *Importer) Import(txTrans []interfaces.Univalue, args ...interface{})
 			}
 
 			deltaSeq, _ := this.byPath.Get(*txTrans[i].GetPath())
-			deltaSeq.(*DeltaSequence).Insert(txTrans[i])
+			deltaSeq.(*DeltaSequence).Insert(txTrans[i], this, this.uniPool)
+
+			// if preexist {
+
+			// deltaSeq.(*DeltaSequence).Init(nKeys[i], this, uniPool) // Get the initial value from the cache / persistent DB
+			// }
+
 		}
 	}
 	common.ParallelWorker(len(txTrans), this.numThreads, Inserter)

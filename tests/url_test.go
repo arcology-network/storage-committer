@@ -11,10 +11,10 @@ import (
 	"github.com/arcology-network/common-lib/common"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
-	"github.com/arcology-network/concurrenturl/commutative"
+	"github.com/arcology-network/concurrenturl/datatypes/commutative"
+	"github.com/arcology-network/concurrenturl/datatypes/noncommutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 	"github.com/arcology-network/concurrenturl/interfaces"
-	"github.com/arcology-network/concurrenturl/noncommutative"
 	storage "github.com/arcology-network/concurrenturl/storage"
 	"github.com/arcology-network/concurrenturl/univalue"
 	"github.com/holiman/uint256"
@@ -149,7 +149,8 @@ func TestAddThenDeletePath2(t *testing.T) {
 }
 
 func TestBasic(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+	store := ccurlcommon.NewEthMemoryDataStore()
+	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
@@ -709,7 +710,7 @@ func TestCommutative(t *testing.T) {
 
 	// ----------------------------U256 ---------------------------------------------------
 	if _, err := url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/balance",
-		commutative.NewU256(commutative.U256_MIN, commutative.U256_MAX), true); err != nil { //initialization
+		commutative.NewU256(), true); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 

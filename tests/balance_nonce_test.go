@@ -8,9 +8,9 @@ import (
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
-	commutative "github.com/arcology-network/concurrenturl/commutative"
+	commutative "github.com/arcology-network/concurrenturl/datatypes/commutative"
+	noncommutative "github.com/arcology-network/concurrenturl/datatypes/noncommutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
-	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	storage "github.com/arcology-network/concurrenturl/storage"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 	"github.com/holiman/uint256"
@@ -25,7 +25,7 @@ func TestSimpleBalance(t *testing.T) {
 	}
 
 	if _, err := url.Write(0, "blcc://eth1.0/account/"+alice+"/balance",
-		commutative.NewU256(commutative.U256_MIN, commutative.U256_MAX), true); err != nil { //initialization
+		commutative.NewU256(), true); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 

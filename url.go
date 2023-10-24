@@ -8,10 +8,10 @@ import (
 	"github.com/arcology-network/common-lib/common"
 	performance "github.com/arcology-network/common-lib/mhasher"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
-	commutative "github.com/arcology-network/concurrenturl/commutative"
+	"github.com/arcology-network/concurrenturl/datatypes/commutative"
+	noncommutative "github.com/arcology-network/concurrenturl/datatypes/noncommutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 	interfaces "github.com/arcology-network/concurrenturl/interfaces"
-	"github.com/arcology-network/concurrenturl/noncommutative"
 	"github.com/arcology-network/concurrenturl/univalue"
 )
 
@@ -72,12 +72,12 @@ func (this *ConcurrentUrl) WriteCache() *indexer.WriteCache { return this.writeC
 func (this *ConcurrentUrl) Importer() *indexer.Importer     { return this.importer }
 
 // Get data from the DB direcly, still under conflict protection
-func (this *ConcurrentUrl) ReadCommitted(tx uint32, key string) (interface{}, uint64) {
-	if v, Fee := this.Read(tx, key); v != nil { // For conflict detection
+func (this *ConcurrentUrl) ReadCommitted(tx uint32, key string, decoder func([]byte) (interface{}, error)) (interface{}, uint64) {
+	if v, Fee := this.Read(tx, key, decoder); v != nil { // For conflict detection
 		return v, Fee
 	}
 
-	v, _ := this.WriteCache().Store().Retrive(key)
+	v, _ := this.WriteCache().Store().Retrive(key, decoder)
 	return v, Fee{}.Reader(univalue.NewUnivalue(tx, key, 1, 0, 0, v))
 }
 
@@ -108,7 +108,7 @@ func (this *ConcurrentUrl) NewAccount(tx uint32, acct string) error {
 			v = noncommutative.NewString("")
 
 		case uint8(reflect.Kind(commutative.UINT256)): // delta big int
-			v = commutative.NewU256(commutative.U256_MIN, commutative.U256_MAX)
+			v = commutative.NewU256()
 
 		case uint8(reflect.Kind(commutative.UINT64)):
 			v = commutative.NewUint64(0, math.MaxUint64)
@@ -137,13 +137,13 @@ func (this *ConcurrentUrl) IfExists(path string) bool {
 	return this.writeCache.IfExists(path)
 }
 
-func (this *ConcurrentUrl) IndexOf(tx uint32, path string, key interface{}) (uint64, uint64) {
+func (this *ConcurrentUrl) IndexOf(tx uint32, path string, key interface{}, T any) (uint64, uint64) {
 	if !common.IsPath(path) {
 		return math.MaxUint64, READ_NONEXIST //, errors.New("Error: Not a path!!!")
 	}
 
 	getter := func(v interface{}) (uint32, uint32, uint32, interface{}) { return 1, 0, 0, v }
-	if v, err := this.Do(tx, path, getter); err == nil {
+	if v, err := this.Do(tx, path, getter, T); err == nil {
 		pathInfo := v.(interfaces.Univalue).Value()
 		if common.IsType[*commutative.Path](pathInfo) && common.IsType[string](key) {
 			return pathInfo.(*commutative.Path).View().IdxOf(key.(string)), 0
@@ -152,13 +152,13 @@ func (this *ConcurrentUrl) IndexOf(tx uint32, path string, key interface{}) (uin
 	return math.MaxUint64, READ_NONEXIST
 }
 
-func (this *ConcurrentUrl) KeyAt(tx uint32, path string, index interface{}) (string, uint64) {
+func (this *ConcurrentUrl) KeyAt(tx uint32, path string, index interface{}, T any) (string, uint64) {
 	if !common.IsPath(path) {
 		return "", READ_NONEXIST //, errors.New("Error: Not a path!!!")
 	}
 
 	getter := func(v interface{}) (uint32, uint32, uint32, interface{}) { return 1, 0, 0, v }
-	if v, err := this.Do(tx, path, getter); err == nil {
+	if v, err := this.Do(tx, path, getter, T); err == nil {
 		pathInfo := v.(interfaces.Univalue).Value()
 		if common.IsType[*commutative.Path](pathInfo) && common.IsType[uint64](index) {
 			return pathInfo.(*commutative.Path).View().KeyAt(index.(uint64)), 0
@@ -167,18 +167,18 @@ func (this *ConcurrentUrl) KeyAt(tx uint32, path string, index interface{}) (str
 	return "", READ_NONEXIST
 }
 
-func (this *ConcurrentUrl) Peek(path string) (interface{}, uint64) {
-	typedv, univ := this.writeCache.Peek(path)
+func (this *ConcurrentUrl) Peek(path string, T any) (interface{}, uint64) {
+	typedv, univ := this.writeCache.Peek(path, T)
 	return typedv, Fee{}.Reader(univ.(interfaces.Univalue))
 }
 
-func (this *ConcurrentUrl) PeekCommitted(path string) (interface{}, uint64) {
-	v := this.writeCache.RetriveShallow(path)
+func (this *ConcurrentUrl) PeekCommitted(path string, T any) (interface{}, uint64) {
+	v := this.writeCache.RetriveShallow(path, T)
 	return v, READ_COMMITTED_FROM_DB
 }
 
-func (this *ConcurrentUrl) Read(tx uint32, path string) (interface{}, uint64) {
-	typedv, univ := this.writeCache.Read(tx, path)
+func (this *ConcurrentUrl) Read(tx uint32, path string, T any) (interface{}, uint64) {
+	typedv, univ := this.writeCache.Read(tx, path, T)
 	return typedv, Fee{}.Reader(univ.(interfaces.Univalue))
 }
 
@@ -191,17 +191,17 @@ func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}, pers
 	return fee, errors.New("Error: Unknown data type !")
 }
 
-func (this *ConcurrentUrl) Do(tx uint32, path string, doer interface{}) (interface{}, error) {
-	return this.writeCache.Do(tx, path, doer), nil
+func (this *ConcurrentUrl) Do(tx uint32, path string, doer interface{}, T any) (interface{}, error) {
+	return this.writeCache.Do(tx, path, doer, T), nil
 }
 
 // Read th Nth element under a path
-func (this *ConcurrentUrl) at(tx uint32, path string, idx uint64) (interface{}, uint64, error) {
+func (this *ConcurrentUrl) at(tx uint32, path string, idx uint64, T any) (interface{}, uint64, error) {
 	if !common.IsPath(path) {
 		return nil, READ_NONEXIST, errors.New("Error: Not a path!!!")
 	}
 
-	meta, readFee := this.Read(tx, path) // read the container meta
+	meta, readFee := this.Read(tx, path, T) // read the container meta
 	return common.IfThen(meta == nil,
 		meta,
 		common.IfThenDo1st(idx < uint64(len(meta.([]string))), func() interface{} { return path + meta.([]string)[idx] }, nil),
@@ -209,9 +209,9 @@ func (this *ConcurrentUrl) at(tx uint32, path string, idx uint64) (interface{}, 
 }
 
 // Read th Nth element under a path
-func (this *ConcurrentUrl) ReadAt(tx uint32, path string, idx uint64) (interface{}, uint64, error) {
-	if key, Fee, err := this.at(tx, path, idx); err == nil && key != nil {
-		v, Fee := this.Read(tx, key.(string))
+func (this *ConcurrentUrl) ReadAt(tx uint32, path string, idx uint64, T any) (interface{}, uint64, error) {
+	if key, Fee, err := this.at(tx, path, idx, T); err == nil && key != nil {
+		v, Fee := this.Read(tx, key.(string), T)
 		return v, Fee, nil
 	} else {
 		return key, Fee, err
@@ -219,9 +219,9 @@ func (this *ConcurrentUrl) ReadAt(tx uint32, path string, idx uint64) (interface
 }
 
 // Read th Nth element under a path
-func (this *ConcurrentUrl) DoAt(tx uint32, path string, idx uint64, do interface{}) (interface{}, uint64, error) {
-	if key, Fee, err := this.at(tx, path, idx); err == nil && key != nil {
-		v, err := this.Do(tx, key.(string), do)
+func (this *ConcurrentUrl) DoAt(tx uint32, path string, idx uint64, do interface{}, T any) (interface{}, uint64, error) {
+	if key, Fee, err := this.at(tx, path, idx, T); err == nil && key != nil {
+		v, err := this.Do(tx, key.(string), do, T)
 		return v, Fee, err
 	} else {
 		return key, Fee, err
@@ -229,19 +229,20 @@ func (this *ConcurrentUrl) DoAt(tx uint32, path string, idx uint64, do interface
 }
 
 // Read th Nth element under a path
-func (this *ConcurrentUrl) PopBack(tx uint32, path string, persistent bool) (interface{}, int64, error) {
+func (this *ConcurrentUrl) PopBack(tx uint32, path string, persistent bool, T any) (interface{}, int64, error) {
 	if !common.IsPath(path) {
 		return nil, int64(READ_NONEXIST), errors.New("Error: Not a path!!!")
 	}
+	pathDecoder := T
 
-	subkeys, Fee := this.Read(tx, path) // read the container meta
+	subkeys, Fee := this.Read(tx, path, pathDecoder) // read the container meta
 	if subkeys == nil || len(subkeys.([]string)) == 0 {
 		return nil, int64(Fee), errors.New("Error: The path is either empty or doesn't exist")
 	}
 
 	key := path + subkeys.([]string)[len(subkeys.([]string))-1]
 
-	value, Fee := this.Read(tx, key)
+	value, Fee := this.Read(tx, key, pathDecoder)
 	if value == nil {
 		return nil, int64(Fee), errors.New("Error: Empty container!")
 	}
@@ -256,7 +257,7 @@ func (this *ConcurrentUrl) WriteAt(tx uint32, path string, idx uint64, value int
 		return int64(READ_NONEXIST), errors.New("Error: Not a path!!!")
 	}
 
-	if key, Fee, err := this.at(tx, path, idx); err == nil {
+	if key, Fee, err := this.at(tx, path, idx, value); err == nil {
 		return this.Write(tx, key.(string), value, persistent)
 	} else {
 		return int64(Fee), err

@@ -97,11 +97,11 @@ func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{
 
 func (this *Univalue) Merge(writeCache interfaces.WriteCache) {
 	common.IfThenDo(this.writes == 0 && this.deltaWrites == 0,
-		func() { writeCache.Read(this.tx, *this.GetPath()) },
+		func() { writeCache.Read(this.tx, *this.GetPath(), this.value) }, // Add reads
 		func() { writeCache.Write(this.tx, *this.GetPath(), this.value, this.GetPersistent()) },
 	)
 
-	_, univ := writeCache.Peek(*this.GetPath())
+	_, univ := writeCache.Peek(*this.GetPath(), nil)
 	readsDiff := this.Reads() - univ.(interfaces.Univalue).Reads()
 	writesDiff := this.Writes() - univ.(interfaces.Univalue).Writes()
 	deltaWriteDiff := this.DeltaWrites() - univ.(interfaces.Univalue).DeltaWrites()

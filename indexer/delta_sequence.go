@@ -23,16 +23,16 @@ func NewDeltaSequence() *DeltaSequence {
 	}
 }
 
-func (this *DeltaSequence) Reset(key string, indexer *Importer, mempool *mempool.Mempool) {
+func (this *DeltaSequence) Reset(key string) {
 	this.key = key
 	this.transitions = this.transitions[:0]
 	this.base = nil
 }
 
-func (this *DeltaSequence) Init(key string, indexer *Importer, mempool *mempool.Mempool) {
-	if initialState := indexer.RetriveShallow(key); initialState != nil {
+func (this *DeltaSequence) Init(key string, T any, indexer *Importer, mempool *mempool.Mempool) {
+	if initialState, _ := indexer.store.Retrive(key, T); initialState != nil {
 		nVal := mempool.Get().(*univalue.Univalue)
-		nVal.Init(ccurlcommon.SYSTEM, key, 0, 0, 0, initialState.(interfaces.Type).Clone(), indexer)
+		nVal.Init(ccurlcommon.SYSTEM, key, 0, 0, 0, initialState.(interfaces.Type).Clone(), indexer.Store())
 		this.transitions = append(this.transitions, nVal) //Transitions are ordered by Tx, -1 will guarantee the initial state is always the first one
 	}
 }
@@ -41,8 +41,12 @@ func (this *DeltaSequence) Value() interface{} {
 	return this.base
 }
 
-func (this *DeltaSequence) Insert(v interfaces.Univalue) {
+func (this *DeltaSequence) Insert(v interfaces.Univalue, indexer *Importer, mempool *mempool.Mempool) {
 	this.lock.Lock()
+	if len(this.transitions) == 0 {
+		this.Init(*v.GetPath(), v.Value(), indexer, mempool)
+	}
+
 	this.transitions = append(this.transitions, v.(*univalue.Univalue))
 	this.lock.Unlock()
 }

@@ -7,10 +7,10 @@ import (
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
 	"github.com/arcology-network/common-lib/common"
 	ccurl "github.com/arcology-network/concurrenturl"
-	commutative "github.com/arcology-network/concurrenturl/commutative"
+	commutative "github.com/arcology-network/concurrenturl/datatypes/commutative"
+	noncommutative "github.com/arcology-network/concurrenturl/datatypes/noncommutative"
 	"github.com/arcology-network/concurrenturl/indexer"
 	"github.com/arcology-network/concurrenturl/interfaces"
-	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 )
 
 func Create_Ctrn_0(account string, store *cachedstorage.DataStore) ([]byte, []interfaces.Univalue, error) {

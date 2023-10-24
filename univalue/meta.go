@@ -58,7 +58,7 @@ func (this *Unimeta) Preexist() bool   { return this.preexists } // Exist in cac
 func (this *Unimeta) Persistent() bool { return this.persistent }
 
 func (this *Unimeta) CheckPreexist(key string, source interface{}) bool {
-	return source.(interfaces.Importer).RetriveShallow(key) != nil
+	return source.(interfaces.ReadonlyDatastore).IfExists(key)
 }
 
 func (this *Unimeta) Equal(other *Unimeta) bool {
