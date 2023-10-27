@@ -3,17 +3,14 @@ package commutative
 import (
 	"testing"
 
-	"github.com/arcology-network/common-lib/codec"
+	"github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/concurrenturl/interfaces"
+	"github.com/arcology-network/evm/rlp"
 	"github.com/holiman/uint256"
 )
 
-func TestMaxUint256(t *testing.T) {
-	max := uint256.NewInt(0).SetAllOne()
-	t.Log(max)
-}
-
 func TestU256(t *testing.T) {
-	v := NewU256(uint256.NewInt(4), uint256.NewInt(6))
+	v := NewBoundedU256(uint256.NewInt(4), uint256.NewInt(6))
 	delta := NewU256Delta(uint256.NewInt(0), true)
 	if _, _, _, _, err := v.(*U256).Set(delta, nil); err != nil {
 		t.Error(err)
@@ -51,7 +48,7 @@ func TestU256(t *testing.T) {
 }
 
 func TestU256DeltaOutRange(t *testing.T) {
-	v := NewU256(uint256.NewInt(40), uint256.NewInt(60))
+	v := NewBoundedU256(uint256.NewInt(40), uint256.NewInt(60))
 	delta := NewU256Delta(uint256.NewInt(0), true)
 	if _, _, _, _, err := v.(*U256).Set(delta, nil); err != nil {
 		t.Error(err)
@@ -77,72 +74,107 @@ func TestU256DeltaOutRange(t *testing.T) {
 		t.Error("Error: Should have failed")
 	}
 
+	delta = NewU256Delta(uint256.NewInt(1), true)
+	if _, _, _, _, err := v.(*U256).Set(delta, nil); err == nil { // Must bring it to somewhere between the lower and upper limits
+		t.Error("Error: Should have failed")
+	}
+
+	delta = NewU256Delta(uint256.NewInt(40), true)
+	if _, _, _, _, err := v.(*U256).Set(delta, nil); err != nil {
+		t.Error(err)
+	}
+
+	delta = NewU256Delta(uint256.NewInt(1), true)
+	if _, _, _, _, err := v.(*U256).Set(delta, nil); err != nil {
+		t.Error(err)
+	}
+
+	delta = NewU256Delta(uint256.NewInt(2), false)
+	if _, _, _, _, err := v.(*U256).Set(delta, nil); err == nil {
+		t.Error("Error: Should have failed")
+	}
+
+	delta = NewU256Delta(uint256.NewInt(18), true)
+	if _, _, _, _, err := v.(*U256).Set(delta, nil); err != nil {
+		t.Error("Error: Should have failed")
+	}
+
+	delta = NewU256Delta(uint256.NewInt(1), true)
+	if _, _, _, _, err := v.(*U256).Set(delta, nil); err != nil {
+		t.Error("Error: Should have failed")
+	}
+
+	delta = NewU256Delta(uint256.NewInt(1), true)
+	if _, _, _, _, err := v.(*U256).Set(delta, nil); err == nil {
+		t.Error("Error: Should have failed")
+	}
+
+	// v.(*U256).Get().(*uint256.Int).ToBig().Uint64()
+	finalized, _, _ := v.(*U256).Get()
+	if finalized.(*uint256.Int).ToBig().Uint64() != 60 {
+		t.Error("Error: Should be", 60)
+	}
+
+	delta = NewU256Delta(uint256.NewInt(1), true)
+	if _, _, _, _, err := v.(*U256).Set(delta, nil); err == nil {
+		t.Error("Error: Should have failed")
+	}
+
+	finalized, _, _ = v.(*U256).Get()
+	if finalized.(*uint256.Int).ToBig().Uint64() != 60 {
+		t.Error("Error: Should be", 60)
+	}
 }
 
 func TestCodec(t *testing.T) {
-	in := NewU256((*uint256.Int)(U256_MIN), (*uint256.Int)(U256_MIN)).(*U256)
+	in := NewUnboundedU256().(*U256)
 
 	buffer := in.Encode()
 	out := (&(U256{})).Decode(buffer).(*U256)
 	if out.value.Uint64() != 0 ||
-		(*out.min).Uint64() != (*in.min).Uint64() ||
-		(*out.max).Uint64() != (*in.max).Uint64() ||
+		out.min.Uint64() != (in.min).Uint64() ||
+		(out.max).Uint64() != (in.max).Uint64() ||
 		out.deltaPositive != in.deltaPositive {
 		t.Error("Error: Mismatch after Encode()/Decode()")
 	}
 
 	buffer = in.Encode()
 	out = (&(U256{})).Decode(buffer).(*U256)
-	if (*out.delta).Uint64() != (*in.delta).Uint64() ||
+	if (out.delta).Uint64() != (in.delta).Uint64() ||
 		out.deltaPositive != in.deltaPositive ||
-		(*out.min).Uint64() != (*in.min).Uint64() ||
-		(*out.max).Uint64() != (*in.max).Uint64() {
+		(out.min).Uint64() != (in.min).Uint64() ||
+		(out.max).Uint64() != (in.max).Uint64() {
 		t.Error("Error: Out of range, should have failed")
 	}
 
-	in = NewU256((*uint256.Int)(U256_MIN), (*uint256.Int)(U256_MAX)).(*U256)
+	in = NewBoundedU256(&U256_MIN, &U256_MAX).(*U256)
 
 	buffer = (&U256{}).New(nil, in.delta, true, nil, nil).(*U256).Encode()
 	out = (&(U256{})).Decode(buffer).(*U256)
-	if !out.value.Eq((*codec.Uint256)(U256_ZERO)) ||
-		!out.delta.Eq(in.delta) ||
-		!out.min.Eq((*codec.Uint256)(U256_MIN)) ||
-		!out.max.Eq((*codec.Uint256)(U256_MAX)) {
+	if !out.value.Eq((&U256_ZERO)) ||
+		!out.delta.Eq(&in.delta) ||
+		!out.min.Eq((&U256_MIN)) ||
+		!out.max.Eq((&U256_MAX)) {
 		t.Error("Error: Out of range, should have failed")
 	}
 }
 
-// func TestCodecRlp(t *testing.T) {
-// 	in := NewU256(U256_MIN, U256_MIN).(*U256)
+type Rlp struct {
+	Val interface{}
+	Min interface{}
+	Max interface{}
+}
 
-// 	in.value = (&codec.Uint256{}).NewInt(111)
+func (this Rlp) Encode(v interface{}) []byte {
+	this.Val = v.(interfaces.Type).Value()
+	if !v.(interfaces.Type).IsBounded() {
+		this.Min = v.(interfaces.Type).Min()
+		this.Max = v.(interfaces.Type).Max()
+	}
+	buffer := common.FilterFirst(rlp.EncodeToBytes(this))
+	return buffer
 
-// 	buffer, _ := rlp.EncodeToBytes(in.max)
-// 	out := (&(U256{})).Decode(buffer).(*U256)
-// 	if out.value.Uint64() != 0 ||
-// 		(*out.min).Uint64() != (*in.min).Uint64() ||
-// 		(*out.max).Uint64() != (*in.max).Uint64() ||
-// 		out.deltaPositive != in.deltaPositive {
-// 		t.Error("Error: Mismatch after Encode()/Decode()")
-// 	}
+	// return
 
-// 	buffer = in.EncodeRlp()
-// 	out = (&(U256{})).DecodeRlp(buffer).(*U256)
-// 	if (*out.delta).Uint64() != (*in.delta).Uint64() ||
-// 		out.deltaPositive != in.deltaPositive ||
-// 		(*out.min).Uint64() != (*in.min).Uint64() ||
-// 		(*out.max).Uint64() != (*in.max).Uint64() {
-// 		t.Error("Error: Out of range, should have failed")
-// 	}
-
-// 	in = NewU256(U256_MIN, U256_MAX).(*U256)
-
-// 	buffer = (&U256{}).New(nil, in.delta, true, nil, nil).(*U256).EncodeRlp()
-// 	out = (&(U256{})).DecodeRlp(buffer).(*U256)
-// 	if !out.value.Eq((*codec.Uint256)(U256_ZERO)) ||
-// 		!out.delta.Eq(in.delta) ||
-// 		!out.min.Eq((*codec.Uint256)(U256_MIN)) ||
-// 		!out.max.Eq((*codec.Uint256)(U256_MAX)) {
-// 		t.Error("Error: Out of range, should have failed")
-// 	}
-// }
+	// return buffer
+}

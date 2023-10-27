@@ -37,7 +37,7 @@ func (this *ReadonlyClient) Get(key string) ([]byte, error) {
 		if err != nil {
 			return []byte{}, err
 		}
-		bytes := this.localStore.Encoder()(v)
+		bytes := this.localStore.Encoder()(key, v)
 
 		return bytes, err
 	} else {

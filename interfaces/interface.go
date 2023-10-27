@@ -27,11 +27,13 @@ type Type interface { // value type
 
 	IsNumeric() bool
 	IsCommutative() bool
+	IsBounded() bool
 
 	FromRawType(v interface{}) interface{}
 	Value() interface{} // Get() - read/write count
 	Delta() interface{}
 	DeltaSign() bool
+	CloneDelta() interface{}
 	Min() interface{}
 	Max() interface{}
 	New(interface{}, interface{}, interface{}, interface{}, interface{}) interface{}
@@ -55,6 +57,9 @@ type Type interface { // value type
 	Encode() []byte
 	EncodeToBuffer([]byte) int
 	Decode([]byte) interface{}
+
+	StorageEncode() []byte
+	StorageDecode([]byte) interface{}
 
 	Hash(func([]byte) []byte) []byte
 	Reset()
@@ -83,7 +88,7 @@ type Univalue interface { // value type
 	GetPath() *string
 	SetPath(*string)
 	Value() interface{}
-	SetValue(interface{})
+	SetValue(interface{}) Univalue
 
 	Merge(WriteCache)
 	GetUnimeta() interface{}

@@ -115,7 +115,7 @@ func (this *WriteCache) Write(tx uint32, path string, value interface{}, _ bool)
 }
 
 func (this *WriteCache) IfExists(path string) bool {
-	return this.kvDict[path] != nil || this.RetriveShallow(path, nil) != nil
+	return this.kvDict[path] != nil || this.store.IfExists(path) //this.RetriveShallow(path, nil) != nil
 }
 
 func (this *WriteCache) AddTransitions(transitions []interfaces.Univalue) {

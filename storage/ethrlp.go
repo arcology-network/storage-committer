@@ -1,22 +1,21 @@
 package ccdb
 
 import (
-	common "github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/evm/rlp"
+	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
 type Rlp struct{}
 
-func (Rlp) Encode(v interface{}) []byte {
-	return common.Return1st(rlp.EncodeToBytes(v))
+func (this Rlp) Encode(key string, v interface{}) []byte {
+	if v == nil {
+		return []byte{} // Deletion
+	}
+
+	return v.(interfaces.Type).StorageEncode()
 }
 
-func (Rlp) Decode(data []byte, T any) interface{} {
-	err := rlp.DecodeBytes(data, T)
-	if err != nil {
-		return nil
-	}
-	return T
+func (Rlp) Decode(buffer []byte, T any) interface{} {
+	return T.(interfaces.Type).StorageDecode(buffer)
 }
 
 // func (this Rlp) Encoder(v interface{}) func(interface{}) []byte {

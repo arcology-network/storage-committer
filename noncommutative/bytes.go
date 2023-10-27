@@ -7,6 +7,7 @@ import (
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
+	"github.com/arcology-network/evm/rlp"
 )
 
 //type Bytes []byte
@@ -51,6 +52,7 @@ func (this *Bytes) Equal(other interface{}) bool {
 
 func (this *Bytes) IsNumeric() bool     { return false }
 func (this *Bytes) IsCommutative() bool { return false }
+func (this *Bytes) IsBounded() bool     { return false }
 
 func (this *Bytes) Value() interface{} { return this.value }
 func (this *Bytes) Delta() interface{} { return this.value }
@@ -58,7 +60,8 @@ func (this *Bytes) DeltaSign() bool    { return true } // delta sign
 func (this *Bytes) Min() interface{}   { return nil }
 func (this *Bytes) Max() interface{}   { return nil }
 
-func (this *Bytes) SetValue(v interface{}) { this.SetDelta(v) }
+func (this *Bytes) CloneDelta() interface{} { return codec.Bytes(common.Clone(this.value)) }
+func (this *Bytes) SetValue(v interface{})  { this.SetDelta(v) }
 
 func (this *Bytes) IsDeltaApplied() bool       { return true }
 func (this *Bytes) ResetDelta()                { this.SetDelta(codec.Bytes([]byte{})) }
@@ -117,4 +120,14 @@ func (this *Bytes) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
 		return nil, 0, nil
 	}
 	return this, len(vec), nil
+}
+
+func (this *Bytes) StorageEncode() []byte {
+	buffer, _ := rlp.EncodeToBytes(*this)
+	return buffer
+}
+
+func (this *Bytes) StorageDecode(buffer []byte) interface{} {
+	rlp.DecodeBytes(buffer, this)
+	return this
 }

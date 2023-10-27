@@ -49,17 +49,18 @@ func (this *Univalue) From(v interfaces.Univalue) interface{} { return v }
 func (this *Univalue) SetTx(txId uint32)  { this.tx = txId }
 func (this *Univalue) ClearCache()        { this.cache = this.cache[:0] }
 func (this *Univalue) Value() interface{} { return this.value }
-func (this *Univalue) SetValue(newValue interface{}) {
+func (this *Univalue) SetValue(newValue interface{}) interfaces.Univalue {
 	if reflect.TypeOf(this.value) != reflect.TypeOf(newValue) {
 		panic("Wrong type")
 	}
 	this.value = newValue
+	return this
 }
 
 func (this *Univalue) GetUnimeta() interface{} { return &this.Unimeta }
 func (this *Univalue) GetCache() interface{}   { return this.cache }
 
-func (this *Univalue) Init(tx uint32, key string, reads, writes, deltaWrites uint32, v interface{}, args ...interface{}) {
+func (this *Univalue) Init(tx uint32, key string, reads, writes, deltaWrites uint32, v interface{}, args ...interface{}) *Univalue {
 	this.vType = common.IfThenDo1st(v != nil, func() uint8 { return v.(interfaces.Type).TypeID() }, uint8(reflect.Invalid))
 	this.tx = tx
 	this.path = &key
@@ -68,6 +69,7 @@ func (this *Univalue) Init(tx uint32, key string, reads, writes, deltaWrites uin
 	this.deltaWrites = deltaWrites
 	this.value = v
 	this.preexists = common.IfThenDo1st(len(args) > 0, func() bool { return (&Unimeta{}).CheckPreexist(key, args[0]) }, false)
+	return this
 }
 
 func (this *Univalue) Reclaim() {
@@ -155,6 +157,7 @@ func (this *Univalue) ApplyDelta(v interface{}) error {
 		this.PrecheckAttributes(vec[i].(*Univalue))
 		this.writes += vec[i].Writes()
 		this.reads += vec[i].Reads()
+		this.deltaWrites += vec[i].DeltaWrites()
 	}
 
 	// Apply transitions

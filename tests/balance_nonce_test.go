@@ -25,7 +25,7 @@ func TestSimpleBalance(t *testing.T) {
 	}
 
 	if _, err := url.Write(0, "blcc://eth1.0/account/"+alice+"/balance",
-		commutative.NewU256(), true); err != nil { //initialization
+		commutative.NewBoundedU256(), true); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
@@ -113,7 +113,7 @@ func TestBalance(t *testing.T) {
 	}
 
 	// -------------------Create another commutative bigint ------------------------------
-	comtVInit := commutative.NewU256(commutative.U256_MIN, commutative.U256_MAX)
+	comtVInit := commutative.NewBoundedU256(commutative.U256_MIN, commutative.U256_MAX)
 	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", comtVInit, true); err != nil {
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}

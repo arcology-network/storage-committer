@@ -42,3 +42,13 @@ func TestBigintCodecs(t *testing.T) {
 		t.Error("Mismatch expecting ", 100)
 	}
 }
+
+func TestBigintRlpCodecs(t *testing.T) {
+	in := NewInt64(111)
+	buffer := in.StorageEncode()
+	out := new(Int64).StorageDecode(buffer)
+
+	if *out.(*Int64) != 111 {
+		t.Error("Mismatch expecting ", 100)
+	}
+}

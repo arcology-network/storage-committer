@@ -108,10 +108,10 @@ func (this *ConcurrentUrl) NewAccount(tx uint32, acct string) error {
 			v = noncommutative.NewString("")
 
 		case uint8(reflect.Kind(commutative.UINT256)): // delta big int
-			v = commutative.NewU256()
+			v = commutative.NewUnboundedU256()
 
 		case uint8(reflect.Kind(commutative.UINT64)):
-			v = commutative.NewUint64(0, math.MaxUint64)
+			v = commutative.NewUnboundedUint64()
 
 		case uint8(reflect.Kind(noncommutative.INT64)):
 			v = noncommutative.NewInt64(0)
@@ -268,12 +268,12 @@ func (this *ConcurrentUrl) Import(transitions []interfaces.Univalue, args ...int
 	invTransitions := make([]interfaces.Univalue, 0, len(transitions))
 
 	for i := 0; i < len(transitions); i++ {
-		if transitions[i].Persistent() {
+		if transitions[i].Persistent() { // Peristent transitions are immune to conflict detection
 			invTransitions = append(invTransitions, transitions[i]) //
-			transitions[i] = nil
+			transitions[i] = nil                                    // mark the peristent transitions
 		}
 	}
-	common.Remove(&transitions, nil)
+	common.Remove(&transitions, nil) // Remove the Peristent transitions from the transition lists
 
 	common.ParallelExecute(
 		func() { this.imuImporter.Import(invTransitions, args...) },

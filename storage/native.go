@@ -10,7 +10,7 @@ type Codec struct {
 	ID uint8
 }
 
-func (Codec) Encode(value interface{}) []byte {
+func (Codec) Encode(_ string, value interface{}) []byte {
 	if value == nil {
 		return []byte{} // Deletion
 	}

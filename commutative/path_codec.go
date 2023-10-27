@@ -5,6 +5,7 @@ import (
 
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/evm/rlp"
 
 	// performance "github.com/arcology-network/common-lib/mhasher"
 	orderedset "github.com/arcology-network/common-lib/container/set"
@@ -55,4 +56,15 @@ func (this *Path) Print() {
 	fmt.Println("Added: ", this.delta.addDict.Keys())
 	fmt.Println("Removed: ", this.delta.delDict.Keys())
 	fmt.Println()
+}
+
+func (this *Path) StorageEncode() []byte {
+	buffer, _ := rlp.EncodeToBytes(this.Encode())
+	return buffer
+}
+
+func (this *Path) StorageDecode(buffer []byte) interface{} {
+	var decoded []byte
+	rlp.DecodeBytes(buffer, &decoded)
+	return this.Decode(decoded)
 }

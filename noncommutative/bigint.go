@@ -7,11 +7,12 @@ import (
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
+	"github.com/arcology-network/evm/rlp"
 )
 
 // type Bigint codec.Bigint
 
-type Bigint codec.Bigint //has anonymous camera
+type Bigint big.Int //has anonymous camera
 
 func NewBigint(v int64) interface{} {
 	var value big.Int
@@ -36,12 +37,15 @@ func (this *Bigint) Clone() interface{} {
 
 func (this *Bigint) IsNumeric() bool     { return true }
 func (this *Bigint) IsCommutative() bool { return false }
+func (this *Bigint) IsBounded() bool     { return false }
 
 func (this *Bigint) Value() interface{} { return (this) }
 func (this *Bigint) Delta() interface{} { return (this) }
 func (this *Bigint) DeltaSign() bool    { return true } // delta sign
 func (this *Bigint) Min() interface{}   { return nil }
 func (this *Bigint) Max() interface{}   { return nil }
+
+func (this *Bigint) CloneDelta() interface{} { return this.Clone() }
 
 func (this *Bigint) SetValue(v interface{}) { this.SetDelta(v) }
 
@@ -97,4 +101,14 @@ func (this *Bigint) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
 		return nil, 0, nil
 	}
 	return this, len(vec), nil
+}
+
+func (this *Bigint) StorageEncode() []byte {
+	buffer, _ := rlp.EncodeToBytes(*this)
+	return buffer
+}
+
+func (this *Bigint) StorageDecode(buffer []byte) interface{} {
+	rlp.DecodeBytes(buffer, this)
+	return this
 }

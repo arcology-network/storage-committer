@@ -31,12 +31,15 @@ func (this *Path) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { 
 
 func (this *Path) IsNumeric() bool     { return false }
 func (this *Path) IsCommutative() bool { return true }
+func (this *Path) IsBounded() bool     { return true }
 
 func (this *Path) Value() interface{} { return this.value }
 func (this *Path) Delta() interface{} { return this.delta }
 func (this *Path) DeltaSign() bool    { return true }
 func (this *Path) Min() interface{}   { return nil }
 func (this *Path) Max() interface{}   { return nil }
+
+func (this *Path) CloneDelta() interface{} { return this.delta.Clone().(*PathDelta) }
 
 func (this *Path) IsDeltaApplied() bool       { return this.delta.IsEmpty() }
 func (this *Path) SetValue(v interface{})     { this.value = v.(*orderedset.OrderedSet) }

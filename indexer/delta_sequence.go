@@ -4,7 +4,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/arcology-network/common-lib/mempool"
+	common "github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
@@ -13,50 +13,36 @@ import (
 type DeltaSequence struct {
 	key         string
 	transitions []interfaces.Univalue
-	base        interfaces.Univalue
-	lock        sync.RWMutex
+	// initial     interfaces.Univalue
+	lock     sync.RWMutex
+	rawBytes interface{}
 }
 
-func NewDeltaSequence() *DeltaSequence {
+func NewDeltaSequence(key string, indexer *Importer) *DeltaSequence {
 	return &DeltaSequence{
+		key:         key,
 		transitions: make([]interfaces.Univalue, 0, 16),
+		rawBytes:    common.FilterFirst(indexer.store.Retrive(key, nil)),
+		// initial: (&univalue.Univalue{}).Init(ccurlcommon.SYSTEM, key, 0, 0, 0, encoded, indexer.Store()),
 	}
 }
 
-func (this *DeltaSequence) Reset(key string) {
+func (this *DeltaSequence) Reset(key string) *DeltaSequence {
 	this.key = key
 	this.transitions = this.transitions[:0]
-	this.base = nil
+	// this.initial = nil
+	return this
 }
 
-func (this *DeltaSequence) Init(key string, T any, indexer *Importer, mempool *mempool.Mempool) {
-	if initialState, _ := indexer.store.Retrive(key, T); initialState != nil {
-		nVal := mempool.Get().(*univalue.Univalue)
-		nVal.Init(ccurlcommon.SYSTEM, key, 0, 0, 0, initialState.(interfaces.Type).Clone(), indexer.Store())
-		this.transitions = append(this.transitions, nVal) //Transitions are ordered by Tx, -1 will guarantee the initial state is always the first one
-	}
-}
-
-func (this *DeltaSequence) Value() interface{} {
-	return this.base
-}
-
-func (this *DeltaSequence) Insert(v interfaces.Univalue, indexer *Importer, mempool *mempool.Mempool) {
+func (this *DeltaSequence) Add(v interfaces.Univalue) *DeltaSequence {
 	this.lock.Lock()
-	if len(this.transitions) == 0 {
-		this.Init(*v.GetPath(), v.Value(), indexer, mempool)
-	}
-
+	defer this.lock.Unlock()
 	this.transitions = append(this.transitions, v.(*univalue.Univalue))
-	this.lock.Unlock()
+	return this
 }
 
 func (this *DeltaSequence) Sort() {
 	if len(this.transitions) <= 1 {
-		return
-	}
-
-	if len(this.transitions) == 2 && this.transitions[0].GetTx() == ccurlcommon.SYSTEM {
 		return
 	}
 
@@ -73,26 +59,35 @@ func (this *DeltaSequence) Sort() {
 	})
 }
 
-func (this *DeltaSequence) Finalize() {
+func (this *DeltaSequence) Finalize() *univalue.Univalue {
 	if len(this.transitions) == 0 {
-		return
+		return nil
 	}
 
-	i := 0
-	for ; i < len(this.transitions); i++ { // Find th first non nil value, where transitions will be applied on
-		if this.transitions[i].GetPath() != nil {
-			this.base = this.transitions[i]
-			break
-		}
+	if (this.rawBytes) == nil { // New value
+		return this.transitions[0].(*univalue.Univalue) // Cannot be more than one element in the transtion array
 	}
 
-	if this.base == nil {
-		return
+	if this.rawBytes != nil && this.transitions[0].(*univalue.Univalue).Value() == nil { // Deletion
+		return this.transitions[0].(*univalue.Univalue) // Cannot be more than one element in the transtion array
 	}
 
-	if err := this.base.ApplyDelta(this.transitions[i+1:]); err != nil {
+	T := this.transitions[0].Value().(interfaces.Type) // Type indicator
+	// if this.rawBytes != nil && univ.Value() != nil {
+	initial := (&univalue.Univalue{}).SetValue(T.StorageDecode(this.rawBytes.([]byte)).([]byte)).(*univalue.Univalue)
+	this.transitions = this.transitions[1:]
+	// initial // Update
+	// initial.Unimeta.Merge(univ.GetUnimeta().(*univalue.Unimeta))
+	// }
+
+	// if this.rawBytes != nil && univ == nil {
+	// 	initial.Unimeta.Merge(univ.GetUnimeta().(*univalue.Unimeta))
+	// }
+
+	if err := initial.ApplyDelta(this.transitions); err != nil {
 		panic(err)
 	}
+	return initial
 }
 
 func (this *DeltaSequence) Reclaim() {
