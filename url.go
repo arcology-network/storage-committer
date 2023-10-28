@@ -114,7 +114,7 @@ func (this *ConcurrentUrl) NewAccount(tx uint32, acct string) error {
 			v = commutative.NewUnboundedUint64()
 
 		case uint8(reflect.Kind(noncommutative.INT64)):
-			v = noncommutative.NewInt64(0)
+			v = new(noncommutative.Int64)
 
 		case uint8(reflect.Kind(noncommutative.BYTES)):
 			v = noncommutative.NewBytes([]byte{})

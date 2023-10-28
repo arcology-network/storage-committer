@@ -13,9 +13,8 @@ import (
 type DeltaSequence struct {
 	key         string
 	transitions []interfaces.Univalue
-	// initial     interfaces.Univalue
-	lock     sync.RWMutex
-	rawBytes interface{}
+	lock        sync.RWMutex
+	rawBytes    interface{}
 }
 
 func NewDeltaSequence(key string, indexer *Importer) *DeltaSequence {
@@ -30,7 +29,6 @@ func NewDeltaSequence(key string, indexer *Importer) *DeltaSequence {
 func (this *DeltaSequence) Reset(key string) *DeltaSequence {
 	this.key = key
 	this.transitions = this.transitions[:0]
-	// this.initial = nil
 	return this
 }
 
@@ -63,31 +61,16 @@ func (this *DeltaSequence) Finalize() *univalue.Univalue {
 	if len(this.transitions) == 0 {
 		return nil
 	}
+	finalized := this.transitions[0].(*univalue.Univalue)
 
-	if (this.rawBytes) == nil { // New value
-		return this.transitions[0].(*univalue.Univalue) // Cannot be more than one element in the transtion array
+	if (this.rawBytes != nil) && (finalized.Value() != nil) { // Value update not an assignment or deletion
+		finalized.SetValue(finalized.Value().(interfaces.Type).StorageDecode(this.rawBytes.([]byte)))
 	}
 
-	if this.rawBytes != nil && this.transitions[0].(*univalue.Univalue).Value() == nil { // Deletion
-		return this.transitions[0].(*univalue.Univalue) // Cannot be more than one element in the transtion array
-	}
-
-	T := this.transitions[0].Value().(interfaces.Type) // Type indicator
-	// if this.rawBytes != nil && univ.Value() != nil {
-	initial := (&univalue.Univalue{}).SetValue(T.StorageDecode(this.rawBytes.([]byte)).([]byte)).(*univalue.Univalue)
-	this.transitions = this.transitions[1:]
-	// initial // Update
-	// initial.Unimeta.Merge(univ.GetUnimeta().(*univalue.Unimeta))
-	// }
-
-	// if this.rawBytes != nil && univ == nil {
-	// 	initial.Unimeta.Merge(univ.GetUnimeta().(*univalue.Unimeta))
-	// }
-
-	if err := initial.ApplyDelta(this.transitions); err != nil {
+	if err := finalized.ApplyDelta(this.transitions[1:]); err != nil {
 		panic(err)
 	}
-	return initial
+	return finalized
 }
 
 func (this *DeltaSequence) Reclaim() {

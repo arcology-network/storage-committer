@@ -72,40 +72,40 @@ func Create_Ctrn_1(account string, store *cachedstorage.DataStore) ([]byte, erro
 }
 
 func CheckPaths(account string, url *ccurl.ConcurrentUrl) error {
-	v, _ := url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-00", noncommutative.String(""))
+	v, _ := url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-00", new(noncommutative.String))
 	if v.(string) != "tx0-elem-00" {
 		return errors.New("Error: Not match")
 	}
 
-	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-01", noncommutative.String(""))
+	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-01", new(noncommutative.String))
 	if v.(string) != "tx0-elem-01" {
 		return errors.New("Error: Not match")
 	}
 
-	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/elem-00", noncommutative.String(""))
+	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/elem-00", new(noncommutative.String))
 	if v.(string) != "tx1-elem-00" {
 		return errors.New("Error: Not match")
 	}
 
-	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/elem-01", noncommutative.String(""))
+	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/elem-01", new(noncommutative.String))
 	if v.(string) != "tx1-elem-00" {
 		return errors.New("Error: Not match")
 	}
 
 	//Read the path
-	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", &commutative.Path{})
+	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", new(commutative.Path))
 	keys := v.([]string)
 	if !reflect.DeepEqual(keys, []string{"elem-00", "elem-01"}) {
 		return errors.New("Error: Path don't match !")
 	}
 
 	// Read the path again
-	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", &commutative.Path{})
+	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", new(commutative.Path))
 	if !reflect.DeepEqual(v.([]string), []string{"elem-00", "elem-01"}) {
 		return errors.New("Error: Path don't match !")
 	}
 
-	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/", &commutative.Path{})
+	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/", new(commutative.Path))
 	if !reflect.DeepEqual(v.([]string), []string{"elem-00", "elem-01"}) {
 		return errors.New("Error: Path don't match !")
 	}

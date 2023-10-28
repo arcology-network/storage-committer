@@ -11,6 +11,7 @@ import (
 	mempool "github.com/arcology-network/common-lib/mempool"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	concurrenturlcommon "github.com/arcology-network/concurrenturl/common"
+	"github.com/arcology-network/concurrenturl/commutative"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 )
@@ -104,7 +105,7 @@ func (this *WriteCache) Write(tx uint32, path string, value interface{}, _ bool)
 		err := univalue.Set(tx, path, value, this)
 		if err == nil {
 			if strings.HasSuffix(parentPath, "container/") || (!this.platform.IsSysPath(parentPath) && tx != ccurlcommon.SYSTEM) { // Don't keep track of the system children
-				parentMeta := this.GetOrInit(tx, parentPath, value)
+				parentMeta := this.GetOrInit(tx, parentPath, new(commutative.Path))
 				err = parentMeta.Set(tx, path, univalue.Value(), this)
 			}
 		}

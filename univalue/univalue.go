@@ -50,7 +50,7 @@ func (this *Univalue) SetTx(txId uint32)  { this.tx = txId }
 func (this *Univalue) ClearCache()        { this.cache = this.cache[:0] }
 func (this *Univalue) Value() interface{} { return this.value }
 func (this *Univalue) SetValue(newValue interface{}) interfaces.Univalue {
-	if reflect.TypeOf(this.value) != reflect.TypeOf(newValue) {
+	if this.value != nil && reflect.TypeOf(this.value) != reflect.TypeOf(newValue) {
 		panic("Wrong type")
 	}
 	this.value = newValue
