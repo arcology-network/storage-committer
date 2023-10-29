@@ -1,12 +1,11 @@
 package ccurltest
 
 import (
-	"fmt"
 	"testing"
-	"time"
 
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
-	codec "github.com/arcology-network/common-lib/codec"
+
+	// codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	datacompression "github.com/arcology-network/common-lib/datacompression"
 	"github.com/arcology-network/common-lib/merkle"
@@ -14,11 +13,16 @@ import (
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
-	storage "github.com/arcology-network/concurrenturl/storage"
 )
 
 func TestMultiAccountCreation(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+	fileDB, err := cachedstorage.NewFileDB(ROOT_PATH, 8, 2)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), fileDB, encoder, decoder)
+
 	store.Inject((ccurlcommon.ETH10_ACCOUNT_PREFIX), commutative.NewPath())
 	url := ccurl.NewConcurrentUrl(store)
 
@@ -51,30 +55,5 @@ func TestMultiAccountCreation(t *testing.T) {
 
 	accountMerkle := indexer.NewAccountMerkle(url.Platform, rlpEncoder, merkle.Keccak256{}.Hash)
 	accountMerkle.Import(out)
-
 	// accountMerkle.Build()
-}
-
-func TestRlps(t *testing.T) {
-	// fmt.Println(rlpEncoder(uint64(1230)))
-	fmt.Println(rlpEncoder(string("1234")))
-
-	fmt.Println(rlpEncoder(uint64(1230), string("1234")))
-	v := commutative.NewUint64(uint64(10), uint64(12000000000000)).(*commutative.Uint64)
-	fmt.Println(v)
-
-	t0 := time.Now()
-	for i := 0; i < 1000000; i++ {
-		v := commutative.NewUint64(uint64(10), uint64(12000000000000)).(*commutative.Uint64)
-		rlpEncoder(v.Value().(*codec.Uint64), v.Min().(*codec.Uint64), v.Max().(*codec.Uint64), v.Delta().(*codec.Uint64))
-	}
-	fmt.Println("Encode() rlp: ", time.Since(t0))
-
-	t0 = time.Now()
-	for i := 0; i < 1000000; i++ {
-		v := commutative.NewUint64(uint64(10), uint64(12000000000000)).(*commutative.Uint64)
-		v.Encode()
-	}
-	fmt.Println("Encode() native: ", time.Since(t0))
-	// codec.ByteSet()
 }

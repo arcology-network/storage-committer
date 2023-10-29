@@ -99,6 +99,7 @@ func (this *String) StorageEncode() []byte {
 }
 
 func (this *String) StorageDecode(buffer []byte) interface{} {
-	rlp.DecodeBytes(buffer, this)
-	return this
+	var v String
+	rlp.DecodeBytes(buffer, &v)
+	return &v
 }

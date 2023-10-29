@@ -50,7 +50,7 @@ func (this *Univalue) SetTx(txId uint32)  { this.tx = txId }
 func (this *Univalue) ClearCache()        { this.cache = this.cache[:0] }
 func (this *Univalue) Value() interface{} { return this.value }
 func (this *Univalue) SetValue(newValue interface{}) interfaces.Univalue {
-	if this.value != nil && reflect.TypeOf(this.value) != reflect.TypeOf(newValue) {
+	if this.value != nil && reflect.TypeOf(this.value) != reflect.TypeOf(newValue) && newValue != nil {
 		panic("Wrong type")
 	}
 	this.value = newValue
@@ -100,7 +100,7 @@ func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{
 func (this *Univalue) Merge(writeCache interfaces.WriteCache) {
 	common.IfThenDo(this.writes == 0 && this.deltaWrites == 0,
 		func() { writeCache.Read(this.tx, *this.GetPath(), this.value) }, // Add reads
-		func() { writeCache.Write(this.tx, *this.GetPath(), this.value, this.GetPersistent()) },
+		func() { writeCache.Write(this.tx, *this.GetPath(), this.value) },
 	)
 
 	_, univ := writeCache.Peek(*this.GetPath(), nil)

@@ -121,12 +121,12 @@ func (this *ConcurrentUrl) NewAccount(tx uint32, acct string) error {
 		}
 
 		if !this.writeCache.IfExists(path) {
-			if err := this.writeCache.Write(tx, path, v, true); err != nil { // root path
+			if err := this.writeCache.Write(tx, path, v); err != nil { // root path
 				return err
 			}
 
 			if !this.writeCache.IfExists(path) {
-				return this.writeCache.Write(tx, path, v, true) // root path
+				return this.writeCache.Write(tx, path, v) // root path
 			}
 		}
 	}
@@ -182,10 +182,10 @@ func (this *ConcurrentUrl) Read(tx uint32, path string, T any) (interface{}, uin
 	return typedv, Fee{}.Reader(univ.(interfaces.Univalue))
 }
 
-func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}, persistent bool) (int64, error) {
-	fee := Fee{}.Writer(path, value, this.writeCache)
+func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}) (int64, error) {
+	fee := int64(0) //Fee{}.Writer(path, value, this.writeCache)
 	if value == nil || (value != nil && value.(interfaces.Type).TypeID() != uint8(reflect.Invalid)) {
-		return fee, this.writeCache.Write(tx, path, value, persistent)
+		return fee, this.writeCache.Write(tx, path, value)
 	}
 
 	return fee, errors.New("Error: Unknown data type !")
@@ -247,7 +247,7 @@ func (this *ConcurrentUrl) PopBack(tx uint32, path string, persistent bool, T an
 		return nil, int64(Fee), errors.New("Error: Empty container!")
 	}
 
-	writeFee, err := this.Write(tx, key, nil, persistent)
+	writeFee, err := this.Write(tx, key, nil)
 	return value, writeFee, err
 }
 
@@ -258,7 +258,7 @@ func (this *ConcurrentUrl) WriteAt(tx uint32, path string, idx uint64, value int
 	}
 
 	if key, Fee, err := this.at(tx, path, idx, value); err == nil {
-		return this.Write(tx, key.(string), value, persistent)
+		return this.Write(tx, key.(string), value)
 	} else {
 		return int64(Fee), err
 	}

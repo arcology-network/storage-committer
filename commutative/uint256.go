@@ -41,8 +41,8 @@ func NewUnboundedU256() interface{} {
 		value:         *uint256.NewInt(0),
 		delta:         *uint256.NewInt(0),
 		deltaPositive: true,
-		min:           *uint256.NewInt(0),
-		max:           *U256_MAX.Clone(),
+		min:           U256_MIN,
+		max:           U256_MAX,
 	}
 }
 
@@ -88,8 +88,8 @@ func (this *U256) New(value, delta, sign, min, max interface{}) interface{} {
 		value:         common.IfThenDo1st(value != nil, func() uint256.Int { return value.(uint256.Int) }, *U256_ZERO.Clone()),
 		delta:         common.IfThenDo1st(delta != nil, func() uint256.Int { return delta.(uint256.Int) }, *U256_ZERO.Clone()),
 		deltaPositive: common.IfThenDo1st(sign != nil, func() bool { return sign.(bool) }, true),
-		min:           common.IfThenDo1st(min != nil, func() uint256.Int { return min.(uint256.Int) }, *U256_ZERO.Clone()),
-		max:           common.IfThenDo1st(max != nil, func() uint256.Int { return max.(uint256.Int) }, *U256_MAX.Clone()),
+		min:           common.IfThenDo1st(min != nil, func() uint256.Int { return min.(uint256.Int) }, U256_ZERO),
+		max:           common.IfThenDo1st(max != nil, func() uint256.Int { return max.(uint256.Int) }, U256_MAX),
 	}
 }
 

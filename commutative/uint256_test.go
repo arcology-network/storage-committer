@@ -126,6 +126,15 @@ func TestU256DeltaOutRange(t *testing.T) {
 	}
 }
 
+func TestCloner(t *testing.T) {
+	x := uint256.NewInt(100)
+	delta := uint256.NewInt(1)
+	ret := (&uint256.Int{}).Add(x, delta)
+	if x.ToBig().Uint64() != 100 || ret.ToBig().Uint64() != 101 || delta.ToBig().Uint64() != 1 {
+		t.Error("Error: Should be unchange")
+	}
+}
+
 func TestCodec(t *testing.T) {
 	in := NewUnboundedU256().(*U256)
 

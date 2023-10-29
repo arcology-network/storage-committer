@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/arcology-network/common-lib/codec"
+	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/evm/rlp"
 )
 
@@ -43,6 +44,5 @@ func (this *Int64) StorageEncode() []byte {
 func (this *Int64) StorageDecode(buffer []byte) interface{} {
 	var v big.Int
 	rlp.DecodeBytes(buffer, &v)
-	*this = Int64(v.Uint64())
-	return this
+	return common.New(Int64(v.Uint64()))
 }

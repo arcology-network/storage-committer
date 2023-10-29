@@ -16,15 +16,15 @@ import (
 func Create_Ctrn_0(account string, store *cachedstorage.DataStore) ([]byte, []interfaces.Univalue, error) {
 	url := ccurl.NewConcurrentUrl(store)
 	path := commutative.NewPath() // create a path
-	if _, err := url.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", path, true); err != nil {
+	if _, err := url.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", path); err != nil {
 		return []byte{}, nil, err
 	}
 
-	if _, err := url.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-00", noncommutative.NewString("tx0-elem-00"), true); err != nil { /* The first Element */
+	if _, err := url.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-00", noncommutative.NewString("tx0-elem-00")); err != nil { /* The first Element */
 		return []byte{}, nil, err
 	}
 
-	if _, err := url.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-01", noncommutative.NewString("tx0-elem-01"), true); err != nil { /* The second Element */
+	if _, err := url.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-01", noncommutative.NewString("tx0-elem-01")); err != nil { /* The second Element */
 		return []byte{}, nil, err
 	}
 
@@ -36,15 +36,15 @@ func Create_Ctrn_0(account string, store *cachedstorage.DataStore) ([]byte, []in
 func ParallelInsert_Ctrn_0(account string, store *cachedstorage.DataStore) ([]byte, error) {
 	url := ccurl.NewConcurrentUrl(store)
 	path := commutative.NewPath() // create a path
-	if _, err := url.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", path, true); err != nil {
+	if _, err := url.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", path); err != nil {
 		return []byte{}, err
 	}
 
-	if _, err := url.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-00", noncommutative.NewString("tx0-elem-00"), true); err != nil { /* The first Element */
+	if _, err := url.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-00", noncommutative.NewString("tx0-elem-00")); err != nil { /* The first Element */
 		return []byte{}, err
 	}
 
-	if _, err := url.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-01", noncommutative.NewString("tx0-elem-01"), true); err != nil { /* The second Element */
+	if _, err := url.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-01", noncommutative.NewString("tx0-elem-01")); err != nil { /* The second Element */
 		return []byte{}, err
 	}
 
@@ -55,15 +55,15 @@ func ParallelInsert_Ctrn_0(account string, store *cachedstorage.DataStore) ([]by
 func Create_Ctrn_1(account string, store *cachedstorage.DataStore) ([]byte, error) {
 	url := ccurl.NewConcurrentUrl(store)
 	path := commutative.NewPath() // create a path
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/", path, true); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/", path); err != nil {
 		return []byte{}, err
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/elem-00", noncommutative.NewString("tx1-elem-00"), true); err != nil { /* The first Element */
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/elem-00", noncommutative.NewString("tx1-elem-00")); err != nil { /* The first Element */
 		return []byte{}, err
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/elem-01", noncommutative.NewString("tx1-elem-00"), true); err != nil { /* The second Element */
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/elem-01", noncommutative.NewString("tx1-elem-00")); err != nil { /* The second Element */
 		return []byte{}, err
 	}
 
@@ -72,40 +72,40 @@ func Create_Ctrn_1(account string, store *cachedstorage.DataStore) ([]byte, erro
 }
 
 func CheckPaths(account string, url *ccurl.ConcurrentUrl) error {
-	v, _ := url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-00")
+	v, _ := url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-00", new(noncommutative.String))
 	if v.(string) != "tx0-elem-00" {
 		return errors.New("Error: Not match")
 	}
 
-	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-01")
+	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-01", new(noncommutative.String))
 	if v.(string) != "tx0-elem-01" {
 		return errors.New("Error: Not match")
 	}
 
-	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/elem-00")
+	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/elem-00", new(noncommutative.String))
 	if v.(string) != "tx1-elem-00" {
 		return errors.New("Error: Not match")
 	}
 
-	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/elem-01")
+	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/elem-01", new(noncommutative.String))
 	if v.(string) != "tx1-elem-00" {
 		return errors.New("Error: Not match")
 	}
 
 	//Read the path
-	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/")
+	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", new(commutative.Path))
 	keys := v.([]string)
 	if !reflect.DeepEqual(keys, []string{"elem-00", "elem-01"}) {
 		return errors.New("Error: Path don't match !")
 	}
 
 	// Read the path again
-	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/")
+	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", new(commutative.Path))
 	if !reflect.DeepEqual(v.([]string), []string{"elem-00", "elem-01"}) {
 		return errors.New("Error: Path don't match !")
 	}
 
-	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/")
+	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/", new(commutative.Path))
 	if !reflect.DeepEqual(v.([]string), []string{"elem-00", "elem-01"}) {
 		return errors.New("Error: Path don't match !")
 	}

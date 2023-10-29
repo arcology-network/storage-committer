@@ -128,6 +128,7 @@ func (this *Bytes) StorageEncode() []byte {
 }
 
 func (this *Bytes) StorageDecode(buffer []byte) interface{} {
-	rlp.DecodeBytes(buffer, this)
-	return this
+	var v Bytes
+	rlp.DecodeBytes(buffer, &v)
+	return &v
 }

@@ -31,7 +31,7 @@ func TestUnivalueCodecUint64(t *testing.T) {
 	alice := AliceAccount()
 
 	// meta:= commutative.NewPath()
-	u64 := commutative.NewUint64(0, 100)
+	u64 := commutative.NewBoundedUint64(0, 100)
 	in := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, u64)
 	in.reads = 1
 	in.writes = 2
@@ -69,13 +69,14 @@ func TestUnivalueCodecU256(t *testing.T) {
 	v := (&Univalue{}).Decode(bytes).(*Univalue)
 	out := v.Value()
 
-	raw := (*uint256.Int)(in.Value().(*commutative.U256).Value().(*codec.Uint256))
+	raw := in.Value().(*commutative.U256).Value().(uint256.Int)
 
-	outV := out.(*commutative.U256).Value().(*codec.Uint256)
-	deltaV := in.Value().(*commutative.U256).Delta().(*codec.Uint256)
+	outV := out.(*commutative.U256).Value().(uint256.Int)
+	deltaV := in.Value().(*commutative.U256).Delta().(uint256.Int)
 
-	flag := ((*uint256.Int)(deltaV)).Cmp((*uint256.Int)(out.(*commutative.U256).Delta().(*codec.Uint256))) != 0
-	if raw.Cmp((*uint256.Int)(outV)) != 0 || flag {
+	otherv := out.(*commutative.U256).Delta().(uint256.Int)
+	flag := (&deltaV).Cmp(&(otherv)) != 0
+	if raw.Cmp((*uint256.Int)(&outV)) != 0 || flag {
 		t.Error("Error")
 	}
 
@@ -119,7 +120,7 @@ func TestUnimetaCodecUint64(t *testing.T) {
 	alice := datacompression.AliceAccount()
 
 	// meta:= commutative.NewPath()
-	u256 := commutative.NewUint64(0, 100).(*commutative.Uint64)
+	u256 := commutative.NewBoundedUint64(0, 100).(*commutative.Uint64)
 	in := NewUnimeta(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, u256.TypeID(), true, false)
 	in.reads = 1
 	in.writes = 2

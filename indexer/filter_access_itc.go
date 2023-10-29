@@ -1,7 +1,6 @@
 package indexer
 
 import (
-	codec "github.com/arcology-network/common-lib/codec"
 	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
 )
@@ -20,22 +19,16 @@ func (this ITCAccess) From(v interfaces.Univalue) interface{} {
 	}
 
 	typed := converted.Value().(interfaces.Type)
-	if typed.IsCommutative() && typed.IsNumeric() { // For the accumulator
-		typed = typed.New(
-			codec.Clone(typed.Value()),
-			codec.Clone(typed.Delta()),
-			typed.DeltaSign(),
-			typed.Min(),
-			typed.Max(),
-		).(interfaces.Type)
-	} else {
-		typed = typed.New(
-			nil,
-			codec.Clone(typed.Delta()),
-			typed.DeltaSign(),
-			typed.Min(),
-			typed.Max(),
-		).(interfaces.Type)
+	newv := typed.New(
+		nil,
+		typed.Delta(),
+		typed.DeltaSign(),
+		typed.Min(),
+		typed.Max(),
+	).(interfaces.Type)
+
+	if typed.IsCommutative() && typed.IsNumeric() { // For the accumulator, commutative u64 & U256
+		newv.SetValue(typed.Value())
 	}
 
 	return converted.New(

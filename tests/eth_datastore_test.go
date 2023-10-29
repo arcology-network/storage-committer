@@ -16,8 +16,8 @@ import (
 	storage "github.com/arcology-network/concurrenturl/storage"
 )
 
-func TestBasicExport(t *testing.T) {
-	store := ccurlcommon.NewEthMemoryDataStore()
+func TestEthStorageConnection(t *testing.T) {
+	store := storage.NewEthMemoryDataStore()
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
@@ -38,7 +38,6 @@ func TestBasicExport(t *testing.T) {
 	t0 := time.Now()
 	store.Precommit(keys, values)
 	fmt.Print(time.Since(t0))
-
 }
 
 func BenchmarkMultipleAccountCommitDataStore(b *testing.B) {
@@ -50,7 +49,7 @@ func BenchmarkMultipleAccountCommitDataStore(b *testing.B) {
 	}
 
 	path := commutative.NewPath() // create a path
-	if _, err := url.Write(0, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path, true); err != nil {
+	if _, err := url.Write(0, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		b.Error(err)
 	}
 
@@ -62,12 +61,12 @@ func BenchmarkMultipleAccountCommitDataStore(b *testing.B) {
 		}
 
 		path := commutative.NewPath() // create a path
-		if _, err := url.Write(0, "blcc://eth1.0/account/"+acct+"/storage/ctrn-0/", path, true); err != nil {
+		if _, err := url.Write(0, "blcc://eth1.0/account/"+acct+"/storage/ctrn-0/", path); err != nil {
 			b.Error(err)
 		}
 
 		for j := 0; j < 4; j++ {
-			if _, err := url.Write(0, "blcc://eth1.0/account/"+acct+"/storage/ctrn-0/elem-0"+fmt.Sprint(j), noncommutative.NewString("fmt.Sprint(i)"), true); err != nil { /* The first Element */
+			if _, err := url.Write(0, "blcc://eth1.0/account/"+acct+"/storage/ctrn-0/elem-0"+fmt.Sprint(j), noncommutative.NewString("fmt.Sprint(i)")); err != nil { /* The first Element */
 				b.Error(err)
 			}
 		}

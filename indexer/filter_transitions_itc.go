@@ -22,15 +22,16 @@ func (this ITCTransition) From(v interfaces.Univalue) interface{} {
 	}
 
 	typed := converted.Value().(interfaces.Type)
-	typedNew := typed.New(
-		nil,
-		typed.CloneDelta(),
-		typed.DeltaSign(),
-		typed.Min(),
-		typed.Max(),
-	).(interfaces.Type)
+	typed.SetDelta(typed.CloneDelta())
+	// typedNew := typed.New(
+	// 	nil,
+	// 	typed.CloneDelta(),
+	// 	typed.DeltaSign(),
+	// 	typed.Min(),
+	// 	typed.Max(),
+	// ).(interfaces.Type)
 
 	// typedNew.SetDelta(codec.Clone(typedNew.Delta()))
-	converted.SetValue(typedNew) // Reuse the univalue wrapper
+	// converted.SetValue(typed) // Reuse the univalue wrapper
 	return converted
 }

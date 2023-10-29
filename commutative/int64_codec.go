@@ -74,7 +74,8 @@ func (this *Int64) StorageEncode() []byte {
 	return buffer
 }
 
-func (this *Int64) StorageDecode(buffer []byte) interface{} {
+func (*Int64) StorageDecode(buffer []byte) interface{} {
+	var this *Int64
 	var arr []interface{}
 	err := rlp.DecodeBytes(buffer, &arr)
 	if err != nil {

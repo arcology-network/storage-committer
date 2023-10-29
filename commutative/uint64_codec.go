@@ -73,7 +73,8 @@ func (this *Uint64) StorageEncode() []byte {
 	return buffer
 }
 
-func (this *Uint64) StorageDecode(buffer []byte) interface{} {
+func (*Uint64) StorageDecode(buffer []byte) interface{} {
+	var this Uint64
 	var arr []*big.Int
 	err := rlp.DecodeBytes(buffer, &arr)
 	if err != nil {
@@ -86,5 +87,5 @@ func (this *Uint64) StorageDecode(buffer []byte) interface{} {
 		this.min = arr[1].Uint64()
 		this.max = arr[2].Uint64()
 	}
-	return this
+	return &this
 }

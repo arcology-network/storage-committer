@@ -52,7 +52,7 @@ func TestNoncommutativeCodec(t *testing.T) {
 
 	/* Int64 Test */
 	inInt64 := noncommutative.NewInt64(12345)
-	int64Bytes := inInt64.(*noncommutative.Int64).Encode()
+	int64Bytes := inInt64.Encode()
 	int64cdc := noncommutative.Int64(0)
 	outInt64 := (&int64cdc).Decode(int64Bytes).(*noncommutative.Int64)
 	if !reflect.DeepEqual(inInt64, outInt64) {
@@ -74,7 +74,7 @@ func TestUnivalueCodec(t *testing.T) {
 
 	url := ccurl.NewConcurrentUrl(store)
 	url.NewAccount(ccurlcommon.SYSTEM, fmt.Sprint("rand.Int()"))
-	transVec := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	transVec := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{})
 	transitions = append(transitions, transVec...)
 
 	for i := 0; i < len(transitions); i++ {

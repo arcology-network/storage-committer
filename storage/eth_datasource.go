@@ -31,6 +31,11 @@ func NewEthMemoryDataStore() *EthMemoryDatasource {
 
 func (this *EthMemoryDatasource) Trie() *ethmpt.Trie { return this.trie }
 
+func (this *EthMemoryDatasource) IfExists(key string) bool {
+	buffer, _ := this.trie.Get([]byte(key))
+	return len(buffer) > 0
+}
+
 func (this *EthMemoryDatasource) Inject(key string, value interface{}) error {
 	return this.trie.Update([]byte(key), value.([]byte))
 }
@@ -42,7 +47,7 @@ func (this *EthMemoryDatasource) BatchInject(keys []string, values []interface{}
 	return nil
 }
 
-func (this *EthMemoryDatasource) Retrive(key string) (interface{}, error) {
+func (this *EthMemoryDatasource) Retrive(key string, T any) (interface{}, error) {
 	v, err := this.trie.Get([]byte(key))
 	if err != nil || len(v) == 0 {
 		return nil, err
@@ -55,7 +60,7 @@ func (this *EthMemoryDatasource) Retrive(key string) (interface{}, error) {
 
 }
 
-func (this *EthMemoryDatasource) BatchRetrive(keys []string) []interface{} {
+func (this *EthMemoryDatasource) BatchRetrive(keys []string, T []any) []interface{} {
 	values := make([]interface{}, len(keys))
 	for i := 0; i < len(keys); i++ {
 		values[i], _ = this.trie.Get([]byte(keys[i]))

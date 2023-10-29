@@ -117,7 +117,7 @@ type Univalue interface { // value type
 type WriteCache interface {
 	Read(uint32, string, any) (interface{}, interface{})
 	Peek(string, any) (interface{}, interface{})
-	Write(uint32, string, interface{}, bool) error
+	Write(uint32, string, interface{}) error
 	AddTransitions([]Univalue)
 
 	Retrive(string, any) (interface{}, error)
