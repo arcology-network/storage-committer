@@ -33,12 +33,12 @@ var (
 )
 
 func TestSize(t *testing.T) {
-	fileDB, err := cachedstorage.NewFileDB(ROOT_PATH, 8, 2)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), fileDB, encoder, decoder)
+	// fileDB, err := cachedstorage.NewFileDB(ROOT_PATH, 8, 2)
+	// if err != nil {
+	// 	t.Error(err)
+	// 	return
+	// }
+	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(1000000, 1), nil, encoder, decoder)
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)

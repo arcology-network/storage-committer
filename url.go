@@ -72,12 +72,12 @@ func (this *ConcurrentUrl) WriteCache() *indexer.WriteCache { return this.writeC
 func (this *ConcurrentUrl) Importer() *indexer.Importer     { return this.importer }
 
 // Get data from the DB direcly, still under conflict protection
-func (this *ConcurrentUrl) ReadCommitted(tx uint32, key string, decoder func([]byte) (interface{}, error)) (interface{}, uint64) {
-	if v, Fee := this.Read(tx, key, decoder); v != nil { // For conflict detection
+func (this *ConcurrentUrl) ReadCommitted(tx uint32, key string, T any) (interface{}, uint64) {
+	if v, Fee := this.Read(tx, key, this); v != nil { // For conflict detection
 		return v, Fee
 	}
 
-	v, _ := this.WriteCache().Store().Retrive(key, decoder)
+	v, _ := this.WriteCache().Store().Retrive(key, T)
 	return v, Fee{}.Reader(univalue.NewUnivalue(tx, key, 1, 0, 0, v))
 }
 
@@ -229,7 +229,7 @@ func (this *ConcurrentUrl) DoAt(tx uint32, path string, idx uint64, do interface
 }
 
 // Read th Nth element under a path
-func (this *ConcurrentUrl) PopBack(tx uint32, path string, persistent bool, T any) (interface{}, int64, error) {
+func (this *ConcurrentUrl) PopBack(tx uint32, path string, T any) (interface{}, int64, error) {
 	if !common.IsPath(path) {
 		return nil, int64(READ_NONEXIST), errors.New("Error: Not a path!!!")
 	}
@@ -252,13 +252,13 @@ func (this *ConcurrentUrl) PopBack(tx uint32, path string, persistent bool, T an
 }
 
 // Read th Nth element under a path
-func (this *ConcurrentUrl) WriteAt(tx uint32, path string, idx uint64, value interface{}, persistent bool) (int64, error) {
+func (this *ConcurrentUrl) WriteAt(tx uint32, path string, idx uint64, T any) (int64, error) {
 	if !common.IsPath(path) {
 		return int64(READ_NONEXIST), errors.New("Error: Not a path!!!")
 	}
 
-	if key, Fee, err := this.at(tx, path, idx, value); err == nil {
-		return this.Write(tx, key.(string), value)
+	if key, Fee, err := this.at(tx, path, idx, T); err == nil {
+		return this.Write(tx, key.(string), T)
 	} else {
 		return int64(Fee), err
 	}
