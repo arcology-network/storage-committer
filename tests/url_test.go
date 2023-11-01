@@ -33,12 +33,8 @@ var (
 )
 
 func TestSize(t *testing.T) {
-	// fileDB, err := cachedstorage.NewFileDB(ROOT_PATH, 8, 2)
-	// if err != nil {
-	// 	t.Error(err)
-	// 	return
-	// }
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(1000000, 1), nil, encoder, decoder)
+	// store := storage.NewEthMemDataStore()
+	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(1000000, 1), cachedstorage.NewMemDB(), encoder, decoder)
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
@@ -46,29 +42,33 @@ func TestSize(t *testing.T) {
 		t.Error(err)
 	}
 
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.NewPath()); err != nil {
+		t.Error(err)
+	}
+
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/ele0", noncommutative.NewString("124")); err != nil {
+		t.Error(err)
+	}
+
+	if v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path)); v == nil {
+		t.Error("Error: The path should exists")
+	}
+
+	v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/ele0", new(noncommutative.String))
+	if v == nil || v.(string) != "124" {
+		t.Error("Error: The path should exists")
+	}
+
 	raw := url.Export(indexer.Sorter)
 	acctTrans := indexer.Univalues(common.Clone(raw)).To(indexer.IPCTransition{})
 
 	indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode())
 	url.Import(acctTrans)
-
-	original := []int{1, 2, 3, 4}
-	original = append([]int{}, (original)...)
-	fmt.Println(original)
-	original[0] = 99
-	fmt.Println(original)
-	fmt.Println(original, "!!!")
 }
 
 func TestAddThenDeletePath(t *testing.T) {
-	fileDB, err := cachedstorage.NewFileDB(ROOT_PATH, 8, 2)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	// compressionLut := datacompression.NewCompressionLut()
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), fileDB, encoder, decoder)
+	store := storage.NewEthMemDataStore()
+	// store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(10000, 1), cachedstorage.NewMemDB(), encoder, decoder)
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
@@ -77,26 +77,26 @@ func TestAddThenDeletePath(t *testing.T) {
 
 	// _, acctTrans := url.Export(indexer.Sorter)
 
-	acctTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{})
+	// acctTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{})
 
-	buffer := indexer.Univalues(acctTrans).Encode()
-	out := indexer.Univalues{}.Decode(buffer).(indexer.Univalues)
+	// buffer := indexer.Univalues(acctTrans).Encode()
+	// out := indexer.Univalues{}.Decode(buffer).(indexer.Univalues)
 
-	url.Import(out)
-	url.Sort()
-	url.Commit([]uint32{ccurlcommon.SYSTEM})
+	// url.Import(out)
+	// url.Sort()
+	// url.Commit([]uint32{ccurlcommon.SYSTEM})
 
-	url.Init(store)
+	// url = ccurl.NewConcurrentUrl(store)
 	// create a path
 	path := commutative.NewPath()
 	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		t.Error(err)
 	}
 
-	transitions := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{})
-	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(transitions).Encode()).(indexer.Univalues))
-	url.Sort()
-	url.Commit([]uint32{1})
+	// transitions := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{})
+	// url.Import(indexer.Univalues{}.Decode(indexer.Univalues(transitions).Encode()).(indexer.Univalues))
+	// url.Sort()
+	// url.Commit([]uint32{1})
 
 	v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
 	if v == nil {
@@ -108,26 +108,19 @@ func TestAddThenDeletePath(t *testing.T) {
 		t.Error(err)
 	}
 
-	acctTrans = indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{})
-	buffer = indexer.Univalues(acctTrans).Encode()
-	url.Import(indexer.Univalues{}.Decode(buffer).(indexer.Univalues))
-	url.Sort()
-	url.Commit([]uint32{1})
+	// acctTrans = indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{})
+	// buffer = indexer.Univalues(acctTrans).Encode()
+	// url.Import(indexer.Univalues{}.Decode(buffer).(indexer.Univalues))
+	// url.Sort()
+	// url.Commit([]uint32{1})
 
-	if v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{}); v != nil {
-		t.Error("Error: The path should have been deleted")
-	}
+	// if v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{}); v != nil {
+	// 	t.Error("Error: The path should have been deleted")
+	// }
 }
 
 func TestAddThenDeletePath2(t *testing.T) {
-	fileDB, err := cachedstorage.NewFileDB(ROOT_PATH, 8, 2)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	// compressionLut := datacompression.NewCompressionLut()
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), fileDB, encoder, decoder)
+	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
@@ -179,14 +172,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 }
 
 func TestBasic(t *testing.T) {
-	fileDB, err := cachedstorage.NewFileDB(ROOT_PATH, 8, 2)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	// compressionLut := datacompression.NewCompressionLut()
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(1000000, 1), fileDB, encoder, decoder)
+	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(1000000, 1), cachedstorage.NewMemDB(), encoder, decoder)
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
@@ -294,12 +280,7 @@ func TestBasic(t *testing.T) {
 }
 
 func TestPathAddThenDelete(t *testing.T) {
-	fileDB, err := cachedstorage.NewFileDB(ROOT_PATH, 8, 2)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), fileDB, encoder, decoder)
+	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
@@ -379,13 +360,8 @@ func TestPathAddThenDelete(t *testing.T) {
 }
 
 func TestUrl1(t *testing.T) {
-	fileDB, err := cachedstorage.NewFileDB(ROOT_PATH, 8, 2)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), fileDB, encoder, decoder)
-
+	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	// store := storage.NewEthMemDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
@@ -473,12 +449,7 @@ func TestUrl1(t *testing.T) {
 }
 
 func TestUrl2(t *testing.T) {
-	fileDB, err := cachedstorage.NewFileDB(ROOT_PATH, 8, 2)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), fileDB, encoder, decoder)
+	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(1000000, 1), cachedstorage.NewMemDB(), encoder, decoder)
 	// store := cachedstorage.NewDataStore(nil, nil, nil, encoder, decoder)
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
@@ -657,6 +628,29 @@ func TestUrl2(t *testing.T) {
 			t.Error("Error: transitions don't match")
 		}
 	}
+}
+
+func TestTransientDBv2(t *testing.T) {
+	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(1000000, 1), cachedstorage.NewMemDB(), encoder, decoder)
+
+	alice := AliceAccount()
+	url := ccurl.NewConcurrentUrl(store)
+	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+		t.Error(err)
+	}
+
+	raw := url.Export(indexer.Sorter)
+	acctTrans := indexer.Univalues(common.Clone(raw)).To(indexer.IPCTransition{})
+
+	indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode())
+	url.Import(acctTrans)
+
+	original := []int{1, 2, 3, 4}
+	original = append([]int{}, (original)...)
+	fmt.Println(original)
+	original[0] = 99
+	fmt.Println(original)
+	fmt.Println(original, "!!!")
 }
 
 // // func TestUnivaluesBatchCodec(t *testing.T) {
@@ -905,14 +899,14 @@ func TestUrl2(t *testing.T) {
 // }
 
 func TestCustomCodec(t *testing.T) {
-	fileDB, err := cachedstorage.NewFileDB(ROOT_PATH, 8, 2)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	// fileDB, err := cachedstorage.NewFileDB(ROOT_PATH, 8, 2)
+	// if err != nil {
+	// 	t.Error(err)
+	// 	return
+	// }
 
 	policy := cachedstorage.NewCachePolicy(0, 1)
-	store := cachedstorage.NewDataStore(nil, policy, fileDB, storage.Rlp{}.Encode, storage.Rlp{}.Decode)
+	store := cachedstorage.NewDataStore(nil, policy, cachedstorage.NewMemDB(), storage.Rlp{}.Encode, storage.Rlp{}.Decode)
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {

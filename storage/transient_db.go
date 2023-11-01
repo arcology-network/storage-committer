@@ -6,41 +6,55 @@ import (
 
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
 	"github.com/arcology-network/concurrenturl/interfaces"
-	// storage "github.com/arcology-network/concurrenturl/storage"
 )
 
 type TransientDB struct {
 	*cachedstorage.DataStore
-	parent interfaces.Datastore
+	readonlyParent interfaces.Datastore
 }
 
-func NewTransientDB(parent interfaces.Datastore) interfaces.Datastore {
+func NewTransientDB(readonlyParent interfaces.Datastore) interfaces.Datastore {
 	return &TransientDB{
-		DataStore: cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(math.MaxUint64, 1), nil, nil, nil),
-		parent:    parent,
+		DataStore: cachedstorage.NewDataStore(
+			nil,
+			cachedstorage.NewCachePolicy(math.MaxUint64, 1), cachedstorage.NewMemDB(), Rlp{}.Encode, Rlp{}.Decode,
+		),
+		readonlyParent: readonlyParent,
 	}
 }
 
-func (db *TransientDB) Query(pattern string, condition func(string, string) bool) ([]string, [][]byte, error) {
+func (this *TransientDB) Query(pattern string, condition func(string, string) bool) ([]string, [][]byte, error) {
 	return []string{}, [][]byte{}, nil
 }
 
-// func (db *TransientDB) Inject(path string, v interface{}) {
-// 	db.DataStore.Inject(path, v)
-// }
-
-func (this *TransientDB) Checksum() [32]byte {
-	return this.DataStore.Checksum()
+func (this *TransientDB) Inject(path string, v interface{}) error {
+	return this.DataStore.Inject(path, v)
 }
 
-func (db *TransientDB) Retrive(path string, T any) (interface{}, error) {
-	v, err := db.DataStore.Retrive(path, nil)
+func (this *TransientDB) Precommit(paths []string, dict interface{}) {
+	this.DataStore.Precommit(paths, dict)
+}
+
+func (this *TransientDB) IfExists(key string) bool {
+	return this.DataStore.IfExists(key) || this.readonlyParent.IfExists(key)
+}
+
+func (this *TransientDB) Commit() error { return this.DataStore.Commit() }
+
+// func (this *TransientDB) Checksum() [32]byte { return this.DataStore.Checksum() }
+func (this *TransientDB) Print() { this.DataStore.Print() }
+func (this *TransientDB) Buffers() ([]string, []interface{}, [][]byte) {
+	return this.DataStore.Buffers()
+}
+
+func (this *TransientDB) Retrive(path string, T any) (interface{}, error) {
+	v, err := this.DataStore.Retrive(path, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	if v == nil {
-		v, err = db.parent.Retrive(path, T)
+		v, err = this.readonlyParent.Retrive(path, T)
 		if err != nil {
 			return nil, err
 		}
@@ -48,10 +62,10 @@ func (db *TransientDB) Retrive(path string, T any) (interface{}, error) {
 	return v, nil
 }
 
-func (db *TransientDB) BatchRetrive(paths []string, T []any) []interface{} {
+func (this *TransientDB) BatchRetrive(paths []string, T []any) []interface{} {
 	queryKeys := make([]string, 0, len(paths))
 	queryIdxes := make([]int, 0, len(paths))
-	values := db.DataStore.BatchRetrive(paths, T)
+	values := this.DataStore.BatchRetrive(paths, T)
 	for i := 0; i < len(paths); i++ {
 		if values[i] == nil {
 			queryKeys = append(queryKeys, paths[i])
@@ -62,7 +76,7 @@ func (db *TransientDB) BatchRetrive(paths []string, T []any) []interface{} {
 	if len(queryKeys) == 0 { // No missing values
 		return values
 	}
-	queryvalues := db.parent.BatchRetrive(queryKeys, T)
+	queryvalues := this.readonlyParent.BatchRetrive(queryKeys, T)
 	for i, idx := range queryIdxes {
 		values[idx] = queryvalues[i]
 	}
@@ -70,24 +84,8 @@ func (db *TransientDB) BatchRetrive(paths []string, T []any) []interface{} {
 	return values
 }
 
-func (db *TransientDB) Precommit(paths []string, dict interface{}) {
-	db.DataStore.Precommit(paths, dict)
-}
-
-func (db *TransientDB) Commit() error {
-	return db.DataStore.Commit()
-}
-
-func (this *TransientDB) Print() {
-	this.DataStore.Print()
-}
-
-func (this *TransientDB) Buffers() ([]string, []interface{}, [][]byte) {
-	return this.DataStore.Buffers()
-}
-
 func (this *TransientDB) CheckSum() [32]byte {
-	psum := this.parent.CheckSum()
+	psum := this.readonlyParent.CheckSum()
 	tsum := this.DataStore.CheckSum()
 	datas := []byte{}
 	datas = append(datas, psum[:]...)
@@ -96,7 +94,7 @@ func (this *TransientDB) CheckSum() [32]byte {
 }
 
 func (this *TransientDB) Dump() ([]string, []interface{}) {
-	pkeys, pvals := this.parent.Dump()
+	pkeys, pvals := this.readonlyParent.Dump()
 	keys, vals := this.DataStore.Dump()
 
 	return append(pkeys, keys...), append(pvals, vals...)
@@ -110,5 +108,5 @@ func (this *TransientDB) CacheRetrive(key string, valueTransformer func(interfac
 	if v, err := this.DataStore.CacheRetrive(key, valueTransformer); v != nil {
 		return v, err
 	}
-	return this.parent.CacheRetrive(key, valueTransformer)
+	return this.readonlyParent.CacheRetrive(key, valueTransformer)
 }

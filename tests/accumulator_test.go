@@ -16,12 +16,8 @@ import (
 )
 
 func TestAccumulatorUpperLimit(t *testing.T) {
-	fileDB, err := cachedstorage.NewFileDB(ROOT_PATH, 8, 2)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), fileDB, encoder, decoder)
+
+	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
@@ -63,12 +59,8 @@ func TestAccumulatorUpperLimit(t *testing.T) {
 }
 
 func TestAccumulatorLowerLimit(t *testing.T) {
-	fileDB, err := cachedstorage.NewFileDB(ROOT_PATH, 8, 2)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), fileDB, encoder, decoder)
+
+	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)

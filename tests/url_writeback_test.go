@@ -14,13 +14,8 @@ import (
 )
 
 func TestAddAndDelete(t *testing.T) {
-	fileDB, err := cachedstorage.NewFileDB(ROOT_PATH, 8, 2)
-	if err != nil {
-		t.Error(err)
-		return
-	}
 
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), fileDB, encoder, decoder)
+	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
@@ -52,13 +47,8 @@ func TestAddAndDelete(t *testing.T) {
 }
 
 func TestRecursiveDeletionSameBatch(t *testing.T) {
-	fileDB, err := cachedstorage.NewFileDB(ROOT_PATH, 8, 2)
-	if err != nil {
-		t.Error(err)
-		return
-	}
 
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), fileDB, encoder, decoder)
+	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
@@ -121,13 +111,8 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 }
 
 func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
-	fileDB, err := cachedstorage.NewFileDB(ROOT_PATH, 8, 2)
-	if err != nil {
-		t.Error(err)
-		return
-	}
 
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), fileDB, encoder, decoder)
+	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
@@ -141,7 +126,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 
 	url.Init(store)
 	path := commutative.NewPath()
-	_, err = url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", path)
+	_, err := url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", path)
 
 	if err != nil {
 		t.Error("error")
@@ -161,13 +146,8 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 }
 
 func TestRecursiveDeletionDifferentBatch(t *testing.T) {
-	fileDB, err := cachedstorage.NewFileDB(ROOT_PATH, 8, 2)
-	if err != nil {
-		t.Error(err)
-		return
-	}
 
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), fileDB, encoder, decoder)
+	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
@@ -221,13 +201,8 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 }
 
 func TestStateUpdate(t *testing.T) {
-	fileDB, err := cachedstorage.NewFileDB(ROOT_PATH, 8, 2)
-	if err != nil {
-		t.Error(err)
-		return
-	}
 
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), fileDB, encoder, decoder)
+	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()

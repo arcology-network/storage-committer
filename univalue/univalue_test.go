@@ -1,18 +1,12 @@
 package univalue
 
 import (
-	"crypto/sha256"
-	"fmt"
 	"testing"
-	"time"
 
-	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/datacompression"
-	ethrlp "github.com/arcology-network/common-lib/ethrlp"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	"github.com/arcology-network/concurrenturl/interfaces"
-	"github.com/arcology-network/evm/rlp"
 	"github.com/holiman/uint256"
 )
 
@@ -134,25 +128,25 @@ func TestUnimetaCodecUint64(t *testing.T) {
 	}
 }
 
-func BenchmarkAccountMerkleImportPerf(t *testing.B) {
-	data := [][]byte{}
-	for i := 0; i < 1000000; i++ {
-		v := sha256.Sum256([]byte(fmt.Sprint(i)))
-		data = append(data, v[:])
-	}
+// func BenchmarkAccountMerkleImportPerf(t *testing.B) {
+// 	data := [][]byte{}
+// 	for i := 0; i < 1000000; i++ {
+// 		v := sha256.Sum256([]byte(fmt.Sprint(i)))
+// 		data = append(data, v[:])
+// 	}
 
-	t0 := time.Now()
-	s1 := codec.Byteset(data).Encode()
-	codec.Byteset{}.Decode(s1)
-	fmt.Println("Code.Byteset: ", time.Since(t0), len(s1))
+// 	t0 := time.Now()
+// 	s1 := codec.Byteset(data).Encode()
+// 	codec.Byteset{}.Decode(s1)
+// 	fmt.Println("Code.Byteset: ", time.Since(t0), len(s1))
 
-	t0 = time.Now()
-	s2 := ethrlp.Bytes{}.Encode(data)
-	_, err := ethrlp.Bytes{}.Decode(s2)
+// 	t0 = time.Now()
+// 	s2 := ethrlp.Bytes{}.Encode(data)
+// 	_, err := ethrlp.Bytes{}.Decode(s2)
 
-	rlp.EncodeToBytes(s2)
-	if err != nil {
-		t.Error(err)
-	}
-	fmt.Println("ethrlp.Bytes{}.Encode: ", time.Since(t0), len(s2), float64(len(s1))/float64(len(s2)))
-}
+// 	rlp.EncodeToBytes(s2)
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// 	fmt.Println("ethrlp.Bytes{}.Encode: ", time.Since(t0), len(s2), float64(len(s1))/float64(len(s2)))
+// }

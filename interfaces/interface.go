@@ -146,6 +146,9 @@ type Datastore interface {
 	Commit() error
 	UpdateCacheStats([]interface{})
 
+	Encoder() func(string, interface{}) []byte
+	Decoder() func([]byte, any) interface{}
+
 	// Buffers() ([]string, []interface{}, [][]byte)
 	Dump() ([]string, []interface{})
 	Clear()
