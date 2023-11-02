@@ -20,7 +20,6 @@ import (
 )
 
 func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
-
 	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 
 	url := ccurl.NewConcurrentUrl(store)
@@ -59,7 +58,6 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 }
 
 func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
-
 	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 
 	url := ccurl.NewConcurrentUrl(store)
@@ -104,7 +102,6 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 }
 
 func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
-
 	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 
 	alice := AliceAccount()

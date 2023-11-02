@@ -14,7 +14,6 @@ import (
 )
 
 func TestAddAndDelete(t *testing.T) {
-
 	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
@@ -47,7 +46,6 @@ func TestAddAndDelete(t *testing.T) {
 }
 
 func TestRecursiveDeletionSameBatch(t *testing.T) {
-
 	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
@@ -111,7 +109,6 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 }
 
 func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
-
 	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
@@ -146,7 +143,6 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 }
 
 func TestRecursiveDeletionDifferentBatch(t *testing.T) {
-
 	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
@@ -201,7 +197,6 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 }
 
 func TestStateUpdate(t *testing.T) {
-
 	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)

@@ -18,7 +18,6 @@ func (Rlp) Encode(key string, v interface{}) []byte {
 	if v == nil {
 		return []byte{} // Deletion
 	}
-
 	return v.(interfaces.Type).StorageEncode()
 }
 

@@ -207,19 +207,20 @@ func (this *Importer) SortDeltaSequences() {
 func (this *Importer) MergeStateDelta() {
 	this.valBuffer = this.valBuffer[:0]
 	this.valBuffer = append(this.valBuffer, make([]interface{}, len(this.keyBuffer))...)
-	finalizer := func(start, end, index int, args ...interface{}) {
-		for i := start; i < end; i++ {
-			deltaSeq, _ := this.deltaDict.Get(this.keyBuffer[i])
-			finalized := deltaSeq.(*DeltaSequence).Finalize()
-			this.valBuffer[i] = finalized
 
-			if finalized == nil { // Some sequences may have been deleted with transactions they belong to
-				this.keyBuffer[i] = ""
-				continue
-			}
+	// finalizer := func(start, end, index int, args ...interface{}) {
+	for i := 0; i < len(this.keyBuffer); i++ {
+		deltaSeq, _ := this.deltaDict.Get(this.keyBuffer[i])
+		finalized := deltaSeq.(*DeltaSequence).Finalize()
+		this.valBuffer[i] = finalized
+
+		if finalized == nil { // Some sequences may have been deleted with transactions they belong to
+			this.keyBuffer[i] = ""
+			continue
 		}
 	}
-	common.ParallelWorker(len(this.keyBuffer), this.numThreads, finalizer)
+	// }
+	// common.ParallelWorker(len(this.keyBuffer), this.numThreads, finalizer)
 
 	common.Remove(&this.keyBuffer, "")
 	common.RemoveIf(&this.valBuffer, func(v interface{}) bool { return v == nil })

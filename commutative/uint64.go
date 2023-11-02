@@ -28,7 +28,7 @@ func NewBoundedUint64(min, max uint64) interface{} {
 	return NewUnboundedUint64()
 }
 
-func (this *Uint64) Clone() interface{} { return common.New(this) }
+func (this *Uint64) Clone() interface{} { return common.New(*this) }
 
 func (this *Uint64) FromRawType(value interface{}) interface{} {
 	if v, ok := value.(uint64); ok {

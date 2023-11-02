@@ -16,7 +16,6 @@ import (
 )
 
 func TestMultiAccountCreation(t *testing.T) {
-
 	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 
 	store.Inject((ccurlcommon.ETH10_ACCOUNT_PREFIX), commutative.NewPath())

@@ -103,6 +103,7 @@ func (this *WriteCache) Write(tx uint32, path string, value interface{}) error {
 		univalue := this.GetOrInit(tx, path, value) // Get a univalue wrapper
 
 		err := univalue.Set(tx, path, value, this)
+		this.GetOrInit(tx, path, value)
 		if err == nil {
 			if strings.HasSuffix(parentPath, "container/") || (!this.platform.IsSysPath(parentPath) && tx != ccurlcommon.SYSTEM) { // Don't keep track of the system children
 				parentMeta := this.GetOrInit(tx, parentPath, new(commutative.Path))

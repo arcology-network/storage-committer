@@ -16,7 +16,6 @@ import (
 )
 
 func TestAccumulatorUpperLimit(t *testing.T) {
-
 	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 
 	alice := AliceAccount()
@@ -59,7 +58,6 @@ func TestAccumulatorUpperLimit(t *testing.T) {
 }
 
 func TestAccumulatorLowerLimit(t *testing.T) {
-
 	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 
 	alice := AliceAccount()

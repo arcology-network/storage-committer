@@ -64,7 +64,8 @@ func (this *DeltaSequence) Finalize() *univalue.Univalue {
 	finalized := this.transitions[0].(*univalue.Univalue)
 
 	if (this.rawBytes != nil) && (finalized.Value() != nil) { // Value update not an assignment or deletion
-		finalized.SetValue(finalized.Value().(interfaces.Type).StorageDecode(this.rawBytes.([]byte)))
+		v := finalized.Value().(interfaces.Type).StorageDecode(this.rawBytes.([]byte)).(interfaces.Type).Value()
+		finalized.Value().(interfaces.Type).SetValue(v)
 	}
 
 	if err := finalized.ApplyDelta(this.transitions[1:]); err != nil {
