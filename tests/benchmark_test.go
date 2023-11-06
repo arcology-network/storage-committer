@@ -32,7 +32,7 @@ func BenchmarkAccountMerkleImportPerf(b *testing.B) {
 	// 	b.Error(err)
 	// 	return
 	// }
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
 
 	meta := commutative.NewPath()
 	store.Inject((ccurlcommon.ETH10_ACCOUNT_PREFIX), meta)
@@ -56,7 +56,7 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 	// 	b.Error(err)
 	// 	return
 	// }
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
 
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
@@ -99,7 +99,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	// 	b.Error(err)
 	// 	return
 	// }
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
 
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
@@ -372,7 +372,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	// 	b.Error(err)
 	// 	return
 	// }
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	store.Inject((ccurlcommon.ETH10_ACCOUNT_PREFIX), commutative.NewPath())
 
@@ -459,7 +459,7 @@ func BenchmarkStringSort(b *testing.B) {
 		acct := datacompression.RandomAccount()
 		for j := 9; j >= 1; j-- {
 
-			paths[i] = append(paths[i], univalue.NewUnivalue(uint32(j), acct, 0, 0, 0, noncommutative.NewString(fmt.Sprint(rand.Float64()))))
+			paths[i] = append(paths[i], univalue.NewUnivalue(uint32(j), acct, 0, 0, 0, noncommutative.NewString(fmt.Sprint(rand.Float64())), nil))
 		}
 	}
 

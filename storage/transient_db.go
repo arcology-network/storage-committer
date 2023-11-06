@@ -31,8 +31,8 @@ func (this *TransientDB) Inject(path string, v interface{}) error {
 	return this.DataStore.Inject(path, v)
 }
 
-func (this *TransientDB) Precommit(paths []string, dict interface{}) {
-	this.DataStore.Precommit(paths, dict)
+func (this *TransientDB) Precommit(paths []string, dict interface{}) [32]byte {
+	return this.DataStore.Precommit(paths, dict)
 }
 
 func (this *TransientDB) IfExists(key string) bool {
@@ -48,7 +48,7 @@ func (this *TransientDB) Buffers() ([]string, []interface{}, [][]byte) {
 }
 
 func (this *TransientDB) Retrive(path string, T any) (interface{}, error) {
-	v, err := this.DataStore.Retrive(path, nil)
+	v, err := this.DataStore.Retrive(path, T)
 	if err != nil {
 		return nil, err
 	}

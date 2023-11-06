@@ -3,9 +3,8 @@ package ccurltest
 import (
 	"testing"
 
-	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
-
 	// codec "github.com/arcology-network/common-lib/codec"
+
 	"github.com/arcology-network/common-lib/common"
 	datacompression "github.com/arcology-network/common-lib/datacompression"
 	"github.com/arcology-network/common-lib/merkle"
@@ -16,7 +15,8 @@ import (
 )
 
 func TestMultiAccountCreation(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
+	// store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 
 	store.Inject((ccurlcommon.ETH10_ACCOUNT_PREFIX), commutative.NewPath())
 	url := ccurl.NewConcurrentUrl(store)

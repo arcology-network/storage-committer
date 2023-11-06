@@ -4,7 +4,6 @@ import (
 	"errors"
 	"reflect"
 
-	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
 	"github.com/arcology-network/common-lib/common"
 	ccurl "github.com/arcology-network/concurrenturl"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
@@ -13,7 +12,7 @@ import (
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 )
 
-func Create_Ctrn_0(account string, store *cachedstorage.DataStore) ([]byte, []interfaces.Univalue, error) {
+func Create_Ctrn_0(account string, store interfaces.Datastore) ([]byte, []interfaces.Univalue, error) {
 	url := ccurl.NewConcurrentUrl(store)
 	path := commutative.NewPath() // create a path
 	if _, err := url.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", path); err != nil {
@@ -33,7 +32,7 @@ func Create_Ctrn_0(account string, store *cachedstorage.DataStore) ([]byte, []in
 	return indexer.Univalues(transitions).Encode(), transitions, nil
 }
 
-func ParallelInsert_Ctrn_0(account string, store *cachedstorage.DataStore) ([]byte, error) {
+func ParallelInsert_Ctrn_0(account string, store interfaces.Datastore) ([]byte, error) {
 	url := ccurl.NewConcurrentUrl(store)
 	path := commutative.NewPath() // create a path
 	if _, err := url.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", path); err != nil {
@@ -52,7 +51,7 @@ func ParallelInsert_Ctrn_0(account string, store *cachedstorage.DataStore) ([]by
 	return indexer.Univalues(transitions).Encode(), nil
 }
 
-func Create_Ctrn_1(account string, store *cachedstorage.DataStore) ([]byte, error) {
+func Create_Ctrn_1(account string, store interfaces.Datastore) ([]byte, error) {
 	url := ccurl.NewConcurrentUrl(store)
 	path := commutative.NewPath() // create a path
 	if _, err := url.Write(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/", path); err != nil {

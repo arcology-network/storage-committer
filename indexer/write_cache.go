@@ -61,40 +61,35 @@ func (this *WriteCache) GetOrInit(tx uint32, path string, T any) interfaces.Univ
 	return unival
 }
 
-// func (this *WriteCache) Read(tx uint32, path string) (interface{}, interface{}) {
-// 	univalue := this.GetOrInit(tx, path)
-// 	return univalue.Get(tx, path, nil), univalue
-// }
-
 func (this *WriteCache) Read(tx uint32, path string, T any) (interface{}, interface{}) {
 	univalue := this.GetOrInit(tx, path, T)
 	return univalue.Get(tx, path, nil), univalue
 }
 
-func (this *WriteCache) Retrive(path string, T any) (interface{}, error) {
-	v, _ := this.Peek(path, T)
-	if v == nil || v.(interfaces.Type).IsDeltaApplied() {
-		return v, nil
+// Get the value directly, skip the access counting at the univalue level
+func (this *WriteCache) Peek(path string, T any) (interface{}, interface{}) {
+	if univ, ok := this.kvDict[path]; ok {
+		return univ.Value(), univ
 	}
 
-	rawv, _, _ := v.(interfaces.Type).Get()
-	value := v.(interfaces.Type).FromRawType(rawv)
-	return v.(interfaces.Type).New(value, nil, nil, v.(interfaces.Type).Min(), v.(interfaces.Type).Max()), nil
+	v := this.RetriveShallow(path, T)
+	univ := univalue.NewUnivalue(ccurlcommon.SYSTEM, path, 0, 0, 0, v.(interfaces.Type), nil)
+	return univ.Value(), univ
+}
+
+func (this *WriteCache) Retrive(path string, T any) (interface{}, error) {
+	typedv, _ := this.Peek(path, T)
+	if typedv == nil || typedv.(interfaces.Type).IsDeltaApplied() {
+		return typedv, nil
+	}
+
+	rawv := typedv.(interfaces.Type).Value()                                                                                 // convert to the internal type
+	return typedv.(interfaces.Type).New(rawv, nil, nil, typedv.(interfaces.Type).Min(), typedv.(interfaces.Type).Max()), nil // Return in a new univalue
 }
 
 func (this *WriteCache) Do(tx uint32, path string, doer interface{}, T any) interface{} {
 	univalue := this.GetOrInit(tx, path, T)
 	return univalue.Do(tx, path, doer)
-}
-
-// Get the value directly, skip the access counting at the univalue level
-func (this *WriteCache) Peek(path string, T any) (interface{}, interface{}) {
-	if v, ok := this.kvDict[path]; ok {
-		return v.Value(), v
-	}
-
-	v := this.RetriveShallow(path, T)
-	return v, univalue.NewUnivalue(ccurlcommon.SYSTEM, path, 0, 0, 0, v)
 }
 
 func (this *WriteCache) Write(tx uint32, path string, value interface{}) error {

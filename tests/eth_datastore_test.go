@@ -12,13 +12,65 @@ import (
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
+	"github.com/arcology-network/concurrenturl/interfaces"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	storage "github.com/arcology-network/concurrenturl/storage"
+	univalue "github.com/arcology-network/concurrenturl/univalue"
 )
 
+func TestEthStorageBasic(t *testing.T) {
+	store := storage.NewEthMemDataStore(false)
+
+	keys := []string{
+		"blcc://eth1.0/account/bbbbbbbbbbbbbbbbbbbb/storage/ctrn-0/",
+		"blcc://eth1.0/account/bbbbbbbbbbbbbbbbbbbb/storage/native/1",
+		"blcc://eth1.0/account/bbbbbbbbbbbbbbbbbbbb/storage/native/2",
+	}
+
+	vals := []interface{}{
+		univalue.NewUnivalue(0, "", 0, 0, 0, commutative.NewBoundedUint64(1, 111), nil),
+		univalue.NewUnivalue(0, "", 0, 0, 0, commutative.InitNewPaths([]string{"ctrn-0"}), nil),
+		univalue.NewUnivalue(0, "", 0, 0, 0, noncommutative.NewInt64(199), nil),
+	}
+
+	store.Precommit(keys, vals)
+
+	v, err := store.Retrive(keys[0], new(commutative.Uint64))
+	if v == nil {
+		t.Error(err)
+	}
+
+	if v == nil || !vals[0].(interfaces.Univalue).Value().(interfaces.Type).Equal(v) {
+		t.Error("Expeced :", vals[0].(interfaces.Univalue).Value().(interfaces.Type))
+		t.Error("Actual; :", v)
+	}
+
+	v, err = store.Retrive(keys[1], new(commutative.Path))
+	if v == nil {
+		t.Error(err)
+	}
+
+	if v == nil || !vals[1].(interfaces.Univalue).Value().(interfaces.Type).Equal(v) {
+		t.Error("Expeced :", vals[0].(interfaces.Univalue).Value().(interfaces.Type))
+		t.Error("Actual; :", v)
+	}
+
+	v, err = store.Retrive(keys[2], new(noncommutative.Int64))
+	if v == nil {
+		t.Error(err)
+	}
+
+	if v == nil || !vals[2].(interfaces.Univalue).Value().(interfaces.Type).Equal(v) {
+		t.Error("Expeced :", vals[0].(interfaces.Univalue).Value().(interfaces.Type))
+		t.Error("Actual; :", v)
+	}
+}
+
+// need to hash the keys first
+
 func TestEthStorageConnection(t *testing.T) {
-	store := storage.NewEthMemDataStore()
-	// store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(1000000, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
+	// store := chooseDataStore()
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
@@ -30,29 +82,20 @@ func TestEthStorageConnection(t *testing.T) {
 		t.Error(err)
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/ele0", noncommutative.NewString("124")); err != nil {
+	trans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{})
+	url.Import(trans)
+	url.Sort()
+	url.Commit([]uint32{ccurlcommon.SYSTEM})
+
+	v, err := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path))
+	if v == nil {
 		t.Error(err)
 	}
-
-	if v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path)); v == nil {
-		t.Error("Error: The path should exists")
-	}
-
-	v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/ele0", new(noncommutative.String))
-	if v == nil || v.(string) != "124" {
-		t.Error("Error: The path should exists")
-	}
-
-	raw := url.Export(indexer.Sorter)
-	acctTrans := indexer.Univalues(common.Clone(raw)).To(indexer.IPCTransition{})
-
-	indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode())
-	url.Import(acctTrans)
 }
 
 func TestBasicAddRead(t *testing.T) {
-	store := storage.NewEthMemDataStore()
-	// store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(1000000, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
+	// store := chooseDataStore()
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
@@ -123,8 +166,8 @@ func TestBasicAddRead(t *testing.T) {
 }
 
 func TestEthDataStoreAddDeleteRead(t *testing.T) {
-	store := storage.NewEthMemDataStore()
-	// store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
+	// store := chooseDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
@@ -203,8 +246,63 @@ func TestEthDataStoreAddDeleteRead(t *testing.T) {
 	}
 }
 
+func TestAddThenDeletePathInEthTrie(t *testing.T) {
+	store := chooseDataStore()
+	// store := chooseDataStore()
+
+	alice := AliceAccount()
+	url := ccurl.NewConcurrentUrl(store)
+	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+		t.Error(err)
+	}
+
+	// _, trans := url.Export(indexer.Sorter)
+	trans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{})
+	acctTrans := (&indexer.Univalues{}).Decode(indexer.Univalues(trans).Encode()).(indexer.Univalues)
+
+	//values := indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).([]interfaces.Univalue)
+	ts := indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues)
+	url.Import(ts)
+	url.Sort()
+	url.Commit([]uint32{ccurlcommon.SYSTEM})
+
+	url.Init(store)
+	// create a path
+	path := commutative.NewPath()
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
+		t.Error(err)
+	}
+
+	transitions := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{})
+	url.Import((&indexer.Univalues{}).Decode(indexer.Univalues(transitions).Encode()).(indexer.Univalues))
+
+	url.Sort()
+	url.Commit([]uint32{1})
+
+	v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
+	if v == nil {
+		t.Error("Error: The path should exists")
+	}
+
+	url.Init(store)
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil); err != nil { // Delete the path
+		t.Error(err)
+	}
+
+	trans = indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{})
+	url.Import((&indexer.Univalues{}).Decode(indexer.Univalues(trans).Encode()).(indexer.Univalues))
+	url.Sort()
+	url.Commit([]uint32{1})
+
+	if v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path)); v != nil {
+		t.Error("Error: The path should have been deleted")
+	}
+}
+
 func BenchmarkMultipleAccountCommitDataStore(b *testing.B) {
-	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+	// store := chooseDataStore() // Eth data store
+	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode) // Native data store
+
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {

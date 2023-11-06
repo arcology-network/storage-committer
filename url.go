@@ -78,7 +78,10 @@ func (this *ConcurrentUrl) ReadCommitted(tx uint32, key string, T any) (interfac
 	}
 
 	v, _ := this.WriteCache().Store().Retrive(key, T)
-	return v, Fee{}.Reader(univalue.NewUnivalue(tx, key, 1, 0, 0, v))
+	if v == nil {
+		return v, Fee{}.Reader(univalue.NewUnivalue(tx, key, 1, 0, 0, v, nil))
+	}
+	return v, Fee{}.Reader(univalue.NewUnivalue(tx, key, 1, 0, 0, v.(interfaces.Type), nil))
 }
 
 func (this *ConcurrentUrl) Init(store interfaces.Datastore) {
@@ -169,7 +172,11 @@ func (this *ConcurrentUrl) KeyAt(tx uint32, path string, index interface{}, T an
 
 func (this *ConcurrentUrl) Peek(path string, T any) (interface{}, uint64) {
 	typedv, univ := this.writeCache.Peek(path, T)
-	return typedv, Fee{}.Reader(univ.(interfaces.Univalue))
+	var v interface{}
+	if typedv != nil {
+		v, _, _ = typedv.(interfaces.Type).Get()
+	}
+	return v, Fee{}.Reader(univ.(interfaces.Univalue))
 }
 
 func (this *ConcurrentUrl) PeekCommitted(path string, T any) (interface{}, uint64) {
@@ -317,12 +324,12 @@ func (this *ConcurrentUrl) Finalize(txs []uint32) *ConcurrentUrl {
 	return this
 }
 
-func (this *ConcurrentUrl) WriteToDbBuffer() {
+func (this *ConcurrentUrl) WriteToDbBuffer() [32]byte {
 	keys, values := this.importer.KVs()
 	invKeys, invVals := this.imuImporter.KVs()
 
 	keys, values = append(keys, invKeys...), append(values, invVals...)
-	this.importer.Store().Precommit(keys, values) // save the transitions to the DB buffer
+	return this.importer.Store().Precommit(keys, values) // save the transitions to the DB buffer
 }
 
 func (this *ConcurrentUrl) SaveToDB() {
@@ -337,7 +344,7 @@ func (this *ConcurrentUrl) Commit(txs []uint32) *ConcurrentUrl {
 		return this
 	}
 	this.Finalize(txs)
-	this.WriteToDbBuffer()
+	this.WriteToDbBuffer() // Export transitions and save them to the DB buffer.
 	this.SaveToDB()
 	return this
 }

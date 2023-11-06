@@ -76,7 +76,7 @@ func (this *Uint64) StorageEncode() []byte {
 func (*Uint64) StorageDecode(buffer []byte) interface{} {
 	this := NewUnboundedUint64().(*Uint64)
 
-	var arr []*big.Int
+	arr := make([]*big.Int, 3)
 	err := rlp.DecodeBytes(buffer, &arr)
 	if err != nil {
 		var value big.Int

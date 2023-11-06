@@ -14,12 +14,19 @@ type Path struct {
 	delta *PathDelta
 }
 
-func NewPath() interface{} {
+func NewPath() interfaces.Type {
 	this := &Path{
 		value: orderedset.NewOrderedSet([]string{}),
 		delta: NewPathDelta([]string{}, []string{}),
 	}
 	return this
+}
+
+func InitNewPaths(newPaths []string) *Path {
+	return &Path{
+		value: orderedset.NewOrderedSet(newPaths),
+		delta: NewPathDelta([]string{}, []string{}),
+	}
 }
 
 func (this *Path) Length() int                                                { return this.value.Length() }

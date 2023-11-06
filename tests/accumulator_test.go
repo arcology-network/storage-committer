@@ -4,7 +4,6 @@ import (
 	"strings"
 	"testing"
 
-	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
 	"github.com/arcology-network/common-lib/common"
 	ccurl "github.com/arcology-network/concurrenturl"
 	arbitrator "github.com/arcology-network/concurrenturl/arbitrator"
@@ -16,7 +15,7 @@ import (
 )
 
 func TestAccumulatorUpperLimit(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
@@ -58,7 +57,7 @@ func TestAccumulatorUpperLimit(t *testing.T) {
 }
 
 func TestAccumulatorLowerLimit(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)

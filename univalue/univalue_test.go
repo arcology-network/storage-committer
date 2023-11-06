@@ -26,7 +26,7 @@ func TestUnivalueCodecUint64(t *testing.T) {
 
 	// meta:= commutative.NewPath()
 	u64 := commutative.NewBoundedUint64(0, 100)
-	in := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, u64)
+	in := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, u64, nil)
 	in.reads = 1
 	in.writes = 2
 	in.deltaWrites = 3
@@ -54,7 +54,7 @@ func TestUnivalueCodecU256(t *testing.T) {
 	// meta:= commutative.NewPath()
 	u256 := commutative.NewBoundedU256(uint256.NewInt(0), uint256.NewInt(100))
 
-	in := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, u256)
+	in := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, u256, nil)
 	in.reads = 1
 	in.writes = 2
 	in.deltaWrites = 3
@@ -93,7 +93,7 @@ func TestUnivalueCodeMeta(t *testing.T) {
 	meta.(*commutative.Path).SetAdded([]string{"+01", "+001", "+002", "+002"})
 	meta.(*commutative.Path).SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
 
-	in := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 11, meta)
+	in := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 11, meta, nil)
 	in.reads = 1
 	in.writes = 2
 	in.deltaWrites = 3

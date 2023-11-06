@@ -27,7 +27,7 @@ type U256 struct {
 	deltaPositive bool
 }
 
-func NewBoundedU256(lower, upper *uint256.Int) interface{} {
+func NewBoundedU256(lower, upper *uint256.Int) interfaces.Type {
 	v := NewUnboundedU256().(*U256)
 	if upper.Cmp(lower) >= 0 { // The upper limit has to be greater than the lower one
 		v.min = *lower
@@ -36,7 +36,16 @@ func NewBoundedU256(lower, upper *uint256.Int) interface{} {
 	return v
 }
 
-func NewUnboundedU256() interface{} {
+func NewBoundedU256FromU64(lower, upper uint64) interfaces.Type {
+	v := NewUnboundedU256().(*U256)
+	if upper >= lower { // The upper limit has to be greater than the lower one
+		v.min = *uint256.NewInt(lower)
+		v.max = *uint256.NewInt(upper)
+	}
+	return v
+}
+
+func NewUnboundedU256() interfaces.Type {
 	return &U256{
 		value:         *uint256.NewInt(0),
 		delta:         *uint256.NewInt(0),
@@ -46,7 +55,7 @@ func NewUnboundedU256() interface{} {
 	}
 }
 
-func NewU256Delta(delta *uint256.Int, deltaPositive bool) interface{} {
+func NewU256Delta(delta *uint256.Int, deltaPositive bool) interfaces.Type {
 	return &U256{
 		delta:         (*delta),
 		deltaPositive: deltaPositive,

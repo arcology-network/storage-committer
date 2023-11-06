@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
 	common "github.com/arcology-network/common-lib/common"
 	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl"
@@ -20,7 +19,7 @@ import (
 )
 
 func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
 
 	url := ccurl.NewConcurrentUrl(store)
 	meta := commutative.NewPath()
@@ -58,7 +57,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 }
 
 func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
 
 	url := ccurl.NewConcurrentUrl(store)
 	meta := commutative.NewPath()
@@ -102,7 +101,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 }
 
 func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
@@ -231,11 +230,11 @@ func BenchmarkSimpleArbitrator(b *testing.B) {
 
 	v := commutative.NewPath()
 	for i := 0; i < len(univalues)/5; i++ {
-		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v))
-		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v))
-		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v))
-		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v))
-		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v))
+		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v, nil))
+		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v, nil))
+		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v, nil))
+		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v, nil))
+		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v, nil))
 
 		groupIDs = append(groupIDs, uint32(i))
 		groupIDs = append(groupIDs, uint32(i))

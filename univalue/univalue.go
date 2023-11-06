@@ -17,18 +17,18 @@ type Univalue struct {
 
 // func NewUnivalue
 
-func NewUnivalue(tx uint32, key string, reads, writes uint32, deltaWrites uint32, args ...interface{}) *Univalue {
+func NewUnivalue(tx uint32, key string, reads, writes uint32, deltaWrites uint32, v interface{}, source interface{}) *Univalue {
 	return &Univalue{
 		Unimeta{
-			vType:       common.IfThenDo1st(len(args) > 0 && args[0] != nil, func() uint8 { return args[0].(interfaces.Type).TypeID() }, uint8(reflect.Invalid)),
+			vType:       common.IfThenDo1st(v != nil, func() uint8 { return v.(interfaces.Type).TypeID() }, uint8(reflect.Invalid)),
 			tx:          tx,
 			path:        &key,
 			reads:       reads,
 			writes:      writes,
 			deltaWrites: deltaWrites,
-			preexists:   common.IfThenDo1st(len(args) > 1, func() bool { return (&Unimeta{}).CheckPreexist(key, args[1]) }, false),
+			preexists:   common.IfThenDo1st(source != nil, func() bool { return (&Unimeta{}).CheckPreexist(key, source) }, false),
 		},
-		args[0],
+		v,
 		[]byte{},
 	}
 }

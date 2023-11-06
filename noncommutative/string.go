@@ -11,7 +11,7 @@ import (
 
 type String codec.String
 
-func NewString(v string) interface{} {
+func NewString(v string) interfaces.Type {
 	var this String = String(v)
 	return &this
 }

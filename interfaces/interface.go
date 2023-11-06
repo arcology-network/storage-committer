@@ -1,12 +1,7 @@
 package interfaces
 
-import (
-	"math"
-)
-
 const (
 	MAX_DEPTH            uint8 = 12
-	SYSTEM                     = math.MaxInt32
 	ETH10_ACCOUNT_LENGTH       = 40
 )
 
@@ -142,7 +137,7 @@ type Datastore interface {
 	BatchInject([]string, []any) error
 	Retrive(string, any) (interface{}, error)
 	BatchRetrive([]string, []any) []interface{}
-	Precommit([]string, interface{})
+	Precommit([]string, interface{}) [32]byte
 	Commit() error
 	UpdateCacheStats([]interface{})
 

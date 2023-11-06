@@ -18,10 +18,10 @@ type Uint64 struct {
 	max   uint64
 }
 
-func NewUnboundedUint64() interface{}         { return &Uint64{min: 0, max: math.MaxInt64} }
-func NewUint64Delta(delta uint64) interface{} { return &Uint64{delta: delta} }
+func NewUnboundedUint64() interfaces.Type         { return &Uint64{min: 0, max: math.MaxInt64} }
+func NewUint64Delta(delta uint64) interfaces.Type { return &Uint64{delta: delta} }
 
-func NewBoundedUint64(min, max uint64) interface{} {
+func NewBoundedUint64(min, max uint64) interfaces.Type {
 	if max >= min {
 		return &Uint64{min: min, max: max}
 	}

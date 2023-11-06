@@ -19,22 +19,9 @@ import (
 	"github.com/holiman/uint256"
 )
 
-const (
-	ROOT_PATH   = "./tmp/filedb/"
-	BACKUP_PATH = "./tmp/filedb-back/"
-)
-
-var (
-	// encoder = storage.Codec{}.Encode
-	// decoder = storage.Codec{}.Decode
-
-	encoder = storage.Rlp{}.Encode
-	decoder = storage.Rlp{}.Decode
-)
-
 func TestSize(t *testing.T) {
-	// store := storage.NewEthMemDataStore()
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(1000000, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	// store := chooseDataStore()
+	store := chooseDataStore()
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
@@ -67,9 +54,9 @@ func TestSize(t *testing.T) {
 }
 
 func TestAddThenDeletePath(t *testing.T) {
-	store := storage.NewEthMemDataStore()
-	// store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(10000, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
 	alice := AliceAccount()
+
 	url := ccurl.NewConcurrentUrl(store)
 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
@@ -120,7 +107,7 @@ func TestAddThenDeletePath(t *testing.T) {
 }
 
 func TestAddThenDeletePath2(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
@@ -172,7 +159,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 }
 
 func TestBasic(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(1000000, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
@@ -280,7 +267,7 @@ func TestBasic(t *testing.T) {
 }
 
 func TestPathAddThenDelete(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
@@ -360,8 +347,8 @@ func TestPathAddThenDelete(t *testing.T) {
 }
 
 func TestUrl1(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
-	// store := storage.NewEthMemDataStore()
+	store := chooseDataStore()
+	// store := chooseDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
@@ -449,7 +436,7 @@ func TestUrl1(t *testing.T) {
 }
 
 func TestUrl2(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(1000000, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
 	// store := cachedstorage.NewDataStore(nil, nil, nil, encoder, decoder)
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
@@ -599,22 +586,22 @@ func TestUrl2(t *testing.T) {
 	transitions := indexer.Univalues(common.Clone(url.Export())).To(indexer.ITCTransition{})
 
 	// 3 writes + 1 affiliated write
-	value := univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, nil)
+	value := univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, nil, nil)
 	if !indexer.Univalues(accessRecords).IfContains(value) {
 		t.Error("Error: Error: ")
 	}
 
-	value = univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", 1, 1, 0, nil)
+	value = univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", 1, 1, 0, nil, nil)
 	if !indexer.Univalues(accessRecords).IfContains(value) {
 		t.Error("Error: Error: ")
 	}
 
-	value = univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-002", 0, 1, 0, nil)
+	value = univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-002", 0, 1, 0, nil, nil)
 	if !indexer.Univalues(accessRecords).IfContains(value) {
 		t.Error("Error: Error: ")
 	}
 
-	value = univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-005", 1, 0, 0, nil)
+	value = univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-005", 1, 0, 0, nil, nil)
 	if !indexer.Univalues(accessRecords).IfContains(value) {
 		t.Error("Error: Error: ")
 	}
@@ -631,7 +618,7 @@ func TestUrl2(t *testing.T) {
 }
 
 func TestTransientDBv2(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(1000000, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)

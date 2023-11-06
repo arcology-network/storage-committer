@@ -92,66 +92,6 @@ func (this *Importer) Import(txTrans []interfaces.Univalue, args ...interface{})
 	}
 }
 
-// // The transaction set must not contain duplicate keys
-// func (this *Importer) Import(txTrans []interfaces.Univalue, args ...interface{}) {
-// 	commitIfAbsent := true // Write if absent from the local cache, this may happen with a partial cache
-// 	if len(args) > 0 && args[0] != nil {
-// 		commitIfAbsent = args[0].(bool)
-// 	}
-// 	nKeys := common.Append(txTrans, func(v interfaces.Univalue) string { return *v.GetPath() }) // Get the keys from univaues
-// 	// values := common.Append(txTrans, func(v interfaces.Univalue) interface{} { return v.Value() }) // Get the values from univaues
-
-// 	// Create delta sequences all at once
-// 	deltaSeq := this.deltaDict.BatchGet(nKeys) // If the entries exist in the RWCache already
-
-// 	inLocalCache := common.Append(nKeys, func(k string) bool { return this.store.IfExists(k) })
-// 	worker := func(start, end, index int, args ...interface{}) {
-// 		seqPool := this.seqPool.GetTlsMempool(index)
-// 		// uniPool := this.uniPool.GetTlsMempool(index)
-// 		for i := start; i < end; i++ {
-// 			if deltaSeq[i] == nil { // The entry does't exist in the RWCache
-// 				preexist := txTrans[i].Preexist()
-// 				if !inLocalCache[i] && commitIfAbsent && preexist { //preexists, but not available locally
-// 					nKeys[i] = ""
-// 					txTrans[i] = nil
-// 					continue
-// 				}
-// 				deltaSeq[i] = seqPool.Get().(*DeltaSequence).Reset(nKeys[i]) // Reset the sequence in case it was used before
-
-// 				// if preexist {
-// 				// 	deltaSeq[i].(*DeltaSequence).Init(nKeys[i], this, uniPool) // Get the initial value from the cache / persistent DB
-// 				// }
-// 			}
-// 		}
-// 	}
-// 	common.ParallelWorker(len(nKeys), this.numThreads, worker)
-
-// 	this.deltaDict.BatchSet(nKeys, deltaSeq)                       // Create new empty sequences all at once
-// 	Inserter := func(start, end, index int, args ...interface{}) { // Insert the transitions to the sequences
-// 		for i := start; i < end; i++ {
-// 			if deltaSeq[i] != nil {
-// 				common.FilterFirst(this.deltaDict.Get(*txTrans[i].GetPath())).(*DeltaSequence).Append(txTrans[i], this, this.uniPool)
-// 			}
-// 			// if preexist {
-// 			// deltaSeq.(*DeltaSequence).Init(nKeys[i], this, uniPool) // Get the initial value from the cache / persistent DB
-// 			// }
-// 		}
-// 	}
-// 	common.ParallelWorker(len(txTrans), this.numThreads, Inserter)
-
-// 	for i := 0; i < len(txTrans); i++ { // Update the transaction ID index
-// 		v := txTrans[i]
-// 		if v == nil {
-// 			continue
-// 		}
-
-// 		if this.byTx[v.GetTx()] == nil {
-// 			this.byTx[v.GetTx()] = make([]interfaces.Univalue, 0, 32)
-// 		}
-// 		this.byTx[v.GetTx()] = append(this.byTx[v.GetTx()], v)
-// 	}
-// }
-
 // Only keep transation within the whitelist
 func (this *Importer) WhilteList(whitelist []uint32) []error {
 	if whitelist == nil { // Whiltelist all
@@ -179,25 +119,10 @@ func (this *Importer) WhilteList(whitelist []uint32) []error {
 
 func (this *Importer) SortDeltaSequences() {
 	this.keyBuffer = this.deltaDict.Keys()
-	// var err error
-	// this.keyBuffer, err = performance.SortStrings(this.keyBuffer) // Keys should be unique
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// sort.Strings(this.keyBuffer) // For the later merkle tree calculation
-
 	sorter := func(start, end, index int, args ...interface{}) {
 		for i := start; i < end; i++ {
 			deltaSeq, _ := this.deltaDict.Get(this.keyBuffer[i])
-
-			// typeValue := deltaSeq.(*DeltaSequence).base
-			// if typeValue == nil {
-			// 	typeValue = deltaSeq.(*DeltaSequence).values[0]
-			// }
-
-			// if typeValue.Value().(interfaces.Type).TypeID() == commutative.Path() {
 			deltaSeq.(*DeltaSequence).Sort() // Sort the transitions in the sequence
-			// }
 		}
 	}
 	common.ParallelWorker(len(this.keyBuffer), this.numThreads, sorter)
@@ -208,19 +133,20 @@ func (this *Importer) MergeStateDelta() {
 	this.valBuffer = this.valBuffer[:0]
 	this.valBuffer = append(this.valBuffer, make([]interface{}, len(this.keyBuffer))...)
 
-	// finalizer := func(start, end, index int, args ...interface{}) {
-	for i := 0; i < len(this.keyBuffer); i++ {
-		deltaSeq, _ := this.deltaDict.Get(this.keyBuffer[i])
-		finalized := deltaSeq.(*DeltaSequence).Finalize()
-		this.valBuffer[i] = finalized
+	finalizer := func(start, end, index int, args ...interface{}) {
+		// for i := 0; i < len(this.keyBuffer); i++ {
+		for i := start; i < end; i++ {
+			deltaSeq, _ := this.deltaDict.Get(this.keyBuffer[i])
+			finalized := deltaSeq.(*DeltaSequence).Finalize()
+			this.valBuffer[i] = finalized
 
-		if finalized == nil { // Some sequences may have been deleted with transactions they belong to
-			this.keyBuffer[i] = ""
-			continue
+			if finalized == nil { // Some sequences may have been deleted with transactions they belong to
+				this.keyBuffer[i] = ""
+				continue
+			}
 		}
 	}
-	// }
-	// common.ParallelWorker(len(this.keyBuffer), this.numThreads, finalizer)
+	common.ParallelWorker(len(this.keyBuffer), this.numThreads, finalizer)
 
 	common.Remove(&this.keyBuffer, "")
 	common.RemoveIf(&this.valBuffer, func(v interface{}) bool { return v == nil })

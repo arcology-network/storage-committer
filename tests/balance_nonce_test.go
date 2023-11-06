@@ -5,7 +5,6 @@ import (
 	"math/big"
 	"testing"
 
-	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
@@ -16,7 +15,7 @@ import (
 )
 
 func TestSimpleBalance(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
 
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
@@ -81,7 +80,7 @@ func TestSimpleBalance(t *testing.T) {
 }
 
 func TestBalance(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
 
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
@@ -166,7 +165,7 @@ func TestBalance(t *testing.T) {
 }
 
 func TestNonce(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
 
 	url1 := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
@@ -209,7 +208,7 @@ func TestNonce(t *testing.T) {
 }
 
 func TestMultipleNonces(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
 
 	url0 := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()

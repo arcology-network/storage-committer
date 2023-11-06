@@ -4,7 +4,6 @@ import (
 	"reflect"
 	"testing"
 
-	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
 	"github.com/arcology-network/common-lib/common"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
@@ -14,7 +13,7 @@ import (
 )
 
 func TestAddAndDelete(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
@@ -46,7 +45,7 @@ func TestAddAndDelete(t *testing.T) {
 }
 
 func TestRecursiveDeletionSameBatch(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
@@ -109,7 +108,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 }
 
 func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
@@ -143,7 +142,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 }
 
 func TestRecursiveDeletionDifferentBatch(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
@@ -185,8 +184,8 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewString("3"))
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/2", noncommutative.NewString("4"))
 
-	path, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
-	if reflect.DeepEqual(path.([]string), []string{"1", "2", "3", "4"}) {
+	outpath, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
+	if reflect.DeepEqual(outpath.([]string), []string{"1", "2", "3", "4"}) {
 		t.Error("Error: Not match")
 	}
 
@@ -197,7 +196,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 }
 
 func TestStateUpdate(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()

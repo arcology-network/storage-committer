@@ -4,7 +4,6 @@ import (
 	"reflect"
 	"testing"
 
-	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
 	"github.com/arcology-network/common-lib/common"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
@@ -15,7 +14,7 @@ import (
 )
 
 func TestAuxTrans(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 
 	alice := AliceAccount()
@@ -102,7 +101,7 @@ func TestAuxTrans(t *testing.T) {
 }
 
 func TestCheckAccessRecords(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	store := chooseDataStore()
 
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
