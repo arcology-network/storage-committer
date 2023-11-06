@@ -76,14 +76,9 @@ func (this *EthDataStore) IfExists(key string) bool {
 }
 
 func (this *EthDataStore) writeDB(keys []string, values []interface{}, encode func(v interface{}) []byte) error {
-	keyBytes := common.Append(keys, func(key string) []byte { return this.Hash(key) })
-	valBytes := common.ParallelAppend(values, func(i int) []byte { return encode(values[i]) })
-
-	this.trie.ParallelUpdate(keyBytes, valBytes)
-	// for i, key := range keys {
-	// 	this.trie.Update(this.Hash(key), encode(values[i]))
-	// }
-
+	this.trie.ParallelUpdate(
+		common.Append(keys, func(key string) []byte { return this.Hash(key) }),
+		common.ParallelAppend(values, func(i int) []byte { return encode(values[i]) }))
 	return nil
 }
 
@@ -125,8 +120,6 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 		}
 		return v.(interfaces.Univalue).Value().(interfaces.Type).StorageEncode()
 	})
-
-	// this.BatchInject(keys, values.([]interface{}))
 	return this.trie.Hash()
 }
 
