@@ -16,9 +16,11 @@ import (
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	storage "github.com/arcology-network/concurrenturl/storage"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
+	"github.com/arcology-network/evm/ethdb/memorydb"
+	ethmpt "github.com/arcology-network/evm/trie"
 )
 
-func TestEthStorageBasic(t *testing.T) {
+func TestEthTrieBasic(t *testing.T) {
 	store := storage.NewEthMemDataStore(false)
 
 	keys := []string{
@@ -63,6 +65,28 @@ func TestEthStorageBasic(t *testing.T) {
 	if v == nil || !vals[2].(interfaces.Univalue).Value().(interfaces.Type).Equal(v) {
 		t.Error("Expeced :", vals[0].(interfaces.Univalue).Value().(interfaces.Type))
 		t.Error("Actual; :", v)
+	}
+
+	store.Commit() // Calculate root hash
+
+	proofs := memorydb.New()
+	trie := store.LoadTrie(store.Root())
+
+	trie.Prove(store.Hash(keys[0]), 0, proofs)
+	if _, err := ethmpt.VerifyProof(store.Root(), store.Hash(keys[0]), proofs); err != nil {
+		t.Error("Actual :", err)
+	}
+
+	trie.Prove(store.Hash(keys[1]), 0, proofs)
+	store.LoadTrie(store.Root()).Prove(store.Hash(keys[1]), 0, proofs)
+	if _, err := ethmpt.VerifyProof(store.Root(), store.Hash(keys[1]), proofs); err != nil {
+		t.Error("Actual :", err)
+	}
+
+	trie.Prove(store.Hash(keys[2]), 0, proofs)
+	store.LoadTrie(store.Root()).Prove(store.Hash(keys[2]), 0, proofs)
+	if _, err := ethmpt.VerifyProof(store.Root(), store.Hash(keys[2]), proofs); err != nil {
+		t.Error("Actual :", err)
 	}
 }
 

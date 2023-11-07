@@ -52,7 +52,7 @@ func NewEthMemDataStore(memonly bool) *EthDataStore {
 
 func (this *EthDataStore) Clear() {
 	var err error
-	this.trie, err = ethmpt.NewParallel(ethmpt.TrieID(this.latestRoot), this.ethdb)
+	this.trie, err = ethmpt.NewParallel(ethmpt.TrieID(this.latestRoot), this.ethdb) // reopen the trie for future use
 	if err != nil {
 		panic(err)
 	}
@@ -65,7 +65,17 @@ func (this *EthDataStore) Hash(key string) []byte {
 	return sum
 }
 
-func (this *EthDataStore) Trie() *ethmpt.Trie { return this.trie }
+func (this *EthDataStore) LoadTrie(root [32]byte) *ethmpt.Trie {
+	if this.latestRoot != root {
+		if proofTrie, err := ethmpt.NewParallel(ethmpt.TrieID(this.latestRoot), this.ethdb); err == nil {
+			return proofTrie
+		}
+		return nil
+	}
+	return this.trie
+}
+
+func (this *EthDataStore) Root() [32]byte { return this.latestRoot }
 
 func (this *EthDataStore) Encoder() func(string, interface{}) []byte { return this.encoder }
 func (this *EthDataStore) Decoder() func([]byte, any) interface{}    { return this.decoder }
@@ -75,9 +85,10 @@ func (this *EthDataStore) IfExists(key string) bool {
 	return len(buffer) > 0
 }
 
-func (this *EthDataStore) writeDB(keys []string, values []interface{}, encode func(v interface{}) []byte) error {
+// Update the trie
+func (this *EthDataStore) WriteTrie(keys []string, values []interface{}, encode func(v interface{}) []byte) error {
 	this.trie.ParallelUpdate(
-		common.Append(keys, func(key string) []byte { return this.Hash(key) }),
+		common.ParallelAppend(keys, func(i int) []byte { return this.Hash(keys[i]) }),
 		common.ParallelAppend(values, func(i int) []byte { return encode(values[i]) }))
 	return nil
 }
@@ -87,7 +98,7 @@ func (this *EthDataStore) Inject(key string, value interface{}) error {
 }
 
 func (this *EthDataStore) BatchInject(keys []string, values []interface{}) error {
-	this.writeDB(keys, values, func(v interface{}) []byte {
+	this.WriteTrie(keys, values, func(v interface{}) []byte {
 		return v.(interfaces.Type).StorageEncode()
 	})
 	return nil
@@ -113,8 +124,9 @@ func (this *EthDataStore) BatchRetrive(keys []string, T []any) []interface{} {
 	return values
 }
 
+// Encode KVs and write them to the trie.
 func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte {
-	this.writeDB(keys, values.([]interface{}), func(v interface{}) []byte {
+	this.WriteTrie(keys, values.([]interface{}), func(v interface{}) []byte {
 		if v.(interfaces.Univalue).Value() == nil {
 			return []byte{} //Deletion
 		}
@@ -123,9 +135,10 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 	return this.trie.Hash()
 }
 
+// Write the DB
 func (this *EthDataStore) Commit() error {
 	this.latestRoot, this.nodeBuffer = this.trie.Commit(false)                                                                // Finalized the trie
-	if err := this.ethdb.Update(this.latestRoot, types.EmptyRootHash, trienode.NewWithNodeSet(this.nodeBuffer)); err != nil { // To DB dirty set
+	if err := this.ethdb.Update(this.latestRoot, types.EmptyRootHash, trienode.NewWithNodeSet(this.nodeBuffer)); err != nil { // Move to DB dirty node set
 		return err
 	}
 
@@ -138,9 +151,9 @@ func (this *EthDataStore) Commit() error {
 // Place holders
 func (this *EthDataStore) UpdateCacheStats([]interface{})  {}
 func (this *EthDataStore) Dump() ([]string, []interface{}) { return nil, nil }
-
-func (this *EthDataStore) Print()             {}
-func (this *EthDataStore) CheckSum() [32]byte { return [32]byte{} }
+func (this *EthDataStore) GetRootHash() [32]byte           { return this.trie.Hash() }
+func (this *EthDataStore) Print()                          {}
+func (this *EthDataStore) CheckSum() [32]byte              { return [32]byte{} }
 func (this *EthDataStore) Query(string, func(string, string) bool) ([]string, [][]byte, error) {
 	return nil, nil, nil
 }
