@@ -50,6 +50,26 @@ func NewEthMemDataStore(memonly bool) *EthDataStore {
 	}
 }
 
+func NewLevelDBDataStore(dir string) *EthDataStore {
+	leveldb, err := rawdb.NewLevelDBDatabase(dir, 256, 16, "temp", false)
+	if err != nil {
+		return nil
+	}
+
+	diskdbs := [16]ethdb.Database{}
+	common.Fill(diskdbs[:], leveldb)
+	db := ethmpt.NewParallelDatabase(diskdbs, nil)
+
+	paraTrie := ethmpt.NewEmptyParallel(db)
+	return &EthDataStore{
+		ethdb:   db,
+		trie:    paraTrie,
+		memonly: false,
+		encoder: Rlp{}.Encode,
+		decoder: Rlp{}.Decode,
+	}
+}
+
 func (this *EthDataStore) Clear() {
 	var err error
 	this.trie, err = ethmpt.NewParallel(ethmpt.TrieID(this.latestRoot), this.ethdb) // reopen the trie for future use

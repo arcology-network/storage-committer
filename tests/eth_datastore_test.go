@@ -1,13 +1,17 @@
 package ccurltest
 
 import (
+	"bytes"
 	"fmt"
 	"math/rand"
+	"os"
 	"reflect"
 	"testing"
+	"time"
 
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
 	"github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/common-lib/merkle"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
@@ -16,7 +20,11 @@ import (
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	storage "github.com/arcology-network/concurrenturl/storage"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
+	"github.com/arcology-network/evm/core/rawdb"
+	"github.com/arcology-network/evm/core/types"
+	"github.com/arcology-network/evm/ethdb"
 	"github.com/arcology-network/evm/ethdb/memorydb"
+	"github.com/arcology-network/evm/trie"
 	ethmpt "github.com/arcology-network/evm/trie"
 )
 
@@ -355,5 +363,103 @@ func BenchmarkMultipleAccountCommitDataStore(b *testing.B) {
 				b.Error(err)
 			}
 		}
+	}
+}
+
+func TestLevelDB(t *testing.T) {
+	leveldb, err := rawdb.NewLevelDBDatabase("./leveldb", 256, 16, "temp", false)
+	if err != nil {
+		return
+	}
+
+	diskdbs := [16]ethdb.Database{}
+	common.Fill(diskdbs[:], leveldb)
+	db := ethmpt.NewParallelDatabase(diskdbs, nil)
+
+	// db := trie.NewDatabase(leveldb)
+	trie := trie.NewEmpty(db)
+	res := trie.Hash()
+	exp := types.EmptyRootHash
+	if res != exp {
+		t.Errorf("expected %x got %x", exp, res)
+	}
+
+	keys := make([][]byte, 10)
+	data := make([][]byte, len(keys))
+	for i := 0; i < len(data); i++ {
+		keys[i] = merkle.Sha256{}.Hash([]byte(fmt.Sprint(i)))
+		data[i] = merkle.Sha256{}.Hash([]byte(fmt.Sprint(i)))
+	}
+
+	trie.ParallelUpdate(keys, data)
+
+	for i, k := range keys {
+		v, err := trie.Get(k)
+		if err != nil || !bytes.Equal(v, data[i]) {
+			t.Errorf("expected %x got %x", exp, res)
+		}
+	}
+
+	if err := os.RemoveAll("./leveldb"); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestLevelDBPerformance1M(t *testing.T) {
+	leveldb, err := rawdb.NewLevelDBDatabase("./leveldb", 0, 16, "temp", false)
+	if err != nil {
+		return
+	}
+
+	diskdbs := [16]ethdb.Database{}
+	common.Fill(diskdbs[:], leveldb)
+	db := ethmpt.NewParallelDatabase(diskdbs, nil)
+
+	trie := trie.NewEmptyParallel(db)
+	res := trie.Hash()
+	exp := types.EmptyRootHash
+	if res != exp {
+		t.Errorf("expected %x got %x", exp, res)
+	}
+
+	keys := make([][]byte, 2000000)
+	data := make([][]byte, len(keys))
+	for i := 0; i < len(data); i++ {
+		keys[i] = merkle.Sha256{}.Hash([]byte(fmt.Sprint(i)))
+		data[i] = merkle.Sha256{}.Hash([]byte(fmt.Sprint(i)))
+	}
+
+	t0 := time.Now()
+	trie.ParallelUpdate(keys, data)
+	fmt.Println("Parallel Update ", len(keys), " entries in ", time.Since(t0))
+
+	offset := len(keys)
+	for i := 0; i < len(data); i++ {
+		keys[i] = merkle.Sha256{}.Hash([]byte(fmt.Sprint(i + offset)))
+		data[i] = merkle.Sha256{}.Hash([]byte(fmt.Sprint(i + offset)))
+	}
+
+	t0 = time.Now()
+	common.ParallelWorker(len(keys), 8, func(start, end, index int, args ...interface{}) {
+		for i := start; i < end; i++ {
+			trie.Get(keys[i])
+		}
+	})
+	fmt.Println("Parallel Get ", len(keys), " entries in ", time.Since(t0))
+
+	t0 = time.Now()
+	for i, k := range keys {
+		trie.Update(k, data[i])
+	}
+	fmt.Println("Sequential Update ", len(keys), " entries in ", time.Since(t0))
+
+	t0 = time.Now()
+	for _, k := range keys {
+		trie.Get(k)
+	}
+	fmt.Println("Sequential Get ", len(keys), " entries in ", time.Since(t0))
+
+	if err := os.RemoveAll("./leveldb"); err != nil {
+		t.Error(err)
 	}
 }
