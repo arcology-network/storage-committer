@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"sort"
 
-	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
@@ -82,7 +81,7 @@ func (this Univalues) Sort(groupIDs []uint32) Univalues {
 	// t0 := time.Now()
 	for i := 0; i < len(this); i++ {
 		str := this[i].GetPath()
-		bytes := *codec.UnsafeStringToBytes(str) // 100% faster than ([]byte(*str))
+		bytes := []byte(*str)
 
 		sortees[i] = struct {
 			groupID uint32
