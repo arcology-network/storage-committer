@@ -64,13 +64,9 @@ func (this *Account) IfExists(key string) bool {
 		return len(this.code) > 0
 	}
 
-	// return true
-
-	buffer, err := this.storageTrie.Get([]byte(this.storageKey(key))) // Here need to follow the workflow of Retrive
-
-	// fmt.Println("key:", key, "|", len(buffer) > 0)
-
-	return err == nil && len(buffer) > 0
+	// buffer, err := this.storageTrie.Get([]byte(this.storageKey(key))) // Here need to follow the workflow of Retrive
+	// return err == nil && len(buffer) > 0
+	return this.storageTrie.IfExists([]byte(this.storageKey(key)))
 }
 
 func (this *Account) Retrive(key string, T any) (interface{}, error) {
