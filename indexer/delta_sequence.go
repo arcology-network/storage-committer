@@ -58,14 +58,20 @@ func (this *DeltaSequence) Sort() {
 }
 
 func (this *DeltaSequence) Finalize() *univalue.Univalue {
+	common.RemoveIf(&this.transitions, func(v interfaces.Univalue) bool {
+		return v.GetPath() == nil
+	})
+
 	if len(this.transitions) == 0 {
 		return nil
 	}
 	finalized := this.transitions[0].(*univalue.Univalue)
 
 	if (this.rawBytes != nil) && (finalized.Value() != nil) { // Value update not an assignment or deletion
-		v := finalized.Value().(interfaces.Type).StorageDecode(this.rawBytes.([]byte)).(interfaces.Type).Value()
-		finalized.Value().(interfaces.Type).SetValue(v)
+		if encoded, ok := this.rawBytes.([]byte); ok {
+			v := finalized.Value().(interfaces.Type).StorageDecode(encoded).(interfaces.Type).Value()
+			finalized.Value().(interfaces.Type).SetValue(v)
+		}
 	}
 
 	if err := finalized.ApplyDelta(this.transitions[1:]); err != nil {
@@ -73,6 +79,26 @@ func (this *DeltaSequence) Finalize() *univalue.Univalue {
 	}
 	return finalized
 }
+
+// func (this *DeltaSequence) Finalize() *univalue.Univalue {
+// 	if len(this.transitions) == 0 {
+// 		return nil
+// 	}
+// 	finalized := this.transitions[0].(*univalue.Univalue)
+
+// 	if (this.rawBytes != nil) && (finalized.Value() != nil) { // Value update not an assignment or deletion
+// 		var v interface{}
+// 		if encoded, ok := this.rawBytes.([]byte); ok {
+// 			v = finalized.Value().(interfaces.Type).StorageDecode(encoded).(interfaces.Type).Value()
+// 			finalized.Value().(interfaces.Type).SetValue(v)
+// 		}
+// 	}
+
+// 	if err := finalized.ApplyDelta(this.transitions[1:]); err != nil {
+// 		panic(err)
+// 	}
+// 	return finalized
+// }
 
 func (this *DeltaSequence) Reclaim() {
 	for i := range this.transitions {

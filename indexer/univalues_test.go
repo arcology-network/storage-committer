@@ -17,13 +17,13 @@ func TestUnivaluesCodecPathMeta(t *testing.T) {
 	alice := datacompression.RandomAccount()
 
 	u64 := commutative.NewBoundedUint64(0, 100)
-	in0 := univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/u64-000", 3, 4, 0, u64)
+	in0 := univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/u64-000", 3, 4, 0, u64, nil)
 	// in0.reads = 1
 	// in0.writes = 2
 	// in0.deltaWrites = 3
 
 	u256 := commutative.NewBoundedU256(uint256.NewInt(0), uint256.NewInt(100))
-	in1 := univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/u256-000", 3, 4, 0, u256)
+	in1 := univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/u256-000", 3, 4, 0, u256, nil)
 	// in1.reads = 4
 	// in1.writes = 5
 	// in1.deltaWrites = 6
@@ -33,7 +33,7 @@ func TestUnivaluesCodecPathMeta(t *testing.T) {
 	meta.(*commutative.Path).SetAdded([]string{"+01", "+001", "+002", "+002"})
 	meta.(*commutative.Path).SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
 
-	in2 := univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 11, meta)
+	in2 := univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 11, meta, nil)
 	// in2.reads = 7
 	// in2.writes = 8
 	// in2.deltaWrites = 9
@@ -59,7 +59,7 @@ func TestUnivaluesCodecU256(t *testing.T) {
 
 	// meta:= commutative.NewPath()
 	u256 := commutative.NewBoundedU256(uint256.NewInt(0), uint256.NewInt(100))
-	in := univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, u256)
+	in := univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, u256, nil)
 	// in.reads = 1
 	// in.writes = 2
 	// in.deltaWrites = 3
@@ -86,7 +86,7 @@ func TestUnivaluesCodeMeta(t *testing.T) {
 	meta.(*commutative.Path).SetAdded([]string{"+01", "+001", "+002", "+002"})
 	meta.(*commutative.Path).SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
 
-	in := univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 11, meta)
+	in := univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 11, meta, nil)
 	// in.reads = 1
 	// in.writes = 2
 	// in.deltaWrites = 3

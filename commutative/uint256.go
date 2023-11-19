@@ -85,13 +85,6 @@ func (*U256) NewBoundedU256(value, delta, min, max *uint256.Int, sign bool) *U25
 	}
 }
 
-func (this *U256) FromRawType(v interface{}) interface{} {
-	if common.IsType[*uint256.Int](v) {
-		v = (codec.Uint256)(*v.(*uint256.Int))
-	}
-	return v
-}
-
 func (this *U256) New(value, delta, sign, min, max interface{}) interface{} {
 	return &U256{
 		value:         common.IfThenDo1st(value != nil, func() uint256.Int { return value.(uint256.Int) }, *U256_ZERO.Clone()),
@@ -151,14 +144,14 @@ func (this *U256) Equal(other interface{}) bool {
 
 func (this *U256) Get() (interface{}, uint32, uint32) {
 	if U256_ZERO.Eq(&this.delta) {
-		return (*uint256.Int)(&this.value), 1, 0
+		return *((*uint256.Int)(&this.value)), 1, 0
 	}
 
 	original := this.value.Clone()
 	if this.deltaPositive {
-		return (&uint256.Int{}).Add(original, &this.delta), 1, 1
+		return *((&uint256.Int{}).Add(original, &this.delta)), 1, 1
 	}
-	return (&uint256.Int{}).Sub(original, &this.delta), 1, 1
+	return *((&uint256.Int{}).Sub(original, &this.delta)), 1, 1
 }
 
 func (this *U256) isOverflowed(lhv *uint256.Int, lhvSign bool, rhv *uint256.Int, rhvSign bool) (*uint256.Int, bool) {
@@ -226,7 +219,7 @@ func (this *U256) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
 	}
 
 	newValue, _, _ := this.Get()
-	this.value = *newValue.(*uint256.Int)
+	this.value = (newValue.(uint256.Int))
 	this.delta.Clear()
 	return this, len(vec), nil
 }

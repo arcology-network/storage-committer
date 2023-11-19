@@ -98,21 +98,25 @@ func (this *Importer) WhilteList(whitelist []uint32) []error {
 		return []error{}
 	}
 
-	dict := make(map[uint32]bool)
+	whitelisted := make(map[uint32]bool)
 	for _, txID := range whitelist {
-		dict[txID] = true
+		whitelisted[txID] = true
 	}
 
-	for k, vec := range this.byTx {
-		if k == ccurlcommon.SYSTEM {
+	for txid, vec := range this.byTx {
+		if txid == ccurlcommon.SYSTEM {
 			continue
 		}
 
-		if _, ok := dict[k]; !ok {
+		if _, ok := whitelisted[txid]; !ok {
 			for _, v := range vec {
-				v.(*univalue.Univalue).SetPath(nil)
+				v.(*univalue.Univalue).SetPath(nil) // Mark its status
 			}
 		}
+		// common.Foreach(vec, func(v *interfaces.Univalue) {
+		// 	_, ok := allowDict[k]
+		// 	return !ok
+		// })
 	}
 	return []error{}
 }
@@ -149,12 +153,12 @@ func (this *Importer) MergeStateDelta() {
 	common.ParallelWorker(len(this.keyBuffer), this.numThreads, finalizer)
 
 	common.Remove(&this.keyBuffer, "")
-	common.RemoveIf(&this.valBuffer, func(v interface{}) bool { return v == nil })
+	common.RemoveIf(&this.valBuffer, func(v interface{}) bool { return v.(*univalue.Univalue) == nil })
 }
 
 func (this *Importer) KVs() ([]string, []interface{}) {
 	common.Remove(&this.keyBuffer, "")
-	common.RemoveIf(&this.valBuffer, func(v interface{}) bool { return v == nil })
+	common.RemoveIf(&this.valBuffer, func(v interface{}) bool { return v.(*univalue.Univalue) == nil })
 	return this.keyBuffer, this.valBuffer
 }
 

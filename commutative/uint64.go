@@ -30,13 +30,6 @@ func NewBoundedUint64(min, max uint64) interfaces.Type {
 
 func (this *Uint64) Clone() interface{} { return common.New(*this) }
 
-func (this *Uint64) FromRawType(value interface{}) interface{} {
-	if v, ok := value.(uint64); ok {
-		value = common.New(codec.Uint64(v))
-	}
-	return value
-}
-
 // For the codec only, don't use it for other purposes
 func (this *Uint64) New(value, delta, _, min, max interface{}) interface{} {
 	return &Uint64{

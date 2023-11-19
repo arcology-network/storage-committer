@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/arcology-network/common-lib/common"
+	orderedset "github.com/arcology-network/common-lib/container/set"
 	ccurl "github.com/arcology-network/concurrenturl"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	"github.com/arcology-network/concurrenturl/indexer"
@@ -93,19 +94,21 @@ func CheckPaths(account string, url *ccurl.ConcurrentUrl) error {
 
 	//Read the path
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", new(commutative.Path))
-	keys := v.([]string)
+	keys := v.(*orderedset.OrderedSet).Keys()
 	if !reflect.DeepEqual(keys, []string{"elem-00", "elem-01"}) {
 		return errors.New("Error: Path don't match !")
 	}
 
 	// Read the path again
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", new(commutative.Path))
-	if !reflect.DeepEqual(v.([]string), []string{"elem-00", "elem-01"}) {
+	keys = v.(*orderedset.OrderedSet).Keys()
+	if !reflect.DeepEqual(keys, []string{"elem-00", "elem-01"}) {
 		return errors.New("Error: Path don't match !")
 	}
 
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/", new(commutative.Path))
-	if !reflect.DeepEqual(v.([]string), []string{"elem-00", "elem-01"}) {
+	keys = v.(*orderedset.OrderedSet).Keys()
+	if !reflect.DeepEqual(keys, []string{"elem-00", "elem-01"}) {
 		return errors.New("Error: Path don't match !")
 	}
 	return nil

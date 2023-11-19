@@ -10,7 +10,9 @@ import (
 	"time"
 
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
+	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
+	orderedset "github.com/arcology-network/common-lib/container/set"
 	"github.com/arcology-network/common-lib/merkle"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
@@ -29,12 +31,11 @@ import (
 )
 
 func TestEthTrieBasic(t *testing.T) {
-	store := storage.NewEthMemDataStore(false)
-
+	store := storage.NewParallelEthMemDataStore()
 	keys := []string{
-		"blcc://eth1.0/account/bbbbbbbbbbbbbbbbbbbb/storage/ctrn-0/",
-		"blcc://eth1.0/account/bbbbbbbbbbbbbbbbbbbb/storage/native/1",
-		"blcc://eth1.0/account/bbbbbbbbbbbbbbbbbbbb/storage/native/2",
+		"blcc://eth1.0/account/abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbc/storage/container/ctrn-0/",
+		"blcc://eth1.0/account/abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbc/storage/native/" + string(codec.Bytes32([32]byte{1}).Encode()),
+		"blcc://eth1.0/account/abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbc/storage/native/" + string(codec.Bytes32([32]byte{2}).Encode()),
 	}
 
 	vals := []interface{}{
@@ -78,21 +79,22 @@ func TestEthTrieBasic(t *testing.T) {
 	store.Commit() // Calculate root hash
 
 	proofs := memorydb.New()
-	trie := store.LoadTrie(store.Root())
+	trie, _ := store.LoadTrie(store.Root())
 
 	trie.Prove(store.Hash(keys[0]), 0, proofs)
 	if _, err := ethmpt.VerifyProof(store.Root(), store.Hash(keys[0]), proofs); err != nil {
 		t.Error("Actual :", err)
 	}
 
+	trie, _ = store.LoadTrie(store.Root())
 	trie.Prove(store.Hash(keys[1]), 0, proofs)
-	store.LoadTrie(store.Root()).Prove(store.Hash(keys[1]), 0, proofs)
 	if _, err := ethmpt.VerifyProof(store.Root(), store.Hash(keys[1]), proofs); err != nil {
 		t.Error("Actual :", err)
 	}
 
+	trie, _ = store.LoadTrie(store.Root())
 	trie.Prove(store.Hash(keys[2]), 0, proofs)
-	store.LoadTrie(store.Root()).Prove(store.Hash(keys[2]), 0, proofs)
+	// store.LoadTrie(store.Root()).Prove(store.Hash(keys[2]), 0, proofs)
 	if _, err := ethmpt.VerifyProof(store.Root(), store.Hash(keys[2]), proofs); err != nil {
 		t.Error("Actual :", err)
 	}
@@ -110,7 +112,7 @@ func TestEthStorageConnection(t *testing.T) {
 		t.Error(err)
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.NewPath()); err != nil {
+	if _, err := url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
 		t.Error(err)
 	}
 
@@ -119,7 +121,7 @@ func TestEthStorageConnection(t *testing.T) {
 	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
-	v, err := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path))
+	v, err := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", new(commutative.Path))
 	if v == nil {
 		t.Error(err)
 	}
@@ -190,7 +192,7 @@ func TestBasicAddRead(t *testing.T) {
 	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path)); value == nil {
 		t.Error(value)
 	} else {
-		target := value.([]string)
+		target := value.(*orderedset.OrderedSet).Keys()
 		if !reflect.DeepEqual(target, []string{"elem-000", "elem-111"}) {
 			t.Error("Error: Wrong value !!!!")
 		}
@@ -271,9 +273,10 @@ func TestEthDataStoreAddDeleteRead(t *testing.T) {
 	}
 
 	meta, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
-	if meta == nil || len(meta.([]string)) != 2 ||
-		meta.([]string)[0] != "elem-888" ||
-		meta.([]string)[1] != "elem-999" {
+	keys := meta.(*orderedset.OrderedSet).Keys()
+	if meta == nil || len(keys) != 2 ||
+		keys[0] != "elem-888" ||
+		keys[1] != "elem-999" {
 		t.Error("not found")
 	}
 }
@@ -301,7 +304,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 	url.Init(store)
 	// create a path
 	path := commutative.NewPath()
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", path); err != nil {
 		t.Error(err)
 	}
 
@@ -311,13 +314,13 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 	url.Sort()
 	url.Commit([]uint32{1})
 
-	v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
+	v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", &commutative.Path{})
 	if v == nil {
 		t.Error("Error: The path should exists")
 	}
 
 	url.Init(store)
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil); err != nil { // Delete the path
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", nil); err != nil { // Delete the path
 		t.Error(err)
 	}
 
@@ -326,7 +329,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 	url.Sort()
 	url.Commit([]uint32{1})
 
-	if v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path)); v != nil {
+	if v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", new(commutative.Path)); v != nil {
 		t.Error("Error: The path should have been deleted")
 	}
 }
@@ -366,7 +369,7 @@ func BenchmarkMultipleAccountCommitDataStore(b *testing.B) {
 	}
 }
 
-func TestLevelDB(t *testing.T) {
+func TestLevelDBBasic(t *testing.T) {
 	leveldb, err := rawdb.NewLevelDBDatabase("./leveldb", 256, 16, "temp", false)
 	if err != nil {
 		return
@@ -405,7 +408,7 @@ func TestLevelDB(t *testing.T) {
 	}
 }
 
-func TestLevelDBPerformance1M(t *testing.T) {
+func BenchmarkLevelDBPerformance1M(t *testing.B) {
 	leveldb, err := rawdb.NewLevelDBDatabase("./leveldb", 0, 16, "temp", false)
 	if err != nil {
 		return

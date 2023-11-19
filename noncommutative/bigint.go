@@ -4,10 +4,8 @@ import (
 	"bytes"
 	"math/big"
 
-	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
-	"github.com/arcology-network/evm/rlp"
 )
 
 // type Bigint codec.Bigint
@@ -56,14 +54,7 @@ func (this *Bigint) SetDeltaSign(v interface{}) {}
 func (this *Bigint) SetMin(v interface{})       {}
 func (this *Bigint) SetMax(v interface{})       {}
 
-func (this *Bigint) Get() (interface{}, uint32, uint32) { return (*big.Int)(this), 1, 0 }
-
-func (this *Bigint) FromRawType(v interface{}) interface{} {
-	if common.IsType[*big.Int](v) {
-		v = (*codec.Bigint)(v.(*big.Int))
-	}
-	return v
-}
+func (this *Bigint) Get() (interface{}, uint32, uint32) { return *((*big.Int)(this)), 1, 0 }
 
 func (this *Bigint) New(_, delta, _, _, _ interface{}) interface{} {
 	return common.IfThenDo1st(delta != nil && delta.(*Bigint) != nil, func() interface{} { return delta.(*Bigint).Clone() }, interface{}(this))
@@ -101,14 +92,4 @@ func (this *Bigint) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
 		return nil, 0, nil
 	}
 	return this, len(vec), nil
-}
-
-func (this *Bigint) StorageEncode() []byte {
-	buffer, _ := rlp.EncodeToBytes(*this)
-	return buffer
-}
-
-func (this *Bigint) StorageDecode(buffer []byte) interface{} {
-	rlp.DecodeBytes(buffer, this)
-	return this
 }

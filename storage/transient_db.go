@@ -103,10 +103,3 @@ func (this *TransientDB) Dump() ([]string, []interface{}) {
 func (this *TransientDB) UpdateCacheStats(vals []interface{}) {
 	this.DataStore.UpdateCacheStats(vals)
 }
-
-func (this *TransientDB) CacheRetrive(key string, valueTransformer func(interface{}) interface{}) (interface{}, error) {
-	if v, err := this.DataStore.CacheRetrive(key, valueTransformer); v != nil {
-		return v, err
-	}
-	return this.readonlyParent.CacheRetrive(key, valueTransformer)
-}

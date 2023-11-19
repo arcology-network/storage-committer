@@ -32,13 +32,6 @@ func NewInt64Delta(delta int64) interface{} {
 	return &Int64{delta: delta}
 }
 
-func (this *Int64) FromRawType(value interface{}) interface{} {
-	if common.IsType[int64](value) {
-		value = common.New(value.(int64))
-	}
-	return value
-}
-
 func (this *Int64) New(value, delta, sign, min, max interface{}) interface{} {
 	return &Int64{
 		common.IfThenDo1st(value != nil, func() int64 { return value.(int64) }, 0),

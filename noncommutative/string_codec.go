@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/arcology-network/common-lib/codec"
+	"github.com/arcology-network/evm/rlp"
 )
 
 func (this *String) Size() uint32 {
@@ -28,13 +29,16 @@ func (this *String) Decode(buffer []byte) interface{} {
 	return this
 }
 
-// func (this *String) Encode() []byte {
-// 	return this.Encode()
-// }
+func (this *String) StorageEncode() []byte {
+	buffer, _ := rlp.EncodeToBytes(*this)
+	return buffer
+}
 
-// func (this *String) DecodeCompact(bytes []byte) interface{} {
-// 	return this.Decode(bytes)
-// }
+func (this *String) StorageDecode(buffer []byte) interface{} {
+	var v String
+	rlp.DecodeBytes(buffer, &v)
+	return &v
+}
 
 func (*String) Reset() {}
 

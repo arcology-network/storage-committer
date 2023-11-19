@@ -24,7 +24,6 @@ type Type interface { // value type
 	IsCommutative() bool
 	IsBounded() bool
 
-	FromRawType(v interface{}) interface{}
 	Value() interface{} // Get() - read/write count
 	Delta() interface{}
 	DeltaSign() bool
@@ -150,7 +149,7 @@ type Datastore interface {
 	Print()
 	CheckSum() [32]byte
 	Query(string, func(string, string) bool) ([]string, [][]byte, error)
-	CacheRetrive(key string, valueTransformer func(interface{}) interface{}) (interface{}, error)
+	// CacheRetrive(key string, valueTransformer func(interface{}) interface{}) (interface{}, error)
 }
 
 type Hasher func(Type) []byte

@@ -3,13 +3,11 @@ package noncommutative
 import (
 	"strings"
 
-	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
-	"github.com/arcology-network/evm/rlp"
 )
 
-type String codec.String
+type String string
 
 func NewString(v string) interfaces.Type {
 	var this String = String(v)
@@ -42,13 +40,6 @@ func (this *String) SetDelta(v interface{})     { *this = (*v.(*String)) }
 func (this *String) SetDeltaSign(v interface{}) {}
 func (this *String) SetMin(v interface{})       {}
 func (this *String) SetMax(v interface{})       {}
-
-func (this *String) FromRawType(v interface{}) interface{} {
-	if common.IsType[string](v) {
-		v = common.New[codec.String]((codec.String)(v.(string)))
-	}
-	return v
-}
 
 func (this *String) New(_, delta, _, _, _ interface{}) interface{} {
 	return common.IfThenDo1st(delta != nil && delta.(*String) != nil, func() interface{} { return delta.(*String).Clone() }, interface{}(this))
@@ -91,15 +82,4 @@ func (this *String) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
 		return nil, 0, nil
 	}
 	return this, len(vec), nil
-}
-
-func (this *String) StorageEncode() []byte {
-	buffer, _ := rlp.EncodeToBytes(*this)
-	return buffer
-}
-
-func (this *String) StorageDecode(buffer []byte) interface{} {
-	var v String
-	rlp.DecodeBytes(buffer, &v)
-	return &v
 }

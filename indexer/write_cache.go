@@ -73,7 +73,7 @@ func (this *WriteCache) Peek(path string, T any) (interface{}, interface{}) {
 	}
 
 	v := this.RetriveShallow(path, T)
-	univ := univalue.NewUnivalue(ccurlcommon.SYSTEM, path, 0, 0, 0, v.(interfaces.Type), nil)
+	univ := univalue.NewUnivalue(ccurlcommon.SYSTEM, path, 0, 0, 0, v, nil)
 	return univ.Value(), univ
 }
 
@@ -83,7 +83,7 @@ func (this *WriteCache) Retrive(path string, T any) (interface{}, error) {
 		return typedv, nil
 	}
 
-	rawv := typedv.(interfaces.Type).Value()                                                                                 // convert to the internal type
+	rawv, _, _ := typedv.(interfaces.Type).Get()                                                                             //problem is here !!!
 	return typedv.(interfaces.Type).New(rawv, nil, nil, typedv.(interfaces.Type).Min(), typedv.(interfaces.Type).Max()), nil // Return in a new univalue
 }
 
@@ -100,18 +100,20 @@ func (this *WriteCache) Write(tx uint32, path string, value interface{}) error {
 		err := univalue.Set(tx, path, value, this)
 		this.GetOrInit(tx, path, value)
 		if err == nil {
-			if strings.HasSuffix(parentPath, "container/") || (!this.platform.IsSysPath(parentPath) && tx != ccurlcommon.SYSTEM) { // Don't keep track of the system children
+			if strings.HasSuffix(parentPath, "/container/") || (!this.platform.IsSysPath(parentPath) && tx != ccurlcommon.SYSTEM) { // Don't keep track of the system children
 				parentMeta := this.GetOrInit(tx, parentPath, new(commutative.Path))
 				err = parentMeta.Set(tx, path, univalue.Value(), this)
 			}
 		}
 		return err
 	}
-	// strings.HasPrefix(parentPath, "container/") &&
 	return errors.New("Error: The parent path doesn't exist: " + parentPath)
 }
 
 func (this *WriteCache) IfExists(path string) bool {
+	if ccurlcommon.ETH10_ACCOUNT_PREFIX_LENGTH == len(path) {
+		return true
+	}
 	return this.kvDict[path] != nil || this.store.IfExists(path) //this.RetriveShallow(path, nil) != nil
 }
 

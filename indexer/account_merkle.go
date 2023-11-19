@@ -79,7 +79,7 @@ func (this *AccountMerkle) Build(keys []string, encodedVals [][]byte) []*string 
 
 	t0 := time.Now()
 	offset := ccurlcommon.ETH10_ACCOUNT_PREFIX_LENGTH
-	ranges, accountKeys := this.markAccountRange(keys)
+	ranges, ParseAccountAddrs := this.markAccountRange(keys)
 	builder := func(start, end, index int, args ...interface{}) {
 		mempool := this.nodePool.GetTlsMempool(index)
 		for i := start; i < end; i++ {
@@ -111,7 +111,7 @@ func (this *AccountMerkle) Build(keys []string, encodedVals [][]byte) []*string 
 	}
 	common.ParallelWorker(len(ranges)-1, concurrency, builder)
 	fmt.Println("Build the Tree in:", time.Since(t0))
-	return accountKeys
+	return ParseAccountAddrs
 }
 
 // Assume the paths are already sorted
@@ -129,12 +129,12 @@ func (this *AccountMerkle) markAccountRange(paths []string) ([]int, []*string) {
 	}
 	positions = append(positions, len(paths))
 
-	accountKeys := make([]*string, len(positions)-1)
+	ParseAccountAddrs := make([]*string, len(positions)-1)
 	worker := func(start, end, index int, args ...interface{}) {
 		for i := start; i < end; i++ {
-			accountKeys[i] = &paths[positions[i]]
+			ParseAccountAddrs[i] = &paths[positions[i]]
 		}
 	}
-	common.ParallelWorker(len(accountKeys), 6, worker)
-	return positions, accountKeys
+	common.ParallelWorker(len(ParseAccountAddrs), 6, worker)
+	return positions, ParseAccountAddrs
 }

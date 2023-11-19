@@ -8,6 +8,7 @@ import (
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
+	orderedset "github.com/arcology-network/common-lib/container/set"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/commutative"
@@ -228,7 +229,7 @@ func TestBasic(t *testing.T) {
 	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path)); value == nil {
 		t.Error(value)
 	} else {
-		target := value.([]string)
+		target := value.(*orderedset.OrderedSet).Keys()
 		if !reflect.DeepEqual(target, []string{"elem-000", "elem-111"}) {
 			t.Error("Error: Wrong value !!!!")
 		}
@@ -339,9 +340,10 @@ func TestPathAddThenDelete(t *testing.T) {
 	}
 
 	meta, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
-	if meta == nil || len(meta.([]string)) != 2 ||
-		meta.([]string)[0] != "elem-888" ||
-		meta.([]string)[1] != "elem-999" {
+	keys := meta.(*orderedset.OrderedSet).Keys()
+	if meta == nil || len(keys) != 2 ||
+		keys[0] != "elem-888" ||
+		keys[1] != "elem-999" {
 		t.Error("not found")
 	}
 }
@@ -497,13 +499,15 @@ func TestUrl2(t *testing.T) {
 
 	// Update then return path meta info
 	meta0, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
-	if !reflect.DeepEqual(meta0.([]string), []string{"elem-000", "elem-001", "elem-002"}) {
+	keys := meta0.(*orderedset.OrderedSet).Keys()
+	if !reflect.DeepEqual(keys, []string{"elem-000", "elem-001", "elem-002"}) {
 		t.Error("Error: Keys don't match")
 	}
 
 	// Do again
 	meta1, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
-	if !reflect.DeepEqual(meta1.([]string), []string{"elem-000", "elem-001", "elem-002"}) {
+	keys = meta1.(*orderedset.OrderedSet).Keys()
+	if !reflect.DeepEqual(keys, []string{"elem-000", "elem-001", "elem-002"}) {
 		t.Error("Error: Keys don't match")
 	}
 
@@ -532,7 +536,8 @@ func TestUrl2(t *testing.T) {
 
 	// The elem-00 has been deleted, only "elem-001", "elem-002" left
 	meta, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
-	if !reflect.DeepEqual(meta.([]string), []string{"elem-001", "elem-002"}) {
+	keys = meta1.(*orderedset.OrderedSet).Keys()
+	if !reflect.DeepEqual(keys, []string{"elem-001", "elem-002"}) {
 		t.Error("Error: keys don't match")
 	}
 
@@ -548,7 +553,8 @@ func TestUrl2(t *testing.T) {
 
 	// Update then read the path info again
 	meta, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
-	if !reflect.DeepEqual(meta.([]string), []string{"elem-001", "elem-002", "elem-000"}) {
+	keys = meta.(*orderedset.OrderedSet).Keys()
+	if !reflect.DeepEqual(keys, []string{"elem-001", "elem-002", "elem-000"}) {
 		t.Error("Error: keys don't match")
 	}
 
@@ -576,7 +582,8 @@ func TestUrl2(t *testing.T) {
 
 	/*  Read the storage path to see what is left*/
 	v, _ = url.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/", &commutative.Path{})
-	if !reflect.DeepEqual(v.([]string), []string{}) {
+	keys = v.(*orderedset.OrderedSet).Keys()
+	if !reflect.DeepEqual(keys, []string{}) {
 		t.Error("Error: Should be empty!!")
 	}
 
@@ -916,7 +923,8 @@ func TestCustomCodec(t *testing.T) {
 	// url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", &commutative.U256{value: 100})
 
 	value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/balance", &commutative.U256{})
-	if value == nil || value.(*uint256.Int).ToBig().Uint64() != 0 {
+	valueAdd := value.(uint256.Int)
+	if value == nil || (&valueAdd).ToBig().Uint64() != 0 {
 		t.Error("Error: Wrong value", value.(*uint256.Int).ToBig().Uint64())
 	}
 }

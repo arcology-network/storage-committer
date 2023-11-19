@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/arcology-network/common-lib/common"
+	orderedset "github.com/arcology-network/common-lib/container/set"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
@@ -185,7 +186,8 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/2", noncommutative.NewString("4"))
 
 	outpath, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
-	if reflect.DeepEqual(outpath.([]string), []string{"1", "2", "3", "4"}) {
+	keys := outpath.(*orderedset.OrderedSet).Keys()
+	if reflect.DeepEqual(keys, []string{"1", "2", "3", "4"}) {
 		t.Error("Error: Not match")
 	}
 
@@ -245,7 +247,7 @@ func TestStateUpdate(t *testing.T) {
 	// }
 
 	v, _ = url.Read(9, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
-	keys := v.([]string)
+	keys := v.(*orderedset.OrderedSet).Keys()
 	if !reflect.DeepEqual(keys, []string{"elem-00", "elem-01"}) {
 		t.Error("Error: Keys don't match !")
 	}

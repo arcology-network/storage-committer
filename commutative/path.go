@@ -70,14 +70,8 @@ func (this *Path) Equal(other interface{}) bool {
 }
 
 func (this *Path) Get() (interface{}, uint32, uint32) {
-	return this.value.Keys(), 1, common.IfThen(!this.value.Touched(), uint32(0), uint32(1))
-}
-
-func (this *Path) FromRawType(value interface{}) interface{} {
-	if common.IsType[[]string](value) {
-		value = orderedset.NewOrderedSet(value.([]string))
-	}
-	return value
+	return this.value, 1, common.IfThen(!this.value.Touched(), uint32(0), uint32(1))
+	// return this.value.Keys(), 1, common.IfThen(!this.value.Touched(), uint32(0), uint32(1))
 }
 
 // For the codec only

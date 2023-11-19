@@ -2,7 +2,6 @@ package noncommutative
 
 import (
 	"bytes"
-	"math/big"
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
@@ -17,7 +16,7 @@ type Bytes struct {
 	value       codec.Bytes
 }
 
-func NewBytes(v []byte) interface{} {
+func NewBytes(v []byte) interfaces.Type {
 	b := make([]byte, len(v))
 	copy(b, v)
 	return &Bytes{
@@ -72,13 +71,6 @@ func (this *Bytes) SetMax(v interface{})       {}
 
 func (this *Bytes) Get() (interface{}, uint32, uint32) { return []byte(this.value), 1, 0 }
 
-func (this *Bytes) FromRawType(v interface{}) interface{} {
-	if common.IsType[*big.Int](v) {
-		v = ([]byte)(v.(codec.Bytes))
-	}
-	return v
-}
-
 func (this *Bytes) New(_, delta, _, _, _ interface{}) interface{} {
 	v := common.IfThenDo1st(delta != nil && delta.(codec.Bytes) != nil, func() codec.Bytes { return delta.(codec.Bytes).Clone().(codec.Bytes) }, this.value)
 	return &Bytes{
@@ -123,12 +115,19 @@ func (this *Bytes) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
 }
 
 func (this *Bytes) StorageEncode() []byte {
-	buffer, _ := rlp.EncodeToBytes(*this)
+	buffer, err := rlp.EncodeToBytes(this.value)
+	if err != nil {
+		panic("Failed to encode bytes")
+	}
 	return buffer
 }
 
 func (this *Bytes) StorageDecode(buffer []byte) interface{} {
-	var v Bytes
-	rlp.DecodeBytes(buffer, &v)
-	return &v
+	v := &Bytes{
+		placeholder: true,
+		value:       []byte{},
+	}
+
+	rlp.DecodeBytes(buffer, &v.value)
+	return v
 }

@@ -57,13 +57,16 @@ func TestSimpleBalance(t *testing.T) {
 	// Read alice's balance again
 	url2 := ccurl.NewConcurrentUrl(store)
 	balance, _ := url2.Read(1, "blcc://eth1.0/account/"+alice+"/balance", new(commutative.U256))
-	if balance.(*uint256.Int).Cmp(uint256.NewInt(33)) != 0 {
+	balanceAddr := balance.(uint256.Int)
+	if (&balanceAddr).Cmp(uint256.NewInt(33)) != 0 {
 		t.Error("Error: Wrong blcc://eth1.0/account/alice/balance value")
 	}
 
 	url2.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(10), true))
 	balance, _ = url2.Read(1, "blcc://eth1.0/account/"+alice+"/balance", new(commutative.U256))
-	if balance.(*uint256.Int).Cmp(uint256.NewInt(43)) != 0 {
+
+	balanceAddr = balance.(uint256.Int)
+	if (&balanceAddr).Cmp(uint256.NewInt(43)) != 0 {
 		t.Error("Error: Wrong blcc://eth1.0/account/alice/balance value")
 	}
 
@@ -101,7 +104,7 @@ func TestBalance(t *testing.T) {
 	}
 
 	v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0", new(noncommutative.Bigint))
-	outV := v.(*big.Int)
+	outV := v.(big.Int)
 	value := (*big.Int)(inV.(*noncommutative.Bigint))
 	if outV.Cmp(value) != 0 {
 		t.Error("Failed to read: blcc://eth1.0/account/alice/storage/ctrn-0/elem-0")
@@ -126,7 +129,8 @@ func TestBalance(t *testing.T) {
 	}
 
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", new(commutative.Path))
-	if v.(*uint256.Int).Cmp(uint256.NewInt(303)) != 0 {
+	vAdd := v.(uint256.Int)
+	if vAdd.Cmp(uint256.NewInt(303)) != 0 {
 		t.Error("comt-0 has a wrong returned value")
 	}
 
@@ -147,7 +151,8 @@ func TestBalance(t *testing.T) {
 
 	// Read alice's balance
 	v, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/balance", new(commutative.U256))
-	if v.(*uint256.Int).Cmp(uint256.NewInt(33)) != 0 {
+	vAdd = v.(uint256.Int)
+	if vAdd.Cmp(uint256.NewInt(33)) != 0 {
 		t.Error("blcc://eth1.0/account/" + alice + "/balance")
 	}
 

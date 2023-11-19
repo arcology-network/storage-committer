@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/arcology-network/common-lib/common"
+	orderedset "github.com/arcology-network/common-lib/container/set"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
@@ -72,7 +73,8 @@ func TestAuxTrans(t *testing.T) {
 	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path)); value == nil {
 		t.Error(value)
 	} else {
-		if !reflect.DeepEqual(value.([]string), []string{"elem-000"}) {
+		keys := value.(*orderedset.OrderedSet).Keys()
+		if !reflect.DeepEqual(keys, []string{"elem-000"}) {
 			t.Error("Wrong value ")
 		}
 	}
@@ -168,7 +170,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	// }
 
 	v1, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path))
-	keys := v1.([]string)
+	keys := v1.(*orderedset.OrderedSet).Keys()
 	if len(keys) != 3 {
 		t.Error("Error: There should be 3 elements only!!! actual = ", len(keys)) // create a path
 	}

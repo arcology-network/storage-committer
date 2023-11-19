@@ -117,7 +117,7 @@ func TestUnivaluesCodec(t *testing.T) {
 	}
 }
 
-func TestRlpComparePerformance(t *testing.T) {
+func BenchmarkRlpComparePerformance(t *testing.B) {
 	num := big.NewInt(100)
 
 	expected, err := rlp.EncodeToBytes(num)

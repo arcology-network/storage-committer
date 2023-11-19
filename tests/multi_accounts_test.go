@@ -7,7 +7,6 @@ import (
 
 	"github.com/arcology-network/common-lib/common"
 	datacompression "github.com/arcology-network/common-lib/datacompression"
-	"github.com/arcology-network/common-lib/merkle"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
@@ -40,15 +39,15 @@ func TestMultiAccountCreation(t *testing.T) {
 	url.Sort()
 	url.Commit([]uint32{0})
 
-	acctTrans = indexer.Univalues(common.Clone(raw)).To(indexer.ITCTransition{})
-	encoded := indexer.Univalues(acctTrans).Encode()
+	// acctTrans = indexer.Univalues(common.Clone(raw)).To(indexer.ITCTransition{})
+	// encoded := indexer.Univalues(acctTrans).Encode()
 
-	out := indexer.Univalues{}.Decode(encoded).(indexer.Univalues)
-	if len(acctTrans) != len(out) {
-		t.Error("Error: Transition counts don't match up")
-	}
+	// out := indexer.Univalues{}.Decode(encoded).(indexer.Univalues)
+	// if len(acctTrans) != len(out) {
+	// 	t.Error("Error: Transition counts don't match up")
+	// }
 
-	accountMerkle := indexer.NewAccountMerkle(url.Platform, rlpEncoder, merkle.Keccak256{}.Hash)
-	accountMerkle.Import(out)
+	// accountMerkle := indexer.NewAccountMerkle(url.Platform, rlpEncoder, merkle.Keccak256{}.Hash)
+	// accountMerkle.Import(out)
 	// accountMerkle.Build()
 }

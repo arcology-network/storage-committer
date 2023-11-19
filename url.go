@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/arcology-network/common-lib/common"
+	orderedset "github.com/arcology-network/common-lib/container/set"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
@@ -186,10 +187,12 @@ func (this *ConcurrentUrl) PeekCommitted(path string, T any) (interface{}, uint6
 
 func (this *ConcurrentUrl) Read(tx uint32, path string, T any) (interface{}, uint64) {
 	typedv, univ := this.writeCache.Read(tx, path, T)
+	// fmt.Println("Read: ", path, "|", typedv)
 	return typedv, Fee{}.Reader(univ.(interfaces.Univalue))
 }
 
 func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}) (int64, error) {
+	// fmt.Println("Write: ", path, "|", value)
 	fee := int64(0) //Fee{}.Writer(path, value, this.writeCache)
 	if value == nil || (value != nil && value.(interfaces.Type).TypeID() != uint8(reflect.Invalid)) {
 		return fee, this.writeCache.Write(tx, path, value)
@@ -209,9 +212,10 @@ func (this *ConcurrentUrl) at(tx uint32, path string, idx uint64, T any) (interf
 	}
 
 	meta, readFee := this.Read(tx, path, T) // read the container meta
+
 	return common.IfThen(meta == nil,
 		meta,
-		common.IfThenDo1st(idx < uint64(len(meta.([]string))), func() interface{} { return path + meta.([]string)[idx] }, nil),
+		common.IfThenDo1st(idx < uint64(len(meta.(*orderedset.OrderedSet).Keys())), func() interface{} { return path + meta.(*orderedset.OrderedSet).Keys()[idx] }, nil),
 	), readFee, nil
 }
 
@@ -242,12 +246,14 @@ func (this *ConcurrentUrl) PopBack(tx uint32, path string, T any) (interface{}, 
 	}
 	pathDecoder := T
 
-	subkeys, Fee := this.Read(tx, path, pathDecoder) // read the container meta
-	if subkeys == nil || len(subkeys.([]string)) == 0 {
+	meta, Fee := this.Read(tx, path, pathDecoder) // read the container meta
+
+	subkeys := meta.(*orderedset.OrderedSet).Keys()
+	if subkeys == nil || len(subkeys) == 0 {
 		return nil, int64(Fee), errors.New("Error: The path is either empty or doesn't exist")
 	}
 
-	key := path + subkeys.([]string)[len(subkeys.([]string))-1]
+	key := path + subkeys[len(subkeys)-1]
 
 	value, Fee := this.Read(tx, key, pathDecoder)
 	if value == nil {
@@ -313,6 +319,10 @@ func (this *ConcurrentUrl) Finalize(txs []uint32) *ConcurrentUrl {
 	if txs != nil && len(txs) == 0 { // Commit all the transactions when txs == nil
 		return this
 	}
+
+	// this.imuImporter.MergeStateDelta()
+	// this.importer.WhilteList(txs)
+	// this.importer.MergeStateDelta()
 
 	common.ParallelExecute(
 		func() { this.imuImporter.MergeStateDelta() },

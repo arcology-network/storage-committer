@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	codec "github.com/arcology-network/common-lib/codec"
+	"github.com/arcology-network/evm/rlp"
 )
 
 func (this *Bigint) Size() uint32 {
@@ -36,6 +37,16 @@ func (this *Bigint) Decode(buffer []byte) interface{} {
 // func (this *Bigint) DecodeCompact(bytes []byte) interface{} {
 // 	return this.Decode(bytes)
 // }
+
+func (this *Bigint) StorageEncode() []byte {
+	buffer, _ := rlp.EncodeToBytes(*this)
+	return buffer
+}
+
+func (this *Bigint) StorageDecode(buffer []byte) interface{} {
+	rlp.DecodeBytes(buffer, this)
+	return this
+}
 
 func (this *Bigint) Reset() {}
 
