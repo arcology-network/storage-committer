@@ -1,6 +1,9 @@
 package ccdb
 
 import (
+	"bytes"
+	"sync"
+
 	common "github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
@@ -96,15 +99,19 @@ func (this *EthDataStore) Root() [32]byte { return this.latestRoot }
 func (this *EthDataStore) Encoder() func(string, interface{}) []byte { return this.encoder }
 func (this *EthDataStore) Decoder() func([]byte, any) interface{}    { return this.decoder }
 
+var lock sync.Mutex
+
 // Problem is here, need to load the storage trie first? and use storageKey as well
 func (this *EthDataStore) IfExists(key string) bool {
-	buffer, _ := this.worldStateTrie.Get([]byte(ccurlcommon.ParseAccountAddr(key)))
+	buffer, _ := this.worldStateTrie.ThreadSafeGet(bytes.Clone([]byte(ccurlcommon.ParseAccountAddr(key))))
 	if len(buffer) == 0 { // Not found
 		return false
 	}
 
 	var stateAccount types.StateAccount
+	lock.Lock()
 	rlp.DecodeBytes(buffer, &stateAccount)
+	lock.Unlock()
 
 	// storage trie is still empty
 	account := NewAccount([]byte(key), this.ethdb, this.diskdbs[0], stateAccount)
@@ -148,7 +155,7 @@ func (this *EthDataStore) LoadAccount(accountAddr string) *Account {
 
 	account, ok := this.acctDict[accountAddr]
 	if !ok { // Not in cache yet.
-		if buffer, err := this.worldStateTrie.Get([]byte(accountAddr)); err == nil && len(buffer) > 0 { // Not found
+		if buffer, err := this.worldStateTrie.ThreadSafeGet([]byte(accountAddr)); err == nil && len(buffer) > 0 { // Not found
 			var acctState types.StateAccount
 			rlp.DecodeBytes(buffer, &acctState)
 
