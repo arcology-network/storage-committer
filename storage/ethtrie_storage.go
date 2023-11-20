@@ -32,8 +32,8 @@ func NewParallelEthMemDataStore() *EthDataStore {
 	diskdbs := [16]ethdb.Database{}
 	common.Fill(diskdbs[:], rawdb.NewMemoryDatabase())
 	db := ethmpt.NewParallelDatabase(diskdbs, nil)
-
 	paraTrie := ethmpt.NewEmptyParallel(db)
+
 	return &EthDataStore{
 		ethdb:          db,
 		diskdbs:        diskdbs,
@@ -114,7 +114,7 @@ func (this *EthDataStore) IfExists(key string) bool {
 	lock.Unlock()
 
 	// storage trie is still empty
-	account := NewAccount([]byte(key), this.ethdb, this.diskdbs[0], stateAccount)
+	account := NewAccount(key, this.ethdb, this.diskdbs[0], stateAccount)
 	return account.IfExists(key)
 }
 
@@ -127,7 +127,7 @@ func (this *EthDataStore) BatchInject(keys []string, values []interface{}) error
 		key := ccurlcommon.ParseAccountAddr(keys[i])
 		account, ok := this.acctDict[key]
 		if !ok {
-			account = NewAccount([]byte(key), this.ethdb, this.diskdbs[0], EmptyAccountState()) // empty account
+			account = NewAccount(key, this.ethdb, this.diskdbs[0], EmptyAccountState()) // empty account
 			this.acctDict[key] = account
 		}
 
@@ -148,20 +148,20 @@ func (this *EthDataStore) BatchInject(keys []string, values []interface{}) error
 	return nil
 }
 
-func (this *EthDataStore) LoadAccount(accountAddr string) *Account {
-	if len(accountAddr) == 0 {
+func (this *EthDataStore) LoadExistingAccount(accountKey string) *Account {
+	if len(accountKey) == 0 {
 		return nil
 	}
 
-	account, ok := this.acctDict[accountAddr]
+	account, ok := this.acctDict[accountKey]
 	if !ok { // Not in cache yet.
-		if buffer, err := this.worldStateTrie.ThreadSafeGet([]byte(accountAddr)); err == nil && len(buffer) > 0 { // Not found
+		if buffer, err := this.worldStateTrie.ThreadSafeGet([]byte(accountKey)); err == nil && len(buffer) > 0 { // Not found
 			var acctState types.StateAccount
 			rlp.DecodeBytes(buffer, &acctState)
 
 			code, _ := this.diskdbs[0].Get(acctState.CodeHash)
 			account = &Account{
-				[]byte(accountAddr),
+				accountKey,
 				acctState,
 				code,
 				ethmpt.NewEmptyParallel(this.ethdb),
@@ -174,7 +174,7 @@ func (this *EthDataStore) LoadAccount(accountAddr string) *Account {
 }
 
 func (this *EthDataStore) Retrive(key string, T any) (interface{}, error) {
-	if account := this.LoadAccount(ccurlcommon.ParseAccountAddr(key)); account != nil {
+	if account := this.LoadExistingAccount(ccurlcommon.ParseAccountAddr(key)); account != nil {
 		return account.Retrive(key, T)
 	}
 	return nil, nil
@@ -199,16 +199,17 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 		})
 
 	accounts := make([]*Account, len(accountKeys))
-	common.ParallelWorker(len(accountKeys), 16, func(start, end, index int, args ...interface{}) {
-		for i := start; i < end; i++ {
-			key := accountKeys[i]
-			if accounts[i], _ = this.acctDict[key]; accounts[i] == nil {
-				accounts[i] = NewAccount([]byte(key), this.ethdb, this.diskdbs[0], EmptyAccountState()) // empty account
-			}
+	common.ParallelForeach(accountKeys, 16, func(key string, i int) {
+		if accounts[i] = this.LoadExistingAccount(key); accounts[i] == nil {
+			accounts[i] = NewAccount(
+				key,
+				this.ethdb,
+				this.diskdbs[0],
+				EmptyAccountState()) // empty account
 		}
 	})
 
-	common.Foreach(accounts, func(_ **Account, idx int) { this.acctDict[accountKeys[idx]] = accounts[idx] }) // Add to cache
+	common.Foreach(accounts, func(acct **Account, _ int) { this.acctDict[(**acct).addr] = *acct }) // Add to cache
 	common.ParallelForeach(accounts, 16, func(acct *Account, idx int) { acct.Precommit(common.FromPairs(stateGroups[idx])) })
 
 	for k, account := range this.acctDict {

@@ -20,7 +20,7 @@ import (
 )
 
 type Account struct {
-	addr []byte
+	addr string
 	types.StateAccount
 	code        []byte
 	storageTrie *ethmpt.Trie // account storage trie
@@ -28,8 +28,9 @@ type Account struct {
 	diskdb      ethdb.Database
 }
 
-func NewAccount(addr []byte, ethdb *ethmpt.Database, diskdb ethdb.Database, state types.StateAccount) *Account {
-	trie, _ := ethmpt.New(ethmpt.TrieID(state.Root), ethdb)
+func NewAccount(addr string, ethdb *ethmpt.Database, diskdb ethdb.Database, state types.StateAccount) *Account {
+	// trie, _ := ethmpt.New(ethmpt.TrieID(state.Root), ethdb)
+	trie, _ := ethmpt.NewParallel(ethmpt.TrieID(state.Root), ethdb)
 	return &Account{
 		addr:         addr,
 		storageTrie:  trie,
@@ -130,17 +131,12 @@ func (this *Account) updateAccountTrie(keys []string, typedVals []interfaces.Typ
 
 	k := common.ParallelAppend(keys, func(i int) []byte { return []byte(this.storageKey(keys[i])) })
 	v := common.ParallelAppend(typedVals, func(i int) []byte {
-		if typedVals[i] != nil {
-			return typedVals[i].StorageEncode()
-		}
-		return []byte{}
+		return common.IfThenDo1st(typedVals[i] != nil, func() []byte { return typedVals[i].StorageEncode() }, []byte{})
 	})
 
-	for i := 0; i < len(k); i++ {
-		this.storageTrie.Update(k[i], v[i])
-	}
+	// common.Foreach(keys, func(_ *string, i int) { this.storageTrie.Update(k[i], v[i]) }) // Sequential
 
-	// this.storageTrie.ParallelUpdate(k, v)
+	this.storageTrie.ParallelUpdate(k, v)
 	this.Root = this.storageTrie.Hash()
 }
 
