@@ -70,7 +70,7 @@ func (this *Importer) Import(txTrans []interfaces.Univalue, args ...interface{})
 		return univ.Preexist() && this.store.IfExists(*univ.GetPath()) && !commitIfAbsent //preexists but not available locally, happen with a partial cache
 	})
 
-	common.Foreach(txTrans, func(univ *interfaces.Univalue) { // Create new sequences all at once
+	common.Foreach(txTrans, func(univ *interfaces.Univalue, _ int) { // Create new sequences all at once
 		if v, _ := this.deltaDict.Get(*(*univ).GetPath()); v == nil {
 			this.deltaDict.Set(*(*univ).GetPath(), NewDeltaSequence(*(*univ).GetPath(), this))
 		}

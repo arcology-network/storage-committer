@@ -121,22 +121,26 @@ func (this *Account) updateAccountTrie(keys []string, typedVals []interfaces.Typ
 	if pos, _ := common.FindFirstIf(keys, func(v string) bool { return strings.HasSuffix(v, "/code") }); pos >= 0 {
 		this.code = typedVals[pos].Value().(codec.Bytes)
 		this.StateAccount.CodeHash = this.Hash(this.code)
-		if this.diskdb.Put(this.CodeHash, this.code) != nil { // Save to DB directly
+		if this.diskdb.Put(this.CodeHash, this.code) != nil { // Save to DB directly, only for code
 			panic("error")
 		}
 		common.RemoveAt(&keys, pos)
 		common.RemoveAt(&typedVals, pos)
 	}
 
-	this.storageTrie.ParallelUpdate(
-		common.ParallelAppend(keys, func(i int) []byte { return []byte(this.storageKey(keys[i])) }),
-		common.ParallelAppend(typedVals, func(i int) []byte {
-			if typedVals[i] != nil {
-				return typedVals[i].StorageEncode()
-			}
-			return []byte{}
-		}))
+	k := common.ParallelAppend(keys, func(i int) []byte { return []byte(this.storageKey(keys[i])) })
+	v := common.ParallelAppend(typedVals, func(i int) []byte {
+		if typedVals[i] != nil {
+			return typedVals[i].StorageEncode()
+		}
+		return []byte{}
+	})
 
+	for i := 0; i < len(k); i++ {
+		this.storageTrie.Update(k[i], v[i])
+	}
+
+	// this.storageTrie.ParallelUpdate(k, v)
 	this.Root = this.storageTrie.Hash()
 }
 

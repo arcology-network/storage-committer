@@ -133,11 +133,11 @@ func (this *WriteCache) AddTransitions(transitions []interfaces.Univalue) {
 
 	// Not necessary at the moment, but good for the future if multiple level containers are available
 	newPathCreations = Univalues(Sorter(newPathCreations))
-	common.Foreach(newPathCreations, func(v *interfaces.Univalue) {
+	common.Foreach(newPathCreations, func(v *interfaces.Univalue, _ int) {
 		(*v).Merge(this) // Write back to the parent writecache
 	})
 
-	common.Foreach(transitions, func(v *interfaces.Univalue) {
+	common.Foreach(transitions, func(v *interfaces.Univalue, _ int) {
 		(*v).Merge(this) // Write back to the parent writecache
 	})
 }

@@ -188,9 +188,8 @@ func (this *EthDataStore) BatchRetrive(keys []string, T []any) []interface{} {
 	return values
 }
 
-// Encode KVs and write them to the trie.
 func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte {
-	pairGroups := common.GroupBy(common.ToPairs(keys, values.([]interface{})),
+	accountKeys, stateGroups := common.GroupBy(common.ToPairs(keys, values.([]interface{})),
 		func(v struct {
 			First  string
 			Second interface{}
@@ -199,15 +198,18 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 			return &key
 		})
 
-	for i := 0; i < len(pairGroups); i++ {
-		key := ccurlcommon.ParseAccountAddr(pairGroups[i][0].First)
-		account, ok := this.acctDict[key]
-		if !ok {
-			account = NewAccount([]byte(key), this.ethdb, this.diskdbs[0], EmptyAccountState()) // empty account
-			this.acctDict[key] = account
+	accounts := make([]*Account, len(accountKeys))
+	common.ParallelWorker(len(accountKeys), 16, func(start, end, index int, args ...interface{}) {
+		for i := start; i < end; i++ {
+			key := accountKeys[i]
+			if accounts[i], _ = this.acctDict[key]; accounts[i] == nil {
+				accounts[i] = NewAccount([]byte(key), this.ethdb, this.diskdbs[0], EmptyAccountState()) // empty account
+			}
 		}
-		account.Precommit(common.FromPairs(pairGroups[i]))
-	}
+	})
+
+	common.Foreach(accounts, func(_ **Account, idx int) { this.acctDict[accountKeys[idx]] = accounts[idx] }) // Add to cache
+	common.ParallelForeach(accounts, 16, func(acct *Account, idx int) { acct.Precommit(common.FromPairs(stateGroups[idx])) })
 
 	for k, account := range this.acctDict {
 		this.worldStateTrie.Update([]byte(k), account.Encode())

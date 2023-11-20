@@ -81,7 +81,7 @@ func (this *Accumulator) isOutOfLimits(k string, transitions []interfaces.Unival
 	}
 
 	txIDs := []uint32{}
-	common.Foreach(transitions[length+1:], func(v *interfaces.Univalue) { txIDs = append(txIDs, (*v).GetTx()) })
+	common.Foreach(transitions[length+1:], func(v *interfaces.Univalue, _ int) { txIDs = append(txIDs, (*v).GetTx()) })
 
 	return &Conflict{
 		key:   k,
