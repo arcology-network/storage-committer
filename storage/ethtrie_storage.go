@@ -128,7 +128,6 @@ func (this *EthDataStore) BatchInject(keys []string, values []interface{}) error
 	for i := 0; i < len(keys); i++ {
 		key := ccurlcommon.ParseAccountAddr(keys[i])
 
-		// account, ok := //this.acctDict[key]
 		account, ok := this.acctLookup.Get(key)
 		if account != nil {
 			account = account.(*Account)
@@ -140,7 +139,6 @@ func (this *EthDataStore) BatchInject(keys []string, values []interface{}) error
 
 		if !ok {
 			account = NewAccount(key, this.ethdb, this.diskdbs[0], EmptyAccountState()) // empty account
-			//this.acctDict[key] = account.(*Account)
 			this.acctLookup.Set(key, account)
 		}
 
@@ -166,7 +164,6 @@ func (this *EthDataStore) LoadExistingAccount(accountKey string) *Account {
 		return nil
 	}
 
-	// account, ok := //this.acctDict[accountKey]
 	var account *Account
 	v, ok := this.acctLookup.Get(accountKey)
 	if v != nil {
@@ -243,7 +240,6 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 
 	// encoded := common.Append(v, func(acct interface{}) []byte { return acct.(*Account).Encode() })
 	// this.worldStateTrie.ParallelUpdate(codec.Strings(keys).ToBytes(), encoded)
-
 	return this.worldStateTrie.Hash()
 }
 
