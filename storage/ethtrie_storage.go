@@ -161,25 +161,23 @@ func (this *EthDataStore) BatchInject(keys []string, values []interface{}) error
 }
 
 func (this *EthDataStore) LoadExistingAccount(accountKey string, accesses [][]byte) *Account {
-	if len(accountKey) == 0 {
-		return nil
-	}
+	if len(accountKey) > 0 {
+		if v, _ := this.acctLookup.Get(accountKey); v != nil {
+			return v.(*Account)
+		}
 
-	if v, _ := this.acctLookup.Get(accountKey); v != nil {
-		return v.(*Account)
-	}
+		if buffer, err := this.worldStateTrie.ThreadSafeGet([]byte(accountKey), accesses); err == nil && len(buffer) > 0 { // Not found
+			var acctState types.StateAccount
+			rlp.DecodeBytes(buffer, &acctState)
 
-	if buffer, err := this.worldStateTrie.ThreadSafeGet([]byte(accountKey), accesses); err == nil && len(buffer) > 0 { // Not found
-		var acctState types.StateAccount
-		rlp.DecodeBytes(buffer, &acctState)
-
-		return &Account{
-			accountKey,
-			acctState,
-			common.FilterFirst(this.diskdbs[0].Get(acctState.CodeHash)),
-			ethmpt.NewEmptyParallel(this.ethdb),
-			this.ethdb,
-			this.diskdbs,
+			return &Account{
+				accountKey,
+				acctState,
+				common.FilterFirst(this.diskdbs[0].Get(acctState.CodeHash)),
+				ethmpt.NewEmptyParallel(this.ethdb),
+				this.ethdb,
+				this.diskdbs,
+			}
 		}
 	}
 	return nil
