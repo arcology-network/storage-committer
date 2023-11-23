@@ -116,7 +116,7 @@ func (this *EthDataStore) IfExists(key string) bool {
 	lock.Unlock()
 
 	// storage trie is still empty
-	account := NewAccount(key, this.ethdb, this.diskdbs[0], stateAccount)
+	account := NewAccount(key, this.diskdbs, stateAccount)
 	return account.IfExists(key)
 }
 
@@ -139,7 +139,7 @@ func (this *EthDataStore) BatchInject(keys []string, values []interface{}) error
 		}
 
 		if !ok {
-			account = NewAccount(key, this.ethdb, this.diskdbs[0], EmptyAccountState()) // empty account
+			account = NewAccount(key, this.diskdbs, EmptyAccountState()) // empty account
 			//this.acctDict[key] = account.(*Account)
 			this.acctLookup.Set(key, account)
 		}
@@ -185,7 +185,7 @@ func (this *EthDataStore) LoadExistingAccount(accountKey string) *Account {
 				code,
 				ethmpt.NewEmptyParallel(this.ethdb),
 				this.ethdb,
-				this.diskdbs[0],
+				this.diskdbs,
 			}
 		}
 	}
@@ -222,8 +222,7 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 		if accounts[i] = this.LoadExistingAccount(*key); accounts[i] == nil {
 			accounts[i] = NewAccount(
 				*key,
-				this.ethdb,
-				this.diskdbs[0],
+				this.diskdbs,
 				EmptyAccountState()) // empty account
 		}
 	})
@@ -249,7 +248,7 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 
 // Write the DB
 func (this *EthDataStore) Commit() error {
-	this.acctLookup.ForeachDo(func(_, accountTrie interface{}) {
+	this.acctLookup.ParallelForeachDo(func(_, accountTrie interface{}) {
 		accountTrie.(*Account).Commit() // Save the account tries to DB
 	})
 
