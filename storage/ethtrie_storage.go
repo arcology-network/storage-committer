@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"sync"
 
+	"github.com/arcology-network/common-lib/codec"
 	common "github.com/arcology-network/common-lib/common"
 	ccmap "github.com/arcology-network/common-lib/container/map"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
@@ -228,14 +229,10 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 		(*acct).Precommit(common.FromPairs(stateGroups[idx]))
 	})
 
-	keys, v := this.acctLookup.KVs()
-	for i, k := range keys {
-		this.worldStateTrie.Update([]byte(k), v[i].(*Account).Encode())
-	}
+	keys, accts := this.acctLookup.KVs()
+	encoded := common.Append(accts, func(acct interface{}) []byte { return acct.(*Account).Encode() })
 
-	// encoded := common.Append(v, func(acct interface{}) []byte { return acct.(*Account).Encode() })
-	// this.worldStateTrie.ParallelUpdate(codec.Strings(keys).ToBytes(), encoded)
-
+	this.worldStateTrie.ParallelUpdate(codec.Strings(keys).ToBytes(), encoded)
 	return this.worldStateTrie.Hash()
 }
 
