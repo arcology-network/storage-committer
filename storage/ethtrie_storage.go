@@ -128,7 +128,6 @@ func (this *EthDataStore) BatchInject(keys []string, values []interface{}) error
 	for i := 0; i < len(keys); i++ {
 		key := ccurlcommon.ParseAccountAddr(keys[i])
 
-		// account, ok := //this.acctDict[key]
 		account, ok := this.acctLookup.Get(key)
 		if account != nil {
 			account = account.(*Account)
@@ -140,7 +139,6 @@ func (this *EthDataStore) BatchInject(keys []string, values []interface{}) error
 
 		if !ok {
 			account = NewAccount(key, this.diskdbs, EmptyAccountState()) // empty account
-			//this.acctDict[key] = account.(*Account)
 			this.acctLookup.Set(key, account)
 		}
 
