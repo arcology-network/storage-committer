@@ -105,7 +105,7 @@ func (this *Account) Retrive(key string, T any) (interface{}, error) {
 	return T.(interfaces.Type).StorageDecode(buffer), err
 }
 
-func (this *Account) updateAccountTrie(keys []string, typedVals []interfaces.Type) {
+func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Type) {
 	if pos, _ := common.FindFirstIf(keys, func(v string) bool { return strings.HasSuffix(v, "/nonce") }); pos >= 0 {
 		this.Nonce = typedVals[pos].Value().(uint64)
 		common.RemoveAt(&keys, pos)
@@ -141,7 +141,7 @@ func (this *Account) updateAccountTrie(keys []string, typedVals []interfaces.Typ
 }
 
 func (this *Account) Precommit(keys []string, values []interface{}) {
-	this.updateAccountTrie(keys, common.Append(values,
+	this.UpdateAccountTrie(keys, common.Append(values,
 		func(v interface{}) interfaces.Type {
 			if v.(interfaces.Univalue).Value() != nil {
 				return v.(interfaces.Univalue).Value().(interfaces.Type)
