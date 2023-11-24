@@ -106,8 +106,9 @@ var lock sync.Mutex
 
 // Problem is here, need to load the storage trie first? and use storageKey as well
 func (this *EthDataStore) IfExists(key string) bool {
-	accesses := [][]byte{}
-	buffer, _ := this.worldStateTrie.ThreadSafeGet(bytes.Clone([]byte(ccurlcommon.ParseAccountAddr(key))), accesses)
+	accesses := ethmpt.AccessListCache{}
+
+	buffer, _ := this.worldStateTrie.ThreadSafeGet(bytes.Clone([]byte(ccurlcommon.ParseAccountAddr(key))), &accesses)
 	if len(buffer) == 0 { // Not found
 		return false
 	}
@@ -161,7 +162,7 @@ func (this *EthDataStore) BatchInject(keys []string, values []interface{}) error
 	return nil
 }
 
-func (this *EthDataStore) LoadExistingAccount(accountKey string, accesses [][]byte) *Account {
+func (this *EthDataStore) LoadExistingAccount(accountKey string, accesses *ethmpt.AccessListCache) *Account {
 	if len(accountKey) > 0 {
 		if v, _ := this.acctLookup.Get(accountKey); v != nil {
 			return v.(*Account)
@@ -185,8 +186,8 @@ func (this *EthDataStore) LoadExistingAccount(accountKey string, accesses [][]by
 }
 
 func (this *EthDataStore) Retrive(key string, T any) (interface{}, error) {
-	accesses := [][]byte{}
-	if account := this.LoadExistingAccount(ccurlcommon.ParseAccountAddr(key), accesses); account != nil {
+	accesses := ethmpt.AccessListCache{}
+	if account := this.LoadExistingAccount(ccurlcommon.ParseAccountAddr(key), &accesses); account != nil {
 		return account.Retrive(key, T)
 	}
 	return nil, nil
@@ -216,8 +217,8 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 
 	accounts := make([]*Account, len(accountKeys))
 	common.ParallelForeach(accountKeys, 16, func(key *string, i int) {
-		accesses := [][]byte{}
-		if accounts[i] = this.LoadExistingAccount(*key, accesses); accounts[i] == nil {
+		accesses := ethmpt.AccessListCache{}
+		if accounts[i] = this.LoadExistingAccount(*key, &accesses); accounts[i] == nil {
 			accounts[i] = NewAccount(
 				*key,
 				this.diskdbs,
