@@ -201,6 +201,10 @@ func (this *EthDataStore) BatchRetrive(keys []string, T []any) []interface{} {
 }
 
 func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte {
+	if len(keys) == 0 {
+		return this.latestRoot
+	}
+
 	accountKeys, stateGroups := common.GroupBy(common.ToPairs(keys, values.([]interface{})),
 		func(v struct {
 			First  string
@@ -243,7 +247,11 @@ func (this *EthDataStore) Commit() error {
 	})
 
 	// Save the world trie to DB
-	this.latestRoot, this.nodeBuffer = this.worldStateTrie.Commit(false)                                                      // Finalized the trie
+	this.latestRoot, this.nodeBuffer = this.worldStateTrie.Commit(false) // Finalized the trie
+	if len(this.nodeBuffer.Nodes) == 0 {
+		return nil
+	}
+
 	if err := this.ethdb.Update(this.latestRoot, types.EmptyRootHash, trienode.NewWithNodeSet(this.nodeBuffer)); err != nil { // Move to DB dirty node set
 		return err
 	}
