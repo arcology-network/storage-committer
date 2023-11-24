@@ -138,8 +138,10 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Typ
 		common.RemoveAt(&typedVals, pos)
 	}
 
-	k := common.ParallelAppend(keys, func(i int) []byte { return []byte(this.storageKey(keys[i])) })
-	v := common.ParallelAppend(typedVals, func(i int) []byte {
+	numThd := common.IfThen(len(keys) < 1024, 4, 8)
+
+	k := common.ParallelAppend(keys, numThd, func(i int) []byte { return []byte(this.storageKey(keys[i])) })
+	v := common.ParallelAppend(typedVals, numThd, func(i int) []byte {
 		return common.IfThenDo1st(typedVals[i] != nil, func() []byte { return typedVals[i].StorageEncode() }, []byte{})
 	})
 

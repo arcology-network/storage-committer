@@ -216,7 +216,9 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 		})
 
 	accounts := make([]*Account, len(accountKeys))
-	common.ParallelForeach(accountKeys, 16, func(key *string, i int) {
+
+	numThd := common.IfThen(len(accountKeys) <= 1024, 8, 16)
+	common.ParallelForeach(accountKeys, numThd, func(key *string, i int) {
 		accesses := ethmpt.AccessListCache{}
 		if accounts[i] = this.LoadExistingAccount(*key, &accesses); accounts[i] == nil {
 			accounts[i] = NewAccount(
