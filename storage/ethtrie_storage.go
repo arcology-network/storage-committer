@@ -45,7 +45,7 @@ func NewParallelEthMemDataStore() *EthDataStore {
 }
 
 func NewLevelDBDataStore(dir string) *EthDataStore {
-	leveldb, err := rawdb.NewLevelDBDatabase(dir, 256, 16, "temp", false)
+	leveldb, err := rawdb.NewLevelDBDatabase(dir, 256, 16, "arcology", false)
 	if err != nil {
 		return nil
 	}
@@ -189,6 +189,9 @@ func (this *EthDataStore) BatchRetrive(keys []string, T []any) []interface{} {
 }
 
 func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte {
+	if len(keys) == 0 {
+		return this.latestRoot
+	}
 	accountKeys, stateGroups := common.GroupBy(common.ToPairs(keys, values.([]interface{})),
 		func(v struct {
 			First  string
@@ -224,7 +227,10 @@ func (this *EthDataStore) Commit() error {
 		accountTrie.Commit()
 	}
 
-	this.latestRoot, this.nodeBuffer = this.worldStateTrie.Commit(false)                                                      // Finalized the trie
+	this.latestRoot, this.nodeBuffer = this.worldStateTrie.Commit(false) // Finalized the trie
+	if this.nodeBuffer == nil {
+		return nil
+	}
 	if err := this.ethdb.Update(this.latestRoot, types.EmptyRootHash, trienode.NewWithNodeSet(this.nodeBuffer)); err != nil { // Move to DB dirty node set
 		return err
 	}

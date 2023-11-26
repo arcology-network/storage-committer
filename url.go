@@ -2,11 +2,13 @@ package concurrenturl
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"reflect"
 
 	"github.com/arcology-network/common-lib/common"
 	orderedset "github.com/arcology-network/common-lib/container/set"
+	performance "github.com/arcology-network/common-lib/mhasher"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
@@ -32,35 +34,35 @@ func NewConcurrentUrl(store interfaces.Datastore) *ConcurrentUrl {
 	}
 }
 
-// func (this *ConcurrentUrl) KVs() ([]string, []interface{}) {
-// 	keys, values := this.importer.KVs()
-// 	invKeys, invVals := this.imuImporter.KVs()
+func (this *ConcurrentUrl) KVs() ([]string, []interface{}) {
+	keys, values := this.importer.KVs()
+	invKeys, invVals := this.imuImporter.KVs()
 
-// 	kvs := make(map[string]interface{}, len(keys)+len(invKeys))
-// 	for i, key := range keys {
-// 		kvs[key] = values[i]
-// 	}
-// 	for i, key := range invKeys {
-// 		kvs[key] = invVals[i]
-// 	}
+	kvs := make(map[string]interface{}, len(keys)+len(invKeys))
+	for i, key := range keys {
+		kvs[key] = values[i]
+	}
+	for i, key := range invKeys {
+		kvs[key] = invVals[i]
+	}
 
-// 	sortedKeys, err := performance.SortStrings(append(keys, invKeys...)) // Keys should be unique
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	// sortedKeys := append(keys, invKeys...)
-// 	// sort.Strings(sortedKeys)
+	sortedKeys, err := performance.SortStrings(append(keys, invKeys...)) // Keys should be unique
+	if err != nil {
+		panic(err)
+	}
+	// sortedKeys := append(keys, invKeys...)
+	// sort.Strings(sortedKeys)
 
-// 	sortedVals := make([]interface{}, len(sortedKeys))
-// 	sorter := func(start, end, index int, args ...interface{}) {
-// 		for i := start; i < end; i++ {
-// 			sortedVals[i] = kvs[sortedKeys[i]]
-// 		}
-// 	}
-// 	common.ParallelWorker(len(sortedKeys), 6, sorter)
+	sortedVals := make([]interface{}, len(sortedKeys))
+	sorter := func(start, end, index int, args ...interface{}) {
+		for i := start; i < end; i++ {
+			sortedVals[i] = kvs[sortedKeys[i]]
+		}
+	}
+	common.ParallelWorker(len(sortedKeys), 6, sorter)
 
-// 	return sortedKeys, sortedVals
-// }
+	return sortedKeys, sortedVals
+}
 
 func (this *ConcurrentUrl) New(args ...interface{}) *ConcurrentUrl {
 	return &ConcurrentUrl{
@@ -207,6 +209,7 @@ func (this *ConcurrentUrl) Do(tx uint32, path string, doer interface{}, T any) (
 
 // Read th Nth element under a path
 func (this *ConcurrentUrl) at(tx uint32, path string, idx uint64, T any) (interface{}, uint64, error) {
+	fmt.Printf("------------concurrenturl/url.go path:%v\n", path)
 	if !common.IsPath(path) {
 		return nil, READ_NONEXIST, errors.New("Error: Not a path!!!")
 	}

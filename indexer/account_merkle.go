@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	merkle "github.com/arcology-network/common-lib/merkle"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
+	"github.com/arcology-network/evm/rlp"
 )
 
 const (
@@ -137,4 +139,12 @@ func (this *AccountMerkle) markAccountRange(paths []string) ([]int, []*string) {
 	}
 	common.ParallelWorker(len(ParseAccountAddrs), 6, worker)
 	return positions, ParseAccountAddrs
+}
+
+func RlpEncoder(args ...interface{}) []byte {
+	encoded, err := rlp.EncodeToBytes(args)
+	if err != nil {
+		log.Fatal("Error encoding data:", err)
+	}
+	return encoded
 }
