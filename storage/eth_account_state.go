@@ -22,20 +22,22 @@ import (
 type Account struct {
 	addr string
 	types.StateAccount
-	code        []byte
-	storageTrie *ethmpt.Trie // account storage trie
-	ethdb       *ethmpt.Database
-	diskdb      ethdb.Database
+	code         []byte
+	storageTrie  *ethmpt.Trie // account storage trie
+	ethdb        *ethmpt.Database
+	diskdbShards [16]ethdb.Database
 }
 
-func NewAccount(addr string, ethdb *ethmpt.Database, diskdb ethdb.Database, state types.StateAccount) *Account {
-	// trie, _ := ethmpt.New(ethmpt.TrieID(state.Root), ethdb)
+// The diskdbs need to able to handle concurrent accesses themselve
+func NewAccount(addr string, diskdbs [16]ethdb.Database, state types.StateAccount) *Account {
+	ethdb := ethmpt.NewParallelDatabase(diskdbs, nil)
+
 	trie, _ := ethmpt.NewParallel(ethmpt.TrieID(state.Root), ethdb)
 	return &Account{
 		addr:         addr,
 		storageTrie:  trie,
 		ethdb:        ethdb,
-		diskdb:       diskdb,
+		diskdbShards: diskdbs,
 		StateAccount: state,
 	}
 }
@@ -47,6 +49,13 @@ func EmptyAccountState() types.StateAccount {
 		Root:     types.EmptyRootHash,
 		CodeHash: types.EmptyCodeHash[:],
 	}
+}
+
+func (this *Account) SelectDB(key string) ethdb.Database {
+	if len(key) == 0 {
+		return this.diskdbShards[0]
+	}
+	return this.diskdbShards[key[0]>>4]
 }
 
 func (this *Account) storageKey(key string) string {
@@ -86,7 +95,7 @@ func (this *Account) Retrive(key string, T any) (interface{}, error) {
 	if strings.HasSuffix(key, "/code") {
 		var err error
 		if this.code == nil {
-			if this.code, err = this.diskdb.Get(this.CodeHash); err != nil {
+			if this.code, err = this.SelectDB(key).Get(this.CodeHash); err != nil {
 				return nil, err
 			}
 		}
@@ -112,17 +121,17 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Typ
 		common.RemoveAt(&typedVals, pos)
 	}
 
-	if pos, _ := common.FindFirstIf(keys, func(v string) bool { return strings.HasSuffix(v, "/balance") }); pos >= 0 {
+	if pos, _ := common.FindFirstIf(keys, func(key string) bool { return strings.HasSuffix(key, "/balance") }); pos >= 0 {
 		balance := typedVals[pos].Value().(uint256.Int)
 		this.Balance = balance.ToBig()
 		common.RemoveAt(&keys, pos)
 		common.RemoveAt(&typedVals, pos)
 	}
 
-	if pos, _ := common.FindFirstIf(keys, func(v string) bool { return strings.HasSuffix(v, "/code") }); pos >= 0 {
+	if pos, _ := common.FindFirstIf(keys, func(key string) bool { return strings.HasSuffix(key, "/code") }); pos >= 0 {
 		this.code = typedVals[pos].Value().(codec.Bytes)
 		this.StateAccount.CodeHash = this.Hash(this.code)
-		if this.diskdb.Put(this.CodeHash, this.code) != nil { // Save to DB directly, only for code
+		if this.SelectDB(keys[pos]).Put(this.CodeHash, this.code) != nil { // Save to DB directly, only for code
 			panic("error")
 		}
 		common.RemoveAt(&keys, pos)
