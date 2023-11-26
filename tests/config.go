@@ -1,7 +1,6 @@
 package ccurltest
 
 import (
-	"github.com/arcology-network/common-lib/cachedstorage"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	storage "github.com/arcology-network/concurrenturl/storage"
 )
@@ -20,7 +19,7 @@ var (
 )
 
 func chooseDataStore() interfaces.Datastore {
-	// return storage.NewParallelEthMemDataStore() // Eth trie datastore
-	return cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(1000000, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	return storage.NewParallelEthMemDataStore() // Eth trie datastore
+	// return cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(1000000, 1), cachedstorage.NewMemDB(), encoder, decoder)
 	// return cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 }
