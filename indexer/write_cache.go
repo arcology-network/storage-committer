@@ -44,18 +44,12 @@ func (this *WriteCache) NewUnivalue() *univalue.Univalue {
 	return v
 }
 
-// For write cache RetriveShallow() is same os Retrive()
-func (this *WriteCache) RetriveShallow(key string, T any) interface{} {
-	ret, _ := this.store.Retrive(key, T)
-	return ret
-}
-
 // If the access has been recorded
 func (this *WriteCache) GetOrInit(tx uint32, path string, T any) interfaces.Univalue {
 	unival := this.kvDict[path]
 	if unival == nil { // Not in the kvDict, check the datastore
 		unival = this.NewUnivalue()
-		unival.(*univalue.Univalue).Init(tx, path, 0, 0, 0, this.RetriveShallow(path, T), this)
+		unival.(*univalue.Univalue).Init(tx, path, 0, 0, 0, common.FilterFirst(this.Peek(path, T)), this)
 		this.kvDict[path] = unival // Adding to kvDict
 	}
 	return unival
@@ -72,7 +66,7 @@ func (this *WriteCache) Peek(path string, T any) (interface{}, interface{}) {
 		return univ.Value(), univ
 	}
 
-	v := this.RetriveShallow(path, T)
+	v, _ := this.Store().Retrive(path, T)
 	univ := univalue.NewUnivalue(ccurlcommon.SYSTEM, path, 0, 0, 0, v, nil)
 	return univ.Value(), univ
 }
@@ -83,7 +77,7 @@ func (this *WriteCache) Retrive(path string, T any) (interface{}, error) {
 		return typedv, nil
 	}
 
-	rawv, _, _ := typedv.(interfaces.Type).Get()                                                                             //problem is here !!!
+	rawv, _, _ := typedv.(interfaces.Type).Get()
 	return typedv.(interfaces.Type).New(rawv, nil, nil, typedv.(interfaces.Type).Min(), typedv.(interfaces.Type).Max()), nil // Return in a new univalue
 }
 
