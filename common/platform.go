@@ -75,11 +75,13 @@ func (this *Platform) Builtins(acct string, idx int) string {
 	return ETH10_ACCOUNT_PREFIX + acct + paths[idx]
 }
 
-func ParseAccountAddr(acct string) string {
+func ParseAccountAddr(acct string) (string, string, string) {
 	if len(acct) < ETH10_ACCOUNT_PREFIX_LENGTH+ETH10_ACCOUNT_LENGTH {
-		return ""
+		return acct, "", ""
 	}
-	return acct[ETH10_ACCOUNT_PREFIX_LENGTH : ETH10_ACCOUNT_PREFIX_LENGTH+ETH10_ACCOUNT_LENGTH]
+	return acct[:ETH10_ACCOUNT_PREFIX_LENGTH],
+		acct[ETH10_ACCOUNT_PREFIX_LENGTH : ETH10_ACCOUNT_PREFIX_LENGTH+ETH10_ACCOUNT_LENGTH],
+		acct[ETH10_ACCOUNT_PREFIX_LENGTH+ETH10_ACCOUNT_LENGTH:]
 }
 
 func UnderNative(key string) string {
