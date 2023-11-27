@@ -1,7 +1,6 @@
 package ccdb
 
 import (
-	"bytes"
 	"sync"
 
 	"github.com/arcology-network/common-lib/codec"
@@ -61,6 +60,7 @@ func NewLevelDBDataStore(dir string) *EthDataStore {
 	return &EthDataStore{
 		ethdb:          db,
 		diskdbs:        diskdbs,
+		acctLookup:     ccmap.NewConcurrentMap(),
 		worldStateTrie: paraTrie,
 		encoder:        Rlp{}.Encode,
 		decoder:        Rlp{}.Decode,
@@ -108,9 +108,15 @@ var lock sync.Mutex
 func (this *EthDataStore) IfExists(key string) bool {
 	accesses := ethmpt.AccessListCache{}
 
-	buffer, _ := this.worldStateTrie.ThreadSafeGet(bytes.Clone([]byte(ccurlcommon.ParseAccountAddr(key))), &accesses)
-	if len(buffer) == 0 { // Not found
-		return false
+	accountKey := ccurlcommon.ParseAccountAddr(key)
+	if v, _ := this.acctLookup.Get(ccurlcommon.ParseAccountAddr(key)); v != nil {
+		return v.(*Account).Has(key) // If the account has the key
+	}
+
+	// Not in cache, look up in the trie
+	buffer, _ := this.worldStateTrie.ThreadSafeGet([]byte(accountKey), &accesses)
+	if len(buffer) == 0 {
+		return false // Not found
 	}
 
 	var stateAccount types.StateAccount
@@ -118,9 +124,7 @@ func (this *EthDataStore) IfExists(key string) bool {
 	rlp.DecodeBytes(buffer, &stateAccount)
 	lock.Unlock()
 
-	// storage trie is still empty
-	account := NewAccount(key, this.diskdbs, stateAccount)
-	return account.IfExists(key)
+	return NewAccount(key, this.diskdbs, stateAccount).Has(key) // Load the account but don't keep it in the cache.
 }
 
 func (this *EthDataStore) Inject(key string, value interface{}) error {
