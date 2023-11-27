@@ -115,14 +115,8 @@ type WriteCache interface {
 	AddTransitions([]Univalue)
 
 	Retrive(string, any) (interface{}, error)
-	// RetriveShallow(string, func([]byte) (interface{}, error)) interface{}
 	Cache() *map[string]Univalue
 	Store() ReadonlyDatastore
-}
-
-type Importer interface {
-	IfExists(string) bool
-	RetriveShallow(string) interface{}
 }
 
 type ReadonlyDatastore interface {

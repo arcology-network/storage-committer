@@ -183,7 +183,7 @@ func (this *ConcurrentUrl) Peek(path string, T any) (interface{}, uint64) {
 }
 
 func (this *ConcurrentUrl) PeekCommitted(path string, T any) (interface{}, uint64) {
-	v := this.writeCache.RetriveShallow(path, T)
+	v, _ := this.writeCache.Store().Retrive(path, T)
 	return v, READ_COMMITTED_FROM_DB
 }
 
