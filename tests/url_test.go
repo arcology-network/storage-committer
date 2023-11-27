@@ -54,6 +54,52 @@ func TestSize(t *testing.T) {
 	url.Import(acctTrans)
 }
 
+func TestReadWriteAt(t *testing.T) {
+	store := chooseDataStore()
+
+	alice := AliceAccount()
+	url := ccurl.NewConcurrentUrl(store)
+	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+		t.Error(err)
+	}
+
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
+		t.Error(err)
+	}
+
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ele0", noncommutative.NewString("124")); err != nil {
+		t.Error(err)
+	}
+
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ele1", noncommutative.NewString("1111")); err != nil {
+		t.Error(err)
+	}
+
+	_0, _, _ := url.ReadAt(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", 0, new(noncommutative.String))
+	if !reflect.DeepEqual(_0, "124") {
+		t.Error("Error: Should be empty!!")
+	}
+
+	_1, _, _ := url.ReadAt(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", 1, new(noncommutative.String))
+	if !reflect.DeepEqual(_1, "1111") {
+		t.Error("Error: Should be empty!!")
+	}
+
+	url.WriteAt(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", 0, noncommutative.NewString("456"))
+
+	_0, _, _ = url.ReadAt(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", 0, new(noncommutative.String))
+	if !reflect.DeepEqual(_0, "456") {
+		t.Error("Error: Should be empty!!")
+	}
+
+	url.WriteAt(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", 0, nil) // Delete the first one
+
+	_0, _, _ = url.ReadAt(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", 1, new(noncommutative.String))
+	if !reflect.DeepEqual(_0, "1111") {
+		t.Error("Error: Should be empty!!")
+	}
+}
+
 func TestAddThenDeletePath(t *testing.T) {
 	store := chooseDataStore()
 	alice := AliceAccount()
@@ -517,10 +563,10 @@ func TestUrl2(t *testing.T) {
 	}
 
 	/////////////////=====================================================================/////////////////////////////
-	// _0, _, _ := url.ReadAt(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/", 0, new(noncommutative.Int64))
-	// if !reflect.DeepEqual(_0, 1111) {
-	// 	t.Error("Error: Should be empty!!")
-	// }
+	_0, _, _ := url.ReadAt(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/", 0, new(noncommutative.Int64))
+	if !reflect.DeepEqual(_0, 1111) {
+		t.Error("Error: Should be empty!!")
+	}
 
 	// _1, _, _ := url.ReadAt(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/", 1, new(noncommutative.Int64))
 	// if !reflect.DeepEqual(_1, 2222) {
