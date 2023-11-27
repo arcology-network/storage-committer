@@ -248,7 +248,7 @@ func (this *EthDataStore) Commit() error {
 
 	// Save the world trie to DB
 	this.latestRoot, this.nodeBuffer = this.worldStateTrie.Commit(false) // Finalized the trie
-	if len(this.nodeBuffer.Nodes) == 0 {
+	if this.nodeBuffer == nil || len(this.nodeBuffer.Nodes) == 0 {
 		return nil
 	}
 
