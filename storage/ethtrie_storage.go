@@ -1,8 +1,6 @@
 package ccdb
 
 import (
-	"sync"
-
 	"github.com/arcology-network/common-lib/codec"
 	common "github.com/arcology-network/common-lib/common"
 	ccmap "github.com/arcology-network/common-lib/container/map"
@@ -102,8 +100,6 @@ func (this *EthDataStore) Encoder() func(string, interface{}) []byte { return th
 func (this *EthDataStore) Decoder() func([]byte, any) interface{}    { return this.decoder }
 func (this *EthDataStore) DBs() interface{}                          { return this.diskdbs }
 
-var lock sync.Mutex
-
 // Problem is here, need to load the storage trie first? and use storageKey as well
 func (this *EthDataStore) IfExists(key string) bool {
 	accesses := ethmpt.AccessListCache{}
@@ -124,9 +120,7 @@ func (this *EthDataStore) IfExists(key string) bool {
 	}
 
 	var stateAccount types.StateAccount
-	lock.Lock()
 	rlp.DecodeBytes(buffer, &stateAccount)
-	lock.Unlock()
 
 	return NewAccount(key, this.diskdbs, stateAccount).Has(key) // Load the account but don't keep it in the cache.
 }
