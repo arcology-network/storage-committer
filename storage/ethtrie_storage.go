@@ -61,6 +61,7 @@ func NewLevelDBDataStore(dir string) *EthDataStore {
 	return &EthDataStore{
 		ethdb:          db,
 		diskdbs:        diskdbs,
+		acctLookup:     ccmap.NewConcurrentMap(),
 		worldStateTrie: paraTrie,
 		encoder:        Rlp{}.Encode,
 		decoder:        Rlp{}.Decode,
@@ -108,7 +109,13 @@ var lock sync.Mutex
 func (this *EthDataStore) IfExists(key string) bool {
 	accesses := ethmpt.AccessListCache{}
 
-	buffer, _ := this.worldStateTrie.ThreadSafeGet(bytes.Clone([]byte(ccurlcommon.ParseAccountAddr(key))), &accesses)
+	accountKey := ccurlcommon.ParseAccountAddr(key)
+
+	if v, _ := this.acctLookup.Get(accountKey); v != nil {
+		return true
+	}
+
+	buffer, _ := this.worldStateTrie.ThreadSafeGet(bytes.Clone([]byte(accountKey)), &accesses)
 	if len(buffer) == 0 { // Not found
 		return false
 	}
