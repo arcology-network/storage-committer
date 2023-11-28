@@ -380,7 +380,7 @@ func TestLevelDBBasic(t *testing.T) {
 	db := ethmpt.NewParallelDatabase(diskdbs, nil)
 
 	// db := trie.NewDatabase(leveldb)
-	trie := trie.NewEmpty(db)
+	trie := trie.NewEmptyParallel(db)
 	res := trie.Hash()
 	exp := types.EmptyRootHash
 	if res != exp {

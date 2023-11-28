@@ -37,7 +37,11 @@ func TestAddAndDelete(t *testing.T) {
 	url.Commit([]uint32{1})
 
 	url.Init(store)
-	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/4", nil) // Delete an non-existing entry, should NOT appear in the transitions
+
+	// Delete an non-existing entry, should NOT appear in the transitions
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/4", nil); err == nil {
+		t.Error("Deleting an non-existing entry should've flaged an error", err)
+	}
 
 	raw := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	if acctTrans := raw; len(acctTrans) != 0 {

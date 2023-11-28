@@ -65,7 +65,7 @@ func (this *Account) storageKey(key string) string {
 	return string(this.Hash([]byte(key)))
 }
 
-func (this *Account) IfExists(key string) bool {
+func (this *Account) Has(key string) bool {
 	if strings.HasSuffix(key, "/balance") || strings.HasSuffix(key, "/nonce") {
 		return true
 	}

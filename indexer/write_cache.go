@@ -49,7 +49,7 @@ func (this *WriteCache) GetOrInit(tx uint32, path string, T any) interfaces.Univ
 	unival := this.kvDict[path]
 	if unival == nil { // Not in the kvDict, check the datastore
 		unival = this.NewUnivalue()
-		unival.(*univalue.Univalue).Init(tx, path, 0, 0, 0, common.FilterFirst(this.Peek(path, T)), this)
+		unival.(*univalue.Univalue).Init(tx, path, 0, 0, 0, common.FilterFirst(this.Store().Retrive(path, T)), this)
 		this.kvDict[path] = unival // Adding to kvDict
 	}
 	return unival
@@ -92,7 +92,6 @@ func (this *WriteCache) Write(tx uint32, path string, value interface{}) error {
 		univalue := this.GetOrInit(tx, path, value) // Get a univalue wrapper
 
 		err := univalue.Set(tx, path, value, this)
-		this.GetOrInit(tx, path, value)
 		if err == nil {
 			if strings.HasSuffix(parentPath, "/container/") || (!this.platform.IsSysPath(parentPath) && tx != ccurlcommon.SYSTEM) { // Don't keep track of the system children
 				parentMeta := this.GetOrInit(tx, parentPath, new(commutative.Path))
@@ -108,7 +107,11 @@ func (this *WriteCache) IfExists(path string) bool {
 	if ccurlcommon.ETH10_ACCOUNT_PREFIX_LENGTH == len(path) {
 		return true
 	}
-	return this.kvDict[path] != nil || this.store.IfExists(path) //this.RetriveShallow(path, nil) != nil
+
+	if v := this.kvDict[path]; v != nil {
+		return v.Value() != nil // If value == nil means either it's been deleted or never existed.
+	}
+	return this.store.IfExists(path) //this.RetriveShallow(path, nil) != nil
 }
 
 func (this *WriteCache) AddTransitions(transitions []interfaces.Univalue) {

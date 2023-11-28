@@ -1,7 +1,6 @@
 package ccdb
 
 import (
-	"bytes"
 	"sync"
 
 	"github.com/arcology-network/common-lib/codec"
@@ -109,15 +108,19 @@ var lock sync.Mutex
 func (this *EthDataStore) IfExists(key string) bool {
 	accesses := ethmpt.AccessListCache{}
 
-	accountKey := ccurlcommon.ParseAccountAddr(key)
-
+	_, accountKey, suffix := ccurlcommon.ParseAccountAddr(key)
 	if v, _ := this.acctLookup.Get(accountKey); v != nil {
-		return true
+		return v.(*Account).Has(key) // If the account has the key
 	}
 
-	buffer, _ := this.worldStateTrie.ThreadSafeGet(bytes.Clone([]byte(accountKey)), &accesses)
-	if len(buffer) == 0 { // Not found
-		return false
+	// Not in cache, look up in the trie
+	buffer, _ := this.worldStateTrie.ThreadSafeGet([]byte(accountKey), &accesses)
+	if len(buffer) == 0 {
+		return false // Not found
+	}
+
+	if len(suffix) == 0 {
+		return true
 	}
 
 	var stateAccount types.StateAccount
@@ -125,9 +128,7 @@ func (this *EthDataStore) IfExists(key string) bool {
 	rlp.DecodeBytes(buffer, &stateAccount)
 	lock.Unlock()
 
-	// storage trie is still empty
-	account := NewAccount(key, this.diskdbs, stateAccount)
-	return account.IfExists(key)
+	return NewAccount(key, this.diskdbs, stateAccount).Has(key) // Load the account but don't keep it in the cache.
 }
 
 func (this *EthDataStore) Inject(key string, value interface{}) error {
@@ -136,7 +137,7 @@ func (this *EthDataStore) Inject(key string, value interface{}) error {
 
 func (this *EthDataStore) BatchInject(keys []string, values []interface{}) error {
 	for i := 0; i < len(keys); i++ {
-		key := ccurlcommon.ParseAccountAddr(keys[i])
+		_, key, _ := ccurlcommon.ParseAccountAddr(keys[i])
 
 		account, ok := this.acctLookup.Get(key)
 		if account != nil {
@@ -194,7 +195,8 @@ func (this *EthDataStore) LoadExistingAccount(accountKey string, accesses *ethmp
 
 func (this *EthDataStore) Retrive(key string, T any) (interface{}, error) {
 	accesses := ethmpt.AccessListCache{}
-	if account := this.LoadExistingAccount(ccurlcommon.ParseAccountAddr(key), &accesses); account != nil {
+	_, acct, _ := ccurlcommon.ParseAccountAddr(key)
+	if account := this.LoadExistingAccount(acct, &accesses); account != nil {
 		return account.Retrive(key, T)
 	}
 	return nil, nil
@@ -217,7 +219,7 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 			First  string
 			Second interface{}
 		}) *string {
-			key := ccurlcommon.ParseAccountAddr(v.First)
+			_, key, _ := ccurlcommon.ParseAccountAddr(v.First)
 			return &key
 		})
 
