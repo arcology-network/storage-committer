@@ -97,10 +97,10 @@ func (this *EthDataStore) LoadParallelTrie(root [32]byte) (*ethmpt.Trie, error) 
 	return this.worldStateTrie, nil
 }
 
-func (this *EthDataStore) Root() [32]byte { return this.latestRoot }
-
+func (this *EthDataStore) Root() [32]byte                            { return this.latestRoot }
 func (this *EthDataStore) Encoder() func(string, interface{}) []byte { return this.encoder }
 func (this *EthDataStore) Decoder() func([]byte, any) interface{}    { return this.decoder }
+func (this *EthDataStore) DBs() interface{}                          { return this.diskdbs }
 
 var lock sync.Mutex
 
