@@ -19,7 +19,7 @@ package ccurltest
 // 	store := cachedstorage.NewDataStore(nil, policy, memDB, storage.Codec{}.Encode, storage.Codec{}.Decode)
 // 	url := ccurl.NewConcurrentUrl(store)
 // 	alice := AliceAccount()
-// 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+// 	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 // 		t.Error(err)
 // 	}
 
@@ -78,7 +78,7 @@ package ccurltest
 // 	store := cachedstorage.NewDataStore(nil, policy, memDB, storage.Codec{}.Encode, storage.Codec{}.Decode, excludeMemDB)
 // 	url := ccurl.NewConcurrentUrl(store)
 // 	alice := AliceAccount()
-// 	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+// 	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 // 		t.Error(err)
 // 	}
 

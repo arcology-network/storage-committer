@@ -77,38 +77,97 @@ func TestEthTrieBasic(t *testing.T) {
 	}
 
 	store.Commit() // Calculate root hash
+}
+
+func TestEthTrieBasicProof(t *testing.T) {
+	store := storage.NewParallelEthMemDataStore()
+
+	aliceKeys := []string{
+		"blcc://eth1.0/account/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/storage/container/ctrn-0/",
+		"blcc://eth1.0/account/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/storage/native/" + string(codec.Bytes32([32]byte{1}).Encode()),
+		"blcc://eth1.0/account/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/storage/native/" + string(codec.Bytes32([32]byte{2}).Encode()),
+	}
+
+	vals := []interface{}{
+		univalue.NewUnivalue(0, "", 0, 0, 0, commutative.NewBoundedUint64(1, 111), nil),
+		univalue.NewUnivalue(0, "", 0, 0, 0, commutative.InitNewPaths([]string{"ctrn-0"}), nil),
+		univalue.NewUnivalue(0, "", 0, 0, 0, noncommutative.NewInt64(199), nil),
+	}
+
+	store.Precommit(aliceKeys, vals)
+	store.Commit() // Calculate root hash
 
 	proofs := memorydb.New()
-	trie, _ := store.LoadTrie(store.Root())
-
-	trie.Prove(store.Hash(keys[0]), 0, proofs)
-	if _, err := ethmpt.VerifyProof(store.Root(), store.Hash(keys[0]), proofs); err != nil {
+	storage.LoadParallelEthMemDataStore(store.EthDB(), store.DiskDBs(), store.Root()).Trie().Prove(store.Hash(aliceKeys[0]), 0, proofs)
+	if _, err := ethmpt.VerifyProof(store.Root(), store.Hash(aliceKeys[0]), proofs); err != nil {
 		t.Error("Actual :", err)
 	}
 
-	trie, _ = store.LoadTrie(store.Root())
-	trie.Prove(store.Hash(keys[1]), 0, proofs)
-	if _, err := ethmpt.VerifyProof(store.Root(), store.Hash(keys[1]), proofs); err != nil {
+	storage.LoadParallelEthMemDataStore(store.EthDB(), store.DiskDBs(), store.Root()).Trie().Prove(store.Hash(aliceKeys[1]), 0, proofs)
+	if _, err := ethmpt.VerifyProof(store.Root(), store.Hash(aliceKeys[1]), proofs); err != nil {
 		t.Error("Actual :", err)
 	}
 
-	trie, _ = store.LoadTrie(store.Root())
-	trie.Prove(store.Hash(keys[2]), 0, proofs)
-	// store.LoadTrie(store.Root()).Prove(store.Hash(keys[2]), 0, proofs)
-	if _, err := ethmpt.VerifyProof(store.Root(), store.Hash(keys[2]), proofs); err != nil {
+	storage.LoadParallelEthMemDataStore(store.EthDB(), store.DiskDBs(), store.Root()).Trie().Prove(store.Hash(aliceKeys[2]), 0, proofs)
+	if _, err := ethmpt.VerifyProof(store.Root(), store.Hash(aliceKeys[2]), proofs); err != nil {
 		t.Error("Actual :", err)
 	}
 }
 
-// need to hash the keys first
+func TestEthWorldTrieProof(t *testing.T) {
+	url := ccurl.NewConcurrentUrl(storage.NewParallelEthMemDataStore())
+	alice := AliceAccount()
+	aliceTrans, _ := url.NewAccount(0, alice)
+	fmt.Print(aliceTrans)
 
+	bob := BobAccount()
+	bobTrans, _ := url.NewAccount(0, bob)
+	fmt.Print(bobTrans)
+
+	bobTrans[0].Value().(interfaces.Type).Clone()
+
+	acctTrans := url.Export(indexer.Sorter)
+
+	url.Import(acctTrans)
+	url.Sort()
+	url.Commit([]uint32{0})
+
+	proofs := memorydb.New() // Proof DB
+	store := url.Importer().Store().(*storage.EthDataStore)
+	// store.Precommit()
+
+	// Prove the world trie path
+	store.Trie().Prove([]byte(*aliceTrans[0].GetPath()), 0, proofs)
+	if _, err := ethmpt.VerifyProof(store.Trie().Hash(), []byte(alice), proofs); err != nil {
+		t.Error("Actual :", err)
+	}
+
+	// aliceAcctFromTrie := store.GetAccountFromTrie(alice, new(ethmpt.AccessListCache))
+
+	// if len(aliceAcctData.([]byte)) == 0 {
+	// 	t.Error("Error:")
+	// }
+
+	// Get Alice's account
+	aliceAcct, _ := store.GetAccountFromTrie(alice, &ethmpt.AccessListCache{})
+	fmt.Print(aliceAcct)
+
+	// Prove the storage value
+	// proofs = memorydb.New() // Proof DB
+	// aliceAcct.Trie().Prove([]byte(*aliceTrans[0].GetPath()), 0, proofs)
+	// if _, err := ethmpt.VerifyProof(aliceAcct.StateAccount.Root, []byte(*aliceTrans[0].GetPath()), proofs); err != nil {
+	// 	t.Error("Actual :", err)
+	// }
+}
+
+// need to hash the keys first
 func TestEthStorageConnection(t *testing.T) {
 	store := chooseDataStore()
 	// store := chooseDataStore()
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -133,7 +192,7 @@ func TestBasicAddRead(t *testing.T) {
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -204,7 +263,7 @@ func TestEthDataStoreAddDeleteRead(t *testing.T) {
 	// store := chooseDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -287,7 +346,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -340,7 +399,7 @@ func BenchmarkMultipleAccountCommitDataStore(b *testing.B) {
 
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -352,7 +411,7 @@ func BenchmarkMultipleAccountCommitDataStore(b *testing.B) {
 	// t0 := time.Now()
 	for i := 0; i < 100000; i++ {
 		acct := fmt.Sprint(rand.Int())
-		if err := url.NewAccount(ccurlcommon.SYSTEM, acct); err != nil { // NewAccount account structure {
+		if _, err := url.NewAccount(ccurlcommon.SYSTEM, acct); err != nil { // NewAccount account structure {
 			fmt.Println(err)
 		}
 

@@ -11,6 +11,7 @@ import (
 	"github.com/arcology-network/concurrenturl/interfaces"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	"github.com/arcology-network/evm/core/types"
+	ethtypes "github.com/arcology-network/evm/core/types"
 	"github.com/arcology-network/evm/ethdb"
 	"github.com/arcology-network/evm/rlp"
 	ethmpt "github.com/arcology-network/evm/trie"
@@ -21,7 +22,7 @@ import (
 
 type Account struct {
 	addr string
-	types.StateAccount
+	ethtypes.StateAccount
 	code         []byte
 	storageTrie  *ethmpt.Trie // account storage trie
 	ethdb        *ethmpt.Database
@@ -43,13 +44,15 @@ func NewAccount(addr string, diskdbs [16]ethdb.Database, state types.StateAccoun
 }
 
 func EmptyAccountState() types.StateAccount {
-	return types.StateAccount{
+	return ethtypes.StateAccount{
 		Nonce:    0,
 		Balance:  big.NewInt(0),
 		Root:     types.EmptyRootHash,
 		CodeHash: types.EmptyCodeHash[:],
 	}
 }
+
+func (this *Account) Trie() *ethmpt.Trie { return this.storageTrie }
 
 func (this *Account) SelectDB(key string) ethdb.Database {
 	if len(key) == 0 {
@@ -144,8 +147,6 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Typ
 	v := common.ParallelAppend(typedVals, numThd, func(i int) []byte {
 		return common.IfThenDo1st(typedVals[i] != nil, func() []byte { return typedVals[i].StorageEncode() }, []byte{})
 	})
-
-	// common.Foreach(keys, func(_ *string, i int) { this.storageTrie.Update(k[i], v[i]) }) // Sequential
 
 	this.storageTrie.ParallelUpdate(k, v)
 	this.Root = this.storageTrie.Hash()

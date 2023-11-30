@@ -179,15 +179,15 @@ func (this *U256) Set(newDelta interface{}, source interface{}) (interface{}, ui
 
 	accumDelta, isDeltaPositive := this.isOverflowed(this.delta.Clone(), this.deltaPositive, &newDelta.(*U256).delta, newDelta.(*U256).deltaPositive)
 	if accumDelta == nil {
-		return this, 0, 0, 1, errors.New("Error: Value out of range")
+		return this, 0, 0, 1, errors.New("Error: The value is underflowed")
 	}
 
-	tempV, possitive := this.isOverflowed(this.value.Clone(), true, accumDelta.Clone(), isDeltaPositive)
-	if tempV == nil || !possitive { // Result must be possitive
-		return this, 0, 0, 1, errors.New("Error: Value out of range")
+	accumVal, isPossitive := this.isOverflowed(this.value.Clone(), true, accumDelta.Clone(), isDeltaPositive)
+	if accumVal == nil || !isPossitive { // Result must be possitive
+		return this, 0, 0, 1, errors.New("Error: The value is overflowed")
 	}
 
-	if this.min.Cmp(tempV) < 1 && tempV.Cmp(&this.max) < 1 {
+	if this.min.Cmp(accumVal) < 1 && accumVal.Cmp(&this.max) < 1 {
 		this.delta = *accumDelta
 		this.deltaPositive = isDeltaPositive
 		return this, 0, 0, 1, nil

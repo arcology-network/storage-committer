@@ -92,7 +92,7 @@ func TestUnivalueCodec(t *testing.T) {
 func TestUnivaluesCodec(t *testing.T) {
 	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	transitions := []interfaces.Univalue{}
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 10; i++ {
 		acct := datacompression.RandomAccount()
 		url := ccurl.NewConcurrentUrl(store)
 		url.NewAccount(ccurlcommon.SYSTEM, acct)

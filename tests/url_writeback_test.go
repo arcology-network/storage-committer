@@ -18,7 +18,7 @@ func TestAddAndDelete(t *testing.T) {
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -54,7 +54,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -117,7 +117,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -151,7 +151,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -206,7 +206,7 @@ func TestStateUpdate(t *testing.T) {
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	// _, initTrans := url.Export(indexer.Sorter)

@@ -100,9 +100,10 @@ func (this *ConcurrentUrl) Clear() {
 }
 
 // load accounts
-func (this *ConcurrentUrl) NewAccount(tx uint32, acct string) error {
+func (this *ConcurrentUrl) NewAccount(tx uint32, acct string) ([]interfaces.Univalue, error) {
 	paths, typeids := this.Platform.GetBuiltins(acct)
 
+	transitions := []interfaces.Univalue{}
 	for i, path := range paths {
 		var v interface{}
 		switch typeids[i] {
@@ -126,16 +127,18 @@ func (this *ConcurrentUrl) NewAccount(tx uint32, acct string) error {
 		}
 
 		if !this.writeCache.IfExists(path) {
+			transitions = append(transitions, univalue.NewUnivalue(tx, path, 0, 1, 0, v, nil))
+
 			if err := this.writeCache.Write(tx, path, v); err != nil { // root path
-				return err
+				return nil, err
 			}
 
 			if !this.writeCache.IfExists(path) {
-				return this.writeCache.Write(tx, path, v) // root path
+				return transitions, this.writeCache.Write(tx, path, v) // root path
 			}
 		}
 	}
-	return nil
+	return transitions, nil
 }
 
 func (this *ConcurrentUrl) IfExists(path string) bool {
