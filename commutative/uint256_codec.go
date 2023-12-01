@@ -95,7 +95,6 @@ func (*U256) StorageDecode(buffer []byte) interface{} {
 		var v2 big.Int
 		if err = rlp.DecodeBytes(buffer, &v2); err == nil {
 			this.value.SetFromBig(&v2)
-
 		}
 	} else {
 		this.value.SetBytes(arr[0].([]byte))

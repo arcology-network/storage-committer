@@ -98,17 +98,17 @@ func TestEthTrieBasicProof(t *testing.T) {
 	store.Commit() // Calculate root hash
 
 	proofs := memorydb.New()
-	storage.LoadParallelEthMemDataStore(store.EthDB(), store.DiskDBs(), store.Root()).Trie().Prove(store.Hash(aliceKeys[0]), 0, proofs)
+	common.FilterFirst(storage.LoadDataStore(store.EthDB(), store.Root())).Trie().Prove(store.Hash(aliceKeys[0]), 0, proofs)
 	if _, err := ethmpt.VerifyProof(store.Root(), store.Hash(aliceKeys[0]), proofs); err != nil {
 		t.Error("Actual :", err)
 	}
 
-	storage.LoadParallelEthMemDataStore(store.EthDB(), store.DiskDBs(), store.Root()).Trie().Prove(store.Hash(aliceKeys[1]), 0, proofs)
+	common.FilterFirst(storage.LoadDataStore(store.EthDB(), store.Root())).Trie().Prove(store.Hash(aliceKeys[1]), 0, proofs)
 	if _, err := ethmpt.VerifyProof(store.Root(), store.Hash(aliceKeys[1]), proofs); err != nil {
 		t.Error("Actual :", err)
 	}
 
-	storage.LoadParallelEthMemDataStore(store.EthDB(), store.DiskDBs(), store.Root()).Trie().Prove(store.Hash(aliceKeys[2]), 0, proofs)
+	common.FilterFirst(storage.LoadDataStore(store.EthDB(), store.Root())).Trie().Prove(store.Hash(aliceKeys[2]), 0, proofs)
 	if _, err := ethmpt.VerifyProof(store.Root(), store.Hash(aliceKeys[2]), proofs); err != nil {
 		t.Error("Actual :", err)
 	}

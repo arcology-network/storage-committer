@@ -28,7 +28,9 @@ func (this IPCTransition) From(v interfaces.Univalue) interface{} {
 
 	typed := v.Value().(interfaces.Type)
 	typed = typed.New(
-		common.IfThen(v.Persistent() || common.IsType[*commutative.Path](v.Value()), nil, v.Value().(interfaces.Type).Value()), //,nil,
+		common.IfThen(!v.Value().(interfaces.Type).IsCommutative() || common.IsType[*commutative.Path](v.Value()),
+			nil,
+			v.Value().(interfaces.Type).Value()), // Keep Non-path commutative only
 		typed.Delta(),
 		typed.DeltaSign(),
 		typed.Min(),

@@ -1,4 +1,4 @@
-package ccdb
+package storage
 
 import (
 	"math/big"
@@ -12,6 +12,7 @@ import (
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	"github.com/arcology-network/evm/core/types"
 	ethtypes "github.com/arcology-network/evm/core/types"
+	"github.com/arcology-network/evm/crypto"
 	"github.com/arcology-network/evm/ethdb"
 	"github.com/arcology-network/evm/rlp"
 	ethmpt "github.com/arcology-network/evm/trie"
@@ -27,19 +28,21 @@ type Account struct {
 	storageTrie  *ethmpt.Trie // account storage trie
 	ethdb        *ethmpt.Database
 	diskdbShards [16]ethdb.Database
+	err          error
 }
 
 // The diskdbs need to able to handle concurrent accesses themselve
 func NewAccount(addr string, diskdbs [16]ethdb.Database, state types.StateAccount) *Account {
 	ethdb := ethmpt.NewParallelDatabase(diskdbs, nil)
 
-	trie, _ := ethmpt.NewParallel(ethmpt.TrieID(state.Root), ethdb)
+	trie, err := ethmpt.NewParallel(ethmpt.TrieID(state.Root), ethdb)
 	return &Account{
 		addr:         addr,
 		storageTrie:  trie,
 		ethdb:        ethdb,
 		diskdbShards: diskdbs,
 		StateAccount: state,
+		err:          err,
 	}
 }
 
@@ -48,13 +51,24 @@ func EmptyAccountState() types.StateAccount {
 		Nonce:    0,
 		Balance:  big.NewInt(0),
 		Root:     types.EmptyRootHash,
-		CodeHash: types.EmptyCodeHash[:],
+		CodeHash: codec.Bytes32(crypto.Keccak256Hash(nil)).Encode(),
 	}
 }
 
 func (this *Account) Trie() *ethmpt.Trie { return this.storageTrie }
 
-func (this *Account) SelectDB(key string) ethdb.Database {
+func (this *Account) GetCodeHash() [32]byte {
+	return codec.Bytes32{}.Decode(this.CodeHash).(codec.Bytes32)
+}
+
+func (this *Account) Prove(key [32]byte) ([][]byte, error) {
+	var proofs proofList
+	err := this.storageTrie.Prove(key[:], 0, &proofs)
+
+	return proofs, common.IfThen(this.err != nil, this.err, err)
+}
+
+func (this *Account) DB(key string) ethdb.Database {
 	if len(key) == 0 {
 		return this.diskdbShards[0]
 	}
@@ -98,7 +112,7 @@ func (this *Account) Retrive(key string, T any) (interface{}, error) {
 	if strings.HasSuffix(key, "/code") {
 		var err error
 		if this.code == nil {
-			if this.code, err = this.SelectDB(key).Get(this.CodeHash); err != nil {
+			if this.code, err = this.DB(key).Get(this.CodeHash); err != nil {
 				return nil, err
 			}
 		}
@@ -134,7 +148,7 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Typ
 	if pos, _ := common.FindFirstIf(keys, func(key string) bool { return strings.HasSuffix(key, "/code") }); pos >= 0 {
 		this.code = typedVals[pos].Value().(codec.Bytes)
 		this.StateAccount.CodeHash = this.Hash(this.code)
-		if this.SelectDB(keys[pos]).Put(this.CodeHash, this.code) != nil { // Save to DB directly, only for code
+		if this.DB(keys[pos]).Put(this.CodeHash, this.code) != nil { // Save to DB directly, only for code
 			panic("error")
 		}
 		common.RemoveAt(&keys, pos)

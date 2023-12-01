@@ -1,4 +1,4 @@
-package ccdb
+package storage
 
 import (
 	"github.com/arcology-network/concurrenturl/interfaces"

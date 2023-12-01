@@ -1,8 +1,8 @@
-package ccdb
+package storage
 
 import (
-	"bytes"
 	"errors"
+	"sync"
 
 	common "github.com/arcology-network/common-lib/common"
 	ccmap "github.com/arcology-network/common-lib/container/map"
@@ -29,6 +29,9 @@ type EthDataStore struct {
 	nodeBuffer *trienode.NodeSet
 	encoder    func(string, interface{}) []byte
 	decoder    func([]byte, any) interface{}
+
+	lock  sync.RWMutex
+	dbErr error
 }
 
 func NewParallelEthMemDataStore() *EthDataStore {
@@ -42,18 +45,6 @@ func NewParallelEthMemDataStore() *EthDataStore {
 		diskdbs:        diskdbs,
 		acctLookup:     ccmap.NewConcurrentMap(),
 		worldStateTrie: paraTrie,
-		encoder:        Rlp{}.Encode,
-		decoder:        Rlp{}.Decode,
-	}
-}
-
-// For readonly proof generation
-func LoadParallelEthMemDataStore(ethdb *ethmpt.Database, diskdbs [16]ethdb.Database, root [32]byte) *EthDataStore {
-	return &EthDataStore{
-		ethdb:          ethdb,
-		diskdbs:        diskdbs,
-		acctLookup:     ccmap.NewConcurrentMap(),
-		worldStateTrie: common.FilterFirst(ethmpt.New(ethmpt.TrieID(root), ethdb)),
 		encoder:        Rlp{}.Encode,
 		decoder:        Rlp{}.Decode,
 	}
@@ -93,6 +84,13 @@ func (this *EthDataStore) Hash(key string) []byte {
 	hasher.Write([]byte(key))
 	sum := hasher.Sum(nil)
 	return sum
+}
+
+func (this *EthDataStore) Prove(key [20]byte) ([][]byte, error) {
+	var proofs proofList
+	err := this.worldStateTrie.Prove(key[:], 0, &proofs)
+
+	return proofs, err
 }
 
 func (this *EthDataStore) LoadParallelTrie(root [32]byte) (*ethmpt.Trie, error) {
@@ -166,14 +164,14 @@ func (this *EthDataStore) BatchInject(keys []string, values []interface{}) error
 	return nil
 }
 
-func (this *EthDataStore) GetAccount(accountKey string, accesses *ethmpt.AccessListCache) *Account {
+func (this *EthDataStore) GetAccount(accountKey string, accesses *ethmpt.AccessListCache) (*Account, error) {
 	if len(accountKey) > 0 {
 		if v, _ := this.acctLookup.Get(accountKey); v != nil {
-			return v.(*Account)
+			return v.(*Account), nil
 		}
-		return common.FilterFirst(this.GetAccountFromTrie(accountKey, accesses))
+		return this.GetAccountFromTrie(accountKey, accesses)
 	}
-	return nil
+	return nil, errors.New("Invalid account: " + accountKey)
 }
 
 func (this *EthDataStore) GetAccountFromTrie(accountKey string, accesses *ethmpt.AccessListCache) (*Account, error) {
@@ -190,6 +188,7 @@ func (this *EthDataStore) GetAccountFromTrie(accountKey string, accesses *ethmpt
 				ethmpt.NewEmptyParallel(this.ethdb),
 				this.ethdb,
 				this.diskdbs,
+				nil,
 			}, nil
 		}
 		return nil, err
@@ -200,10 +199,11 @@ func (this *EthDataStore) GetAccountFromTrie(accountKey string, accesses *ethmpt
 func (this *EthDataStore) Retrive(key string, T any) (interface{}, error) {
 	accesses := ethmpt.AccessListCache{}
 	_, acct, _ := ccurlcommon.ParseAccountAddr(key) // Get the address
-	if account := this.GetAccount(acct, &accesses); account != nil {
+	account, err := this.GetAccount(acct, &accesses)
+	if account != nil {
 		return account.Retrive(key, T) // Get the storage from the key
 	}
-	return nil, nil
+	return nil, err
 }
 
 func (this *EthDataStore) BatchRetrive(keys []string, T []any) []interface{} {
@@ -233,7 +233,7 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 	numThd := common.IfThen(len(accountKeys) <= 1024, 8, 16)
 	common.ParallelForeach(accountKeys, numThd, func(key *string, i int) {
 		accesses := ethmpt.AccessListCache{}
-		if accounts[i] = this.GetAccount(*key, &accesses); accounts[i] == nil {
+		if accounts[i], _ = this.GetAccount(*key, &accesses); accounts[i] == nil {
 			accounts[i] = NewAccount(
 				*key,
 				this.diskdbs,
@@ -252,15 +252,8 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 
 	keys, accts := this.acctLookup.KVs()
 	encoded := common.Append(accts, func(acct interface{}) []byte { return acct.(*Account).Encode() })
-
 	this.worldStateTrie.ParallelUpdate(common.Append(keys, func(key string) []byte { return merkle.Sha256{}.Hash([]byte(key)) }), encoded)
 
-	for i := 0; i < len(keys); i++ {
-		data, _ := this.worldStateTrie.Get(merkle.Sha256{}.Hash([]byte(keys[i])))
-		if !bytes.Equal(data, encoded[i]) {
-			panic("")
-		}
-	}
 	return this.worldStateTrie.Hash()
 }
 

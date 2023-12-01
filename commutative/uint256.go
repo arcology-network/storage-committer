@@ -225,5 +225,5 @@ func (this *U256) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
 }
 
 func (this *U256) Print() {
-	fmt.Println(" Value: ", this.value, " Delta: ", this.delta)
+	fmt.Println(" Value: ", this.value, " Delta: ", this.delta, "Delta Sign: ", this.deltaPositive)
 }
