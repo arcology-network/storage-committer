@@ -6,8 +6,6 @@ go 1.21
 
 // replace github.com/arcology-network/evm => ../evm/
 
-replace github.com/arcology-network/evm => ../evm/
-
 require (
 	github.com/elliotchance/orderedmap v1.5.0
 	github.com/google/btree v1.1.2
@@ -15,10 +13,9 @@ require (
 )
 
 require (
-	github.com/arcology-network/common-lib v0.0.0-00010101000000-000000000000
-	github.com/arcology-network/evm v0.0.0-00010101000000-000000000000
+	github.com/arcology-network/common-lib v1.8.1-0.20231201064952-45124bdc685a
+	github.com/arcology-network/evm v1.9.0
 	golang.org/x/crypto v0.13.0
-// github.com/arcology-network/evm v1.8.0
 )
 
 require (
