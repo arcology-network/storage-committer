@@ -4,14 +4,13 @@ import (
 	"bytes"
 	"math/big"
 
-	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
 // type Bigint codec.Bigint
 
-type Bigint codec.Bigint //has anonymous camera
+type Bigint big.Int //has anonymous camera
 
 func NewBigint(v int64) interface{} {
 	var value big.Int
@@ -36,12 +35,15 @@ func (this *Bigint) Clone() interface{} {
 
 func (this *Bigint) IsNumeric() bool     { return true }
 func (this *Bigint) IsCommutative() bool { return false }
+func (this *Bigint) IsBounded() bool     { return false }
 
 func (this *Bigint) Value() interface{} { return (this) }
 func (this *Bigint) Delta() interface{} { return (this) }
 func (this *Bigint) DeltaSign() bool    { return true } // delta sign
 func (this *Bigint) Min() interface{}   { return nil }
 func (this *Bigint) Max() interface{}   { return nil }
+
+func (this *Bigint) CloneDelta() interface{} { return this.Clone() }
 
 func (this *Bigint) SetValue(v interface{}) { this.SetDelta(v) }
 
@@ -52,14 +54,7 @@ func (this *Bigint) SetDeltaSign(v interface{}) {}
 func (this *Bigint) SetMin(v interface{})       {}
 func (this *Bigint) SetMax(v interface{})       {}
 
-func (this *Bigint) Get() (interface{}, uint32, uint32) { return (*big.Int)(this), 1, 0 }
-
-func (this *Bigint) FromRawType(v interface{}) interface{} {
-	if common.IsType[*big.Int](v) {
-		v = (*codec.Bigint)(v.(*big.Int))
-	}
-	return v
-}
+func (this *Bigint) Get() (interface{}, uint32, uint32) { return *((*big.Int)(this)), 1, 0 }
 
 func (this *Bigint) New(_, delta, _, _, _ interface{}) interface{} {
 	return common.IfThenDo1st(delta != nil && delta.(*Bigint) != nil, func() interface{} { return delta.(*Bigint).Clone() }, interface{}(this))

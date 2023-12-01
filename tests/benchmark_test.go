@@ -1,7 +1,6 @@
 package ccurltest
 
 import (
-	"crypto/sha256"
 	"fmt"
 	"math/rand"
 	"sort"
@@ -14,30 +13,65 @@ import (
 	"github.com/arcology-network/common-lib/merkle"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
-	concurrenturlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
+	storage "github.com/arcology-network/concurrenturl/storage"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 	orderedmap "github.com/elliotchance/orderedmap"
 	"github.com/google/btree"
+	// "github.com/google/btree"
+	// ehtrlp "github.com/elliotchance/orderedmap"
 )
 
-func BenchmarkSingleAccountCommit(b *testing.B) {
-	store := cachedstorage.NewDataStore()
+func BenchmarkAccountMerkleImportPerf(b *testing.B) {
+	// lut := datacompression.NewCompressionLut()
+	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+	// fileDB, err := cachedstorage.NewFileDB(ROOT_PATH, 8, 2)
+	// if err != nil {
+	// 	b.Error(err)
+	// 	return
+	// }
+	store := chooseDataStore()
+
+	meta := commutative.NewPath()
+	store.Inject((ccurlcommon.ETH10_ACCOUNT_PREFIX), meta)
+
 	url := ccurl.NewConcurrentUrl(store)
-	alice := datacompression.RandomAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	for i := 0; i < 100000; i++ {
+		if _, err := url.NewAccount(0, fmt.Sprint(rand.Float64())); err != nil { // Preload account structure {
+			b.Error(err)
+		}
+	}
+	acct := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCAccess{})
+
+	t0 := time.Now()
+	indexer.Univalues(acct).Encode()
+	b.Log("Transition Encoding: ", len(acct), time.Since(t0))
+}
+
+func BenchmarkSingleAccountCommit(b *testing.B) {
+	// fileDB, err := cachedstorage.NewFileDB(ROOT_PATH, 8, 2)
+	// if err != nil {
+	// 	b.Error(err)
+	// 	return
+	// }
+	store := chooseDataStore()
+
+	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+	url := ccurl.NewConcurrentUrl(store)
+	alice := AliceAccount()
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
 	path := commutative.NewPath() // create a path
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path, true); err != nil {
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		b.Error(err)
 	}
 
 	for i := 0; i < 1; i++ {
-		if _, err := url.Write(0, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0"+fmt.Sprint(i), noncommutative.NewString("fmt.Sprint(i)"), true); err != nil { /* The first Element */
+		if _, err := url.Write(0, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0"+fmt.Sprint(i), noncommutative.NewString("fmt.Sprint(i)")); err != nil { /* The first Element */
 			b.Error(err)
 		}
 	}
@@ -60,32 +94,38 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 }
 
 func BenchmarkMultipleAccountCommit(b *testing.B) {
-	store := cachedstorage.NewDataStore()
+	// fileDB, err := cachedstorage.NewFileDB(ROOT_PATH, 8, 2)
+	// if err != nil {
+	// 	b.Error(err)
+	// 	return
+	// }
+	store := chooseDataStore()
+
 	url := ccurl.NewConcurrentUrl(store)
-	alice := datacompression.RandomAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	alice := AliceAccount()
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
 	path := commutative.NewPath() // create a path
-	if _, err := url.Write(0, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path, true); err != nil {
+	if _, err := url.Write(0, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		b.Error(err)
 	}
 
 	t0 := time.Now()
 	for i := 0; i < 100000; i++ {
 		acct := fmt.Sprint(rand.Int())
-		if err := url.NewAccount(ccurlcommon.SYSTEM, acct); err != nil { // NewAccount account structure {
+		if _, err := url.NewAccount(ccurlcommon.SYSTEM, acct); err != nil { // NewAccount account structure {
 			fmt.Println(err)
 		}
 
 		path := commutative.NewPath() // create a path
-		if _, err := url.Write(0, "blcc://eth1.0/account/"+acct+"/storage/ctrn-0/", path, true); err != nil {
+		if _, err := url.Write(0, "blcc://eth1.0/account/"+acct+"/storage/ctrn-0/", path); err != nil {
 			b.Error(err)
 		}
 
 		for j := 0; j < 4; j++ {
-			if _, err := url.Write(0, "blcc://eth1.0/account/"+acct+"/storage/ctrn-0/elem-0"+fmt.Sprint(j), noncommutative.NewString("fmt.Sprint(i)"), true); err != nil { /* The first Element */
+			if _, err := url.Write(0, "blcc://eth1.0/account/"+acct+"/storage/ctrn-0/elem-0"+fmt.Sprint(j), noncommutative.NewString("fmt.Sprint(i)")); err != nil { /* The first Element */
 				b.Error(err)
 			}
 		}
@@ -110,33 +150,33 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	fmt.Println("Commit:", time.Since(t0))
 
 	t0 = time.Now()
-	nilHash := merkle.Sha256(nil)
-	fmt.Println("Hash:", nilHash)
+	// nilHash := merkle.Sha256(nil)
+	// fmt.Println("Hash:", nilHash)
 	fmt.Println("merkle: ", time.Since(t0))
 }
 
 func BenchmarkUrlAddThenDelete(b *testing.B) {
-	store := cachedstorage.NewDataStore()
+	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
 	meta := commutative.NewPath()
-	url.Write(ccurlcommon.SYSTEM, ccurlcommon.ETH10_ACCOUNT_PREFIX, meta, true)
+	url.Write(ccurlcommon.SYSTEM, ccurlcommon.ETH10_ACCOUNT_PREFIX, meta)
 	trans := indexer.Univalues(common.Clone(url.Export())).To(indexer.ITCTransition{})
 
 	url.Import(trans)
 	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
-	alice := datacompression.RandomAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	alice := AliceAccount()
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
 	path := commutative.NewPath()
-	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path, true)
+	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
 
 	t0 := time.Now()
 	for i := 0; i < 50000; i++ {
-		_, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-"+fmt.Sprint(i), noncommutative.NewInt64(int64(i)), true)
+		_, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-"+fmt.Sprint(i), noncommutative.NewInt64(int64(i)))
 		if err != nil {
 			panic(err)
 		}
@@ -145,7 +185,7 @@ func BenchmarkUrlAddThenDelete(b *testing.B) {
 
 	t0 = time.Now()
 	for i := 0; i < 50000; i++ {
-		if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-"+fmt.Sprint(i), nil, true); err != nil {
+		if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-"+fmt.Sprint(i), nil); err != nil {
 			panic(err)
 		}
 	}
@@ -153,10 +193,10 @@ func BenchmarkUrlAddThenDelete(b *testing.B) {
 }
 
 func BenchmarkUrlAddThenPop(b *testing.B) {
-	store := cachedstorage.NewDataStore()
+	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
 	meta := commutative.NewPath()
-	url.Write(ccurlcommon.SYSTEM, ccurlcommon.ETH10_ACCOUNT_PREFIX, meta, true)
+	url.Write(ccurlcommon.SYSTEM, ccurlcommon.ETH10_ACCOUNT_PREFIX, meta)
 
 	trans := indexer.Univalues(common.Clone(url.Export())).To(indexer.ITCTransition{})
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans).Encode()).(indexer.Univalues))
@@ -164,18 +204,18 @@ func BenchmarkUrlAddThenPop(b *testing.B) {
 	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
-	alice := datacompression.RandomAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	alice := AliceAccount()
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
 	path := commutative.NewPath()
-	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path, true)
+	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
 
 	t0 := time.Now()
 	for i := 0; i < 50000; i++ {
 		v := noncommutative.NewBytes([]byte(fmt.Sprint(rand.Float64())))
-		_, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-"+fmt.Sprint(i), v, true)
+		_, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-"+fmt.Sprint(i), v)
 		if err != nil {
 			panic(err)
 		}
@@ -193,11 +233,11 @@ func BenchmarkUrlAddThenPop(b *testing.B) {
 
 // func BenchmarkOrderedMap(b *testing.B) {
 // 	m := orderedmap.NewOrderedMap()
-// 	alice := datacompression.RandomAccount()
+// 	alice := AliceAccount()
 // 	t0 := time.Now()
 
 // 	for i := 0; i < 100000; i++ {
-// 		m.Set("blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0"+fmt.Sprint(i), true)
+// 		m.Set("blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0"+fmt.Sprint(i))
 // 	}
 // 	fmt.Println("orderedmap Insertion:", time.Since(t0))
 
@@ -231,11 +271,11 @@ func BenchmarkUrlAddThenPop(b *testing.B) {
 
 func BenchmarkInsertAndDelete(b *testing.B) {
 	m := orderedmap.NewOrderedMap()
-	alice := datacompression.RandomAccount()
+	alice := AliceAccount()
 
 	t0 := time.Now()
 	for i := 0; i < 100000; i++ {
-		m.Set("blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0"+fmt.Sprint(i), true)
+		m.Set("blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0"+fmt.Sprint(i), 0)
 	}
 	fmt.Println("orderedmap Insertion:", time.Since(t0))
 
@@ -259,7 +299,7 @@ func BenchmarkMapInit(b *testing.B) {
 
 func BenchmarkShrinkSlice(b *testing.B) {
 	strs := make([]string, 100000)
-	alice := datacompression.RandomAccount()
+	alice := AliceAccount()
 	for i := 0; i < len(strs); i++ {
 		strs[i] = "blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-0" + fmt.Sprint(i)
 	}
@@ -272,11 +312,11 @@ func BenchmarkShrinkSlice(b *testing.B) {
 	fmt.Println("Remove random element from a Slice ", "from", 100000, "to", len(strs), "in", time.Since(t0))
 }
 
-func BenchmarkMetaIterator(b *testing.B) {
-	store := cachedstorage.NewDataStore()
+func BenchmarkEncodeTransitions(b *testing.B) {
+	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
 
-	alice := datacompression.RandomAccount()
+	alice := AliceAccount()
 	url.NewAccount(ccurlcommon.SYSTEM, alice)
 	// acctTrans := indexer.Univalues(common.Clone(url.Export())).To(indexer.ITCAccess{})
 
@@ -288,13 +328,19 @@ func BenchmarkMetaIterator(b *testing.B) {
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	path := commutative.NewPath()
-	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path, true)
+	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
 
 	t0 := time.Now()
 	for i := 0; i < 100000; i++ {
-		url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-"+fmt.Sprint(i), noncommutative.NewInt64(int64(i)), true)
+		url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-"+fmt.Sprint(i), noncommutative.NewInt64(int64(i)))
 	}
 	fmt.Println("Write "+fmt.Sprint(10000), time.Since(t0))
+
+	acctTrans = indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCAccess{})
+
+	t0 = time.Now()
+	indexer.Univalues(acctTrans).Encode()
+	fmt.Println("Encode "+fmt.Sprint(len(acctTrans)), time.Since(t0))
 
 	/* Forward Iter */
 	// t0 = time.Now()
@@ -319,49 +365,22 @@ func BenchmarkMetaIterator(b *testing.B) {
 	// }
 }
 
-func BenchmarkMapKeyLengthComparison(b *testing.B) {
-	t0 := time.Now()
-	short := make([]string, 100000)
-	long := make([]string, 100000)
-	alice := datacompression.RandomAccount()
-	for i := 0; i < 100000; i++ {
-		long[i] = "blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-" + fmt.Sprint(i)
-		short[i] = fmt.Sprint(i)
-	}
-	fmt.Println("Write "+fmt.Sprint(100000), time.Since(t0))
-
-	t0 = time.Now()
-	longMap := make(map[[32]byte]string)
-	for i := 0; i < len(long); i++ {
-		longMap[sha256.Sum256([]byte(long[i]))] = long[i]
-	}
-	fmt.Println("longMap / [32]byte key"+fmt.Sprint(100000), time.Since(t0))
-
-	t0 = time.Now()
-	shortKeyMap := make(map[string]string)
-	for i := 0; i < len(short); i++ {
-		shortKeyMap[short[i]] = long[i]
-	}
-	fmt.Println("shortMap / short key"+fmt.Sprint(100000), time.Since(t0))
-
-	t0 = time.Now()
-	longkeyshortMap := make(map[string]string)
-	for i := 0; i < len(short); i++ {
-		longkeyshortMap[short[i]] = long[i]
-	}
-	fmt.Println("shortMap / long key"+fmt.Sprint(100000), time.Since(t0))
-}
-
 func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	// lut := datacompression.NewCompressionLut()
-	store := cachedstorage.NewDataStore()
+	// fileDB, err := cachedstorage.NewFileDB(ROOT_PATH, 8, 2)
+	// if err != nil {
+	// 	b.Error(err)
+	// 	return
+	// }
+	store := chooseDataStore()
+	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	store.Inject((ccurlcommon.ETH10_ACCOUNT_PREFIX), commutative.NewPath())
 
 	t0 := time.Now()
 	url := ccurl.NewConcurrentUrl(store)
 	for i := 0; i < 10; i++ {
 		acct := datacompression.RandomAccount()
-		if err := url.NewAccount(0, acct); err != nil { // Preload account structure {
+		if _, err := url.NewAccount(0, acct); err != nil { // Preload account structure {
 			b.Error(err)
 		}
 	}
@@ -384,31 +403,6 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	// 	fmt.Println(errs)
 	// }
 	fmt.Println("Commit + Merkle "+fmt.Sprint(100000*9), time.Since(t0))
-}
-
-func BenchmarkAccountMerkleImportPerf(t *testing.B) {
-	// lut := datacompression.NewCompressionLut()
-	store := cachedstorage.NewDataStore()
-	meta := commutative.NewPath()
-	store.Inject((ccurlcommon.ETH10_ACCOUNT_PREFIX), meta)
-
-	url := ccurl.NewConcurrentUrl(store)
-	for i := 0; i < 100000; i++ {
-		if err := url.NewAccount(0, fmt.Sprint(rand.Float64())); err != nil { // Preload account structure {
-			t.Error(err)
-		}
-	}
-	acctTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCAccess{})
-
-	for n := 0; n < 10; n++ {
-		accountMerkle := indexer.NewAccountMerkle(concurrenturlcommon.NewPlatform())
-		t0 := time.Now()
-		for i := 0; i < 100; i++ {
-			accountMerkle.Import(acctTrans[i*len(acctTrans)/100 : (i+1)*len(acctTrans)/100])
-		}
-		accountMerkle.Clear()
-		t.Log("Account merkle: ", time.Since(t0))
-	}
 }
 
 // func TestOrderedMapBasic(t *testing.T) {
@@ -465,7 +459,7 @@ func BenchmarkStringSort(b *testing.B) {
 		acct := datacompression.RandomAccount()
 		for j := 9; j >= 1; j-- {
 
-			paths[i] = append(paths[i], univalue.NewUnivalue(uint32(j), acct, 0, 0, 0, noncommutative.NewString(fmt.Sprint(rand.Float64()))))
+			paths[i] = append(paths[i], univalue.NewUnivalue(uint32(j), acct, 0, 0, 0, noncommutative.NewString(fmt.Sprint(rand.Float64())), nil))
 		}
 	}
 
@@ -598,7 +592,7 @@ func (s String) Less(b btree.Item) bool {
 // }
 
 func BenchmarkTransitionImport(b *testing.B) {
-	store := cachedstorage.NewDataStore()
+	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	meta := commutative.NewPath()
 	store.Inject((ccurlcommon.ETH10_ACCOUNT_PREFIX), meta)
 
@@ -606,7 +600,7 @@ func BenchmarkTransitionImport(b *testing.B) {
 	url := ccurl.NewConcurrentUrl(store)
 	for i := 0; i < 150000; i++ {
 		acct := datacompression.RandomAccount()
-		if err := url.NewAccount(0, acct); err != nil { // Preload account structure {
+		if _, err := url.NewAccount(0, acct); err != nil { // Preload account structure {
 			b.Error(err)
 		}
 	}
@@ -617,7 +611,7 @@ func BenchmarkTransitionImport(b *testing.B) {
 
 	fmt.Println("Export "+fmt.Sprint(150000*9), time.Since(t0))
 
-	accountMerkle := indexer.NewAccountMerkle(ccurlcommon.NewPlatform())
+	accountMerkle := indexer.NewAccountMerkle(ccurlcommon.NewPlatform(), rlpEncoder, merkle.Keccak256{}.Hash)
 
 	fmt.Println("-------------")
 	t0 = time.Now()
@@ -626,38 +620,38 @@ func BenchmarkTransitionImport(b *testing.B) {
 	fmt.Println("url + accountMerkle Import "+fmt.Sprint(150000*9), time.Since(t0))
 }
 
-func BenchmarkConcurrentTransitionImport(b *testing.B) {
-	store := cachedstorage.NewDataStore()
-	meta := commutative.NewPath()
-	store.Inject((ccurlcommon.ETH10_ACCOUNT_PREFIX), meta)
+// func BenchmarkConcurrentTransitionImport(b *testing.B) {
+// 	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+// 	meta := commutative.NewPath()
+// 	store.Inject((ccurlcommon.ETH10_ACCOUNT_PREFIX), meta)
 
-	t0 := time.Now()
-	url := ccurl.NewConcurrentUrl(store)
-	for i := 0; i < 90000; i++ {
-		acct := datacompression.RandomAccount()
-		if err := url.NewAccount(0, acct); err != nil { // Preload account structure {
-			b.Error(err)
-		}
-	}
-	fmt.Println("Write "+fmt.Sprint(100000*9), time.Since(t0))
+// 	t0 := time.Now()
+// 	url := ccurl.NewConcurrentUrl(store)
+// 	for i := 0; i < 90000; i++ {
+// 		acct := datacompression.RandomAccount()
+// 		if _, err := url.NewAccount(0, acct); err != nil { // Preload account structure {
+// 			b.Error(err)
+// 		}
+// 	}
+// 	fmt.Println("Write "+fmt.Sprint(100000*9), time.Since(t0))
 
-	t0 = time.Now()
-	acctTrans := indexer.Univalues(common.Clone(url.Export())).To(indexer.ITCAccess{})
+// 	t0 = time.Now()
+// 	acctTrans := indexer.Univalues(common.Clone(url.Export())).To(indexer.ITCAccess{})
 
-	fmt.Println("Export "+fmt.Sprint(150000*9), time.Since(t0))
+// 	fmt.Println("Export "+fmt.Sprint(150000*9), time.Since(t0))
 
-	accountMerkle := indexer.NewAccountMerkle(ccurlcommon.NewPlatform())
+// 	accountMerkle := indexer.NewAccountMerkle(ccurlcommon.NewPlatform(), rlpEncoder, merkle.Keccak256{}.Hash)
 
-	t0 = time.Now()
-	common.ParallelExecute(
-		func() { url.Import(acctTrans) },
-		func() { accountMerkle.Import(acctTrans) },
-	)
-	fmt.Println("ParallelExecute Import "+fmt.Sprint(150000*9), time.Since(t0))
-}
+// 	t0 = time.Now()
+// 	common.ParallelExecute(
+// 		func() { url.Import(acctTrans) },
+// 		func() { accountMerkle.Import(acctTrans) },
+// 	)
+// 	fmt.Println("ParallelExecute Import "+fmt.Sprint(150000*9), time.Since(t0))
+// }
 
 func BenchmarkRandomAccountSort(t *testing.B) {
-	store := cachedstorage.NewDataStore()
+	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	meta := commutative.NewPath()
 	store.Inject((ccurlcommon.ETH10_ACCOUNT_PREFIX), meta)
 
@@ -665,7 +659,7 @@ func BenchmarkRandomAccountSort(t *testing.B) {
 	url := ccurl.NewConcurrentUrl(store)
 	for i := 0; i < 100000; i++ {
 		acct := datacompression.RandomAccount()
-		if err := url.NewAccount(0, acct); err != nil { // Preload account structure {
+		if _, err := url.NewAccount(0, acct); err != nil { // Preload account structure {
 			// b.Error(err)
 		}
 	}

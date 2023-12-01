@@ -13,7 +13,7 @@ type Importer struct {
 	numThreads int
 	store      interfaces.Datastore
 	byTx       map[uint32][]interfaces.Univalue
-	byPath     *ccmap.ConcurrentMap
+	deltaDict  *ccmap.ConcurrentMap
 
 	platform interfaces.Platform
 
@@ -30,10 +30,10 @@ func NewImporter(store interfaces.Datastore, platform interfaces.Platform, args 
 
 	importer.byTx = make(map[uint32][]interfaces.Univalue)
 	importer.platform = platform
-	importer.byPath = ccmap.NewConcurrentMap()
+	importer.deltaDict = ccmap.NewConcurrentMap()
 
 	importer.seqPool = mempool.NewMempool("importer-seq", func() interface{} {
-		return NewDeltaSequence()
+		return NewDeltaSequence("", nil)
 	})
 
 	importer.uniPool = mempool.NewMempool("importer-univalue", func() interface{} {
@@ -49,81 +49,46 @@ func (this *Importer) Init(store interfaces.Datastore) {
 
 func (this *Importer) SetStore(store interfaces.Datastore) { this.store = store }
 func (this *Importer) Store() interfaces.Datastore         { return this.store }
-func (this *Importer) ByPath() interface{}                 { return this.byPath }
+func (this *Importer) ByPath() interface{}                 { return this.deltaDict }
 
 func (this *Importer) NewUnivalue() *univalue.Univalue {
 	v := this.uniPool.Get().(*univalue.Univalue)
 	return v
 }
 
-func (this *Importer) RetriveShallow(key string) interface{} {
-	ret, _ := this.store.Retrive(key)
-	return ret
+func (this *Importer) IfExists(key string) bool {
+	if _, ok := this.deltaDict.Get(key); !ok {
+		return this.store.IfExists(key)
+	}
+	return false
 }
 
 func (this *Importer) Import(txTrans []interfaces.Univalue, args ...interface{}) {
-	//txTrans = common.RemoveIf(&txTrans, func(v interfaces.Univalue) bool { return v.Persistent() })
+	commitIfAbsent := common.IfThenDo1st(len(args) > 0 && args[0] != nil, func() bool { return args[0].(bool) }, true) //Write if absent from local
 
-	commitIfAbsent := true // Write if absent from the local cache, this may happen with a partial cache
-	if len(args) > 0 && args[0] != nil {
-		commitIfAbsent = args[0].(bool)
-	}
+	common.RemoveIf(&txTrans, func(univ interfaces.Univalue) bool {
+		return univ.Preexist() && this.store.IfExists(*univ.GetPath()) && !commitIfAbsent //preexists but not available locally, happen with a partial cache
+	})
 
-	nKeys := make([]string, len(txTrans))
-	for i, v := range txTrans {
-		nKeys[i] = *v.GetPath()
-	}
+	common.Foreach(txTrans, func(univ *interfaces.Univalue, _ int) { // Create new sequences all at once
+		if v, _ := this.deltaDict.Get(*(*univ).GetPath()); v == nil {
+			this.deltaDict.Set(*(*univ).GetPath(), NewDeltaSequence(*(*univ).GetPath(), this))
+		}
+	})
 
-	// Create delta sequences all at once
-	deltaSeq := this.byPath.BatchGet(nKeys) // If the entries exist in the RWCache already
-
-	inLocalCache := this.store.BatchRetrive(nKeys)
 	worker := func(start, end, index int, args ...interface{}) {
-		seqPool := this.seqPool.GetTlsMempool(index)
-		uniPool := this.uniPool.GetTlsMempool(index)
 		for i := start; i < end; i++ {
-			if deltaSeq[i] == nil { // The entry does't exist in the RWCache
-				preexist := txTrans[i].Preexist()
-				if inLocalCache[i] == nil && commitIfAbsent && preexist { //preexists, but not available locally
-					nKeys[i] = ""
-					txTrans[i] = nil
-					continue
-				}
-
-				deltaSeq[i] = seqPool.Get().(*DeltaSequence)                // create a new delta sequence from the pool
-				deltaSeq[i].(*DeltaSequence).Reset(nKeys[i], this, uniPool) // Reset the sequence in case it was used before
-
-				if preexist {
-					deltaSeq[i].(*DeltaSequence).Init(nKeys[i], this, uniPool) // Get the initial value from the cache / persistent DB
-				}
-			}
+			seq, _ := this.deltaDict.Get(*txTrans[i].GetPath())
+			this.deltaDict.Set(*txTrans[i].GetPath(), seq.(*DeltaSequence).Add(txTrans[i])) // Add to the sequence
 		}
 	}
-	common.ParallelWorker(len(nKeys), this.numThreads, worker)
-
-	this.byPath.BatchSet(nKeys, deltaSeq)                          // Create new empty sequences all at once
-	Inserter := func(start, end, index int, args ...interface{}) { // Insert the transitions to the sequences
-		for i := start; i < end; i++ {
-			if deltaSeq[i] == nil {
-				continue
-			}
-
-			deltaSeq, _ := this.byPath.Get(*txTrans[i].GetPath())
-			deltaSeq.(*DeltaSequence).Insert(txTrans[i])
-		}
-	}
-	common.ParallelWorker(len(txTrans), this.numThreads, Inserter)
+	common.ParallelWorker(len(txTrans), this.numThreads, worker)
 
 	for i := 0; i < len(txTrans); i++ { // Update the transaction ID index
-		v := txTrans[i]
-		if v == nil {
-			continue
+		if v := txTrans[i]; v != nil {
+			tran := this.byTx[v.GetTx()]
+			this.byTx[v.GetTx()] = append(common.IfThen(tran == nil, make([]interfaces.Univalue, 0, 32), tran), v)
 		}
-
-		if this.byTx[v.GetTx()] == nil {
-			this.byTx[v.GetTx()] = make([]interfaces.Univalue, 0, 32)
-		}
-		this.byTx[v.GetTx()] = append(this.byTx[v.GetTx()], v)
 	}
 }
 
@@ -133,46 +98,35 @@ func (this *Importer) WhilteList(whitelist []uint32) []error {
 		return []error{}
 	}
 
-	dict := make(map[uint32]bool)
+	whitelisted := make(map[uint32]bool)
 	for _, txID := range whitelist {
-		dict[txID] = true
+		whitelisted[txID] = true
 	}
 
-	for k, vec := range this.byTx {
-		if k == ccurlcommon.SYSTEM {
+	for txid, vec := range this.byTx {
+		if txid == ccurlcommon.SYSTEM {
 			continue
 		}
 
-		if _, ok := dict[k]; !ok {
+		if _, ok := whitelisted[txid]; !ok {
 			for _, v := range vec {
-				v.(*univalue.Univalue).SetPath(nil)
+				v.(*univalue.Univalue).SetPath(nil) // Mark its status
 			}
 		}
+		// common.Foreach(vec, func(v *interfaces.Univalue) {
+		// 	_, ok := allowDict[k]
+		// 	return !ok
+		// })
 	}
 	return []error{}
 }
 
 func (this *Importer) SortDeltaSequences() {
-	this.keyBuffer = this.byPath.Keys()
-	// var err error
-	// this.keyBuffer, err = performance.SortStrings(this.keyBuffer) // Keys should be unique
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// sort.Strings(this.keyBuffer) // For the later merkle tree calculation
-
+	this.keyBuffer = this.deltaDict.Keys()
 	sorter := func(start, end, index int, args ...interface{}) {
 		for i := start; i < end; i++ {
-			deltaSeq, _ := this.byPath.Get(this.keyBuffer[i])
-
-			// typeValue := deltaSeq.(*DeltaSequence).base
-			// if typeValue == nil {
-			// 	typeValue = deltaSeq.(*DeltaSequence).values[0]
-			// }
-
-			// if typeValue.Value().(interfaces.Type).TypeID() == commutative.Path() {
+			deltaSeq, _ := this.deltaDict.Get(this.keyBuffer[i])
 			deltaSeq.(*DeltaSequence).Sort() // Sort the transitions in the sequence
-			// }
 		}
 	}
 	common.ParallelWorker(len(this.keyBuffer), this.numThreads, sorter)
@@ -182,27 +136,29 @@ func (this *Importer) SortDeltaSequences() {
 func (this *Importer) MergeStateDelta() {
 	this.valBuffer = this.valBuffer[:0]
 	this.valBuffer = append(this.valBuffer, make([]interface{}, len(this.keyBuffer))...)
+
 	finalizer := func(start, end, index int, args ...interface{}) {
+		// for i := 0; i < len(this.keyBuffer); i++ {
 		for i := start; i < end; i++ {
-			deltaSeq, _ := this.byPath.Get(this.keyBuffer[i])
-			deltaSeq.(*DeltaSequence).Finalize()
-			if deltaSeq.(*DeltaSequence).Value() == nil { // Some sequences may have been deleted with transactions they belong to
+			deltaSeq, _ := this.deltaDict.Get(this.keyBuffer[i])
+			finalized := deltaSeq.(*DeltaSequence).Finalize()
+			this.valBuffer[i] = finalized
+
+			if finalized == nil { // Some sequences may have been deleted with transactions they belong to
 				this.keyBuffer[i] = ""
-				this.valBuffer[i] = nil
 				continue
 			}
-			this.valBuffer[i] = deltaSeq.(*DeltaSequence).Value().(interfaces.Univalue)
 		}
 	}
 	common.ParallelWorker(len(this.keyBuffer), this.numThreads, finalizer)
 
 	common.Remove(&this.keyBuffer, "")
-	common.RemoveIf(&this.valBuffer, func(v interface{}) bool { return v == nil })
+	common.RemoveIf(&this.valBuffer, func(v interface{}) bool { return v.(*univalue.Univalue) == nil })
 }
 
 func (this *Importer) KVs() ([]string, []interface{}) {
 	common.Remove(&this.keyBuffer, "")
-	common.RemoveIf(&this.valBuffer, func(v interface{}) bool { return v == nil })
+	common.RemoveIf(&this.valBuffer, func(v interface{}) bool { return v.(*univalue.Univalue) == nil })
 	return this.keyBuffer, this.valBuffer
 }
 
@@ -212,7 +168,7 @@ func (this *Importer) Clear() {
 		this.byTx[k] = v[:0]
 	}
 
-	this.byPath = ccmap.NewConcurrentMap()
+	this.deltaDict = ccmap.NewConcurrentMap()
 	this.keyBuffer = this.keyBuffer[:0]
 	this.valBuffer = this.valBuffer[:0]
 

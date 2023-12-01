@@ -1,4 +1,4 @@
-package ccdb
+package storage
 
 import (
 	"errors"
@@ -33,11 +33,11 @@ func NewReadonlyClient(addr string, path string, lut *datacompression.Compressio
 // Get from the server connected
 func (this *ReadonlyClient) Get(key string) ([]byte, error) {
 	if this.localStore != nil {
-		v, err := this.localStore.Retrive(key)
+		v, err := this.localStore.Retrive(key, nil)
 		if err != nil {
 			return []byte{}, err
 		}
-		bytes := this.localStore.Encoder()(v)
+		bytes := this.localStore.Encoder()(key, v)
 
 		return bytes, err
 	} else {

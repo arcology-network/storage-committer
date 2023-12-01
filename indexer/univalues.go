@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"sort"
 
-	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
@@ -82,7 +81,7 @@ func (this Univalues) Sort(groupIDs []uint32) Univalues {
 	// t0 := time.Now()
 	for i := 0; i < len(this); i++ {
 		str := this[i].GetPath()
-		bytes := *codec.UnsafeStringToBytes(str) // 100% faster than ([]byte(*str))
+		bytes := []byte(*str)
 
 		sortees[i] = struct {
 			groupID uint32
@@ -127,3 +126,20 @@ func (this Univalues) Sort(groupIDs []uint32) Univalues {
 	}
 	return this
 }
+
+// func (this Univalues) CompressKeys(dict *ccurlcommon.Dict) {
+// 	for i, univ := range this {
+// 		compressedKey := (*univ.GetPath())[ccurlcommon.ETH10_ACCOUNT_PREFIX_LENGTH:ccurlcommon.ETH10_ACCOUNT_FULL_LENGTH]
+// 		newKey := dict.Compress(compressedKey, nil) + (*univ.GetPath())[ccurlcommon.ETH10_ACCOUNT_FULL_LENGTH:]
+// 		this[i].SetPath(&newKey)
+// 	}
+// }
+
+// func (this Univalues) DecompressKeys(dict *ccurlcommon.Dict) {
+// 	for i := range this {
+// 		key := *this[i].GetPath()
+// 		idx := strings.Index(*this[i].GetPath(), "/")
+// 		newKey := ccurlcommon.ETH10 + dict.Decompress(key[:idx]) + key[idx:]
+// 		this[i].SetPath(&newKey)
+// 	}
+// }

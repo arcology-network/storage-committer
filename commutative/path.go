@@ -14,12 +14,19 @@ type Path struct {
 	delta *PathDelta
 }
 
-func NewPath() interface{} {
+func NewPath() interfaces.Type {
 	this := &Path{
 		value: orderedset.NewOrderedSet([]string{}),
 		delta: NewPathDelta([]string{}, []string{}),
 	}
 	return this
+}
+
+func InitNewPaths(newPaths []string) *Path {
+	return &Path{
+		value: orderedset.NewOrderedSet(newPaths),
+		delta: NewPathDelta([]string{}, []string{}),
+	}
 }
 
 func (this *Path) Length() int                                                { return this.value.Length() }
@@ -31,12 +38,15 @@ func (this *Path) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { 
 
 func (this *Path) IsNumeric() bool     { return false }
 func (this *Path) IsCommutative() bool { return true }
+func (this *Path) IsBounded() bool     { return true }
 
 func (this *Path) Value() interface{} { return this.value }
 func (this *Path) Delta() interface{} { return this.delta }
 func (this *Path) DeltaSign() bool    { return true }
 func (this *Path) Min() interface{}   { return nil }
 func (this *Path) Max() interface{}   { return nil }
+
+func (this *Path) CloneDelta() interface{} { return this.delta.Clone().(*PathDelta) }
 
 func (this *Path) IsDeltaApplied() bool       { return this.delta.IsEmpty() }
 func (this *Path) SetValue(v interface{})     { this.value = v.(*orderedset.OrderedSet) }
@@ -60,14 +70,8 @@ func (this *Path) Equal(other interface{}) bool {
 }
 
 func (this *Path) Get() (interface{}, uint32, uint32) {
-	return this.value.Keys(), 1, common.IfThen(!this.value.Touched(), uint32(0), uint32(1))
-}
-
-func (this *Path) FromRawType(value interface{}) interface{} {
-	if common.IsType[[]string](value) {
-		value = orderedset.NewOrderedSet(value.([]string))
-	}
-	return value
+	return this.value, 1, common.IfThen(!this.value.Touched(), uint32(0), uint32(1))
+	// return this.value.Keys(), 1, common.IfThen(!this.value.Touched(), uint32(0), uint32(1))
 }
 
 // For the codec only
@@ -127,7 +131,7 @@ func (this *Path) Set(value interface{}, source interface{}) (interface{}, uint3
 	if common.IsPath(targetPath) && len(targetPath) == len(myPath) { // Delete or rewrite the path
 		if value == nil { // Delete the path and all its elements
 			for _, subpath := range this.value.Keys() { // Get all the sub paths
-				writeCache.Write(tx, targetPath+subpath, nil, true) //FIXME: THIS EMITS SOME ERROR MESSAGEES BUT DON't SEEM HARMFUL
+				writeCache.Write(tx, targetPath+subpath, nil) //FIXME: THIS EMITS SOME ERROR MESSAGEES BUT DON't SEEM TO BE HARMFUL
 			}
 			return this, 0, 1, 0, nil
 		}

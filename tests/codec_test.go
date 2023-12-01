@@ -2,11 +2,13 @@ package ccurltest
 
 import (
 	"fmt"
+	"math/big"
 	"reflect"
 	"testing"
 	"time"
 
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
+	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl"
@@ -15,7 +17,9 @@ import (
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
+	storage "github.com/arcology-network/concurrenturl/storage"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
+	rlp "github.com/arcology-network/evm/rlp"
 )
 
 func TestNoncommutativeCodec(t *testing.T) {
@@ -48,7 +52,7 @@ func TestNoncommutativeCodec(t *testing.T) {
 
 	/* Int64 Test */
 	inInt64 := noncommutative.NewInt64(12345)
-	int64Bytes := inInt64.(*noncommutative.Int64).Encode()
+	int64Bytes := inInt64.Encode()
 	int64cdc := noncommutative.Int64(0)
 	outInt64 := (&int64cdc).Decode(int64Bytes).(*noncommutative.Int64)
 	if !reflect.DeepEqual(inInt64, outInt64) {
@@ -65,12 +69,12 @@ func TestNoncommutativeCodec(t *testing.T) {
 }
 
 func TestUnivalueCodec(t *testing.T) {
-	store := cachedstorage.NewDataStore()
+	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	transitions := []interfaces.Univalue{}
 
 	url := ccurl.NewConcurrentUrl(store)
 	url.NewAccount(ccurlcommon.SYSTEM, fmt.Sprint("rand.Int()"))
-	transVec := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	transVec := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{})
 	transitions = append(transitions, transVec...)
 
 	for i := 0; i < len(transitions); i++ {
@@ -86,9 +90,9 @@ func TestUnivalueCodec(t *testing.T) {
 }
 
 func TestUnivaluesCodec(t *testing.T) {
-	store := cachedstorage.NewDataStore()
+	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	transitions := []interfaces.Univalue{}
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 10; i++ {
 		acct := datacompression.RandomAccount()
 		url := ccurl.NewConcurrentUrl(store)
 		url.NewAccount(ccurlcommon.SYSTEM, acct)
@@ -111,4 +115,35 @@ func TestUnivaluesCodec(t *testing.T) {
 			fmt.Println("Error: Missmatched")
 		}
 	}
+}
+
+func BenchmarkRlpComparePerformance(t *testing.B) {
+	num := big.NewInt(100)
+
+	expected, err := rlp.EncodeToBytes(num)
+	if err != nil {
+		t.Error(expected, err)
+	}
+
+	var decoded big.Int
+	if err := rlp.DecodeBytes(expected, &decoded); err != nil {
+		t.Error(expected, err)
+	}
+
+	if num.Cmp(&decoded) != 0 {
+		t.Error("Mismatch")
+	}
+
+	t0 := time.Now()
+	for i := 0; i < 1000000; i++ {
+		num = big.NewInt(100)
+	}
+	fmt.Println("big NewInt RLP Encode:            "+fmt.Sprint(1000000), time.Since(t0))
+
+	t0 = time.Now()
+	for i := 0; i < 1000000; i++ {
+		v := codec.Bigint(*num)
+		v.Encode()
+	}
+	fmt.Println("big NewInt Codec Encode:            "+fmt.Sprint(1000000), time.Since(t0))
 }

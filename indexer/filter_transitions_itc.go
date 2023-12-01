@@ -1,7 +1,6 @@
 package indexer
 
 import (
-	codec "github.com/arcology-network/common-lib/codec"
 	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
 )
@@ -23,15 +22,16 @@ func (this ITCTransition) From(v interfaces.Univalue) interface{} {
 	}
 
 	typed := converted.Value().(interfaces.Type)
-	typedNew := typed.New(
-		nil,
-		codec.Clone(typed.Delta()),
-		typed.DeltaSign(),
-		typed.Min(),
-		typed.Max(),
-	).(interfaces.Type)
+	typed.SetDelta(typed.CloneDelta())
+	// typedNew := typed.New(
+	// 	nil,
+	// 	typed.CloneDelta(),
+	// 	typed.DeltaSign(),
+	// 	typed.Min(),
+	// 	typed.Max(),
+	// ).(interfaces.Type)
 
 	// typedNew.SetDelta(codec.Clone(typedNew.Delta()))
-	converted.SetValue(typedNew) // Reuse the univalue wrapper
+	// converted.SetValue(typed) // Reuse the univalue wrapper
 	return converted
 }

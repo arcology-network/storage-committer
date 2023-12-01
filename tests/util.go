@@ -2,8 +2,11 @@
 package ccurltest
 
 import (
+	"log"
 	"math/rand"
 	"time"
+
+	rlp "github.com/arcology-network/evm/rlp"
 )
 
 func RandomAccount() string {
@@ -34,4 +37,12 @@ func BobAccount() string {
 		b[i] = letters[2]
 	}
 	return string(b)
+}
+
+func rlpEncoder(args ...interface{}) []byte {
+	encoded, err := rlp.EncodeToBytes(args)
+	if err != nil {
+		log.Fatal("Error encoding data:", err)
+	}
+	return encoded
 }

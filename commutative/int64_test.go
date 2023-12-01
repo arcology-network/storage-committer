@@ -5,8 +5,6 @@ import (
 	"math"
 	"testing"
 	"time"
-
-	codec "github.com/arcology-network/common-lib/codec"
 )
 
 func TestNewInt64(t *testing.T) {
@@ -72,7 +70,7 @@ func TestNewInt64Limits(t *testing.T) {
 	}
 
 	v.Set(NewInt64Delta(2), nil)
-	if *v.value != 0 {
+	if v.value != 0 {
 		t.Error("Wrong value")
 	}
 
@@ -82,7 +80,7 @@ func TestNewInt64Limits(t *testing.T) {
 	}
 
 	v.Set(NewInt64Delta(-3), nil)
-	if *v.value != 0 {
+	if v.value != 0 {
 		t.Error("Wrong value")
 	}
 
@@ -153,22 +151,22 @@ func TestNewInt64MinMax(t *testing.T) {
 }
 
 func TestInt64Codec(t *testing.T) {
-	val := codec.Int64(2)
-	del := codec.Int64(10)
-	min := codec.Int64(-2)
-	max := codec.Int64(50)
+	val := int64(2)
+	del := int64(10)
+	min := int64(-2)
+	max := int64(50)
 
-	in := &Int64{&val, &del, &min, &max}
+	in := &Int64{val, del, min, max}
 	buffer := in.Encode()
 	out := (&Int64{}).Decode(buffer).(*Int64)
 	if !in.Equal(out) {
 		t.Error("Wrong value")
 	}
 
-	if *out.value != *in.value ||
-		*out.delta != *in.delta ||
-		*out.min != *in.min ||
-		*out.max != *in.max {
+	if out.value != in.value ||
+		out.delta != in.delta ||
+		out.min != in.min ||
+		out.max != in.max {
 		t.Error("Error: Wrong value ")
 	}
 
@@ -180,40 +178,40 @@ func TestInt64Codec(t *testing.T) {
 	in = (&Int64{}).New(in.Value(), in.Delta(), del >= 0, nil, nil).(*Int64)
 	buffer = in.Encode()
 	out = (&Int64{}).Decode(buffer).(*Int64)
-	if *(*out).value != 2 ||
-		*(*out).delta != 10 ||
-		*(*out).min != math.MinInt64 ||
-		*(*out).max != math.MaxInt64 {
+	if (*out).value != 2 ||
+		(*out).delta != 10 ||
+		(*out).min != math.MinInt64 ||
+		(*out).max != math.MaxInt64 {
 		t.Error("Don't match")
 	}
 
-	in = &Int64{&val, nil, nil, nil}
+	in = &Int64{val, int64(0), math.MinInt64, math.MaxInt64}
 	buffer = in.Encode()
 	out = (&Int64{}).Decode(buffer).(*Int64)
-	if *(*out).value != 2 ||
-		*(*out).delta != 0 ||
-		*(*out).min != math.MinInt64 ||
-		*(*out).max != math.MaxInt64 {
+	if (*out).value != 2 ||
+		(*out).delta != 0 ||
+		(*out).min != math.MinInt64 ||
+		(*out).max != math.MaxInt64 {
 		t.Error("Don't match")
 	}
 
-	in = &Int64{nil, nil, nil, nil}
+	in = &Int64{int64(0), int64(0), math.MinInt64, math.MaxInt64}
 	buffer = in.Encode()
 	out = (&Int64{}).Decode(buffer).(*Int64)
-	if *(*out).value != 0 ||
-		*(*out).delta != 0 ||
-		*(*out).min != math.MinInt64 ||
-		*(*out).max != math.MaxInt64 {
+	if (*out).value != 0 ||
+		(*out).delta != 0 ||
+		(*out).min != math.MinInt64 ||
+		(*out).max != math.MaxInt64 {
 		t.Error("Don't match")
 	}
 
 	in = (&Int64{}).New(in.Value(), in.Delta(), del >= 0, in.Min(), in.Max()).(*Int64)
 	buffer = in.Encode()
 	out = (&Int64{}).Decode(buffer).(*Int64)
-	if *(*out).value != 0 ||
-		*(*out).delta != 0 ||
-		*(*out).min != math.MinInt64 ||
-		*(*out).max != math.MaxInt64 {
+	if (*out).value != 0 ||
+		(*out).delta != 0 ||
+		(*out).min != math.MinInt64 ||
+		(*out).max != math.MaxInt64 {
 		t.Error("Don't match")
 	}
 

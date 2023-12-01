@@ -2,29 +2,26 @@ package concurrenturl
 
 import (
 	"errors"
-	"fmt"
 	"math"
 	"reflect"
-	"runtime"
-	"time"
 
 	"github.com/arcology-network/common-lib/common"
+	orderedset "github.com/arcology-network/common-lib/container/set"
 	performance "github.com/arcology-network/common-lib/mhasher"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 	interfaces "github.com/arcology-network/concurrenturl/interfaces"
-	"github.com/arcology-network/concurrenturl/noncommutative"
+	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	"github.com/arcology-network/concurrenturl/univalue"
 )
 
 type ConcurrentUrl struct {
 	writeCache  *indexer.WriteCache
 	importer    *indexer.Importer
-	invImporter *indexer.Importer // transitions that will take effect anyway regardless of execution failures or conflicts
+	imuImporter *indexer.Importer // transitions that will take effect anyway regardless of execution failures or conflicts
 	Platform    *ccurlcommon.Platform
-
-	// ImportFilters []func(unival interfaces.Univalue) interfaces.Univalue
 }
 
 func NewConcurrentUrl(store interfaces.Datastore) *ConcurrentUrl {
@@ -32,14 +29,14 @@ func NewConcurrentUrl(store interfaces.Datastore) *ConcurrentUrl {
 	return &ConcurrentUrl{
 		writeCache:  indexer.NewWriteCache(store, platform),
 		importer:    indexer.NewImporter(store, platform),
-		invImporter: indexer.NewImporter(store, platform),
+		imuImporter: indexer.NewImporter(store, platform),
 		Platform:    platform, //[]ccurlcommon.FilteredTransitionsInterface{&indexer.NonceFilter{}, &indexer.BalanceFilter{}},
 	}
 }
 
 func (this *ConcurrentUrl) KVs() ([]string, []interface{}) {
 	keys, values := this.importer.KVs()
-	invKeys, invVals := this.invImporter.KVs()
+	invKeys, invVals := this.imuImporter.KVs()
 
 	kvs := make(map[string]interface{}, len(keys)+len(invKeys))
 	for i, key := range keys {
@@ -66,6 +63,7 @@ func (this *ConcurrentUrl) KVs() ([]string, []interface{}) {
 
 	return sortedKeys, sortedVals
 }
+
 func (this *ConcurrentUrl) New(args ...interface{}) *ConcurrentUrl {
 	return &ConcurrentUrl{
 		writeCache: args[0].(*indexer.WriteCache),
@@ -77,18 +75,21 @@ func (this *ConcurrentUrl) WriteCache() *indexer.WriteCache { return this.writeC
 func (this *ConcurrentUrl) Importer() *indexer.Importer     { return this.importer }
 
 // Get data from the DB direcly, still under conflict protection
-func (this *ConcurrentUrl) ReadCommitted(tx uint32, key string) (interface{}, uint64) {
-	if v, Fee := this.Read(tx, key); v != nil { // For conflict detection
+func (this *ConcurrentUrl) ReadCommitted(tx uint32, key string, T any) (interface{}, uint64) {
+	if v, Fee := this.Read(tx, key, this); v != nil { // For conflict detection
 		return v, Fee
 	}
 
-	v, _ := this.WriteCache().Store().Retrive(key)
-	return v, Fee{}.Reader(univalue.NewUnivalue(tx, key, 1, 0, 0, v))
+	v, _ := this.WriteCache().Store().Retrive(key, T)
+	if v == nil {
+		return v, Fee{}.Reader(univalue.NewUnivalue(tx, key, 1, 0, 0, v, nil))
+	}
+	return v, Fee{}.Reader(univalue.NewUnivalue(tx, key, 1, 0, 0, v.(interfaces.Type), nil))
 }
 
 func (this *ConcurrentUrl) Init(store interfaces.Datastore) {
 	this.importer.Init(store)
-	this.invImporter.Init(store)
+	this.imuImporter.Init(store)
 }
 
 func (this *ConcurrentUrl) Clear() {
@@ -96,13 +97,14 @@ func (this *ConcurrentUrl) Clear() {
 
 	this.writeCache.Clear()
 	this.importer.Clear()
-	this.invImporter.Clear()
+	this.imuImporter.Clear()
 }
 
 // load accounts
-func (this *ConcurrentUrl) NewAccount(tx uint32, acct string) error {
+func (this *ConcurrentUrl) NewAccount(tx uint32, acct string) ([]interfaces.Univalue, error) {
 	paths, typeids := this.Platform.GetBuiltins(acct)
 
+	transitions := []interfaces.Univalue{}
 	for i, path := range paths {
 		var v interface{}
 		switch typeids[i] {
@@ -113,42 +115,44 @@ func (this *ConcurrentUrl) NewAccount(tx uint32, acct string) error {
 			v = noncommutative.NewString("")
 
 		case uint8(reflect.Kind(commutative.UINT256)): // delta big int
-			v = commutative.NewU256(commutative.U256_MIN, commutative.U256_MAX)
+			v = commutative.NewUnboundedU256()
 
 		case uint8(reflect.Kind(commutative.UINT64)):
-			v = commutative.NewUint64(0, math.MaxUint64)
+			v = commutative.NewUnboundedUint64()
 
 		case uint8(reflect.Kind(noncommutative.INT64)):
-			v = noncommutative.NewInt64(0)
+			v = new(noncommutative.Int64)
 
 		case uint8(reflect.Kind(noncommutative.BYTES)):
 			v = noncommutative.NewBytes([]byte{})
 		}
 
 		if !this.writeCache.IfExists(path) {
-			if err := this.writeCache.Write(tx, path, v, true); err != nil { // root path
-				return err
+			transitions = append(transitions, univalue.NewUnivalue(tx, path, 0, 1, 0, v, nil))
+
+			if err := this.writeCache.Write(tx, path, v); err != nil { // root path
+				return nil, err
 			}
 
 			if !this.writeCache.IfExists(path) {
-				return this.writeCache.Write(tx, path, v, true) // root path
+				return transitions, this.writeCache.Write(tx, path, v) // root path
 			}
 		}
 	}
-	return nil
+	return transitions, nil
 }
 
 func (this *ConcurrentUrl) IfExists(path string) bool {
 	return this.writeCache.IfExists(path)
 }
 
-func (this *ConcurrentUrl) IndexOf(tx uint32, path string, key interface{}) (uint64, uint64) {
+func (this *ConcurrentUrl) IndexOf(tx uint32, path string, key interface{}, T any) (uint64, uint64) {
 	if !common.IsPath(path) {
 		return math.MaxUint64, READ_NONEXIST //, errors.New("Error: Not a path!!!")
 	}
 
 	getter := func(v interface{}) (uint32, uint32, uint32, interface{}) { return 1, 0, 0, v }
-	if v, err := this.Do(tx, path, getter); err == nil {
+	if v, err := this.Do(tx, path, getter, T); err == nil {
 		pathInfo := v.(interfaces.Univalue).Value()
 		if common.IsType[*commutative.Path](pathInfo) && common.IsType[string](key) {
 			return pathInfo.(*commutative.Path).View().IdxOf(key.(string)), 0
@@ -157,13 +161,13 @@ func (this *ConcurrentUrl) IndexOf(tx uint32, path string, key interface{}) (uin
 	return math.MaxUint64, READ_NONEXIST
 }
 
-func (this *ConcurrentUrl) KeyAt(tx uint32, path string, index interface{}) (string, uint64) {
+func (this *ConcurrentUrl) KeyAt(tx uint32, path string, index interface{}, T any) (string, uint64) {
 	if !common.IsPath(path) {
 		return "", READ_NONEXIST //, errors.New("Error: Not a path!!!")
 	}
 
 	getter := func(v interface{}) (uint32, uint32, uint32, interface{}) { return 1, 0, 0, v }
-	if v, err := this.Do(tx, path, getter); err == nil {
+	if v, err := this.Do(tx, path, getter, T); err == nil {
 		pathInfo := v.(interfaces.Univalue).Value()
 		if common.IsType[*commutative.Path](pathInfo) && common.IsType[uint64](index) {
 			return pathInfo.(*commutative.Path).View().KeyAt(index.(uint64)), 0
@@ -172,51 +176,57 @@ func (this *ConcurrentUrl) KeyAt(tx uint32, path string, index interface{}) (str
 	return "", READ_NONEXIST
 }
 
-func (this *ConcurrentUrl) Peek(path string) (interface{}, uint64) {
-	typedv, univ := this.writeCache.Peek(path)
-	return typedv, Fee{}.Reader(univ.(interfaces.Univalue))
+func (this *ConcurrentUrl) Peek(path string, T any) (interface{}, uint64) {
+	typedv, univ := this.writeCache.Peek(path, T)
+	var v interface{}
+	if typedv != nil {
+		v, _, _ = typedv.(interfaces.Type).Get()
+	}
+	return v, Fee{}.Reader(univ.(interfaces.Univalue))
 }
 
-func (this *ConcurrentUrl) PeekCommitted(path string) (interface{}, uint64) {
-	v := this.writeCache.RetriveShallow(path)
+func (this *ConcurrentUrl) PeekCommitted(path string, T any) (interface{}, uint64) {
+	v, _ := this.writeCache.Store().Retrive(path, T)
 	return v, READ_COMMITTED_FROM_DB
 }
 
-func (this *ConcurrentUrl) Read(tx uint32, path string) (interface{}, uint64) {
-	typedv, univ := this.writeCache.Read(tx, path)
+func (this *ConcurrentUrl) Read(tx uint32, path string, T any) (interface{}, uint64) {
+	typedv, univ := this.writeCache.Read(tx, path, T)
+	// fmt.Println("Read: ", path, "|", typedv)
 	return typedv, Fee{}.Reader(univ.(interfaces.Univalue))
 }
 
-func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}, persistent bool) (int64, error) {
-	fee := Fee{}.Writer(path, value, this.writeCache)
+func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}) (int64, error) {
+	// fmt.Println("Write: ", path, "|", value)
+	fee := int64(0) //Fee{}.Writer(path, value, this.writeCache)
 	if value == nil || (value != nil && value.(interfaces.Type).TypeID() != uint8(reflect.Invalid)) {
-		return fee, this.writeCache.Write(tx, path, value, persistent)
+		return fee, this.writeCache.Write(tx, path, value)
 	}
 
 	return fee, errors.New("Error: Unknown data type !")
 }
 
-func (this *ConcurrentUrl) Do(tx uint32, path string, doer interface{}) (interface{}, error) {
-	return this.writeCache.Do(tx, path, doer), nil
+func (this *ConcurrentUrl) Do(tx uint32, path string, doer interface{}, T any) (interface{}, error) {
+	return this.writeCache.Do(tx, path, doer, T), nil
 }
 
 // Read th Nth element under a path
-func (this *ConcurrentUrl) at(tx uint32, path string, idx uint64) (interface{}, uint64, error) {
+func (this *ConcurrentUrl) getKeyByIdx(tx uint32, path string, idx uint64) (interface{}, uint64, error) {
 	if !common.IsPath(path) {
 		return nil, READ_NONEXIST, errors.New("Error: Not a path!!!")
 	}
 
-	meta, readFee := this.Read(tx, path) // read the container meta
+	meta, readFee := this.Read(tx, path, new(commutative.Path)) // read the container meta
 	return common.IfThen(meta == nil,
 		meta,
-		common.IfThenDo1st(idx < uint64(len(meta.([]string))), func() interface{} { return path + meta.([]string)[idx] }, nil),
+		common.IfThenDo1st(idx < uint64(len(meta.(*orderedset.OrderedSet).Keys())), func() interface{} { return path + meta.(*orderedset.OrderedSet).Keys()[idx] }, nil),
 	), readFee, nil
 }
 
 // Read th Nth element under a path
-func (this *ConcurrentUrl) ReadAt(tx uint32, path string, idx uint64) (interface{}, uint64, error) {
-	if key, Fee, err := this.at(tx, path, idx); err == nil && key != nil {
-		v, Fee := this.Read(tx, key.(string))
+func (this *ConcurrentUrl) ReadAt(tx uint32, path string, idx uint64, T any) (interface{}, uint64, error) {
+	if key, Fee, err := this.getKeyByIdx(tx, path, idx); err == nil && key != nil {
+		v, Fee := this.Read(tx, key.(string), T)
 		return v, Fee, nil
 	} else {
 		return key, Fee, err
@@ -224,9 +234,9 @@ func (this *ConcurrentUrl) ReadAt(tx uint32, path string, idx uint64) (interface
 }
 
 // Read th Nth element under a path
-func (this *ConcurrentUrl) DoAt(tx uint32, path string, idx uint64, do interface{}) (interface{}, uint64, error) {
-	if key, Fee, err := this.at(tx, path, idx); err == nil && key != nil {
-		v, err := this.Do(tx, key.(string), do)
+func (this *ConcurrentUrl) DoAt(tx uint32, path string, idx uint64, do interface{}, T any) (interface{}, uint64, error) {
+	if key, Fee, err := this.getKeyByIdx(tx, path, idx); err == nil && key != nil {
+		v, err := this.Do(tx, key.(string), do, T)
 		return v, Fee, err
 	} else {
 		return key, Fee, err
@@ -234,35 +244,38 @@ func (this *ConcurrentUrl) DoAt(tx uint32, path string, idx uint64, do interface
 }
 
 // Read th Nth element under a path
-func (this *ConcurrentUrl) PopBack(tx uint32, path string, persistent bool) (interface{}, int64, error) {
+func (this *ConcurrentUrl) PopBack(tx uint32, path string, T any) (interface{}, int64, error) {
 	if !common.IsPath(path) {
 		return nil, int64(READ_NONEXIST), errors.New("Error: Not a path!!!")
 	}
+	pathDecoder := T
 
-	subkeys, Fee := this.Read(tx, path) // read the container meta
-	if subkeys == nil || len(subkeys.([]string)) == 0 {
+	meta, Fee := this.Read(tx, path, pathDecoder) // read the container meta
+
+	subkeys := meta.(*orderedset.OrderedSet).Keys()
+	if subkeys == nil || len(subkeys) == 0 {
 		return nil, int64(Fee), errors.New("Error: The path is either empty or doesn't exist")
 	}
 
-	key := path + subkeys.([]string)[len(subkeys.([]string))-1]
+	key := path + subkeys[len(subkeys)-1]
 
-	value, Fee := this.Read(tx, key)
+	value, Fee := this.Read(tx, key, pathDecoder)
 	if value == nil {
 		return nil, int64(Fee), errors.New("Error: Empty container!")
 	}
 
-	writeFee, err := this.Write(tx, key, nil, persistent)
+	writeFee, err := this.Write(tx, key, nil)
 	return value, writeFee, err
 }
 
 // Read th Nth element under a path
-func (this *ConcurrentUrl) WriteAt(tx uint32, path string, idx uint64, value interface{}, persistent bool) (int64, error) {
+func (this *ConcurrentUrl) WriteAt(tx uint32, path string, idx uint64, T any) (int64, error) {
 	if !common.IsPath(path) {
 		return int64(READ_NONEXIST), errors.New("Error: Not a path!!!")
 	}
 
-	if key, Fee, err := this.at(tx, path, idx); err == nil {
-		return this.Write(tx, key.(string), value, persistent)
+	if key, Fee, err := this.getKeyByIdx(tx, path, idx); err == nil {
+		return this.Write(tx, key.(string), T)
 	} else {
 		return int64(Fee), err
 	}
@@ -272,15 +285,15 @@ func (this *ConcurrentUrl) Import(transitions []interfaces.Univalue, args ...int
 	invTransitions := make([]interfaces.Univalue, 0, len(transitions))
 
 	for i := 0; i < len(transitions); i++ {
-		if transitions[i].Persistent() {
+		if transitions[i].Persistent() { // Peristent transitions are immune to conflict detection
 			invTransitions = append(invTransitions, transitions[i]) //
-			transitions[i] = nil
+			transitions[i] = nil                                    // mark the peristent transitions
 		}
 	}
-	common.Remove(&transitions, nil)
+	common.Remove(&transitions, nil) // Remove the Peristent transitions from the transition lists
 
 	common.ParallelExecute(
-		func() { this.invImporter.Import(invTransitions, args...) },
+		func() { this.imuImporter.Import(invTransitions, args...) },
 		func() { this.importer.Import(transitions, args...) })
 	return this
 }
@@ -300,7 +313,7 @@ func (this *ConcurrentUrl) Import(transitions []interfaces.Univalue, args ...int
 // Call this as s
 func (this *ConcurrentUrl) Sort() *ConcurrentUrl {
 	common.ParallelExecute(
-		func() { this.invImporter.SortDeltaSequences() },
+		func() { this.imuImporter.SortDeltaSequences() },
 		func() { this.importer.SortDeltaSequences() })
 
 	return this
@@ -311,8 +324,12 @@ func (this *ConcurrentUrl) Finalize(txs []uint32) *ConcurrentUrl {
 		return this
 	}
 
+	// this.imuImporter.MergeStateDelta()
+	// this.importer.WhilteList(txs)
+	// this.importer.MergeStateDelta()
+
 	common.ParallelExecute(
-		func() { this.invImporter.MergeStateDelta() },
+		func() { this.imuImporter.MergeStateDelta() },
 		func() {
 			this.importer.WhilteList(txs)   // Remove all the transitions generated by the conflicting transactions
 			this.importer.MergeStateDelta() // Finalize states
@@ -321,14 +338,12 @@ func (this *ConcurrentUrl) Finalize(txs []uint32) *ConcurrentUrl {
 	return this
 }
 
-func (this *ConcurrentUrl) WriteToDbBuffer() {
+func (this *ConcurrentUrl) WriteToDbBuffer() [32]byte {
 	keys, values := this.importer.KVs()
-	invKeys, invVals := this.invImporter.KVs()
+	invKeys, invVals := this.imuImporter.KVs()
 
-	keys = append(keys, invKeys...)
-	values = append(values, invVals...)
-
-	this.importer.Store().Precommit(keys, values) // save the transitions to the DB buffer
+	keys, values = append(keys, invKeys...), append(values, invVals...)
+	return this.importer.Store().Precommit(keys, values) // save the transitions to the DB buffer
 }
 
 func (this *ConcurrentUrl) SaveToDB() {
@@ -343,52 +358,9 @@ func (this *ConcurrentUrl) Commit(txs []uint32) *ConcurrentUrl {
 		return this
 	}
 	this.Finalize(txs)
-	this.WriteToDbBuffer()
+	this.WriteToDbBuffer() // Export transitions and save them to the DB buffer.
 	this.SaveToDB()
 	return this
-}
-
-func (this *ConcurrentUrl) AllInOneCommit(transitions []interfaces.Univalue, txs []uint32) []error {
-	t0 := time.Now()
-
-	accountMerkle := indexer.NewAccountMerkle(this.Platform)
-	common.ParallelExecute(
-		func() { this.importer.Import(transitions) },
-		func() { accountMerkle.Import(transitions) })
-
-	fmt.Println("indexer.Import + accountMerkle Import :--------------------------------", time.Since(t0))
-
-	t0 = time.Now()
-	this.Sort()
-	fmt.Println("indexer.Commit :--------------------------------", time.Since(t0))
-
-	t0 = time.Now()
-	runtime.GC()
-	fmt.Println("GC 0:--------------------------------", time.Since(t0))
-
-	t0 = time.Now()
-	this.Finalize(txs)
-	fmt.Println("Precommit :--------------------------------", time.Since(t0))
-
-	// Build the merkle tree
-	t0 = time.Now()
-	k, v := this.importer.KVs()
-	encoded := make([][]byte, 0, len(v))
-	for _, value := range v {
-		encoded = append(encoded, value.(interfaces.Univalue).GetEncoded())
-	}
-	accountMerkle.Build(k, encoded)
-	fmt.Println("ComputeMerkle:", time.Since(t0))
-
-	t0 = time.Now()
-	this.WriteToDbBuffer()
-	fmt.Println("Postcommit :--------------------------------", time.Since(t0))
-
-	t0 = time.Now()
-	this.SaveToDB()
-	fmt.Println("SaveToDB :--------------------------------", time.Since(t0))
-
-	return []error{}
 }
 
 func (this *ConcurrentUrl) Export(preprocessors ...func([]interfaces.Univalue) []interfaces.Univalue) []interfaces.Univalue {

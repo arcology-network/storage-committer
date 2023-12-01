@@ -1,6 +1,8 @@
 package common
 
 import (
+	"strings"
+
 	common "github.com/arcology-network/common-lib/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
@@ -13,14 +15,14 @@ type Platform struct {
 func NewPlatform() *Platform {
 	return &Platform{
 		map[string]uint8{
-			"/":                      commutative.PATH,
-			"/code":                  noncommutative.BYTES,
-			"/nonce":                 commutative.UINT64,
-			"/balance":               commutative.UINT256,
-			"/storage/":              commutative.PATH,
-			"/storage/container/":    commutative.PATH,
-			"/storage/native/":       commutative.PATH,
-			"/storage/native/local/": commutative.PATH,
+			"/":                   commutative.PATH,
+			"/code":               noncommutative.BYTES,
+			"/nonce":              commutative.UINT64,
+			"/balance":            commutative.UINT256,
+			"/storage/":           commutative.PATH,
+			"/storage/container/": commutative.PATH,
+			"/storage/native/":    commutative.PATH,
+			// "/storage/native/local/": commutative.PATH,
 		},
 	}
 }
@@ -71,4 +73,31 @@ func (this *Platform) GetSysPaths() []string {
 func (this *Platform) Builtins(acct string, idx int) string {
 	paths, _ := common.MapKVs(this.syspaths)
 	return ETH10_ACCOUNT_PREFIX + acct + paths[idx]
+}
+
+func ParseAccountAddr(acct string) (string, string, string) {
+	if len(acct) < ETH10_ACCOUNT_PREFIX_LENGTH+ETH10_ACCOUNT_LENGTH {
+		return acct, "", ""
+	}
+	return acct[:ETH10_ACCOUNT_PREFIX_LENGTH],
+		acct[ETH10_ACCOUNT_PREFIX_LENGTH : ETH10_ACCOUNT_PREFIX_LENGTH+ETH10_ACCOUNT_LENGTH],
+		acct[ETH10_ACCOUNT_PREFIX_LENGTH+ETH10_ACCOUNT_LENGTH:]
+}
+
+func UnderNative(key string) string {
+	if len(key) >= ETH10_ACCOUNT_PREFIX_LENGTH+ETH10_ACCOUNT_LENGTH {
+		subKey := key[ETH10_ACCOUNT_PREFIX_LENGTH+ETH10_ACCOUNT_LENGTH:]
+		if strings.HasPrefix(subKey, "/storage/native/") {
+			return key[len(subKey)+len("/storage/native/"):]
+		}
+	}
+	return ""
+}
+
+func UnderContainer(key string) string {
+	subKey := key[ETH10_ACCOUNT_PREFIX_LENGTH+ETH10_ACCOUNT_LENGTH:]
+	if strings.HasPrefix(subKey, "/storage/container/") {
+		return key[len(subKey)+len("/storage/container/"):]
+	}
+	return ""
 }

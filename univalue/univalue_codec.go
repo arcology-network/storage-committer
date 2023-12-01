@@ -59,7 +59,7 @@ func (this *Univalue) Decode(buffer []byte) interface{} {
 
 	return &Univalue{
 		*unimeta,
-		(&storage.Codec{unimeta.vType}).Decode(fields[1]),
+		(&storage.Codec{unimeta.vType}).Decode(fields[1], this.value),
 		fields[1], // Keep copy, should expire as soon as the value is updated
 	}
 }

@@ -3,7 +3,6 @@ package concurrenturl
 import (
 	common "github.com/arcology-network/common-lib/common"
 	interfaces "github.com/arcology-network/concurrenturl/interfaces"
-	// ethparams "github.com/arcology-network/evm/params"
 )
 
 const (
@@ -28,8 +27,13 @@ func (Fee) Reader(v interface{}) uint64 { // Call this before setting the value 
 }
 
 func (Fee) Writer(key string, v interface{}, writecache interfaces.WriteCache) int64 { // May get refunds sometimes
-	committedv := writecache.RetriveShallow(key)
-	committedSize := common.IfThenDo1st(committedv != nil, func() uint64 { return uint64(committedv.(interfaces.Type).MemSize()) }, 0)
+	committedSize := uint64(0)
+	committedv, _ := writecache.Store().Retrive(key, v)
+	if data, ok := committedv.([]byte); ok {
+		committedSize = uint64(len(data))
+	} else {
+		committedSize = common.IfThenDo1st(committedv != nil, func() uint64 { return uint64(committedv.(interfaces.Type).MemSize()) }, 0)
+	}
 
 	dataSize := common.IfThenDo1st(v != nil, func() uint64 { return uint64(v.(interfaces.Type).Size()) }, 0)
 	return common.IfThen(

@@ -4,7 +4,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/arcology-network/common-lib/mempool"
+	common "github.com/arcology-network/common-lib/common"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
@@ -13,46 +13,34 @@ import (
 type DeltaSequence struct {
 	key         string
 	transitions []interfaces.Univalue
-	base        interfaces.Univalue
 	lock        sync.RWMutex
+	rawBytes    interface{}
 }
 
-func NewDeltaSequence() *DeltaSequence {
+func NewDeltaSequence(key string, indexer *Importer) *DeltaSequence {
 	return &DeltaSequence{
+		key:         key,
 		transitions: make([]interfaces.Univalue, 0, 16),
+		rawBytes:    common.FilterFirst(indexer.store.Retrive(key, nil)),
+		// initial: (&univalue.Univalue{}).Init(ccurlcommon.SYSTEM, key, 0, 0, 0, encoded, indexer.Store()),
 	}
 }
 
-func (this *DeltaSequence) Reset(key string, indexer *Importer, mempool *mempool.Mempool) {
+func (this *DeltaSequence) Reset(key string) *DeltaSequence {
 	this.key = key
 	this.transitions = this.transitions[:0]
-	this.base = nil
+	return this
 }
 
-func (this *DeltaSequence) Init(key string, indexer *Importer, mempool *mempool.Mempool) {
-	if initialState := indexer.RetriveShallow(key); initialState != nil {
-		nVal := mempool.Get().(*univalue.Univalue)
-		nVal.Init(ccurlcommon.SYSTEM, key, 0, 0, 0, initialState.(interfaces.Type).Clone(), indexer)
-		this.transitions = append(this.transitions, nVal) //Transitions are ordered by Tx, -1 will guarantee the initial state is always the first one
-	}
-}
-
-func (this *DeltaSequence) Value() interface{} {
-	return this.base
-}
-
-func (this *DeltaSequence) Insert(v interfaces.Univalue) {
+func (this *DeltaSequence) Add(v interfaces.Univalue) *DeltaSequence {
 	this.lock.Lock()
+	defer this.lock.Unlock()
 	this.transitions = append(this.transitions, v.(*univalue.Univalue))
-	this.lock.Unlock()
+	return this
 }
 
 func (this *DeltaSequence) Sort() {
 	if len(this.transitions) <= 1 {
-		return
-	}
-
-	if len(this.transitions) == 2 && this.transitions[0].GetTx() == ccurlcommon.SYSTEM {
 		return
 	}
 
@@ -69,27 +57,48 @@ func (this *DeltaSequence) Sort() {
 	})
 }
 
-func (this *DeltaSequence) Finalize() {
-	if len(this.transitions) == 0 {
-		return
-	}
+func (this *DeltaSequence) Finalize() *univalue.Univalue {
+	common.RemoveIf(&this.transitions, func(v interfaces.Univalue) bool {
+		return v.GetPath() == nil
+	})
 
-	i := 0
-	for ; i < len(this.transitions); i++ { // Find th first non nil value, where transitions will be applied on
-		if this.transitions[i].GetPath() != nil {
-			this.base = this.transitions[i]
-			break
+	if len(this.transitions) == 0 {
+		return nil
+	}
+	finalized := this.transitions[0].(*univalue.Univalue)
+
+	if (this.rawBytes != nil) && (finalized.Value() != nil) { // Value update not an assignment or deletion
+		if encoded, ok := this.rawBytes.([]byte); ok {
+			v := finalized.Value().(interfaces.Type).StorageDecode(encoded).(interfaces.Type).Value()
+			finalized.Value().(interfaces.Type).SetValue(v)
 		}
 	}
 
-	if this.base == nil {
-		return
-	}
-
-	if err := this.base.ApplyDelta(this.transitions[i+1:]); err != nil {
+	if err := finalized.ApplyDelta(this.transitions[1:]); err != nil {
 		panic(err)
 	}
+	return finalized
 }
+
+// func (this *DeltaSequence) Finalize() *univalue.Univalue {
+// 	if len(this.transitions) == 0 {
+// 		return nil
+// 	}
+// 	finalized := this.transitions[0].(*univalue.Univalue)
+
+// 	if (this.rawBytes != nil) && (finalized.Value() != nil) { // Value update not an assignment or deletion
+// 		var v interface{}
+// 		if encoded, ok := this.rawBytes.([]byte); ok {
+// 			v = finalized.Value().(interfaces.Type).StorageDecode(encoded).(interfaces.Type).Value()
+// 			finalized.Value().(interfaces.Type).SetValue(v)
+// 		}
+// 	}
+
+// 	if err := finalized.ApplyDelta(this.transitions[1:]); err != nil {
+// 		panic(err)
+// 	}
+// 	return finalized
+// }
 
 func (this *DeltaSequence) Reclaim() {
 	for i := range this.transitions {

@@ -3,14 +3,13 @@ package noncommutative
 import (
 	"strings"
 
-	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
-type String codec.String
+type String string
 
-func NewString(v string) interface{} {
+func NewString(v string) interfaces.Type {
 	var this String = String(v)
 	return &this
 }
@@ -24,6 +23,7 @@ func (this *String) Get() (interface{}, uint32, uint32)                         
 
 func (this *String) IsNumeric() bool     { return false }
 func (this *String) IsCommutative() bool { return false }
+func (this *String) IsBounded() bool     { return false }
 
 func (this *String) Value() interface{} { return this }
 func (this *String) Delta() interface{} { return this }
@@ -31,7 +31,8 @@ func (this *String) DeltaSign() bool    { return true } // delta sign
 func (this *String) Min() interface{}   { return nil }
 func (this *String) Max() interface{}   { return nil }
 
-func (this *String) SetValue(v interface{}) { this.SetDelta(v) }
+func (this *String) CloneDelta() interface{} { return this.Clone() }
+func (this *String) SetValue(v interface{})  { this.SetDelta(v) }
 
 func (this *String) IsDeltaApplied() bool       { return true }
 func (this *String) ResetDelta()                { this.SetDelta(common.New[String]("")) }
@@ -39,13 +40,6 @@ func (this *String) SetDelta(v interface{})     { *this = (*v.(*String)) }
 func (this *String) SetDeltaSign(v interface{}) {}
 func (this *String) SetMin(v interface{})       {}
 func (this *String) SetMax(v interface{})       {}
-
-func (this *String) FromRawType(v interface{}) interface{} {
-	if common.IsType[string](v) {
-		v = common.New[codec.String]((codec.String)(v.(string)))
-	}
-	return v
-}
 
 func (this *String) New(_, delta, _, _, _ interface{}) interface{} {
 	return common.IfThenDo1st(delta != nil && delta.(*String) != nil, func() interface{} { return delta.(*String).Clone() }, interface{}(this))

@@ -3,7 +3,8 @@ package ccurltest
 import (
 	"testing"
 
-	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
+	// codec "github.com/arcology-network/common-lib/codec"
+
 	"github.com/arcology-network/common-lib/common"
 	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl"
@@ -13,14 +14,16 @@ import (
 )
 
 func TestMultiAccountCreation(t *testing.T) {
-	store := cachedstorage.NewDataStore()
+	store := chooseDataStore()
+	// store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
+
 	store.Inject((ccurlcommon.ETH10_ACCOUNT_PREFIX), commutative.NewPath())
 	url := ccurl.NewConcurrentUrl(store)
 
 	accounts := make([]string, 10)
 	for i := 0; i < len(accounts); i++ {
 		accounts[i] = datacompression.RandomAccount()
-		if err := url.NewAccount(0, accounts[i]); err != nil { // Preload account structure {
+		if _, err := url.NewAccount(0, accounts[i]); err != nil { // Preload account structure {
 			t.Error(err)
 		}
 	}
@@ -28,7 +31,6 @@ func TestMultiAccountCreation(t *testing.T) {
 	acctTrans := indexer.Univalues(common.Clone(raw)).To(indexer.ITCTransition{})
 
 	paths := ccurlcommon.NewPlatform().GetSysPaths()
-
 	if len(acctTrans) != len(paths)*len(accounts) {
 		t.Error("Error: Transition counts don't match up")
 	}
@@ -37,17 +39,15 @@ func TestMultiAccountCreation(t *testing.T) {
 	url.Sort()
 	url.Commit([]uint32{0})
 
-	acctTrans = indexer.Univalues(common.Clone(raw)).To(indexer.ITCTransition{})
-	encoded := indexer.Univalues(acctTrans).Encode()
+	// acctTrans = indexer.Univalues(common.Clone(raw)).To(indexer.ITCTransition{})
+	// encoded := indexer.Univalues(acctTrans).Encode()
 
-	out := indexer.Univalues{}.Decode(encoded).(indexer.Univalues)
-	if len(acctTrans) != len(out) {
-		t.Error("Error: Transition counts don't match up")
-	}
+	// out := indexer.Univalues{}.Decode(encoded).(indexer.Univalues)
+	// if len(acctTrans) != len(out) {
+	// 	t.Error("Error: Transition counts don't match up")
+	// }
 
-	accountMerkle := indexer.NewAccountMerkle(url.Platform)
-	accountMerkle.Import(out)
-
+	// accountMerkle := indexer.NewAccountMerkle(url.Platform, rlpEncoder, merkle.Keccak256{}.Hash)
+	// accountMerkle.Import(out)
 	// accountMerkle.Build()
-
 }

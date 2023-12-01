@@ -1,7 +1,6 @@
 package univalue
 
 import (
-	"crypto/sha256"
 	"errors"
 	"fmt"
 	"reflect"
@@ -18,18 +17,18 @@ type Univalue struct {
 
 // func NewUnivalue
 
-func NewUnivalue(tx uint32, key string, reads, writes uint32, deltaWrites uint32, args ...interface{}) *Univalue {
+func NewUnivalue(tx uint32, key string, reads, writes uint32, deltaWrites uint32, v interface{}, source interface{}) *Univalue {
 	return &Univalue{
 		Unimeta{
-			vType:       common.IfThenDo1st(len(args) > 0 && args[0] != nil, func() uint8 { return args[0].(interfaces.Type).TypeID() }, uint8(reflect.Invalid)),
+			vType:       common.IfThenDo1st(v != nil, func() uint8 { return v.(interfaces.Type).TypeID() }, uint8(reflect.Invalid)),
 			tx:          tx,
 			path:        &key,
 			reads:       reads,
 			writes:      writes,
 			deltaWrites: deltaWrites,
-			preexists:   common.IfThenDo1st(len(args) > 1, func() bool { return (&Unimeta{}).CheckPreexist(key, args[1]) }, false),
+			preexists:   common.IfThenDo1st(source != nil, func() bool { return (&Unimeta{}).CheckPreexist(key, source) }, false),
 		},
-		args[0],
+		v,
 		[]byte{},
 	}
 }
@@ -50,17 +49,18 @@ func (this *Univalue) From(v interfaces.Univalue) interface{} { return v }
 func (this *Univalue) SetTx(txId uint32)  { this.tx = txId }
 func (this *Univalue) ClearCache()        { this.cache = this.cache[:0] }
 func (this *Univalue) Value() interface{} { return this.value }
-func (this *Univalue) SetValue(newValue interface{}) {
-	if reflect.TypeOf(this.value) != reflect.TypeOf(newValue) {
+func (this *Univalue) SetValue(newValue interface{}) interfaces.Univalue {
+	if this.value != nil && reflect.TypeOf(this.value) != reflect.TypeOf(newValue) && newValue != nil {
 		panic("Wrong type")
 	}
 	this.value = newValue
+	return this
 }
 
 func (this *Univalue) GetUnimeta() interface{} { return &this.Unimeta }
 func (this *Univalue) GetCache() interface{}   { return this.cache }
 
-func (this *Univalue) Init(tx uint32, key string, reads, writes, deltaWrites uint32, v interface{}, args ...interface{}) {
+func (this *Univalue) Init(tx uint32, key string, reads, writes, deltaWrites uint32, v interface{}, args ...interface{}) *Univalue {
 	this.vType = common.IfThenDo1st(v != nil, func() uint8 { return v.(interfaces.Type).TypeID() }, uint8(reflect.Invalid))
 	this.tx = tx
 	this.path = &key
@@ -69,6 +69,7 @@ func (this *Univalue) Init(tx uint32, key string, reads, writes, deltaWrites uin
 	this.deltaWrites = deltaWrites
 	this.value = v
 	this.preexists = common.IfThenDo1st(len(args) > 0, func() bool { return (&Unimeta{}).CheckPreexist(key, args[0]) }, false)
+	return this
 }
 
 func (this *Univalue) Reclaim() {
@@ -98,11 +99,11 @@ func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{
 
 func (this *Univalue) Merge(writeCache interfaces.WriteCache) {
 	common.IfThenDo(this.writes == 0 && this.deltaWrites == 0,
-		func() { writeCache.Read(this.tx, *this.GetPath()) },
-		func() { writeCache.Write(this.tx, *this.GetPath(), this.value, this.GetPersistent()) },
+		func() { writeCache.Read(this.tx, *this.GetPath(), this.value) }, // Add reads
+		func() { writeCache.Write(this.tx, *this.GetPath(), this.value) },
 	)
 
-	_, univ := writeCache.Peek(*this.GetPath())
+	_, univ := writeCache.Peek(*this.GetPath(), nil)
 	readsDiff := this.Reads() - univ.(interfaces.Univalue).Reads()
 	writesDiff := this.Writes() - univ.(interfaces.Univalue).Writes()
 	deltaWriteDiff := this.DeltaWrites() - univ.(interfaces.Univalue).DeltaWrites()
@@ -156,6 +157,7 @@ func (this *Univalue) ApplyDelta(v interface{}) error {
 		this.PrecheckAttributes(vec[i].(*Univalue))
 		this.writes += vec[i].Writes()
 		this.reads += vec[i].Reads()
+		this.deltaWrites += vec[i].DeltaWrites()
 	}
 
 	// Apply transitions
@@ -228,39 +230,4 @@ func (this *Univalue) Less(other *Univalue) bool {
 	}
 
 	return true
-}
-
-func (this *Univalue) Checksum() [32]byte {
-	return sha256.Sum256(this.Encode())
-}
-
-func (this *Univalue) Print() {
-	spaces := " " //fmt.Sprintf("%"+strconv.Itoa(len(strings.Split(*this.path, "/"))*1)+"v", " ")
-	fmt.Print(spaces+"tx: ", this.tx)
-	fmt.Print(spaces+"reads: ", this.reads)
-	fmt.Print(spaces+"writes: ", this.writes)
-	fmt.Print(spaces+"DeltaWrites: ", this.deltaWrites)
-	fmt.Print(spaces+"persistent: ", this.persistent)
-	fmt.Print(spaces+"preexists: ", this.preexists)
-
-	fmt.Print(spaces+"path: ", *this.path, "      ")
-	common.IfThenDo(this.value != nil, func() { this.value.(interfaces.Type).Print() }, func() { fmt.Print("nil") })
-}
-
-func (this *Univalue) Equal(other interfaces.Univalue) bool {
-	if this.value == nil && other.Value() == nil {
-		return true
-	}
-
-	if (this.value == nil && other.Value() != nil) || (this.value != nil && other.Value() == nil) {
-		return false
-	}
-
-	vFlag := this.value.(interfaces.Type).Equal(other.Value().(interfaces.Type))
-	return this.tx == other.GetTx() &&
-		*this.path == *other.GetPath() &&
-		this.reads == other.Reads() &&
-		this.writes == other.Writes() &&
-		vFlag &&
-		this.preexists == other.Preexist()
 }

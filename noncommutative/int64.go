@@ -6,9 +6,9 @@ import (
 	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
-type Int64 codec.Int64
+type Int64 int64
 
-func NewInt64(v int64) interface{} {
+func NewInt64(v int64) *Int64 {
 	var this Int64 = Int64(v)
 	return &this
 }
@@ -23,6 +23,7 @@ func (this *Int64) Get() (interface{}, uint32, uint32)                         {
 
 func (this *Int64) IsNumeric() bool     { return true }
 func (this *Int64) IsCommutative() bool { return false }
+func (this *Int64) IsBounded() bool     { return false }
 
 func (this *Int64) Value() interface{} { return (this) }
 func (this *Int64) Delta() interface{} { return (this) }
@@ -30,23 +31,17 @@ func (this *Int64) DeltaSign() bool    { return true } // delta sign
 func (this *Int64) Min() interface{}   { return nil }
 func (this *Int64) Max() interface{}   { return nil }
 
-func (this *Int64) SetValue(v interface{}) { this.SetDelta(v) }
+func (this *Int64) CloneDelta() interface{} { return this.Clone() }
+func (this *Int64) SetValue(v interface{})  { this.SetDelta(v) }
 
 func (this *Int64) IsDeltaApplied() bool   { return true }
 func (this *Int64) ResetDelta()            { this.SetDelta(common.New[Int64](0)) }
 func (this *Int64) SetDelta(v interface{}) { *this = (*v.(*Int64)) }
 func (this *Int64) SetDeltaSign(v interface{}) {
-	(*this) *= (common.IfThen(v.(bool), Int64(1), Int64(-1)))
+	(*this) *= common.IfThen(v.(bool), Int64(1), Int64(-1))
 }
 func (this *Int64) SetMin(v interface{}) {}
 func (this *Int64) SetMax(v interface{}) {}
-
-func (this *Int64) FromRawType(v interface{}) interface{} {
-	if common.IsType[int64](v) {
-		v = common.New[codec.Int64](codec.Int64(v.(int64)))
-	}
-	return v
-}
 
 func (this *Int64) New(_, delta, _, _, _ interface{}) interface{} {
 	if common.IsType[int64](delta) {

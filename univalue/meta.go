@@ -17,7 +17,7 @@ type Unimeta struct {
 func NewUnimeta(tx uint32, key string, reads, writes uint32, deltaWrites uint32, vType uint8, persistent, preexists bool) *Unimeta {
 	return &Unimeta{
 		vType:       vType,
-		persistent:  persistent,
+		persistent:  persistent, // Won't be affected by conflict status
 		tx:          tx,
 		path:        &key,
 		reads:       reads,
@@ -58,7 +58,7 @@ func (this *Unimeta) Preexist() bool   { return this.preexists } // Exist in cac
 func (this *Unimeta) Persistent() bool { return this.persistent }
 
 func (this *Unimeta) CheckPreexist(key string, source interface{}) bool {
-	return source.(interfaces.Importer).RetriveShallow(key) != nil
+	return source.(interfaces.ReadonlyDatastore).IfExists(key)
 }
 
 func (this *Unimeta) Equal(other *Unimeta) bool {

@@ -1,12 +1,7 @@
 package interfaces
 
-import (
-	"math"
-)
-
 const (
 	MAX_DEPTH            uint8 = 12
-	SYSTEM                     = math.MaxInt32
 	ETH10_ACCOUNT_LENGTH       = 40
 )
 
@@ -27,11 +22,12 @@ type Type interface { // value type
 
 	IsNumeric() bool
 	IsCommutative() bool
+	IsBounded() bool
 
-	FromRawType(v interface{}) interface{}
 	Value() interface{} // Get() - read/write count
 	Delta() interface{}
 	DeltaSign() bool
+	CloneDelta() interface{}
 	Min() interface{}
 	Max() interface{}
 	New(interface{}, interface{}, interface{}, interface{}, interface{}) interface{}
@@ -55,6 +51,9 @@ type Type interface { // value type
 	Encode() []byte
 	EncodeToBuffer([]byte) int
 	Decode([]byte) interface{}
+
+	StorageEncode() []byte
+	StorageDecode([]byte) interface{}
 
 	Hash(func([]byte) []byte) []byte
 	Reset()
@@ -83,7 +82,7 @@ type Univalue interface { // value type
 	GetPath() *string
 	SetPath(*string)
 	Value() interface{}
-	SetValue(interface{})
+	SetValue(interface{}) Univalue
 
 	Merge(WriteCache)
 	GetUnimeta() interface{}
@@ -110,40 +109,41 @@ type Univalue interface { // value type
 }
 
 type WriteCache interface {
-	Read(uint32, string) (interface{}, interface{})
-	Peek(path string) (interface{}, interface{})
-	Write(uint32, string, interface{}, bool) error
+	Read(uint32, string, any) (interface{}, interface{})
+	Peek(string, any) (interface{}, interface{})
+	Write(uint32, string, interface{}) error
 	AddTransitions([]Univalue)
 
-	Retrive(string) (interface{}, error)
-	RetriveShallow(string) interface{}
+	Retrive(string, any) (interface{}, error)
 	Cache() *map[string]Univalue
 	Store() ReadonlyDatastore
 }
 
-type Importer interface {
-	RetriveShallow(string) interface{}
-}
-
 type ReadonlyDatastore interface {
-	Retrive(string) (interface{}, error)
+	IfExists(string) bool
+	Retrive(string, any) (interface{}, error)
 }
 
 type Datastore interface {
-	Inject(string, interface{})
-	BatchInject([]string, []interface{})
-	Retrive(string) (interface{}, error)
-	BatchRetrive([]string) []interface{}
-	Precommit([]string, interface{})
+	IfExists(string) bool
+	Inject(string, any) error
+	BatchInject([]string, []any) error
+	Retrive(string, any) (interface{}, error)
+	BatchRetrive([]string, []any) []interface{}
+	Precommit([]string, interface{}) [32]byte
 	Commit() error
 	UpdateCacheStats([]interface{})
+
+	Encoder() func(string, interface{}) []byte
+	Decoder() func([]byte, any) interface{}
+
+	// Buffers() ([]string, []interface{}, [][]byte)
 	Dump() ([]string, []interface{})
-	Checksum() [32]byte
 	Clear()
 	Print()
 	CheckSum() [32]byte
 	Query(string, func(string, string) bool) ([]string, [][]byte, error)
-	CacheRetrive(key string, valueTransformer func(interface{}) interface{}) (interface{}, error)
+	// CacheRetrive(key string, valueTransformer func(interface{}) interface{}) (interface{}, error)
 }
 
 type Hasher func(Type) []byte

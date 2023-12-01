@@ -18,7 +18,7 @@ func TestMeta(t *testing.T) {
 	inPath.SetAdded([]string{"+01", "+001", "+002", "+002"})
 	inPath.SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
 
-	meta, _, _ = inPath.Get()
+	metaout, _, _ := inPath.Get()
 
 	if !common.EqualArray(inPath.Value().(*orderedset.OrderedSet).Keys(), []string{"e-01", "e-001", "e-002", "e-002"}) {
 		t.Error("Error: Don't match!!")
@@ -32,7 +32,7 @@ func TestMeta(t *testing.T) {
 		t.Error("Error: Don't match!!")
 	}
 
-	fmt.Println(meta)
+	fmt.Println(metaout)
 }
 
 func TestCodecPathMeta(t *testing.T) {
