@@ -1,6 +1,8 @@
 package indexer
 
 import (
+	common "github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/concurrenturl/commutative"
 	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
@@ -26,7 +28,7 @@ func (this IPCTransition) From(v interfaces.Univalue) interface{} {
 
 	typed := v.Value().(interfaces.Type)
 	typed = typed.New(
-		nil,
+		common.IfThen(!v.Value().(interfaces.Type).IsCommutative() || common.IsType[*commutative.Path](v.Value()), nil, v.Value().(interfaces.Type).Value()),
 		typed.Delta(),
 		typed.DeltaSign(),
 		typed.Min(),

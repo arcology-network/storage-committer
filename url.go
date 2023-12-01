@@ -214,7 +214,7 @@ func (this *ConcurrentUrl) at(tx uint32, path string, idx uint64, T any) (interf
 		return nil, READ_NONEXIST, errors.New("Error: Not a path!!!")
 	}
 
-	meta, readFee := this.Read(tx, path, T) // read the container meta
+	meta, readFee := this.Read(tx, path, new(commutative.Path)) // read the container meta
 
 	return common.IfThen(meta == nil,
 		meta,
