@@ -2,7 +2,6 @@ package concurrenturl
 
 import (
 	"errors"
-	"fmt"
 	"math"
 	"reflect"
 
@@ -10,7 +9,8 @@ import (
 	orderedset "github.com/arcology-network/common-lib/container/set"
 	performance "github.com/arcology-network/common-lib/mhasher"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
-	"github.com/arcology-network/concurrenturl/commutative"
+
+	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 	interfaces "github.com/arcology-network/concurrenturl/interfaces"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
@@ -101,9 +101,10 @@ func (this *ConcurrentUrl) Clear() {
 }
 
 // load accounts
-func (this *ConcurrentUrl) NewAccount(tx uint32, acct string) error {
+func (this *ConcurrentUrl) NewAccount(tx uint32, acct string) ([]interfaces.Univalue, error) {
 	paths, typeids := this.Platform.GetBuiltins(acct)
 
+	transitions := []interfaces.Univalue{}
 	for i, path := range paths {
 		var v interface{}
 		switch typeids[i] {
@@ -127,16 +128,18 @@ func (this *ConcurrentUrl) NewAccount(tx uint32, acct string) error {
 		}
 
 		if !this.writeCache.IfExists(path) {
+			transitions = append(transitions, univalue.NewUnivalue(tx, path, 0, 1, 0, v, nil))
+
 			if err := this.writeCache.Write(tx, path, v); err != nil { // root path
-				return err
+				return nil, err
 			}
 
 			if !this.writeCache.IfExists(path) {
-				return this.writeCache.Write(tx, path, v) // root path
+				return transitions, this.writeCache.Write(tx, path, v) // root path
 			}
 		}
 	}
-	return nil
+	return transitions, nil
 }
 
 func (this *ConcurrentUrl) IfExists(path string) bool {
@@ -208,14 +211,12 @@ func (this *ConcurrentUrl) Do(tx uint32, path string, doer interface{}, T any) (
 }
 
 // Read th Nth element under a path
-func (this *ConcurrentUrl) at(tx uint32, path string, idx uint64, T any) (interface{}, uint64, error) {
-	fmt.Printf("------------concurrenturl/url.go path:%v\n", path)
+func (this *ConcurrentUrl) getKeyByIdx(tx uint32, path string, idx uint64) (interface{}, uint64, error) {
 	if !common.IsPath(path) {
 		return nil, READ_NONEXIST, errors.New("Error: Not a path!!!")
 	}
 
 	meta, readFee := this.Read(tx, path, new(commutative.Path)) // read the container meta
-
 	return common.IfThen(meta == nil,
 		meta,
 		common.IfThenDo1st(idx < uint64(len(meta.(*orderedset.OrderedSet).Keys())), func() interface{} { return path + meta.(*orderedset.OrderedSet).Keys()[idx] }, nil),
@@ -224,7 +225,7 @@ func (this *ConcurrentUrl) at(tx uint32, path string, idx uint64, T any) (interf
 
 // Read th Nth element under a path
 func (this *ConcurrentUrl) ReadAt(tx uint32, path string, idx uint64, T any) (interface{}, uint64, error) {
-	if key, Fee, err := this.at(tx, path, idx, T); err == nil && key != nil {
+	if key, Fee, err := this.getKeyByIdx(tx, path, idx); err == nil && key != nil {
 		v, Fee := this.Read(tx, key.(string), T)
 		return v, Fee, nil
 	} else {
@@ -234,7 +235,7 @@ func (this *ConcurrentUrl) ReadAt(tx uint32, path string, idx uint64, T any) (in
 
 // Read th Nth element under a path
 func (this *ConcurrentUrl) DoAt(tx uint32, path string, idx uint64, do interface{}, T any) (interface{}, uint64, error) {
-	if key, Fee, err := this.at(tx, path, idx, T); err == nil && key != nil {
+	if key, Fee, err := this.getKeyByIdx(tx, path, idx); err == nil && key != nil {
 		v, err := this.Do(tx, key.(string), do, T)
 		return v, Fee, err
 	} else {
@@ -273,7 +274,7 @@ func (this *ConcurrentUrl) WriteAt(tx uint32, path string, idx uint64, T any) (i
 		return int64(READ_NONEXIST), errors.New("Error: Not a path!!!")
 	}
 
-	if key, Fee, err := this.at(tx, path, idx, T); err == nil {
+	if key, Fee, err := this.getKeyByIdx(tx, path, idx); err == nil {
 		return this.Write(tx, key.(string), T)
 	} else {
 		return int64(Fee), err

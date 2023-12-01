@@ -1,4 +1,4 @@
-package ccdb
+package storage
 
 import (
 	commutative "github.com/arcology-network/concurrenturl/commutative"

@@ -19,7 +19,7 @@ func TestAuxTrans(t *testing.T) {
 	url := ccurl.NewConcurrentUrl(store)
 
 	alice := AliceAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -107,7 +107,7 @@ func TestCheckAccessRecords(t *testing.T) {
 
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 

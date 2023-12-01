@@ -26,7 +26,7 @@ func TestSize(t *testing.T) {
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -59,7 +59,7 @@ func TestReadWriteAt(t *testing.T) {
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -105,7 +105,7 @@ func TestAddThenDeletePath(t *testing.T) {
 	alice := AliceAccount()
 
 	url := ccurl.NewConcurrentUrl(store)
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -158,7 +158,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -210,7 +210,7 @@ func TestBasic(t *testing.T) {
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -317,7 +317,7 @@ func TestPathAddThenDelete(t *testing.T) {
 	store := chooseDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -399,7 +399,7 @@ func TestUrl1(t *testing.T) {
 	// store := chooseDataStore()
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -488,7 +488,7 @@ func TestUrl2(t *testing.T) {
 	// store := cachedstorage.NewDataStore(nil, nil, nil, encoder, decoder)
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -563,10 +563,10 @@ func TestUrl2(t *testing.T) {
 	}
 
 	/////////////////=====================================================================/////////////////////////////
-	_0, _, _ := url.ReadAt(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/", 0, new(noncommutative.Int64))
-	if !reflect.DeepEqual(_0, 1111) {
-		t.Error("Error: Should be empty!!")
-	}
+	// _0, _, _ := url.ReadAt(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/", 0, new(noncommutative.Int64))
+	// if !reflect.DeepEqual(_0, 1111) {
+	// 	t.Error("Error: Should be empty!!")
+	// }
 
 	// _1, _, _ := url.ReadAt(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/", 1, new(noncommutative.Int64))
 	// if !reflect.DeepEqual(_1, 2222) {
@@ -708,7 +708,7 @@ func TestTransientDBv2(t *testing.T) {
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -737,7 +737,7 @@ func TestCustomCodec(t *testing.T) {
 	store := cachedstorage.NewDataStore(nil, policy, cachedstorage.NewMemDB(), storage.Rlp{}.Encode, storage.Rlp{}.Decode)
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 

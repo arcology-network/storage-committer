@@ -1,4 +1,4 @@
-package ccdb
+package storage
 
 import (
 	"crypto/sha256"

@@ -17,7 +17,7 @@ type Unimeta struct {
 func NewUnimeta(tx uint32, key string, reads, writes uint32, deltaWrites uint32, vType uint8, persistent, preexists bool) *Unimeta {
 	return &Unimeta{
 		vType:       vType,
-		persistent:  persistent,
+		persistent:  persistent, // Won't be affected by conflict status
 		tx:          tx,
 		path:        &key,
 		reads:       reads,

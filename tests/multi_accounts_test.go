@@ -23,7 +23,7 @@ func TestMultiAccountCreation(t *testing.T) {
 	accounts := make([]string, 10)
 	for i := 0; i < len(accounts); i++ {
 		accounts[i] = datacompression.RandomAccount()
-		if err := url.NewAccount(0, accounts[i]); err != nil { // Preload account structure {
+		if _, err := url.NewAccount(0, accounts[i]); err != nil { // Preload account structure {
 			t.Error(err)
 		}
 	}

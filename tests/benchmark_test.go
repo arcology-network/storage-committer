@@ -39,7 +39,7 @@ func BenchmarkAccountMerkleImportPerf(b *testing.B) {
 
 	url := ccurl.NewConcurrentUrl(store)
 	for i := 0; i < 100000; i++ {
-		if err := url.NewAccount(0, fmt.Sprint(rand.Float64())); err != nil { // Preload account structure {
+		if _, err := url.NewAccount(0, fmt.Sprint(rand.Float64())); err != nil { // Preload account structure {
 			b.Error(err)
 		}
 	}
@@ -61,7 +61,7 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -103,7 +103,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -115,7 +115,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	t0 := time.Now()
 	for i := 0; i < 100000; i++ {
 		acct := fmt.Sprint(rand.Int())
-		if err := url.NewAccount(ccurlcommon.SYSTEM, acct); err != nil { // NewAccount account structure {
+		if _, err := url.NewAccount(ccurlcommon.SYSTEM, acct); err != nil { // NewAccount account structure {
 			fmt.Println(err)
 		}
 
@@ -167,7 +167,7 @@ func BenchmarkUrlAddThenDelete(b *testing.B) {
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	alice := AliceAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -205,7 +205,7 @@ func BenchmarkUrlAddThenPop(b *testing.B) {
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	alice := AliceAccount()
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -380,7 +380,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	url := ccurl.NewConcurrentUrl(store)
 	for i := 0; i < 10; i++ {
 		acct := datacompression.RandomAccount()
-		if err := url.NewAccount(0, acct); err != nil { // Preload account structure {
+		if _, err := url.NewAccount(0, acct); err != nil { // Preload account structure {
 			b.Error(err)
 		}
 	}
@@ -600,7 +600,7 @@ func BenchmarkTransitionImport(b *testing.B) {
 	url := ccurl.NewConcurrentUrl(store)
 	for i := 0; i < 150000; i++ {
 		acct := datacompression.RandomAccount()
-		if err := url.NewAccount(0, acct); err != nil { // Preload account structure {
+		if _, err := url.NewAccount(0, acct); err != nil { // Preload account structure {
 			b.Error(err)
 		}
 	}
@@ -629,7 +629,7 @@ func BenchmarkTransitionImport(b *testing.B) {
 // 	url := ccurl.NewConcurrentUrl(store)
 // 	for i := 0; i < 90000; i++ {
 // 		acct := datacompression.RandomAccount()
-// 		if err := url.NewAccount(0, acct); err != nil { // Preload account structure {
+// 		if _, err := url.NewAccount(0, acct); err != nil { // Preload account structure {
 // 			b.Error(err)
 // 		}
 // 	}
@@ -659,7 +659,7 @@ func BenchmarkRandomAccountSort(t *testing.B) {
 	url := ccurl.NewConcurrentUrl(store)
 	for i := 0; i < 100000; i++ {
 		acct := datacompression.RandomAccount()
-		if err := url.NewAccount(0, acct); err != nil { // Preload account structure {
+		if _, err := url.NewAccount(0, acct); err != nil { // Preload account structure {
 			// b.Error(err)
 		}
 	}

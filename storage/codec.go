@@ -1,4 +1,4 @@
-package ccdb
+package storage
 
 type CodecIntf interface {
 	Encoder(interface{}) func(interface{}) []byte

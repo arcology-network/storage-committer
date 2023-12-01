@@ -1,45 +1,155 @@
 package ccurltest
 
 import (
+	"reflect"
+	"strings"
 	"testing"
+
+	"github.com/arcology-network/common-lib/common"
+	orderedset "github.com/arcology-network/common-lib/container/set"
+	"github.com/arcology-network/common-lib/datacompression"
+	ccurl "github.com/arcology-network/concurrenturl"
+	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	"github.com/arcology-network/concurrenturl/commutative"
+	indexer "github.com/arcology-network/concurrenturl/indexer"
+	"github.com/arcology-network/concurrenturl/interfaces"
+	"github.com/holiman/uint256"
 )
 
 /* Commutative Int64 Test */
-func TestUnivaluesFilter(t *testing.T) {
-	// alice := datacompression.RandomAccount()
+func TestTransitionFilters(t *testing.T) {
+	store := chooseDataStore()
 
-	// u64 := commutative.NewBoundedUint64(0, 100)
-	// in0 := univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/u64-000", 3, 4, 0, u64)
-	// // in0.reads = 1
-	// // in0.writes = 2
-	// // in0.deltaWrites = 3
+	alice := datacompression.RandomAccount()
+	bob := datacompression.RandomAccount()
 
-	// u256 := commutative.NewBoundedU256(uint256.NewInt(0), uint256.NewInt(100))
-	// in1 := univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/u256-000", 3, 4, 0, u256)
-	// // in1.reads = 4
-	// // in1.writes = 5
-	// // in1.deltaWrites = 6
+	url := ccurl.NewConcurrentUrl(store)
+	url.NewAccount(ccurlcommon.SYSTEM, alice)
+	url.NewAccount(ccurlcommon.SYSTEM, bob)
 
-	// meta := commutative.NewPath()
-	// meta.(*commutative.Path).SetSubs([]string{"e-01", "e-001", "e-002", "e-002"})
-	// meta.(*commutative.Path).SetAdded([]string{"+01", "+001", "+002", "+002"})
-	// meta.(*commutative.Path).SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
+	raw := url.Export(indexer.Sorter)
 
-	// in2 := univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 11, meta)
+	acctTrans := indexer.Univalues(common.Clone(raw)).To(indexer.IPCTransition{})
 
-	// trans := indexer.ITCTransition{}.From(in2) // Path
-	// trans.(*univalue.Univalue).SetValue(commutative.NewPath())
+	if !acctTrans[1].Value().(*commutative.U256).Equal(raw[1].Value()) {
+		t.Error("Error: Non-path commutative should have the values!!")
+	}
 
-	// in2.Value().(*commutative.Path).SetAdded([]string{"e-01", "e-001", "e-002", "e-002"})
-	// if reflect.DeepEqual(in2.Value().(*commutative.Path).Added(), []string{}) {
-	// 	t.Error("Error")
-	// }
+	acctTrans[0].Value().(*commutative.Path).SetSubs([]string{"k0", "k1"})
+	acctTrans[0].Value().(*commutative.Path).SetAdded([]string{"123", "456"})
+	acctTrans[0].Value().(*commutative.Path).SetRemoved([]string{"789", "116"})
 
-	// trans = indexer.IPCTransition{}.From(in2) // Path
-	// trans.(*univalue.Univalue).SetValue(commutative.NewPath())
+	acctTrans[1].Value().(*commutative.U256).SetValue(*uint256.NewInt(111))
+	acctTrans[1].Value().(*commutative.U256).SetDelta(*uint256.NewInt(999))
+	acctTrans[1].Value().(*commutative.U256).SetMin(*uint256.NewInt(1))
+	acctTrans[1].Value().(*commutative.U256).SetMax(*uint256.NewInt(2222222))
 
-	// in2.Value().(*commutative.Path).SetAdded([]string{})
-	// if !reflect.DeepEqual(in2.Value().(*commutative.Path).Added(), []string{}) {
-	// 	t.Error("Error")
-	// }
+	if v := raw[0].Value().(*commutative.Path).Delta().(*commutative.PathDelta); !reflect.DeepEqual(v.Added(), []string{}) {
+		t.Error("Error: Value altered")
+	}
+
+	if v := raw[0].Value().(*commutative.Path).Delta().(*commutative.PathDelta); !reflect.DeepEqual(v.Removed(), []string{}) {
+		t.Error("Error: Delta altered")
+	}
+
+	if v := raw[1].Value().(*commutative.U256).Delta().(uint256.Int); !v.Eq(uint256.NewInt(0)) {
+		t.Error("Error: Value altered")
+	}
+
+	if v := raw[1].Value().(*commutative.U256).Delta().(uint256.Int); !v.Eq(uint256.NewInt(0)) {
+		t.Error("Error: Delta altered")
+	}
+
+	if v := raw[1].Value().(*commutative.U256).Min().(uint256.Int); !v.Eq(&commutative.U256_MIN) {
+		t.Error("Error: Min Value altered")
+	}
+
+	if v := raw[1].Value().(*commutative.U256).Max().(uint256.Int); !v.Eq(&commutative.U256_MAX) {
+		t.Error("Error: Max altered")
+	}
+
+	copied := indexer.Univalues(common.Clone(acctTrans)).To(indexer.IPCTransition{})
+
+	// Test Path
+	if v := copied[0].Value().(*commutative.Path).Value().(*orderedset.OrderedSet); len(v.Keys()) != 0 {
+		t.Error("Error: A path commutative variable shouldn't have the initial value")
+	}
+
+	if v := copied[0].Value().(*commutative.Path).Delta().(*commutative.PathDelta); !reflect.DeepEqual(v.Added(), []string{"123", "456"}) {
+		t.Error("Error: Delta altered")
+	}
+
+	if v := copied[0].Value().(*commutative.Path).Delta().(*commutative.PathDelta); !reflect.DeepEqual(v.Removed(), []string{"789", "116"}) {
+		t.Error("Error: Delta altered")
+	}
+
+	// Test Commutative 256
+	if v := copied[1].Value().(*commutative.U256).Value().(uint256.Int); !(&v).Eq(uint256.NewInt(111)) {
+		t.Error("Error: A non-path commutative variable should have the initial value")
+	}
+	if v := copied[1].Value().(*commutative.U256).Delta().(uint256.Int); !(&v).Eq(uint256.NewInt(999)) {
+		t.Error("Error: A non-path commutative variable should have the initial value")
+	}
+
+	if v := copied[1].Value().(*commutative.U256).Min().(uint256.Int); !(&v).Eq(uint256.NewInt(1)) {
+		t.Error("Error: A non-path commutative variable should have the initial value")
+	}
+
+	if v := copied[1].Value().(*commutative.U256).Max().(uint256.Int); !(&v).Eq(uint256.NewInt(2222222)) {
+		t.Error("Error: A non-path commutative variable should have the initial value")
+	}
+
+}
+
+func TestAccessFilters(t *testing.T) {
+	store := chooseDataStore()
+
+	alice := datacompression.RandomAccount()
+	bob := datacompression.RandomAccount()
+
+	url := ccurl.NewConcurrentUrl(store)
+	url.NewAccount(ccurlcommon.SYSTEM, alice)
+	url.NewAccount(ccurlcommon.SYSTEM, bob)
+
+	raw := url.Export(indexer.Sorter)
+
+	raw[0].Value().(*commutative.Path).SetSubs([]string{"k0", "k1"})
+	raw[0].Value().(*commutative.Path).SetAdded([]string{"123", "456"})
+	raw[0].Value().(*commutative.Path).SetRemoved([]string{"789", "116"})
+
+	raw[1].Value().(*commutative.U256).SetValue(*uint256.NewInt(111))
+	raw[1].Value().(*commutative.U256).SetDelta(*uint256.NewInt(999))
+	raw[1].Value().(*commutative.U256).SetMin(*uint256.NewInt(1))
+	raw[1].Value().(*commutative.U256).SetMax(*uint256.NewInt(2222222))
+
+	acctTrans := indexer.Univalues(common.Clone(raw)).To(indexer.IPCAccess{})
+
+	if acctTrans[0].Value() != nil {
+		t.Error("Error: Value altered")
+	}
+
+	// Test Commutative 256
+	if v := acctTrans[1].Value().(*commutative.U256).Value().(uint256.Int); !(&v).Eq(uint256.NewInt(111)) {
+		t.Error("Error: A non-path commutative variable should have the initial value")
+	}
+	if v := acctTrans[1].Value().(*commutative.U256).Delta().(uint256.Int); !(&v).Eq(uint256.NewInt(999)) {
+		t.Error("Error: A non-path commutative variable should have the initial value")
+	}
+
+	if v := acctTrans[1].Value().(*commutative.U256).Min().(uint256.Int); !(&v).Eq(uint256.NewInt(1)) {
+		t.Error("Error: A non-path commutative variable should have the initial value")
+	}
+
+	if v := acctTrans[1].Value().(*commutative.U256).Max().(uint256.Int); !(&v).Eq(uint256.NewInt(2222222)) {
+		t.Error("Error: A non-path commutative variable should have the initial value")
+	}
+
+	idx, v := common.FindFirstIf(acctTrans, func(v interfaces.Univalue) bool {
+		return strings.Index(*v.GetPath(), "/balance") == -1 && strings.Index(*v.GetPath(), "/nonce") == -1 && v.Value() != nil
+	})
+
+	if idx != -1 {
+		t.Error("Error: Nonce non-path commutative variables may keep their initial values", v)
+	}
+
 }

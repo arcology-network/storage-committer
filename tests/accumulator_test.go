@@ -20,7 +20,7 @@ func TestAccumulatorUpperLimit(t *testing.T) {
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
 
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -61,7 +61,7 @@ func TestAccumulatorLowerLimit(t *testing.T) {
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
-	if err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
