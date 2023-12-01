@@ -30,7 +30,7 @@ func (this IPCTransition) From(v interfaces.Univalue) interface{} {
 	typed = typed.New(
 		common.IfThen(!v.Value().(interfaces.Type).IsCommutative() || common.IsType[*commutative.Path](v.Value()),
 			nil,
-			v.Value().(interfaces.Type).Value()), // Keep Non-path commutative only
+			v.Value().(interfaces.Type).Value()), // Keep Non-path commutative variables (u256, u64) only
 		typed.Delta(),
 		typed.DeltaSign(),
 		typed.Min(),
