@@ -116,10 +116,10 @@ type WriteCache interface {
 
 	Retrive(string, any) (interface{}, error)
 	Cache() *map[string]Univalue
-	Store() ReadonlyDatastore
+	Store() DataStoreReader
 }
 
-type ReadonlyDatastore interface {
+type DataStoreReader interface {
 	IfExists(string) bool
 	Retrive(string, any) (interface{}, error)
 }

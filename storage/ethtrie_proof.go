@@ -1,10 +1,6 @@
 package storage
 
 import (
-	"encoding/hex"
-	"fmt"
-	"strings"
-
 	ccmap "github.com/arcology-network/common-lib/container/map"
 	ethcommon "github.com/arcology-network/evm/common"
 	"github.com/arcology-network/evm/common/hexutil"
@@ -14,59 +10,6 @@ import (
 	// ethapi "github.com/arcology-network/evm/internal/ethapi"
 )
 
-type AccountResult struct {
-	Address      ethcommon.Address `json:"address"`
-	AccountProof []string          `json:"accountProof"`
-	Balance      *hexutil.Big      `json:"balance"`
-	CodeHash     ethcommon.Hash    `json:"codeHash"`
-	Nonce        hexutil.Uint64    `json:"nonce"`
-	StorageHash  ethcommon.Hash    `json:"storageHash"`
-	StorageProof []StorageResult   `json:"storageProof"`
-}
-
-type StorageResult struct {
-	Key   string       `json:"key"`
-	Value *hexutil.Big `json:"value"`
-	Proof []string     `json:"proof"`
-}
-
-type proofList [][]byte
-
-func (n *proofList) Put(key []byte, value []byte) error {
-	*n = append(*n, value)
-	return nil
-}
-
-func (n *proofList) Delete(key []byte) error {
-	panic("not supported")
-}
-
-// toHexSlice creates a slice of hex-strings based on []byte.
-func toHexSlice(b [][]byte) []string {
-	r := make([]string, len(b))
-	for i := range b {
-		r[i] = hexutil.Encode(b[i])
-	}
-	return r
-}
-
-func decodeHash(s string) (ethcommon.Hash, error) {
-	if strings.HasPrefix(s, "0x") || strings.HasPrefix(s, "0X") {
-		s = s[2:]
-	}
-	if (len(s) & 1) > 0 {
-		s = "0" + s
-	}
-	b, err := hex.DecodeString(s)
-	if err != nil {
-		return ethcommon.Hash{}, fmt.Errorf("hex string invalid")
-	}
-	if len(b) > 32 {
-		return ethcommon.Hash{}, fmt.Errorf("hex string too long, want at most 32 bytes")
-	}
-	return ethcommon.BytesToHash(b), nil
-}
-
 // For readonly proof generation
 func LoadDataStore(ethdb *ethmpt.Database, root [32]byte) (*EthDataStore, error) {
 	trie, err := ethmpt.New(ethmpt.TrieID(root), ethdb)
@@ -74,9 +17,10 @@ func LoadDataStore(ethdb *ethmpt.Database, root [32]byte) (*EthDataStore, error)
 		return nil, err
 	}
 
+	diskdb := ethmpt.GetBackendDB(ethdb).DBs()
 	return &EthDataStore{
-		ethdb: ethdb,
-		// diskdbs:        ,
+		ethdb:          ethmpt.NewParallelDatabase(diskdb, nil),
+		diskdbs:        diskdb,
 		acctLookup:     ccmap.NewConcurrentMap(),
 		worldStateTrie: trie,
 		encoder:        Rlp{}.Encode,
@@ -84,13 +28,18 @@ func LoadDataStore(ethdb *ethmpt.Database, root [32]byte) (*EthDataStore, error)
 	}, nil
 }
 
-func GetProof(ethdb *ethmpt.Database, address ethcommon.Address, storageKeys []string, rootHash [32]byte) (*AccountResult, error) {
+func GetProof(sourece *EthDataStore, ethdb *ethmpt.Database, acctStr string, storageKeys []string, rootHash [32]byte) (*AccountResult, error) {
+	// acct, _ := hex.DecodeString(acctStr)
+	acctAddr := string(acctStr)
+
 	datastore, err := LoadDataStore(ethdb, rootHash)
 	if datastore == nil || err != nil {
 		return nil, err
 	}
 
-	account, err := datastore.GetAccount(string(address[:]), new(ethmpt.AccessListCache))
+	// datastore = sourece
+
+	account, err := datastore.GetAccount(acctAddr, new(ethmpt.AccessListCache))
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +62,7 @@ func GetProof(ethdb *ethmpt.Database, address ethcommon.Address, storageKeys []s
 			return nil, err
 		}
 		if storageTrie != nil {
-			proof, storageError := account.Prove(key)
+			proof, storageError := account.Prove(key) // Get the storage proof
 			if storageError != nil {
 				return nil, storageError
 			}
@@ -126,13 +75,13 @@ func GetProof(ethdb *ethmpt.Database, address ethcommon.Address, storageKeys []s
 	}
 
 	// create the accountProof
-	accountProof, proofErr := datastore.Prove(address)
+	accountProof, proofErr := datastore.GetAccountProof([]byte(acctAddr)) // Get the account proof
 	if proofErr != nil {
 		return nil, proofErr
 	}
 
 	return &AccountResult{
-		Address:      address,
+		Address:      ethcommon.BytesToAddress([]byte(acctAddr)),
 		AccountProof: toHexSlice(accountProof),
 		Balance:      (*hexutil.Big)(account.StateAccount.Balance),
 		CodeHash:     codeHash,
@@ -140,4 +89,17 @@ func GetProof(ethdb *ethmpt.Database, address ethcommon.Address, storageKeys []s
 		StorageHash:  storageHash,
 		StorageProof: storageProof,
 	}, nil // state.Error()
+}
+
+func GetAccountProof(ethdb *ethmpt.Database, acctAddr string, storageKeys []string, rootHash [32]byte) ([][]byte, error) {
+	datastore, err := LoadDataStore(ethdb, rootHash)
+	if datastore == nil || err != nil {
+		return nil, err
+	}
+
+	account, err := datastore.GetAccount(acctAddr, new(ethmpt.AccessListCache))
+	if account == nil || err != nil {
+		return nil, err
+	}
+	return datastore.GetAccountProof([]byte(acctAddr))
 }

@@ -39,6 +39,16 @@ func BobAccount() string {
 	return string(b)
 }
 
+func CarolAccount() string {
+	var letters = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
+	// rand.Seed(2)
+	b := make([]rune, 40)
+	for i := range b {
+		b[i] = letters[3]
+	}
+	return string(b)
+}
+
 func rlpEncoder(args ...interface{}) []byte {
 	encoded, err := rlp.EncodeToBytes(args)
 	if err != nil {

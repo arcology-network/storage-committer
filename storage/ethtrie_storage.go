@@ -6,13 +6,13 @@ import (
 
 	common "github.com/arcology-network/common-lib/common"
 	ccmap "github.com/arcology-network/common-lib/container/map"
-	"github.com/arcology-network/common-lib/merkle"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	ethcommon "github.com/arcology-network/evm/common"
 	"github.com/arcology-network/evm/core/rawdb"
 	"github.com/arcology-network/evm/core/types"
 	ethdb "github.com/arcology-network/evm/ethdb"
+	"github.com/arcology-network/evm/ethdb/memorydb"
 	"github.com/arcology-network/evm/rlp"
 	ethmpt "github.com/arcology-network/evm/trie"
 	trienode "github.com/arcology-network/evm/trie/trienode"
@@ -86,11 +86,30 @@ func (this *EthDataStore) Hash(key string) []byte {
 	return sum
 }
 
-func (this *EthDataStore) Prove(key [20]byte) ([][]byte, error) {
-	var proofs proofList
-	err := this.worldStateTrie.Prove(key[:], 0, &proofs)
+func (this *EthDataStore) GetAccountProof(addr []byte) ([][]byte, error) {
+	var proof proofList
+	if trie, _ := this.worldStateTrie.Get(addr); len(trie) > 0 {
+		err := this.worldStateTrie.Prove(addr, 0, &proof)
+		return proof, err
+	}
+	return [][]byte{}, nil
+}
 
-	return proofs, err
+func (this *EthDataStore) IsProvable(addr string) ([]byte, error) {
+	proofs := memorydb.New()
+	if trie, _ := this.worldStateTrie.Get([]byte(addr)); len(trie) > 0 {
+		if err := this.worldStateTrie.Prove([]byte(addr), 0, proofs); err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, errors.New("Failed to find the proof")
+	}
+
+	v, err := ethmpt.VerifyProof(this.Root(), []byte(addr), proofs)
+	if err != nil || len(v) == 0 {
+		return v, errors.New("Failed to find the proof")
+	}
+	return v, nil
 }
 
 func (this *EthDataStore) LoadParallelTrie(root [32]byte) (*ethmpt.Trie, error) {
@@ -106,7 +125,7 @@ func (this *EthDataStore) IfExists(key string) bool {
 
 	_, accountKey, suffix := ccurlcommon.ParseAccountAddr(key)
 	if v, _ := this.acctLookup.Get(accountKey); v != nil {
-		return v.(*Account).Has(key) // If the account has the key
+		return len(key) == ccurlcommon.ETH10_ACCOUNT_FULL_LENGTH+1 || v.(*Account).Has(key) // If the account has the key
 	}
 
 	// Not in cache, look up in the trie
@@ -120,8 +139,9 @@ func (this *EthDataStore) IfExists(key string) bool {
 	}
 
 	var stateAccount types.StateAccount
-	rlp.DecodeBytes(buffer, &stateAccount)
-
+	if err := rlp.DecodeBytes(buffer, &stateAccount); err != nil {
+		return false
+	}
 	return NewAccount(key, this.diskdbs, stateAccount).Has(key) // Load the account but don't keep it in the cache.
 }
 
@@ -166,7 +186,7 @@ func (this *EthDataStore) BatchInject(keys []string, values []interface{}) error
 
 func (this *EthDataStore) GetAccount(accountKey string, accesses *ethmpt.AccessListCache) (*Account, error) {
 	if len(accountKey) > 0 {
-		if v, _ := this.acctLookup.Get(accountKey); v != nil {
+		if v, _ := this.acctLookup.Get(accountKey); v != nil { // Lookup in the cache first
 			return v.(*Account), nil
 		}
 		return this.GetAccountFromTrie(accountKey, accesses)
@@ -181,15 +201,16 @@ func (this *EthDataStore) GetAccountFromTrie(accountKey string, accesses *ethmpt
 			var acctState types.StateAccount
 			rlp.DecodeBytes(buffer, &acctState)
 
+			trie, err := ethmpt.New(ethmpt.TrieID(acctState.Root), this.EthDB())
 			return &Account{
 				accountKey,
 				acctState,
-				common.FilterFirst(this.diskdbs[0].Get(acctState.CodeHash)),
-				ethmpt.NewEmptyParallel(this.ethdb),
+				common.FilterFirst(this.diskdbs[0].Get(acctState.CodeHash)), // code
+				trie,
 				this.ethdb,
 				this.diskdbs,
 				nil,
-			}, nil
+			}, err
 		}
 		return nil, err
 	}
@@ -251,8 +272,24 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 	})
 
 	keys, accts := this.acctLookup.KVs()
-	encoded := common.Append(accts, func(acct interface{}) []byte { return acct.(*Account).Encode() })
-	this.worldStateTrie.ParallelUpdate(common.Append(keys, func(key string) []byte { return merkle.Sha256{}.Hash([]byte(key)) }), encoded)
+	encoded := common.Append(accts, func(acct interface{}) []byte {
+		return acct.(*Account).Encode()
+	})
+	this.worldStateTrie.ParallelUpdate(common.Append(keys, func(key string) []byte { return ([]byte(key)) }), encoded)
+
+	// Debug only
+	// for _, k := range this.keyBuffer {
+	// 	acct, err := this.GetAccountFromTrie(k, &ethmpt.AccessListCache{})
+	// 	if err != nil {
+	// 		panic("acct")
+	// 	}
+	// 	for _, state := range stateGroups {
+	// 		hash := ethcommon.BytesToHash([]byte(state[0].First))
+	// 		if _, err := acct.IsProvable(hash); err != nil {
+	// 			panic("pp ")
+	// 		}
+	// 	}
+	// }
 
 	return this.worldStateTrie.Hash()
 }
@@ -277,6 +314,10 @@ func (this *EthDataStore) Commit() error {
 	if err := this.ethdb.Commit(this.latestRoot, false); err != nil {
 		return err
 	}
+
+	// for _, k := range this.keyBuffer {
+	// 	this.
+	// }
 
 	this.worldStateTrie, _ = ethmpt.New(ethmpt.TrieID(this.latestRoot), this.ethdb)
 	return nil

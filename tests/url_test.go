@@ -311,6 +311,12 @@ func TestBasic(t *testing.T) {
 	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", new(noncommutative.Int64)); value == nil {
 		t.Error("Error: Entry not found")
 	}
+
+	bob := BobAccount()
+	if value, _ := url.Read(1, "blcc://eth1.0/account/"+bob+"/storage/ctrn-0/elem-000", new(noncommutative.Int64)); value != nil {
+		t.Error("Error: Wrong value")
+	}
+
 }
 
 func TestPathAddThenDelete(t *testing.T) {

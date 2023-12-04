@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"errors"
+	"fmt"
 	"math/big"
 	"strings"
 
@@ -10,10 +12,12 @@ import (
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
+	hexutil "github.com/arcology-network/evm/common/hexutil"
 	"github.com/arcology-network/evm/core/types"
 	ethtypes "github.com/arcology-network/evm/core/types"
 	"github.com/arcology-network/evm/crypto"
 	"github.com/arcology-network/evm/ethdb"
+	"github.com/arcology-network/evm/ethdb/memorydb"
 	"github.com/arcology-network/evm/rlp"
 	ethmpt "github.com/arcology-network/evm/trie"
 	"github.com/arcology-network/evm/trie/trienode"
@@ -23,6 +27,7 @@ import (
 
 type Account struct {
 	addr string
+
 	ethtypes.StateAccount
 	code         []byte
 	storageTrie  *ethmpt.Trie // account storage trie
@@ -62,10 +67,30 @@ func (this *Account) GetCodeHash() [32]byte {
 }
 
 func (this *Account) Prove(key [32]byte) ([][]byte, error) {
-	var proofs proofList
-	err := this.storageTrie.Prove(key[:], 0, &proofs)
+	var proof proofList
+	data, err := this.storageTrie.Get([]byte(key[:]))
+	if len(data) > 0 {
+		this.storageTrie.Prove([]byte(key[:]), 0, &proof)
+	}
+	return proof, err
+}
 
-	return proofs, common.IfThen(this.err != nil, this.err, err)
+func (this *Account) IsProvable(key [32]byte) ([]byte, error) {
+	proofs := memorydb.New()
+	data, err := this.storageTrie.Get([]byte(key[:]))
+	if len(data) > 0 && err == nil {
+		if err := this.storageTrie.Prove([]byte(key[:]), 0, proofs); err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, errors.New("Failed to find the proof")
+	}
+
+	v, err := ethmpt.VerifyProof(this.StateAccount.Root, []byte(key[:]), proofs)
+	if err != nil || len(v) == 0 {
+		return nil, errors.New("Failed to find the proof")
+	}
+	return data, nil
 }
 
 func (this *Account) DB(key string) ethdb.Database {
@@ -75,9 +100,14 @@ func (this *Account) DB(key string) ethdb.Database {
 	return this.diskdbShards[key[0]>>4]
 }
 
-func (this *Account) storageKey(key string) string {
-	if k := ccurlcommon.UnderNative(key); len(k) > 0 {
-		return k
+func (this *Account) ParseStorageKey(key string) string {
+	if k := ccurlcommon.GetPathUnder(key, "/storage/native/"); len(k) > 0 {
+		ccurlcommon.GetPathUnder(key, "/storage/native/")
+		kstr, err := hexutil.Decode(k)
+		if err != nil {
+			panic(err)
+		}
+		return string(kstr)
 	}
 	return string(this.Hash([]byte(key)))
 }
@@ -91,7 +121,7 @@ func (this *Account) Has(key string) bool {
 		return len(this.code) > 0
 	}
 
-	buffer, _ := this.storageTrie.Get([]byte(this.storageKey(key)))
+	buffer, _ := this.storageTrie.Get([]byte(this.ParseStorageKey(key)))
 	return len(buffer) > 0
 }
 
@@ -119,8 +149,8 @@ func (this *Account) Retrive(key string, T any) (interface{}, error) {
 		return noncommutative.NewBytes(this.code), nil
 	}
 
-	key = this.storageKey(key)
-	buffer, err := this.storageTrie.Get([]byte(key))
+	k := this.ParseStorageKey(key)
+	buffer, err := this.storageTrie.Get([]byte(k))
 	if len(buffer) == 0 {
 		return nil, nil
 	}
@@ -132,20 +162,25 @@ func (this *Account) Retrive(key string, T any) (interface{}, error) {
 }
 
 func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Type) {
-	if pos, _ := common.FindFirstIf(keys, func(v string) bool { return strings.HasSuffix(v, "/nonce") }); pos >= 0 {
+	if pos, _ := common.FindFirstIf(keys, func(k string) bool { return len(k) == ccurlcommon.ETH10_ACCOUNT_FULL_LENGTH+1 }); pos >= 0 {
+		common.RemoveAt(&keys, pos)
+		common.RemoveAt(&typedVals, pos)
+	}
+
+	if pos, _ := common.FindFirstIf(keys, func(k string) bool { return strings.HasSuffix(k, "/nonce") }); pos >= 0 {
 		this.Nonce = typedVals[pos].Value().(uint64)
 		common.RemoveAt(&keys, pos)
 		common.RemoveAt(&typedVals, pos)
 	}
 
-	if pos, _ := common.FindFirstIf(keys, func(key string) bool { return strings.HasSuffix(key, "/balance") }); pos >= 0 {
+	if pos, _ := common.FindFirstIf(keys, func(k string) bool { return strings.HasSuffix(k, "/balance") }); pos >= 0 {
 		balance := typedVals[pos].Value().(uint256.Int)
 		this.Balance = balance.ToBig()
 		common.RemoveAt(&keys, pos)
 		common.RemoveAt(&typedVals, pos)
 	}
 
-	if pos, _ := common.FindFirstIf(keys, func(key string) bool { return strings.HasSuffix(key, "/code") }); pos >= 0 {
+	if pos, _ := common.FindFirstIf(keys, func(k string) bool { return strings.HasSuffix(k, "/code") }); pos >= 0 {
 		this.code = typedVals[pos].Value().(codec.Bytes)
 		this.StateAccount.CodeHash = this.Hash(this.code)
 		if this.DB(keys[pos]).Put(this.CodeHash, this.code) != nil { // Save to DB directly, only for code
@@ -157,12 +192,12 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Typ
 
 	numThd := common.IfThen(len(keys) < 1024, 4, 8)
 
-	k := common.ParallelAppend(keys, numThd, func(i int) []byte { return []byte(this.storageKey(keys[i])) })
+	k := common.ParallelAppend(keys, numThd, func(i int) string { return this.ParseStorageKey(keys[i]) })
 	v := common.ParallelAppend(typedVals, numThd, func(i int) []byte {
 		return common.IfThenDo1st(typedVals[i] != nil, func() []byte { return typedVals[i].StorageEncode() }, []byte{})
 	})
 
-	this.storageTrie.ParallelUpdate(k, v)
+	this.storageTrie.ParallelUpdate(codec.Strings(k).ToBytes(), v)
 	this.Root = this.storageTrie.Hash()
 }
 
@@ -176,9 +211,62 @@ func (this *Account) Precommit(keys []string, values []interface{}) {
 		}))
 }
 
+// func (this *Account) Precommit(keys []string, values []interface{}) {
+// 	typedVals := common.Append(values, func(v interface{}) interfaces.Type {
+// 		return common.IfThenDo1st(v.(interfaces.Univalue).Value() != nil, func() interfaces.Type { return v.(interfaces.Univalue).Value().(interfaces.Type) }, nil)
+// 	})
+
+// 	if pos, _ := common.FindFirstIf(keys, func(k string) bool { return len(k) == ccurlcommon.ETH10_ACCOUNT_FULL_LENGTH+1 }); pos >= 0 {
+// 		common.RemoveAt(&keys, pos)
+// 		common.RemoveAt(&typedVals, pos)
+// 	}
+
+// 	if pos, _ := common.FindFirstIf(keys, func(k string) bool { return strings.HasSuffix(k, "/nonce") }); pos >= 0 {
+// 		this.Nonce = typedVals[pos].Value().(uint64)
+// 		common.RemoveAt(&keys, pos)
+// 		common.RemoveAt(&typedVals, pos)
+// 	}
+
+// 	if pos, _ := common.FindFirstIf(keys, func(k string) bool { return strings.HasSuffix(k, "/balance") }); pos >= 0 {
+// 		balance := typedVals[pos].Value().(uint256.Int)
+// 		this.Balance = balance.ToBig()
+// 		common.RemoveAt(&keys, pos)
+// 		common.RemoveAt(&typedVals, pos)
+// 	}
+
+// 	if pos, _ := common.FindFirstIf(keys, func(k string) bool { return strings.HasSuffix(k, "/code") }); pos >= 0 {
+// 		this.code = typedVals[pos].Value().(codec.Bytes)
+// 		this.StateAccount.CodeHash = this.Hash(this.code)
+// 		if this.DB(keys[pos]).Put(this.CodeHash, this.code) != nil { // Save to DB directly, only for code
+// 			panic("error")
+// 		}
+// 		common.RemoveAt(&keys, pos)
+// 		common.RemoveAt(&typedVals, pos)
+// 	}
+
+// 	numThd := common.IfThen(len(keys) < 1024, 4, 8)
+
+// 	k := common.ParallelAppend(keys, numThd, func(i int) string {
+// 		return this.ParseStorageKey(keys[i])
+// 	})
+
+// 	v := common.ParallelAppend(typedVals, numThd, func(i int) []byte {
+// 		return common.IfThenDo1st(typedVals[i] != nil, func() []byte { return typedVals[i].StorageEncode() }, []byte{})
+// 	})
+
+// 	this.storageTrie.ParallelUpdate(codec.Strings(k).ToBytes(), v)
+// 	this.Root = this.storageTrie.Hash()
+// }
+
 func (this *Account) Encode() []byte {
 	encoded, _ := rlp.EncodeToBytes(&this.StateAccount)
 	return encoded
+}
+
+func (*Account) Decode(buffer []byte) *Account {
+	var acctState types.StateAccount
+	rlp.DecodeBytes(buffer, &acctState)
+	return &Account{StateAccount: acctState}
 }
 
 // Write the DB
@@ -190,15 +278,19 @@ func (this *Account) Commit() error {
 	return this.ethdb.Commit(root, false) // Write to DB
 }
 
-func (*Account) Decode(buffer []byte) *Account {
-	var acctState types.StateAccount
-	rlp.DecodeBytes(buffer, acctState)
-	return &Account{StateAccount: acctState}
-}
-
 func (this *Account) Hash(key []byte) []byte {
 	hasher := sha3.NewLegacyKeccak256()
 	hasher.Write([]byte(key))
 	sum := hasher.Sum(nil)
 	return sum
+}
+
+func (this *Account) Print() {
+	fmt.Println("addr: ", this.addr)
+	fmt.Println("StateAccount: ", this.StateAccount)
+	fmt.Println("code: ", this.code)
+	fmt.Println("storageTrie: ", this.storageTrie)
+	fmt.Println("ethdb: ", this.ethdb)
+	fmt.Println("diskdbShards: ", this.diskdbShards)
+	fmt.Println("err: ", this.err)
 }

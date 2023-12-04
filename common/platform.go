@@ -84,20 +84,12 @@ func ParseAccountAddr(acct string) (string, string, string) {
 		acct[ETH10_ACCOUNT_PREFIX_LENGTH+ETH10_ACCOUNT_LENGTH:]
 }
 
-func UnderNative(key string) string {
-	if len(key) >= ETH10_ACCOUNT_PREFIX_LENGTH+ETH10_ACCOUNT_LENGTH {
+func GetPathUnder(key, prefix string) string {
+	if len(key) > ETH10_ACCOUNT_PREFIX_LENGTH+ETH10_ACCOUNT_LENGTH {
 		subKey := key[ETH10_ACCOUNT_PREFIX_LENGTH+ETH10_ACCOUNT_LENGTH:]
-		if strings.HasPrefix(subKey, "/storage/native/") {
-			return key[len(subKey)+len("/storage/native/"):]
+		if subKey != prefix && strings.HasPrefix(subKey, prefix) {
+			return subKey[len(prefix):]
 		}
-	}
-	return ""
-}
-
-func UnderContainer(key string) string {
-	subKey := key[ETH10_ACCOUNT_PREFIX_LENGTH+ETH10_ACCOUNT_LENGTH:]
-	if strings.HasPrefix(subKey, "/storage/container/") {
-		return key[len(subKey)+len("/storage/container/"):]
 	}
 	return ""
 }
