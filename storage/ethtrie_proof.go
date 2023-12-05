@@ -1,7 +1,6 @@
 package storage
 
 import (
-	ccmap "github.com/arcology-network/common-lib/container/map"
 	ethcommon "github.com/arcology-network/evm/common"
 	"github.com/arcology-network/evm/common/hexutil"
 	"github.com/arcology-network/evm/core/types"
@@ -10,36 +9,21 @@ import (
 	// ethapi "github.com/arcology-network/evm/internal/ethapi"
 )
 
-// For readonly proof generation
-func LoadDataStore(ethdb *ethmpt.Database, root [32]byte) (*EthDataStore, error) {
-	trie, err := ethmpt.New(ethmpt.TrieID(root), ethdb)
-	if trie == nil || err != nil {
-		return nil, err
-	}
+type MerkleProof struct {
+	DataStore *EthDataStore
+	Ethdb     *ethmpt.Database
+}
 
-	diskdb := ethmpt.GetBackendDB(ethdb).DBs()
-	return &EthDataStore{
-		ethdb:          ethmpt.NewParallelDatabase(diskdb, nil),
-		diskdbs:        diskdb,
-		acctLookup:     ccmap.NewConcurrentMap(),
-		worldStateTrie: trie,
-		encoder:        Rlp{}.Encode,
-		decoder:        Rlp{}.Decode,
+func NEwMerkleProof(ethdb *ethmpt.Database, root [32]byte) (*MerkleProof, error) {
+	return &MerkleProof{
+		LoadEthDataStore(ethdb, root),
+		ethdb,
 	}, nil
 }
 
-func GetProof(sourece *EthDataStore, ethdb *ethmpt.Database, acctStr string, storageKeys []string, rootHash [32]byte) (*AccountResult, error) {
-	// acct, _ := hex.DecodeString(acctStr)
+func (this *MerkleProof) GetProof(acctStr string, storageKeys []string) (*AccountResult, error) {
 	acctAddr := string(acctStr)
-
-	datastore, err := LoadDataStore(ethdb, rootHash)
-	if datastore == nil || err != nil {
-		return nil, err
-	}
-
-	// datastore = sourece
-
-	account, err := datastore.GetAccount(acctAddr, new(ethmpt.AccessListCache))
+	account, err := this.DataStore.GetAccount(acctAddr, new(ethmpt.AccessListCache))
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +59,7 @@ func GetProof(sourece *EthDataStore, ethdb *ethmpt.Database, acctStr string, sto
 	}
 
 	// create the accountProof
-	accountProof, proofErr := datastore.GetAccountProof([]byte(acctAddr)) // Get the account proof
+	accountProof, proofErr := this.DataStore.GetAccountProof([]byte(acctAddr)) // Get the account proof
 	if proofErr != nil {
 		return nil, proofErr
 	}
@@ -89,17 +73,4 @@ func GetProof(sourece *EthDataStore, ethdb *ethmpt.Database, acctStr string, sto
 		StorageHash:  storageHash,
 		StorageProof: storageProof,
 	}, nil // state.Error()
-}
-
-func GetAccountProof(ethdb *ethmpt.Database, acctAddr string, storageKeys []string, rootHash [32]byte) ([][]byte, error) {
-	datastore, err := LoadDataStore(ethdb, rootHash)
-	if datastore == nil || err != nil {
-		return nil, err
-	}
-
-	account, err := datastore.GetAccount(acctAddr, new(ethmpt.AccessListCache))
-	if account == nil || err != nil {
-		return nil, err
-	}
-	return datastore.GetAccountProof([]byte(acctAddr))
 }

@@ -111,12 +111,6 @@ func TestEthWorldTrieProof(t *testing.T) {
 	if _, err := bobAcctTrie.IsProvable((hash)); err != nil {
 		t.Error(err)
 	}
-
-	// roothash := dstore.Root()
-	// res, err := storage.GetProof(dstore, dstore.EthDB(), bob, []string{string("0x0000000000000000000000000000000000000000000000000000000000000000")}, roothash)
-	// if res.StorageProof[0].Value.ToInt().Cmp(big.NewInt(0)) == 0 {
-	// 	// t.Error(err)
-	// }
 }
 
 func TestGetProofAPI(t *testing.T) {
@@ -196,9 +190,14 @@ func TestGetProofAPI(t *testing.T) {
 
 	/* Through API interface */
 	roothash := store.Root()
-	accountResult, err := storage.GetProof(store, store.EthDB(), bob, []string{string("0x0000000000000000000000000000000000000000000000000000000000000000")}, roothash)
-	if accountResult.StorageProof[0].Value.ToInt().Cmp(big.NewInt(0)) == 0 {
-		// t.Error(err)
+
+	proof, err := storage.NEwMerkleProof(store.EthDB(), roothash)
+	if err != nil {
+		t.Error(err)
 	}
 
+	accountResult, err := proof.GetProof(bob, []string{string("0x0000000000000000000000000000000000000000000000000000000000000000")})
+	if accountResult.StorageProof[0].Value.ToInt().Cmp(big.NewInt(0)) == 0 {
+		t.Error(err)
+	}
 }

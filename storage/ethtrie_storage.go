@@ -8,7 +8,6 @@ import (
 	ccmap "github.com/arcology-network/common-lib/container/map"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
-	ethcommon "github.com/arcology-network/evm/common"
 	"github.com/arcology-network/evm/core/rawdb"
 	"github.com/arcology-network/evm/core/types"
 	ethdb "github.com/arcology-network/evm/ethdb"
@@ -21,33 +20,45 @@ import (
 
 type EthDataStore struct {
 	worldStateTrie *ethmpt.Trie
-	acctLookup     *ccmap.ConcurrentMap
+	acctCache      *ccmap.ConcurrentMap
 
-	ethdb      *ethmpt.Database
-	diskdbs    [16]ethdb.Database
-	latestRoot ethcommon.Hash
-	nodeBuffer *trienode.NodeSet
-	encoder    func(string, interface{}) []byte
-	decoder    func([]byte, any) interface{}
+	ethdb   *ethmpt.Database
+	diskdbs [16]ethdb.Database
+
+	encoder func(string, interface{}) []byte
+	decoder func([]byte, any) interface{}
 
 	lock  sync.RWMutex
 	dbErr error
+}
+
+func LoadEthDataStore(triedb *ethmpt.Database, root [32]byte) *EthDataStore {
+	trie, err := ethmpt.New(ethmpt.TrieID(root), triedb)
+	if trie == nil || err != nil {
+		return nil
+	}
+
+	diskdb := ethmpt.GetBackendDB(triedb).DBs()
+	return NewEthDataStore(trie, triedb, diskdb)
+}
+
+func NewEthDataStore(trie *ethmpt.Trie, triedb *ethmpt.Database, diskdb [16]ethdb.Database) *EthDataStore {
+	return &EthDataStore{
+		ethdb:          triedb,
+		diskdbs:        diskdb,
+		acctCache:      ccmap.NewConcurrentMap(),
+		worldStateTrie: trie,
+		encoder:        Rlp{}.Encode,
+		decoder:        Rlp{}.Decode,
+	}
 }
 
 func NewParallelEthMemDataStore() *EthDataStore {
 	diskdbs := [16]ethdb.Database{}
 	common.Fill(diskdbs[:], rawdb.NewMemoryDatabase())
 	db := ethmpt.NewParallelDatabase(diskdbs, nil)
-	paraTrie := ethmpt.NewEmptyParallel(db)
 
-	return &EthDataStore{
-		ethdb:          db,
-		diskdbs:        diskdbs,
-		acctLookup:     ccmap.NewConcurrentMap(),
-		worldStateTrie: paraTrie,
-		encoder:        Rlp{}.Encode,
-		decoder:        Rlp{}.Decode,
-	}
+	return NewEthDataStore(ethmpt.NewEmptyParallel(db), db, diskdbs)
 }
 
 func NewLevelDBDataStore(dir string) *EthDataStore {
@@ -60,20 +71,12 @@ func NewLevelDBDataStore(dir string) *EthDataStore {
 	common.Fill(diskdbs[:], leveldb)
 	db := ethmpt.NewParallelDatabase(diskdbs, nil)
 
-	paraTrie := ethmpt.NewEmptyParallel(db)
-	return &EthDataStore{
-		ethdb:          db,
-		diskdbs:        diskdbs,
-		acctLookup:     ccmap.NewConcurrentMap(),
-		worldStateTrie: paraTrie,
-		encoder:        Rlp{}.Encode,
-		decoder:        Rlp{}.Decode,
-	}
+	return NewEthDataStore(ethmpt.NewEmptyParallel(db), ethmpt.NewParallelDatabase(diskdbs, nil), diskdbs)
 }
 
 func (this *EthDataStore) Clear() {
 	var err error
-	this.worldStateTrie, err = ethmpt.NewParallel(ethmpt.TrieID(this.latestRoot), this.ethdb) // reopen the trie for future use
+	this.worldStateTrie, err = ethmpt.NewParallel(ethmpt.TrieID(this.worldStateTrie.Hash()), this.ethdb) // reopen the trie for future use
 	if err != nil {
 		panic(err)
 	}
@@ -112,19 +115,19 @@ func (this *EthDataStore) IsProvable(addr string) ([]byte, error) {
 	return v, nil
 }
 
-func (this *EthDataStore) LoadParallelTrie(root [32]byte) (*ethmpt.Trie, error) {
-	if this.latestRoot != root {
-		return ethmpt.NewParallel(ethmpt.TrieID(this.latestRoot), this.ethdb)
-	}
-	return this.worldStateTrie, nil
-}
+// func (this *EthDataStore) LoadParallelTrie(root [32]byte) (*ethmpt.Trie, error) {
+// 	if this.latestRoot != root {
+// 		return ethmpt.NewParallel(ethmpt.TrieID(this.latestRoot), this.ethdb)
+// 	}
+// 	return this.worldStateTrie, nil
+// }
 
 // Problem is here, need to load the storage trie first? and use storageKey as well
 func (this *EthDataStore) IfExists(key string) bool {
 	accesses := ethmpt.AccessListCache{}
 
 	_, accountKey, suffix := ccurlcommon.ParseAccountAddr(key)
-	if v, _ := this.acctLookup.Get(accountKey); v != nil {
+	if v, _ := this.acctCache.Get(accountKey); v != nil {
 		return len(key) == ccurlcommon.ETH10_ACCOUNT_FULL_LENGTH+1 || v.(*Account).Has(key) // If the account has the key
 	}
 
@@ -153,18 +156,18 @@ func (this *EthDataStore) BatchInject(keys []string, values []interface{}) error
 	for i := 0; i < len(keys); i++ {
 		_, key, _ := ccurlcommon.ParseAccountAddr(keys[i])
 
-		account, ok := this.acctLookup.Get(key)
+		account, ok := this.acctCache.Get(key)
 		if account != nil {
 			account = account.(*Account)
 		}
 
-		if v := common.FilterFirst(this.acctLookup.Get(key)); v != nil {
+		if v := common.FilterFirst(this.acctCache.Get(key)); v != nil {
 			account = v.(*Account)
 		}
 
 		if !ok {
 			account = NewAccount(key, this.diskdbs, EmptyAccountState()) // empty account
-			this.acctLookup.Set(key, account)
+			this.acctCache.Set(key, account)
 		}
 
 		// v := values[i]
@@ -175,7 +178,7 @@ func (this *EthDataStore) BatchInject(keys []string, values []interface{}) error
 		}
 	}
 
-	this.acctLookup.ForeachDo(func(k, accountTrie interface{}) {
+	this.acctCache.ForeachDo(func(k, accountTrie interface{}) {
 		this.worldStateTrie.Update([]byte(k.(string)), accountTrie.(*Account).Encode())
 	})
 
@@ -186,7 +189,7 @@ func (this *EthDataStore) BatchInject(keys []string, values []interface{}) error
 
 func (this *EthDataStore) GetAccount(accountKey string, accesses *ethmpt.AccessListCache) (*Account, error) {
 	if len(accountKey) > 0 {
-		if v, _ := this.acctLookup.Get(accountKey); v != nil { // Lookup in the cache first
+		if v, _ := this.acctCache.Get(accountKey); v != nil { // Lookup in the cache first
 			return v.(*Account), nil
 		}
 		return this.GetAccountFromTrie(accountKey, accesses)
@@ -237,7 +240,7 @@ func (this *EthDataStore) BatchRetrive(keys []string, T []any) []interface{} {
 
 func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte {
 	if len(keys) == 0 {
-		return this.latestRoot
+		return this.worldStateTrie.Hash()
 	}
 
 	accountKeys, stateGroups := common.GroupBy(common.ToPairs(keys, values.([]interface{})),
@@ -263,7 +266,7 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 	})
 
 	common.Foreach(accounts, func(acct **Account, _ int) {
-		this.acctLookup.Set((**acct).addr, *acct)
+		this.acctCache.Set((**acct).addr, *acct)
 	}) // Add to cache
 
 	// Update the account storage trie
@@ -271,7 +274,7 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 		(*acct).Precommit(common.FromPairs(stateGroups[idx]))
 	})
 
-	keys, accts := this.acctLookup.KVs()
+	keys, accts := this.acctCache.KVs()
 	encoded := common.Append(accts, func(acct interface{}) []byte {
 		return acct.(*Account).Encode()
 	})
@@ -296,22 +299,22 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 
 // Write the DB
 func (this *EthDataStore) Commit() error {
-	this.acctLookup.ParallelForeachDo(func(_, accountTrie interface{}) {
+	this.acctCache.ParallelForeachDo(func(_, accountTrie interface{}) {
 		accountTrie.(*Account).Commit() // Save the account tries to DB
 	})
 
 	// Save the world trie to DB
-	this.latestRoot, this.nodeBuffer = this.worldStateTrie.Commit(false) // Finalized the trie
-	if len(this.nodeBuffer.Nodes) == 0 {
+	latestRoot, nodeBuffer := this.worldStateTrie.Commit(false) // Finalized the trie
+	if len(nodeBuffer.Nodes) == 0 {
 		return nil
 	}
 
 	// DB update
-	if err := this.ethdb.Update(this.latestRoot, types.EmptyRootHash, trienode.NewWithNodeSet(this.nodeBuffer)); err != nil { // Move to DB dirty node set
+	if err := this.ethdb.Update(latestRoot, types.EmptyRootHash, trienode.NewWithNodeSet(nodeBuffer)); err != nil { // Move to DB dirty node set
 		return err
 	}
 
-	if err := this.ethdb.Commit(this.latestRoot, false); err != nil {
+	if err := this.ethdb.Commit(latestRoot, false); err != nil {
 		return err
 	}
 
@@ -319,7 +322,7 @@ func (this *EthDataStore) Commit() error {
 	// 	this.
 	// }
 
-	this.worldStateTrie, _ = ethmpt.New(ethmpt.TrieID(this.latestRoot), this.ethdb)
+	this.worldStateTrie, _ = ethmpt.New(ethmpt.TrieID(latestRoot), this.ethdb)
 	return nil
 }
 
@@ -328,7 +331,7 @@ func (this *EthDataStore) DiskDBs() [16]ethdb.Database {
 }
 
 // Place holders
-func (this *EthDataStore) Root() [32]byte                            { return this.latestRoot }
+func (this *EthDataStore) Root() [32]byte                            { return this.worldStateTrie.Hash() }
 func (this *EthDataStore) Encoder() func(string, interface{}) []byte { return this.encoder }
 func (this *EthDataStore) Decoder() func([]byte, any) interface{}    { return this.decoder }
 func (this *EthDataStore) EthDB() *ethmpt.Database                   { return this.ethdb }

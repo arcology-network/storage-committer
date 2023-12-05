@@ -60,6 +60,11 @@ func EmptyAccountState() types.StateAccount {
 	}
 }
 
+func (this *Account) GetState(key [32]byte) []byte {
+	data, _ := this.storageTrie.Get(key[:])
+	return data
+}
+
 func (this *Account) Trie() *ethmpt.Trie { return this.storageTrie }
 
 func (this *Account) GetCodeHash() [32]byte {
