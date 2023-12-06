@@ -4,7 +4,9 @@ import (
 	"encoding/hex"
 	"math/big"
 	"testing"
+	"time"
 
+	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
@@ -17,6 +19,68 @@ import (
 	hexutil "github.com/arcology-network/evm/common/hexutil"
 	ethmpt "github.com/arcology-network/evm/trie"
 )
+
+func TestConcurrentDB(t *testing.T) {
+	store := chooseDataStore()
+	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+	url := ccurl.NewConcurrentUrl(store)
+	alice := AliceAccount()
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+		t.Error(err)
+	}
+
+	bob := BobAccount()
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, bob); err != nil { // NewAccount account structure {
+		t.Error(err)
+	}
+
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
+		t.Error(err)
+	}
+
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
+		t.Error(err)
+	}
+
+	for i := 0; i < 1000; i++ {
+		hash := ethcommon.BytesToHash(codec.Uint64(uint64(i)).Encode())
+		if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/"+hexutil.Encode(hash[:]), noncommutative.NewString(string(codec.Uint64(i).Encode()))); err != nil {
+			t.Error(err)
+		}
+
+		if _, err := url.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/"+hexutil.Encode(hash[:]), noncommutative.NewString(string(codec.Uint64(i).Encode()))); err != nil {
+			t.Error(err)
+		}
+	}
+
+	common.ParallelExecute(
+		func() {
+			for i := 1000; i < 2000; i++ {
+				hash := ethcommon.BytesToHash(codec.Uint64(uint64(i)).Encode())
+				if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/"+hexutil.Encode(hash[:]), noncommutative.NewString("124")); err != nil {
+					t.Error(err)
+				}
+
+				if _, err := url.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/"+hexutil.Encode(hash[:]), noncommutative.NewString("124")); err != nil {
+					t.Error(err)
+				}
+				time.Sleep(5 * time.Millisecond)
+			}
+			// },
+			// func() {
+			for i := 0; i < 1000; i++ {
+				hash := ethcommon.BytesToHash(codec.Uint64(uint64(i)).Encode())
+				if v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/"+hexutil.Encode(hash[:]), new(noncommutative.String)); v != string(codec.Uint64(i).Encode()) {
+					t.Error("Mismatch")
+				}
+
+				if v, _ := url.Read(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/"+hexutil.Encode(hash[:]), new(noncommutative.String)); v != string(codec.Uint64(i).Encode()) {
+					t.Error("Mismatch")
+				}
+			}
+
+		})
+}
 
 func TestEthWorldTrieProof(t *testing.T) {
 	store := chooseDataStore()
@@ -191,7 +255,7 @@ func TestGetProofAPI(t *testing.T) {
 	/* Through API interface */
 	roothash := store.Root()
 
-	proof, err := storage.NEwMerkleProof(store.EthDB(), roothash)
+	proof, err := storage.NewMerkleProof(store.EthDB(), roothash)
 	if err != nil {
 		t.Error(err)
 	}

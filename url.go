@@ -33,36 +33,6 @@ func NewConcurrentUrl(store interfaces.Datastore) *ConcurrentUrl {
 	}
 }
 
-// func (this *ConcurrentUrl) KVs() ([]string, []interface{}) {
-// 	keys, values := this.importer.KVs()
-// 	invKeys, invVals := this.imuImporter.KVs()
-
-// 	kvs := make(map[string]interface{}, len(keys)+len(invKeys))
-// 	for i, key := range keys {
-// 		kvs[key] = values[i]
-// 	}
-// 	for i, key := range invKeys {
-// 		kvs[key] = invVals[i]
-// 	}
-
-// 	sortedKeys, err := performance.SortStrings(append(keys, invKeys...)) // Keys should be unique
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	// sortedKeys := append(keys, invKeys...)
-// 	// sort.Strings(sortedKeys)
-
-// 	sortedVals := make([]interface{}, len(sortedKeys))
-// 	sorter := func(start, end, index int, args ...interface{}) {
-// 		for i := start; i < end; i++ {
-// 			sortedVals[i] = kvs[sortedKeys[i]]
-// 		}
-// 	}
-// 	common.ParallelWorker(len(sortedKeys), 6, sorter)
-
-// 	return sortedKeys, sortedVals
-// }
-
 func (this *ConcurrentUrl) New(args ...interface{}) *ConcurrentUrl {
 	return &ConcurrentUrl{
 		writeCache: args[0].(*indexer.WriteCache),

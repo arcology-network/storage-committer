@@ -115,13 +115,6 @@ func (this *EthDataStore) IsProvable(addr string) ([]byte, error) {
 	return v, nil
 }
 
-// func (this *EthDataStore) LoadParallelTrie(root [32]byte) (*ethmpt.Trie, error) {
-// 	if this.latestRoot != root {
-// 		return ethmpt.NewParallel(ethmpt.TrieID(this.latestRoot), this.ethdb)
-// 	}
-// 	return this.worldStateTrie, nil
-// }
-
 // Problem is here, need to load the storage trie first? and use storageKey as well
 func (this *EthDataStore) IfExists(key string) bool {
 	accesses := ethmpt.AccessListCache{}

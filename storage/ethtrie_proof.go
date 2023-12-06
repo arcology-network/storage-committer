@@ -14,7 +14,7 @@ type MerkleProof struct {
 	Ethdb     *ethmpt.Database
 }
 
-func NEwMerkleProof(ethdb *ethmpt.Database, root [32]byte) (*MerkleProof, error) {
+func NewMerkleProof(ethdb *ethmpt.Database, root [32]byte) (*MerkleProof, error) {
 	return &MerkleProof{
 		LoadEthDataStore(ethdb, root),
 		ethdb,
