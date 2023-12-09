@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	ethcommon "github.com/arcology-network/evm/common"
-	"github.com/arcology-network/evm/common/hexutil"
-	// ethapi "github.com/arcology-network/evm/internal/ethapi"
+	ethcommon "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	// ethapi "github.com/ethereum/go-ethereum/internal/ethapi"
 )
 
 // Copied from ETH

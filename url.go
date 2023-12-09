@@ -317,7 +317,7 @@ func (this *ConcurrentUrl) WriteToDbBuffer() [32]byte {
 
 func (this *ConcurrentUrl) SaveToDB() {
 	store := this.importer.Store()
-	store.Commit() // Commit to the state store
+	store.Commit(0) // Commit to the state store
 	this.Clear()
 }
 

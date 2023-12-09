@@ -22,12 +22,12 @@ import (
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	storage "github.com/arcology-network/concurrenturl/storage"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
-	hexutil "github.com/arcology-network/evm/common/hexutil"
-	"github.com/arcology-network/evm/core/rawdb"
-	"github.com/arcology-network/evm/core/types"
-	"github.com/arcology-network/evm/ethdb"
-	"github.com/arcology-network/evm/trie"
-	ethmpt "github.com/arcology-network/evm/trie"
+	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/trie"
+	ethmpt "github.com/ethereum/go-ethereum/trie"
 )
 
 func TestEthTrieBasic(t *testing.T) {
@@ -77,7 +77,7 @@ func TestEthTrieBasic(t *testing.T) {
 		t.Error("Actual; :", v)
 	}
 
-	store.Commit() // Calculate root hash
+	store.Commit(0) // Calculate root hash
 }
 
 // need to hash the keys first

@@ -15,9 +15,9 @@ import (
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	ccurlstorage "github.com/arcology-network/concurrenturl/storage"
 	storage "github.com/arcology-network/concurrenturl/storage"
-	ethcommon "github.com/arcology-network/evm/common"
-	hexutil "github.com/arcology-network/evm/common/hexutil"
-	ethmpt "github.com/arcology-network/evm/trie"
+	ethcommon "github.com/ethereum/go-ethereum/common"
+	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
+	ethmpt "github.com/ethereum/go-ethereum/trie"
 )
 
 func TestConcurrentDB(t *testing.T) {
@@ -139,6 +139,15 @@ func TestEthWorldTrieProof(t *testing.T) {
 		t.Error("Error: Wrong return value")
 	}
 
+	/* Bob updates */
+	// if _, err := url.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
+	// 	t.Error(err)
+	// }
+
+	// if _, err := url.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/ele1", noncommutative.NewString("6789")); err != nil {
+	// 	t.Error(err)
+	// }
+
 	acctTrans = indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
 	url.Sort()
@@ -146,6 +155,7 @@ func TestEthWorldTrieProof(t *testing.T) {
 
 	url.Init(store)
 
+	/* Account Proofs */
 	dstore := url.Importer().Store().(*storage.EthDataStore)
 	if _, err := dstore.IsProvable((alice)); err != nil {
 		t.Error(err)
@@ -159,20 +169,16 @@ func TestEthWorldTrieProof(t *testing.T) {
 		t.Error("Error: Should've flagged an error")
 	}
 
-	bobAcctTrie, _ := dstore.GetAccountFromTrie(bob, &ethmpt.AccessListCache{})
-	bobAcctCache, _ := dstore.GetAccount(bob, &ethmpt.AccessListCache{})
-
-	// bobAcctTrie.Print()
-	// fmt.Println()
-	// bobAcctCache.Print()
-
 	kstr, _ := hexutil.Decode("0x0000000000000000000000000000000000000000000000000000000000000000")
 	hash := ethcommon.BytesToHash(kstr)
-	if _, err := bobAcctCache.IsProvable((hash)); err != nil {
+
+	bobCache, _ := dstore.GetAccount(bob, &ethmpt.AccessListCache{})
+	if _, err := bobCache.IsProvable((hash)); err != nil {
 		t.Error(err)
 	}
 
-	if _, err := bobAcctTrie.IsProvable((hash)); err != nil {
+	bobTrie, _ := dstore.GetAccountFromTrie(bob, &ethmpt.AccessListCache{})
+	if _, err := bobTrie.IsProvable((hash)); err != nil {
 		t.Error(err)
 	}
 }

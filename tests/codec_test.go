@@ -19,7 +19,7 @@ import (
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	storage "github.com/arcology-network/concurrenturl/storage"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
-	rlp "github.com/arcology-network/evm/rlp"
+	rlp "github.com/ethereum/go-ethereum/rlp"
 )
 
 func TestNoncommutativeCodec(t *testing.T) {

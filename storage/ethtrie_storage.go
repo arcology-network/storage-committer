@@ -8,13 +8,13 @@ import (
 	ccmap "github.com/arcology-network/common-lib/container/map"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
-	"github.com/arcology-network/evm/core/rawdb"
-	"github.com/arcology-network/evm/core/types"
-	ethdb "github.com/arcology-network/evm/ethdb"
-	"github.com/arcology-network/evm/ethdb/memorydb"
-	"github.com/arcology-network/evm/rlp"
-	ethmpt "github.com/arcology-network/evm/trie"
-	trienode "github.com/arcology-network/evm/trie/trienode"
+	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/ethereum/go-ethereum/core/types"
+	ethdb "github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/ethdb/memorydb"
+	"github.com/ethereum/go-ethereum/rlp"
+	ethmpt "github.com/ethereum/go-ethereum/trie"
+	trienode "github.com/ethereum/go-ethereum/trie/trienode"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -92,7 +92,7 @@ func (this *EthDataStore) Hash(key string) []byte {
 func (this *EthDataStore) GetAccountProof(addr []byte) ([][]byte, error) {
 	var proof proofList
 	if trie, _ := this.worldStateTrie.Get(addr); len(trie) > 0 {
-		err := this.worldStateTrie.Prove(addr, 0, &proof)
+		err := this.worldStateTrie.Prove(addr, &proof)
 		return proof, err
 	}
 	return [][]byte{}, nil
@@ -101,7 +101,7 @@ func (this *EthDataStore) GetAccountProof(addr []byte) ([][]byte, error) {
 func (this *EthDataStore) IsProvable(addr string) ([]byte, error) {
 	proofs := memorydb.New()
 	if trie, _ := this.worldStateTrie.Get([]byte(addr)); len(trie) > 0 {
-		if err := this.worldStateTrie.Prove([]byte(addr), 0, proofs); err != nil {
+		if err := this.worldStateTrie.Prove([]byte(addr), proofs); err != nil {
 			return nil, err
 		}
 	} else {
@@ -197,16 +197,19 @@ func (this *EthDataStore) GetAccountFromTrie(accountKey string, accesses *ethmpt
 			var acctState types.StateAccount
 			rlp.DecodeBytes(buffer, &acctState)
 
-			trie, err := ethmpt.New(ethmpt.TrieID(acctState.Root), this.EthDB())
-			return &Account{
-				accountKey,
-				acctState,
-				common.FilterFirst(this.diskdbs[0].Get(acctState.CodeHash)), // code
-				trie,
-				this.ethdb,
-				this.diskdbs,
-				nil,
-			}, err
+			if trie, err := ethmpt.New(ethmpt.TrieID(acctState.Root), this.EthDB()); trie != nil && err == nil {
+				return &Account{
+					accountKey,
+					acctState,
+					common.FilterFirst(this.diskdbs[0].Get(acctState.CodeHash)), // code
+					trie,
+					this.ethdb,
+					this.diskdbs,
+					nil,
+					[]string{},
+					[][]byte{},
+				}, nil
+			}
 		}
 		return nil, err
 	}
@@ -267,6 +270,19 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 		(*acct).Precommit(common.FromPairs(stateGroups[idx]))
 	})
 
+	// for _, acct := range accounts {
+	// 	values, err := acct.storageTrie.ParallelGet(codec.Strings(acct.keyBuffer).ToBytes())
+	// 	if err != nil {
+	// 		fmt.Println("Error: ", err)
+	// 	}
+
+	// 	for i, val := range values {
+	// 		if !bytes.Equal(val, acct.valBuffer[i]) {
+	// 			panic("Not equal ")
+	// 		}
+	// 	}
+	// }
+
 	keys, accts := this.acctCache.KVs()
 	encoded := common.Append(accts, func(acct interface{}) []byte {
 		return acct.(*Account).Encode()
@@ -274,36 +290,43 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 	this.worldStateTrie.ParallelUpdate(common.Append(keys, func(key string) []byte { return ([]byte(key)) }), encoded)
 
 	// Debug only
-	// for _, k := range this.keyBuffer {
-	// 	acct, err := this.GetAccountFromTrie(k, &ethmpt.AccessListCache{})
-	// 	if err != nil {
-	// 		panic("acct")
-	// 	}
-	// 	for _, state := range stateGroups {
-	// 		hash := ethcommon.BytesToHash([]byte(state[0].First))
-	// 		if _, err := acct.IsProvable(hash); err != nil {
-	// 			panic("pp ")
-	// 		}
-	// 	}
-	// }
+	for _, k := range keys {
+		acctBuffer, err := this.worldStateTrie.Get([]byte(k))
+		if err != nil || len(acctBuffer) == 0 {
+			panic(err)
+		}
+	}
 
 	return this.worldStateTrie.Hash()
 }
 
 // Write the DB
-func (this *EthDataStore) Commit() error {
-	this.acctCache.ParallelForeachDo(func(_, accountTrie interface{}) {
-		accountTrie.(*Account).Commit() // Save the account tries to DB
+func (this *EthDataStore) Commit(block uint64) error {
+	this.acctCache.ParallelForeachDo(func(_, accountTrie interface{}) { // Save the account tries to DB
+		if err := accountTrie.(*Account).Commit(block); err != nil {
+			panic(err)
+		}
 	})
 
+	keys, _ := this.acctCache.KVs()
+	for _, k := range keys {
+		acctBuffer, err := this.worldStateTrie.Get([]byte(k))
+		if err != nil || len(acctBuffer) == 0 {
+			panic(err)
+		}
+	}
 	// Save the world trie to DB
-	latestRoot, nodeBuffer := this.worldStateTrie.Commit(false) // Finalized the trie
+	latestRoot, nodeBuffer, err := this.worldStateTrie.Commit(false) // Finalized the trie
+	if err != nil {
+		return err
+	}
+
 	if len(nodeBuffer.Nodes) == 0 {
 		return nil
 	}
 
 	// DB update
-	if err := this.ethdb.Update(latestRoot, types.EmptyRootHash, trienode.NewWithNodeSet(nodeBuffer)); err != nil { // Move to DB dirty node set
+	if err := this.ethdb.Update(latestRoot, types.EmptyRootHash, block, trienode.NewWithNodeSet(nodeBuffer), nil); err != nil { // Move to DB dirty node set
 		return err
 	}
 
@@ -311,12 +334,30 @@ func (this *EthDataStore) Commit() error {
 		return err
 	}
 
-	// for _, k := range this.keyBuffer {
-	// 	this.
+	// keys, _ := this.acctCache.KVs()
+	// for _, k := range keys {
+	// acct, err := this.GetAccountFromTrie(k, &ethmpt.AccessListCache{})
+	// acctBuffer, err := this.worldStateTrie.Get([]byte(k))
+	// if err != nil || len(acctBuffer) == 0 {
+	// 	panic(err)
+	// }
+	// for _, state := range stateGroups {
+	// 	hash := ethcommon.BytesToHash([]byte(state[0].First))
+	// 	if _, err := acct.IsProvable(hash); err != nil {
+	// 		panic("pp ")
+	// 	}
+	// }
 	// }
 
-	this.worldStateTrie, _ = ethmpt.New(ethmpt.TrieID(latestRoot), this.ethdb)
-	return nil
+	this.worldStateTrie, err = ethmpt.NewParallel(ethmpt.TrieID(latestRoot), this.ethdb)
+
+	// for _, k := range keys {
+	// 	acctBuffer, err := this.GetAccountFromTrie(k, &ethmpt.AccessListCache{})
+	// 	if err != nil || acctBuffer == nil {
+	// 		panic(err)
+	// 	}
+	// }
+	return err
 }
 
 func (this *EthDataStore) DiskDBs() [16]ethdb.Database {

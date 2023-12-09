@@ -39,7 +39,7 @@ func (this *TransientDB) IfExists(key string) bool {
 	return this.DataStore.IfExists(key) || this.readonlyParent.IfExists(key)
 }
 
-func (this *TransientDB) Commit() error { return this.DataStore.Commit() }
+func (this *TransientDB) Commit(_ uint64) error { return this.DataStore.Commit(0) }
 
 // func (this *TransientDB) Checksum() [32]byte { return this.DataStore.Checksum() }
 func (this *TransientDB) Print() { this.DataStore.Print() }

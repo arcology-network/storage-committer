@@ -12,15 +12,15 @@ import (
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
-	hexutil "github.com/arcology-network/evm/common/hexutil"
-	"github.com/arcology-network/evm/core/types"
-	ethtypes "github.com/arcology-network/evm/core/types"
-	"github.com/arcology-network/evm/crypto"
-	"github.com/arcology-network/evm/ethdb"
-	"github.com/arcology-network/evm/ethdb/memorydb"
-	"github.com/arcology-network/evm/rlp"
-	ethmpt "github.com/arcology-network/evm/trie"
-	"github.com/arcology-network/evm/trie/trienode"
+	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/types"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/ethdb/memorydb"
+	"github.com/ethereum/go-ethereum/rlp"
+	ethmpt "github.com/ethereum/go-ethereum/trie"
+	"github.com/ethereum/go-ethereum/trie/trienode"
 	"github.com/holiman/uint256"
 	"golang.org/x/crypto/sha3"
 )
@@ -34,6 +34,9 @@ type Account struct {
 	ethdb        *ethmpt.Database
 	diskdbShards [16]ethdb.Database
 	err          error
+
+	keyBuffer []string
+	valBuffer [][]byte
 }
 
 // The diskdbs need to able to handle concurrent accesses themselve
@@ -75,7 +78,7 @@ func (this *Account) Prove(key [32]byte) ([][]byte, error) {
 	var proof proofList
 	data, err := this.storageTrie.Get([]byte(key[:]))
 	if len(data) > 0 {
-		this.storageTrie.Prove([]byte(key[:]), 0, &proof)
+		this.storageTrie.Prove([]byte(key[:]), &proof)
 	}
 	return proof, err
 }
@@ -84,7 +87,7 @@ func (this *Account) IsProvable(key [32]byte) ([]byte, error) {
 	proofs := memorydb.New()
 	data, err := this.storageTrie.Get([]byte(key[:]))
 	if len(data) > 0 && err == nil {
-		if err := this.storageTrie.Prove([]byte(key[:]), 0, proofs); err != nil {
+		if err := this.storageTrie.Prove([]byte(key[:]), proofs); err != nil {
 			return nil, err
 		}
 	} else {
@@ -204,6 +207,10 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Typ
 
 	this.storageTrie.ParallelUpdate(codec.Strings(k).ToBytes(), v)
 	this.Root = this.storageTrie.Hash()
+
+	this.keyBuffer = k
+	this.valBuffer = v
+
 }
 
 func (this *Account) Precommit(keys []string, values []interface{}) {
@@ -215,53 +222,6 @@ func (this *Account) Precommit(keys []string, values []interface{}) {
 			return nil
 		}))
 }
-
-// func (this *Account) Precommit(keys []string, values []interface{}) {
-// 	typedVals := common.Append(values, func(v interface{}) interfaces.Type {
-// 		return common.IfThenDo1st(v.(interfaces.Univalue).Value() != nil, func() interfaces.Type { return v.(interfaces.Univalue).Value().(interfaces.Type) }, nil)
-// 	})
-
-// 	if pos, _ := common.FindFirstIf(keys, func(k string) bool { return len(k) == ccurlcommon.ETH10_ACCOUNT_FULL_LENGTH+1 }); pos >= 0 {
-// 		common.RemoveAt(&keys, pos)
-// 		common.RemoveAt(&typedVals, pos)
-// 	}
-
-// 	if pos, _ := common.FindFirstIf(keys, func(k string) bool { return strings.HasSuffix(k, "/nonce") }); pos >= 0 {
-// 		this.Nonce = typedVals[pos].Value().(uint64)
-// 		common.RemoveAt(&keys, pos)
-// 		common.RemoveAt(&typedVals, pos)
-// 	}
-
-// 	if pos, _ := common.FindFirstIf(keys, func(k string) bool { return strings.HasSuffix(k, "/balance") }); pos >= 0 {
-// 		balance := typedVals[pos].Value().(uint256.Int)
-// 		this.Balance = balance.ToBig()
-// 		common.RemoveAt(&keys, pos)
-// 		common.RemoveAt(&typedVals, pos)
-// 	}
-
-// 	if pos, _ := common.FindFirstIf(keys, func(k string) bool { return strings.HasSuffix(k, "/code") }); pos >= 0 {
-// 		this.code = typedVals[pos].Value().(codec.Bytes)
-// 		this.StateAccount.CodeHash = this.Hash(this.code)
-// 		if this.DB(keys[pos]).Put(this.CodeHash, this.code) != nil { // Save to DB directly, only for code
-// 			panic("error")
-// 		}
-// 		common.RemoveAt(&keys, pos)
-// 		common.RemoveAt(&typedVals, pos)
-// 	}
-
-// 	numThd := common.IfThen(len(keys) < 1024, 4, 8)
-
-// 	k := common.ParallelAppend(keys, numThd, func(i int) string {
-// 		return this.ParseStorageKey(keys[i])
-// 	})
-
-// 	v := common.ParallelAppend(typedVals, numThd, func(i int) []byte {
-// 		return common.IfThenDo1st(typedVals[i] != nil, func() []byte { return typedVals[i].StorageEncode() }, []byte{})
-// 	})
-
-// 	this.storageTrie.ParallelUpdate(codec.Strings(k).ToBytes(), v)
-// 	this.Root = this.storageTrie.Hash()
-// }
 
 func (this *Account) Encode() []byte {
 	encoded, _ := rlp.EncodeToBytes(&this.StateAccount)
@@ -275,11 +235,31 @@ func (*Account) Decode(buffer []byte) *Account {
 }
 
 // Write the DB
-func (this *Account) Commit() error {
-	root, nodes := this.storageTrie.Commit(false)                                                        // Finalized the trie
-	if err := this.ethdb.Update(root, types.EmptyRootHash, trienode.NewWithNodeSet(nodes)); err != nil { // Move to DB dirty node set
+func (this *Account) Commit(block uint64) error {
+	root, nodes, err := this.storageTrie.Commit(false) // Finalized the trie
+	if err != nil {
 		return err
 	}
+
+	if root != this.Root {
+		return errors.New("Root mismatched")
+	}
+
+	// Initialize an empty node set, even there is no change
+	nodes = common.IfThen(nodes == nil, trienode.NewNodeSet(types.EmptyRootHash), nodes)
+
+	if err := this.ethdb.Update(root, types.EmptyRootHash, block, trienode.NewWithNodeSet(nodes), nil); err != nil { // Move to DB dirty node set
+		return err
+	}
+
+	if err := this.ethdb.Commit(root, false); err != nil { // Write to DB
+		return err
+	}
+
+	if this.storageTrie, err = ethmpt.NewParallel(ethmpt.TrieID(root), this.ethdb); err != nil { // Reload the trie for next round
+		return err
+	}
+
 	return this.ethdb.Commit(root, false) // Write to DB
 }
 

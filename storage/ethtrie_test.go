@@ -4,9 +4,9 @@ import (
 	"math/big"
 	"testing"
 
-	ethcommon "github.com/arcology-network/evm/common"
-	ethtypes "github.com/arcology-network/evm/core/types"
-	"github.com/arcology-network/evm/rlp"
+	ethcommon "github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 func TestAccountCode(t *testing.T) {

@@ -141,6 +141,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 
 	acctTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	url.Import(acctTrans)
+	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Init(store)
