@@ -3,6 +3,7 @@ package ccurltest
 import (
 	"github.com/arcology-network/concurrenturl/interfaces"
 	storage "github.com/arcology-network/concurrenturl/storage"
+	// trie "github.com/ethereum/go-ethereum/trie"
 )
 
 const (

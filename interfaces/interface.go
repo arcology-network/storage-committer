@@ -116,10 +116,10 @@ type WriteCache interface {
 
 	Retrive(string, any) (interface{}, error)
 	Cache() *map[string]Univalue
-	Store() ReadonlyDatastore
+	Store() DataStoreReader
 }
 
-type ReadonlyDatastore interface {
+type DataStoreReader interface {
 	IfExists(string) bool
 	Retrive(string, any) (interface{}, error)
 }
@@ -131,7 +131,7 @@ type Datastore interface {
 	Retrive(string, any) (interface{}, error)
 	BatchRetrive([]string, []any) []interface{}
 	Precommit([]string, interface{}) [32]byte
-	Commit() error
+	Commit(uint64) error
 	UpdateCacheStats([]interface{})
 
 	Encoder() func(string, interface{}) []byte

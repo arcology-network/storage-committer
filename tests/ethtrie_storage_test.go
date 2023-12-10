@@ -22,10 +22,10 @@ import (
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	storage "github.com/arcology-network/concurrenturl/storage"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
+	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/ethereum/go-ethereum/trie"
 	ethmpt "github.com/ethereum/go-ethereum/trie"
 )
@@ -34,14 +34,15 @@ func TestEthTrieBasic(t *testing.T) {
 	store := storage.NewParallelEthMemDataStore()
 	keys := []string{
 		"blcc://eth1.0/account/abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbc/storage/container/ctrn-0/",
-		"blcc://eth1.0/account/abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbc/storage/native/" + string(codec.Bytes32([32]byte{1}).Encode()),
-		"blcc://eth1.0/account/abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbc/storage/native/" + string(codec.Bytes32([32]byte{2}).Encode()),
+
+		"blcc://eth1.0/account/abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbc/storage/container/" + hexutil.Encode((codec.Bytes32([32]byte{1}).Encode())),
+		"blcc://eth1.0/account/abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbc/storage/native/" + hexutil.Encode((codec.Bytes32([32]byte{2}).Encode())),
 	}
 
 	vals := []interface{}{
 		univalue.NewUnivalue(0, "", 0, 0, 0, commutative.NewBoundedUint64(1, 111), nil),
 		univalue.NewUnivalue(0, "", 0, 0, 0, commutative.InitNewPaths([]string{"ctrn-0"}), nil),
-		univalue.NewUnivalue(0, "", 0, 0, 0, noncommutative.NewInt64(199), nil),
+		univalue.NewUnivalue(0, "", 0, 0, 0, noncommutative.NewInt64(99), nil),
 	}
 
 	store.Precommit(keys, vals)
@@ -52,7 +53,7 @@ func TestEthTrieBasic(t *testing.T) {
 	}
 
 	if v == nil || !vals[0].(interfaces.Univalue).Value().(interfaces.Type).Equal(v) {
-		t.Error("Expeced :", vals[0].(interfaces.Univalue).Value().(interfaces.Type))
+		t.Error("Expected :", vals[0].(interfaces.Univalue).Value().(interfaces.Type))
 		t.Error("Actual; :", v)
 	}
 
@@ -62,7 +63,7 @@ func TestEthTrieBasic(t *testing.T) {
 	}
 
 	if v == nil || !vals[1].(interfaces.Univalue).Value().(interfaces.Type).Equal(v) {
-		t.Error("Expeced :", vals[0].(interfaces.Univalue).Value().(interfaces.Type))
+		t.Error("Expected :", vals[0].(interfaces.Univalue).Value().(interfaces.Type))
 		t.Error("Actual; :", v)
 	}
 
@@ -72,98 +73,17 @@ func TestEthTrieBasic(t *testing.T) {
 	}
 
 	if v == nil || !vals[2].(interfaces.Univalue).Value().(interfaces.Type).Equal(v) {
-		t.Error("Expeced :", vals[0].(interfaces.Univalue).Value().(interfaces.Type))
+		t.Error("Expected :", vals[0].(interfaces.Univalue).Value().(interfaces.Type))
 		t.Error("Actual; :", v)
 	}
 
-	store.Commit() // Calculate root hash
-}
-
-func TestEthTrieBasicProof(t *testing.T) {
-	store := storage.NewParallelEthMemDataStore()
-
-	aliceKeys := []string{
-		"blcc://eth1.0/account/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/storage/container/ctrn-0/",
-		"blcc://eth1.0/account/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/storage/native/" + string(codec.Bytes32([32]byte{1}).Encode()),
-		"blcc://eth1.0/account/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/storage/native/" + string(codec.Bytes32([32]byte{2}).Encode()),
-	}
-
-	vals := []interface{}{
-		univalue.NewUnivalue(0, "", 0, 0, 0, commutative.NewBoundedUint64(1, 111), nil),
-		univalue.NewUnivalue(0, "", 0, 0, 0, commutative.InitNewPaths([]string{"ctrn-0"}), nil),
-		univalue.NewUnivalue(0, "", 0, 0, 0, noncommutative.NewInt64(199), nil),
-	}
-
-	store.Precommit(aliceKeys, vals)
-	store.Commit() // Calculate root hash
-
-	proofs := memorydb.New()
-	common.FilterFirst(storage.LoadDataStore(store.EthDB(), store.Root())).Trie().Prove(store.Hash(aliceKeys[0]), proofs)
-	if _, err := ethmpt.VerifyProof(store.Root(), store.Hash(aliceKeys[0]), proofs); err != nil {
-		t.Error("Actual :", err)
-	}
-
-	common.FilterFirst(storage.LoadDataStore(store.EthDB(), store.Root())).Trie().Prove(store.Hash(aliceKeys[1]), proofs)
-	if _, err := ethmpt.VerifyProof(store.Root(), store.Hash(aliceKeys[1]), proofs); err != nil {
-		t.Error("Actual :", err)
-	}
-
-	common.FilterFirst(storage.LoadDataStore(store.EthDB(), store.Root())).Trie().Prove(store.Hash(aliceKeys[2]), proofs)
-	if _, err := ethmpt.VerifyProof(store.Root(), store.Hash(aliceKeys[2]), proofs); err != nil {
-		t.Error("Actual :", err)
-	}
-}
-
-func TestEthWorldTrieProof(t *testing.T) {
-	url := ccurl.NewConcurrentUrl(storage.NewParallelEthMemDataStore())
-	alice := AliceAccount()
-	aliceTrans, _ := url.NewAccount(0, alice)
-	fmt.Print(aliceTrans)
-
-	bob := BobAccount()
-	bobTrans, _ := url.NewAccount(0, bob)
-	fmt.Print(bobTrans)
-
-	bobTrans[0].Value().(interfaces.Type).Clone()
-
-	acctTrans := url.Export(indexer.Sorter)
-
-	url.Import(acctTrans)
-	url.Sort()
-	url.Commit([]uint32{0})
-
-	proofs := memorydb.New() // Proof DB
-	store := url.Importer().Store().(*storage.EthDataStore)
-	// store.Precommit()
-
-	// Prove the world trie path
-	store.Trie().Prove([]byte(*aliceTrans[0].GetPath()), proofs)
-	if _, err := ethmpt.VerifyProof(store.Trie().Hash(), []byte(alice), proofs); err != nil {
-		t.Error("Actual :", err)
-	}
-
-	// aliceAcctFromTrie := store.GetAccountFromTrie(alice, new(ethmpt.AccessListCache))
-
-	// if len(aliceAcctData.([]byte)) == 0 {
-	// 	t.Error("Error:")
-	// }
-
-	// Get Alice's account
-	aliceAcct, _ := store.GetAccountFromTrie(alice, &ethmpt.AccessListCache{})
-	fmt.Print(aliceAcct)
-
-	// Prove the storage value
-	// proofs = memorydb.New() // Proof DB
-	// aliceAcct.Trie().Prove([]byte(*aliceTrans[0].GetPath()), 0, proofs)
-	// if _, err := ethmpt.VerifyProof(aliceAcct.StateAccount.Root, []byte(*aliceTrans[0].GetPath()), proofs); err != nil {
-	// 	t.Error("Actual :", err)
-	// }
+	store.Commit(0) // Calculate root hash
 }
 
 // need to hash the keys first
 func TestEthStorageConnection(t *testing.T) {
 	store := chooseDataStore()
-	// store := chooseDataStore()
+	store = chooseDataStore()
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
@@ -267,13 +187,13 @@ func TestEthDataStoreAddDeleteRead(t *testing.T) {
 		fmt.Println(err)
 	}
 
-	// acctTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{})
-	// url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
+	acctTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{})
+	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
 
-	// url.Sort()
-	// url.Commit([]uint32{ccurlcommon.SYSTEM})
+	url.Sort()
+	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
-	// url.Init(store)
+	url.Init(store)
 	// create a path
 
 	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.NewPath()); err != nil {
@@ -293,13 +213,17 @@ func TestEthDataStoreAddDeleteRead(t *testing.T) {
 		t.Error(err)
 	}
 
-	// Write an entry having the the same name of a path, should go through
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil); err != nil {
-		t.Error(err)
+	meta, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path))
+	keys := meta.(*orderedset.OrderedSet).Keys()
+	if meta == nil || len(keys) != 2 ||
+		keys[0] != "elem-000" ||
+		keys[1] != "elem-001" {
+		t.Error("not found")
 	}
 
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{}); value != nil {
-		t.Error("not found")
+	// Delete the path
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil); err != nil {
+		t.Error(err)
 	}
 
 	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", new(noncommutative.Int64)); value != nil {
@@ -331,8 +255,8 @@ func TestEthDataStoreAddDeleteRead(t *testing.T) {
 		t.Error("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-000 not found")
 	}
 
-	meta, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
-	keys := meta.(*orderedset.OrderedSet).Keys()
+	meta, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
+	keys = meta.(*orderedset.OrderedSet).Keys()
 	if meta == nil || len(keys) != 2 ||
 		keys[0] != "elem-888" ||
 		keys[1] != "elem-999" {

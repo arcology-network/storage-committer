@@ -31,6 +31,10 @@ func TestAddAndDelete(t *testing.T) {
 	path := commutative.NewPath()
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
 
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000000", noncommutative.NewString("124")); err != nil {
+		t.Error(err)
+	}
+
 	acctTrans = indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
 	url.Sort()
@@ -47,6 +51,20 @@ func TestAddAndDelete(t *testing.T) {
 	if acctTrans := raw; len(acctTrans) != 0 {
 		t.Error("Error: Wrong number of transitions")
 	}
+
+	// Delete an non-existing entry, should NOT appear in the transitions
+	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/4", noncommutative.NewString("124")); err != nil {
+		t.Error("Failed to write", err)
+	}
+
+	if v, err := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/4", nil); v != "124" {
+		t.Error("Wrong return value", err)
+	}
+
+	if v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000000", new(noncommutative.String)); v != "124" {
+		t.Error("Error: Wrong return value")
+	}
+
 }
 
 func TestRecursiveDeletionSameBatch(t *testing.T) {
@@ -123,6 +141,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 
 	acctTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	url.Import(acctTrans)
+	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	url.Init(store)

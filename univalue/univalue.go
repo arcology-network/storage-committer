@@ -43,8 +43,6 @@ func (*Univalue) New(meta, value, cache interface{}) interface{} {
 
 func (this *Univalue) From(v interfaces.Univalue) interface{} { return v }
 
-// func (this *Univalue) Filter() interfaces.Univalue                    { return this }
-
 // func (this *Univalue) IsHotLoaded() bool             { return this.reads > 1 }
 func (this *Univalue) SetTx(txId uint32)  { this.tx = txId }
 func (this *Univalue) ClearCache()        { this.cache = this.cache[:0] }
