@@ -11,7 +11,7 @@ import (
 	merkle "github.com/arcology-network/common-lib/merkle"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
-	"github.com/arcology-network/evm/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 const (

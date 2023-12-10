@@ -9,13 +9,13 @@ import (
 	"github.com/arcology-network/common-lib/merkle"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
-	ethcommon "github.com/arcology-network/evm/common"
-	"github.com/arcology-network/evm/core/rawdb"
-	"github.com/arcology-network/evm/core/types"
-	ethdb "github.com/arcology-network/evm/ethdb"
-	"github.com/arcology-network/evm/rlp"
-	ethmpt "github.com/arcology-network/evm/trie"
-	trienode "github.com/arcology-network/evm/trie/trienode"
+	ethcommon "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/ethereum/go-ethereum/core/types"
+	ethdb "github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/rlp"
+	ethmpt "github.com/ethereum/go-ethereum/trie"
+	trienode "github.com/ethereum/go-ethereum/trie/trienode"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -88,7 +88,7 @@ func (this *EthDataStore) Hash(key string) []byte {
 
 func (this *EthDataStore) Prove(key [20]byte) ([][]byte, error) {
 	var proofs proofList
-	err := this.worldStateTrie.Prove(key[:], 0, &proofs)
+	err := this.worldStateTrie.Prove(key[:], &proofs)
 
 	return proofs, err
 }
@@ -263,13 +263,13 @@ func (this *EthDataStore) Commit() error {
 	})
 
 	// Save the world trie to DB
-	this.latestRoot, this.nodeBuffer = this.worldStateTrie.Commit(false) // Finalized the trie
+	this.latestRoot, this.nodeBuffer, _ = this.worldStateTrie.Commit(false) // Finalized the trie
 	if this.nodeBuffer == nil || len(this.nodeBuffer.Nodes) == 0 {
 		return nil
 	}
 
 	// DB update
-	if err := this.ethdb.Update(this.latestRoot, types.EmptyRootHash, trienode.NewWithNodeSet(this.nodeBuffer)); err != nil { // Move to DB dirty node set
+	if err := this.ethdb.Update(this.latestRoot, types.EmptyRootHash, 0, trienode.NewWithNodeSet(this.nodeBuffer), nil); err != nil { // Move to DB dirty node set
 		return err
 	}
 

@@ -22,12 +22,12 @@ import (
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	storage "github.com/arcology-network/concurrenturl/storage"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
-	"github.com/arcology-network/evm/core/rawdb"
-	"github.com/arcology-network/evm/core/types"
-	"github.com/arcology-network/evm/ethdb"
-	"github.com/arcology-network/evm/ethdb/memorydb"
-	"github.com/arcology-network/evm/trie"
-	ethmpt "github.com/arcology-network/evm/trie"
+	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/ethdb/memorydb"
+	"github.com/ethereum/go-ethereum/trie"
+	ethmpt "github.com/ethereum/go-ethereum/trie"
 )
 
 func TestEthTrieBasic(t *testing.T) {
@@ -98,17 +98,17 @@ func TestEthTrieBasicProof(t *testing.T) {
 	store.Commit() // Calculate root hash
 
 	proofs := memorydb.New()
-	common.FilterFirst(storage.LoadDataStore(store.EthDB(), store.Root())).Trie().Prove(store.Hash(aliceKeys[0]), 0, proofs)
+	common.FilterFirst(storage.LoadDataStore(store.EthDB(), store.Root())).Trie().Prove(store.Hash(aliceKeys[0]), proofs)
 	if _, err := ethmpt.VerifyProof(store.Root(), store.Hash(aliceKeys[0]), proofs); err != nil {
 		t.Error("Actual :", err)
 	}
 
-	common.FilterFirst(storage.LoadDataStore(store.EthDB(), store.Root())).Trie().Prove(store.Hash(aliceKeys[1]), 0, proofs)
+	common.FilterFirst(storage.LoadDataStore(store.EthDB(), store.Root())).Trie().Prove(store.Hash(aliceKeys[1]), proofs)
 	if _, err := ethmpt.VerifyProof(store.Root(), store.Hash(aliceKeys[1]), proofs); err != nil {
 		t.Error("Actual :", err)
 	}
 
-	common.FilterFirst(storage.LoadDataStore(store.EthDB(), store.Root())).Trie().Prove(store.Hash(aliceKeys[2]), 0, proofs)
+	common.FilterFirst(storage.LoadDataStore(store.EthDB(), store.Root())).Trie().Prove(store.Hash(aliceKeys[2]), proofs)
 	if _, err := ethmpt.VerifyProof(store.Root(), store.Hash(aliceKeys[2]), proofs); err != nil {
 		t.Error("Actual :", err)
 	}
@@ -137,7 +137,7 @@ func TestEthWorldTrieProof(t *testing.T) {
 	// store.Precommit()
 
 	// Prove the world trie path
-	store.Trie().Prove([]byte(*aliceTrans[0].GetPath()), 0, proofs)
+	store.Trie().Prove([]byte(*aliceTrans[0].GetPath()), proofs)
 	if _, err := ethmpt.VerifyProof(store.Trie().Hash(), []byte(alice), proofs); err != nil {
 		t.Error("Actual :", err)
 	}

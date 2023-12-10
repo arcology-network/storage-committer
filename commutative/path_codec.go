@@ -5,7 +5,7 @@ import (
 
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/evm/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 
 	// performance "github.com/arcology-network/common-lib/mhasher"
 	orderedset "github.com/arcology-network/common-lib/container/set"

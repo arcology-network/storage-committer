@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/arcology-network/common-lib/codec"
-	"github.com/arcology-network/evm/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 func (this *String) Size() uint32 {

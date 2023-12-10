@@ -10,13 +10,13 @@ import (
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
-	"github.com/arcology-network/evm/core/types"
-	ethtypes "github.com/arcology-network/evm/core/types"
-	"github.com/arcology-network/evm/crypto"
-	"github.com/arcology-network/evm/ethdb"
-	"github.com/arcology-network/evm/rlp"
-	ethmpt "github.com/arcology-network/evm/trie"
-	"github.com/arcology-network/evm/trie/trienode"
+	"github.com/ethereum/go-ethereum/core/types"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/rlp"
+	ethmpt "github.com/ethereum/go-ethereum/trie"
+	"github.com/ethereum/go-ethereum/trie/trienode"
 	"github.com/holiman/uint256"
 	"golang.org/x/crypto/sha3"
 )
@@ -63,7 +63,7 @@ func (this *Account) GetCodeHash() [32]byte {
 
 func (this *Account) Prove(key [32]byte) ([][]byte, error) {
 	var proofs proofList
-	err := this.storageTrie.Prove(key[:], 0, &proofs)
+	err := this.storageTrie.Prove(key[:], &proofs)
 
 	return proofs, common.IfThen(this.err != nil, this.err, err)
 }
@@ -183,10 +183,14 @@ func (this *Account) Encode() []byte {
 
 // Write the DB
 func (this *Account) Commit() error {
-	root, nodes := this.storageTrie.Commit(false)                                                        // Finalized the trie
-	if err := this.ethdb.Update(root, types.EmptyRootHash, trienode.NewWithNodeSet(nodes)); err != nil { // Move to DB dirty node set
+	root, nodes, err := this.storageTrie.Commit(false)
+	if err != nil {
+		return err
+	} // Finalized the trie
+	if err = this.ethdb.Update(root, types.EmptyRootHash, 0, trienode.NewWithNodeSet(nodes), nil); err != nil { // Move to DB dirty node set
 		return err
 	}
+
 	return this.ethdb.Commit(root, false) // Write to DB
 }
 

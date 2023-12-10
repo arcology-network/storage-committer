@@ -6,7 +6,7 @@ import (
 	"math/rand"
 	"time"
 
-	rlp "github.com/arcology-network/evm/rlp"
+	rlp "github.com/ethereum/go-ethereum/rlp"
 )
 
 func RandomAccount() string {

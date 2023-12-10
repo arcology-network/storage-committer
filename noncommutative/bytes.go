@@ -6,7 +6,7 @@ import (
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
-	"github.com/arcology-network/evm/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 //type Bytes []byte

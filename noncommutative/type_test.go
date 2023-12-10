@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/arcology-network/evm/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 	// "github.com/HPISTechnologies/concurrenturl/type/noncommutative"
 )
 
