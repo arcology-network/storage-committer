@@ -218,6 +218,7 @@ func TestBasic(t *testing.T) {
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
 	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
+	// indexer.Univalues(acctTrans).Print()
 
 	url.Init(store)
 	// create a path
@@ -283,6 +284,8 @@ func TestBasic(t *testing.T) {
 
 	trans := common.Clone(url.Export(indexer.Sorter))
 	transitions := indexer.Univalues(trans).To(indexer.ITCTransition{})
+
+	// indexer.Univalues(transitions).Print()
 
 	if !reflect.DeepEqual(transitions[0].Value().(interfaces.Type).Delta().(*commutative.PathDelta).Added(), []string{"elem-000", "elem-111"}) {
 		t.Error("Error: keys are missing from the added buffer!")

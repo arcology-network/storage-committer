@@ -31,7 +31,7 @@ type Account struct {
 	code []byte
 
 	storageTrie  *ethmpt.Trie // account storage trie
-	storageDirty bool
+	StorageDirty bool
 
 	ethdb        *ethmpt.Database
 	diskdbShards [16]ethdb.Database
@@ -49,7 +49,7 @@ func NewAccount(addr string, diskdbs [16]ethdb.Database, state types.StateAccoun
 	return &Account{
 		addr:         addr,
 		storageTrie:  trie,
-		storageDirty: false,
+		StorageDirty: false,
 		ethdb:        ethdb,
 		diskdbShards: diskdbs,
 		StateAccount: state,
@@ -65,6 +65,8 @@ func EmptyAccountState() types.StateAccount {
 		CodeHash: codec.Bytes32(crypto.Keccak256Hash(nil)).Encode(),
 	}
 }
+
+func (this *Account) Address() string { return this.addr }
 
 func (this *Account) GetState(key [32]byte) []byte {
 	data, _ := this.storageTrie.Get(key[:])
@@ -207,7 +209,7 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Typ
 	v := common.ParallelAppend(typedVals, numThd, func(i int) []byte {
 		return common.IfThenDo1st(typedVals[i] != nil, func() []byte { return typedVals[i].StorageEncode() }, []byte{})
 	})
-	this.storageDirty = len(k) > 0
+	this.StorageDirty = len(k) > 0
 
 	errs := this.storageTrie.ParallelUpdate(codec.Strings(k).ToBytes(), v)
 	if _, err := common.FindFirstIf(errs, func(v error) bool { return v != nil }); err != nil {
@@ -246,8 +248,10 @@ func (*Account) Decode(buffer []byte) *Account {
 // Write the DB
 func (this *Account) Commit(block uint64) error {
 	var err error
-	this.storageTrie, err = commitToDB(this.storageTrie, this.ethdb, block) // Commit the change to the storage trie.
-	this.storageDirty = false
+	if this.StorageDirty {
+		this.storageTrie, err = commitToDB(this.storageTrie, this.ethdb, block) // Commit the change to the storage trie.
+		this.StorageDirty = false
+	}
 	return err // Write to DB
 }
 

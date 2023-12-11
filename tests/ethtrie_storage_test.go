@@ -28,7 +28,101 @@ import (
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/trie"
 	ethmpt "github.com/ethereum/go-ethereum/trie"
+	"github.com/holiman/uint256"
 )
+
+// TestTrieUpdates tests the updates to the trie data structure.
+// It creates multiple accounts and performs write operations on their storage.
+// It checks the correctness of the storage updates and cache management.
+func TestTrieUpdates(t *testing.T) {
+	store := chooseDataStore()
+	url := ccurl.NewConcurrentUrl(store)
+
+	alice := AliceAccount()
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+		t.Error(err)
+	}
+
+	bob := BobAccount()
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, bob); err != nil { // NewAccount account structure {
+		t.Error(err)
+	}
+
+	carol := CarolAccount()
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, carol); err != nil { // NewAccount account structure {
+		t.Error(err)
+	}
+
+	url.Import(indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{}))
+	url.Sort()
+	url.Finalize([]uint32{ccurlcommon.SYSTEM})
+	url.WriteToDbBuffer() // Export transitions and save them to the DB buffer.
+
+	ds := url.Importer().Store().(*storage.EthDataStore)
+	if len(ds.DirtyAccounts) != 3 {
+		t.Error("Error: DirtyAccounts should be 3 actual", len(ds.DirtyAccounts))
+	}
+
+	if (ds.AccountCache.Size()) != 3 {
+		t.Error("Error: AccountCache should be 3", ds.AccountCache.Size())
+	}
+	url.SaveToDB()
+
+	url.Init(store)
+
+	if _, err := url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
+		t.Error(err)
+	}
+
+	if _, err := url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ele-0", commutative.NewPath()); err != nil {
+		t.Error(err)
+	}
+
+	if len(ds.DirtyAccounts) != 0 {
+		t.Error("Error: DirtyAccounts should be 0, actual", len(ds.DirtyAccounts))
+	}
+
+	if (ds.AccountCache.Size()) != 3 {
+		t.Error("Error: AccountCache should be 3, actual", ds.AccountCache.Size())
+	}
+
+	url.Import(indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{}))
+	url.Sort()
+	url.Finalize([]uint32{ccurlcommon.SYSTEM})
+	url.WriteToDbBuffer() // Export transitions and save them to the DB buffer.
+
+	if len(ds.DirtyAccounts) != 1 || ds.DirtyAccounts[0].Address() != alice || !ds.DirtyAccounts[0].StorageDirty {
+		t.Error("Error: DirtyAccounts should be 1, actual", len(ds.DirtyAccounts))
+	}
+	url.SaveToDB()
+
+	url.Init(store)
+	if _, err := url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(100), true)); err != nil {
+		t.Error(err)
+	}
+
+	if _, err := url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(uint64(11))); err != nil {
+		t.Error(err)
+	}
+
+	if _, err := url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/code", noncommutative.NewBytes([]byte{1, 2, 3, 4})); err != nil {
+		t.Error(err)
+	}
+
+	url.Import(indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{}))
+	url.Sort()
+	url.Finalize([]uint32{ccurlcommon.SYSTEM})
+	url.WriteToDbBuffer() // Export transitions and save them to the DB buffer.
+
+	if len(ds.DirtyAccounts) != 1 || ds.DirtyAccounts[0].Address() != alice || ds.DirtyAccounts[0].StorageDirty {
+		t.Error("Error: DirtyAccounts should be 1, actual", len(ds.DirtyAccounts))
+	}
+
+	if (ds.AccountCache.Size()) != 3 {
+		t.Error("Error: AccountCache should be 3, actual", ds.AccountCache.Size())
+	}
+
+}
 
 func TestEthTrieBasic(t *testing.T) {
 	store := storage.NewParallelEthMemDataStore()
