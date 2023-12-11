@@ -320,9 +320,11 @@ func (this *EthDataStore) Commit(block uint64) error {
 		return err
 	}
 
-	if len(nodeBuffer.Nodes) == 0 {
-		return nil
-	}
+	nodeBuffer = common.IfThen(nodeBuffer == nil, trienode.NewNodeSet(types.EmptyRootHash), nodeBuffer)
+
+	// if nodeBuffer == nil || len(nodeBuffer.Nodes) == 0 {
+	// 	return nil
+	// }
 
 	// DB update
 	if err := this.ethdb.Update(latestRoot, types.EmptyRootHash, block, trienode.NewWithNodeSet(nodeBuffer), nil); err != nil { // Move to DB dirty node set

@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"math/big"
@@ -205,7 +206,22 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Typ
 		return common.IfThenDo1st(typedVals[i] != nil, func() []byte { return typedVals[i].StorageEncode() }, []byte{})
 	})
 
-	this.storageTrie.ParallelUpdate(codec.Strings(k).ToBytes(), v)
+	// this.storageTrie.ParallelUpdate(codec.Strings(k).ToBytes(), v)
+
+	for i := range k {
+		err := this.storageTrie.Update([]byte(k[i]), v[i])
+		if err != nil {
+			fmt.Printf("*************update err***key=%v**k=%v,%v\n", keys[i], k, err)
+		}
+		vi, err := this.storageTrie.Get([]byte(k[i]))
+		if err != nil {
+			fmt.Printf("*********get err*****key=%v****k=%v,%v\n", keys[i], k, err)
+		}
+		if !bytes.Equal(vi, v[i]) {
+			fmt.Printf("*********get err***key=%v*****k=%v,%v\n", keys[i], k, err)
+		}
+	}
+
 	this.Root = this.storageTrie.Hash()
 
 	this.keyBuffer = k
@@ -236,6 +252,20 @@ func (*Account) Decode(buffer []byte) *Account {
 
 // Write the DB
 func (this *Account) Commit(block uint64) error {
+	for i := range this.keyBuffer {
+		// err := this.storageTrie.Update([]byte(k[i]), v[i])
+		// if err != nil {
+		// 	fmt.Printf("*************update err***key=%v**k=%v,%v\n", keys[i], k, err)
+		// }
+		vi, err := this.storageTrie.Get([]byte(this.keyBuffer[i]))
+		if err != nil {
+			fmt.Printf("*********get err*********k=%v,%v\n", this.keyBuffer[i], err)
+		}
+		if !bytes.Equal(vi, this.valBuffer[i]) {
+			fmt.Printf("*********get err********k=%v,%v\n", this.keyBuffer[i], err)
+		}
+	}
+
 	root, nodes, err := this.storageTrie.Commit(false) // Finalized the trie
 	if err != nil {
 		return err
@@ -253,14 +283,14 @@ func (this *Account) Commit(block uint64) error {
 	}
 
 	if err := this.ethdb.Commit(root, false); err != nil { // Write to DB
+		this.ethdb.Commit(root, false)
 		return err
 	}
 
-	if this.storageTrie, err = ethmpt.NewParallel(ethmpt.TrieID(root), this.ethdb); err != nil { // Reload the trie for next round
-		return err
-	}
+	this.storageTrie, err = ethmpt.NewParallel(ethmpt.TrieID(root), this.ethdb)
 
-	return this.ethdb.Commit(root, false) // Write to DB
+	return err
+	// return this.ethdb.Commit(root, false) // Write to DB
 }
 
 func (this *Account) Hash(key []byte) []byte {
