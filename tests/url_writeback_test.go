@@ -27,6 +27,11 @@ func TestAddAndDelete(t *testing.T) {
 	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
+	// acctTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	url.Import(indexer.Univalues{})
+	url.Sort()
+	url.Commit([]uint32{ccurlcommon.SYSTEM})
+
 	url.Init(store)
 	path := commutative.NewPath()
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
@@ -64,7 +69,30 @@ func TestAddAndDelete(t *testing.T) {
 	if v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000000", new(noncommutative.String)); v != "124" {
 		t.Error("Error: Wrong return value")
 	}
+}
 
+func TestEmptyNodeSet(t *testing.T) {
+	store := chooseDataStore()
+	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+	url := ccurl.NewConcurrentUrl(store)
+	alice := AliceAccount()
+	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+		t.Error(err)
+	}
+
+	acctTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
+	url.Sort()
+	url.Commit([]uint32{ccurlcommon.SYSTEM})
+
+	// acctTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	url.Import(indexer.Univalues{})
+	url.Sort()
+	url.Commit([]uint32{ccurlcommon.SYSTEM})
+
+	url.Import(indexer.Univalues{})
+	url.Sort()
+	url.Commit([]uint32{ccurlcommon.SYSTEM})
 }
 
 func TestRecursiveDeletionSameBatch(t *testing.T) {

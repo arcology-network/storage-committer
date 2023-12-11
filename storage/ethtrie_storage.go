@@ -20,6 +20,7 @@ import (
 type EthDataStore struct {
 	worldStateTrie *ethmpt.Trie
 	acctCache      *ccmap.ConcurrentMap
+	dirtyAccounts  []*Account
 
 	ethdb   *ethmpt.Database
 	diskdbs [16]ethdb.Database
@@ -46,6 +47,7 @@ func NewEthDataStore(trie *ethmpt.Trie, triedb *ethmpt.Database, diskdb [16]ethd
 		ethdb:          triedb,
 		diskdbs:        diskdb,
 		acctCache:      ccmap.NewConcurrentMap(),
+		dirtyAccounts:  []*Account{},
 		worldStateTrie: trie,
 		encoder:        Rlp{}.Encode,
 		decoder:        Rlp{}.Decode,
@@ -145,21 +147,23 @@ func (this *EthDataStore) Inject(key string, value interface{}) error {
 }
 
 func (this *EthDataStore) BatchInject(keys []string, values []interface{}) error {
-	for i := 0; i < len(keys); i++ {
-		_, key, _ := ccurlcommon.ParseAccountAddr(keys[i])
+	acctDict := make(map[string]*Account)
 
-		account, ok := this.acctCache.Get(key)
+	for i := 0; i < len(keys); i++ {
+		_, acctKey, _ := ccurlcommon.ParseAccountAddr(keys[i])
+
+		account, ok := this.acctCache.Get(acctKey)
 		if account != nil {
 			account = account.(*Account)
 		}
 
-		if v := common.FilterFirst(this.acctCache.Get(key)); v != nil {
+		if v := common.FilterFirst(this.acctCache.Get(acctKey)); v != nil {
 			account = v.(*Account)
 		}
 
 		if !ok {
-			account = NewAccount(key, this.diskdbs, EmptyAccountState()) // empty account
-			this.acctCache.Set(key, account)
+			account = NewAccount(acctKey, this.diskdbs, EmptyAccountState()) // empty account
+			this.acctCache.Set(acctKey, account)
 		}
 
 		// v := values[i]
@@ -168,14 +172,14 @@ func (this *EthDataStore) BatchInject(keys []string, values []interface{}) error
 		} else {
 			account.(*Account).UpdateAccountTrie([]string{keys[i]}, []interfaces.Type{values[i].(interfaces.Type)})
 		}
+		acctDict[acctKey] = account.(*Account)
 	}
 
-	this.acctCache.ForeachDo(func(k, accountTrie interface{}) {
-		this.worldStateTrie.Update([]byte(k.(string)), accountTrie.(*Account).Encode())
+	acctKeys, accounts := common.MapKVs(acctDict)
+	common.Foreach(accounts, func(acct **Account, i int) {
+		this.worldStateTrie.Update([]byte(acctKeys[i]), (**acct).Encode())
 	})
 
-	// this.worldStateTrie.Hash()
-	// this.Precommit(keys, values)
 	return nil
 }
 
@@ -202,6 +206,7 @@ func (this *EthDataStore) GetAccountFromTrie(accountKey string, accesses *ethmpt
 					acctState,
 					common.FilterFirst(this.diskdbs[0].Get(acctState.CodeHash)), // code
 					trie,
+					false,
 					this.ethdb,
 					this.diskdbs,
 					nil,
@@ -247,35 +252,42 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 			return &key
 		})
 
-	accounts := make([]*Account, len(accountKeys))
+	this.dirtyAccounts = make([]*Account, len(accountKeys))
 
 	numThd := common.IfThen(len(accountKeys) <= 1024, 8, 16)
 	common.ParallelForeach(accountKeys, numThd, func(key *string, i int) {
 		accesses := ethmpt.AccessListCache{}
-		if accounts[i], _ = this.GetAccount(*key, &accesses); accounts[i] == nil {
-			accounts[i] = NewAccount(
+		if this.dirtyAccounts[i], _ = this.GetAccount(*key, &accesses); this.dirtyAccounts[i] == nil {
+			this.dirtyAccounts[i] = NewAccount(
 				*key,
 				this.diskdbs,
 				EmptyAccountState()) // empty account
 		}
 	})
 
-	common.Foreach(accounts, func(acct **Account, _ int) {
-		this.acctCache.Set((**acct).addr, *acct)
-	}) // Add to cache
-
 	// Update the account storage tries
-	common.ParallelForeach(accounts, 16, func(acct **Account, idx int) {
+	common.ParallelForeach(this.dirtyAccounts, 16, func(acct **Account, idx int) {
 		(*acct).Precommit(common.FromPairs(stateGroups[idx]))
 	})
 
-	keys, accts := this.acctCache.KVs()
-	encoded := common.Append(accts, func(acct interface{}) []byte {
-		return acct.(*Account).Encode()
+	encoded := common.Append(this.dirtyAccounts, func(acct *Account) []byte {
+		return acct.Encode()
 	})
 
-	this.worldStateTrie.ParallelUpdate(common.Append(keys, func(key string) []byte { return ([]byte(key)) }), encoded)
+	// Move dirty accounts to cache
+	common.Foreach(this.dirtyAccounts, func(acct **Account, _ int) {
+		this.acctCache.Set((**acct).addr, *acct)
+	})
 
+	// Update dirty accounts to the trie.
+	errs := this.worldStateTrie.ParallelUpdate(common.Append(this.dirtyAccounts, func(acct *Account) []byte { return ([]byte(acct.addr)) }), encoded)
+
+	// Return the first error if any.
+	if _, err := common.FindFirstIf(errs, func(err error) bool { return err != nil }); err != nil {
+		panic("Error in updating the trie: " + (*err).Error())
+	}
+
+	//=======================================================================
 	// Debug only
 	// for _, k := range keys {
 	// 	acctBuffer, err := this.worldStateTrie.Get([]byte(k))
@@ -295,16 +307,28 @@ func (this *EthDataStore) Commit(block uint64) error {
 		}
 	})
 
-	keys, _ := this.acctCache.KVs()
-	for _, k := range keys {
-		acctBuffer, err := this.worldStateTrie.Get([]byte(k))
-		if err != nil || len(acctBuffer) == 0 {
+	common.ParallelForeach(this.dirtyAccounts, 16, func(acct **Account, _ int) {
+		if err := (**acct).Commit(block); err != nil {
 			panic(err)
 		}
+	})
+
+	// Debugging only
+	// keys, _ := this.dirtyAccounts
+	// for _, k := range keys {
+	// 	acctBuffer, err := this.worldStateTrie.Get([]byte(k))
+	// 	if err != nil || len(acctBuffer) == 0 {
+	// 		panic(err)
+	// 	}
+	// }
+
+	if len(this.dirtyAccounts) == 0 {
+		return nil
 	}
 
 	var err error
-	this.worldStateTrie, err = commitToDB(this.worldStateTrie, this.ethdb, block)
+	this.worldStateTrie, err = commitToDB(this.worldStateTrie, this.ethdb, block) // Reload the trie for the next block
+	this.dirtyAccounts = this.dirtyAccounts[:0]
 	return err
 }
 

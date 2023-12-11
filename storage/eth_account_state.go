@@ -28,8 +28,11 @@ type Account struct {
 	addr string
 
 	ethtypes.StateAccount
-	code         []byte
+	code []byte
+
 	storageTrie  *ethmpt.Trie // account storage trie
+	storageDirty bool
+
 	ethdb        *ethmpt.Database
 	diskdbShards [16]ethdb.Database
 	err          error
@@ -46,6 +49,7 @@ func NewAccount(addr string, diskdbs [16]ethdb.Database, state types.StateAccoun
 	return &Account{
 		addr:         addr,
 		storageTrie:  trie,
+		storageDirty: false,
 		ethdb:        ethdb,
 		diskdbShards: diskdbs,
 		StateAccount: state,
@@ -168,7 +172,7 @@ func (this *Account) Retrive(key string, T any) (interface{}, error) {
 	return T.(interfaces.Type).StorageDecode(buffer), err
 }
 
-func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Type) {
+func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Type) error {
 	if pos, _ := common.FindFirstIf(keys, func(k string) bool { return len(k) == ccurlcommon.ETH10_ACCOUNT_FULL_LENGTH+1 }); pos >= 0 {
 		common.RemoveAt(&keys, pos)
 		common.RemoveAt(&typedVals, pos)
@@ -190,8 +194,8 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Typ
 	if pos, _ := common.FindFirstIf(keys, func(k string) bool { return strings.HasSuffix(k, "/code") }); pos >= 0 {
 		this.code = typedVals[pos].Value().(codec.Bytes)
 		this.StateAccount.CodeHash = this.Hash(this.code)
-		if this.DB(keys[pos]).Put(this.CodeHash, this.code) != nil { // Save to DB directly, only for code
-			panic("error")
+		if err := this.DB(keys[pos]).Put(this.CodeHash, this.code); err != nil { // Save to DB directly, only for code
+			return err // failed to save the code
 		}
 		common.RemoveAt(&keys, pos)
 		common.RemoveAt(&typedVals, pos)
@@ -203,13 +207,19 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Typ
 	v := common.ParallelAppend(typedVals, numThd, func(i int) []byte {
 		return common.IfThenDo1st(typedVals[i] != nil, func() []byte { return typedVals[i].StorageEncode() }, []byte{})
 	})
+	this.storageDirty = len(k) > 0
 
-	this.storageTrie.ParallelUpdate(codec.Strings(k).ToBytes(), v)
+	errs := this.storageTrie.ParallelUpdate(codec.Strings(k).ToBytes(), v)
+	if _, err := common.FindFirstIf(errs, func(v error) bool { return v != nil }); err != nil {
+		return *err
+	}
+
 	this.Root = this.storageTrie.Hash()
 
+	// For debugging only
 	this.keyBuffer = k
 	this.valBuffer = v
-
+	return nil
 }
 
 func (this *Account) Precommit(keys []string, values []interface{}) {
@@ -236,7 +246,8 @@ func (*Account) Decode(buffer []byte) *Account {
 // Write the DB
 func (this *Account) Commit(block uint64) error {
 	var err error
-	this.storageTrie, err = commitToDB(this.storageTrie, this.ethdb, block)
+	this.storageTrie, err = commitToDB(this.storageTrie, this.ethdb, block) // Commit the change to the storage trie.
+	this.storageDirty = false
 	return err // Write to DB
 }
 
