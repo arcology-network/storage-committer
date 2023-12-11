@@ -14,7 +14,6 @@ import (
 	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/ethereum/go-ethereum/rlp"
 	ethmpt "github.com/ethereum/go-ethereum/trie"
-	trienode "github.com/ethereum/go-ethereum/trie/trienode"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -264,37 +263,25 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 		this.acctCache.Set((**acct).addr, *acct)
 	}) // Add to cache
 
-	// Update the account storage trie
+	// Update the account storage tries
 	common.ParallelForeach(accounts, 16, func(acct **Account, idx int) {
 		(*acct).Precommit(common.FromPairs(stateGroups[idx]))
 	})
-
-	// for _, acct := range accounts {
-	// 	values, err := acct.storageTrie.ParallelGet(codec.Strings(acct.keyBuffer).ToBytes())
-	// 	if err != nil {
-	// 		fmt.Println("Error: ", err)
-	// 	}
-
-	// 	for i, val := range values {
-	// 		if !bytes.Equal(val, acct.valBuffer[i]) {
-	// 			panic("Not equal ")
-	// 		}
-	// 	}
-	// }
 
 	keys, accts := this.acctCache.KVs()
 	encoded := common.Append(accts, func(acct interface{}) []byte {
 		return acct.(*Account).Encode()
 	})
+
 	this.worldStateTrie.ParallelUpdate(common.Append(keys, func(key string) []byte { return ([]byte(key)) }), encoded)
 
 	// Debug only
-	for _, k := range keys {
-		acctBuffer, err := this.worldStateTrie.Get([]byte(k))
-		if err != nil || len(acctBuffer) == 0 {
-			panic(err)
-		}
-	}
+	// for _, k := range keys {
+	// 	acctBuffer, err := this.worldStateTrie.Get([]byte(k))
+	// 	if err != nil || len(acctBuffer) == 0 {
+	// 		panic(err)
+	// 	}
+	// }
 
 	return this.worldStateTrie.Hash()
 }
@@ -314,50 +301,9 @@ func (this *EthDataStore) Commit(block uint64) error {
 			panic(err)
 		}
 	}
-	// Save the world trie to DB
-	latestRoot, nodeBuffer, err := this.worldStateTrie.Commit(false) // Finalized the trie
-	if err != nil {
-		return err
-	}
 
-	nodeBuffer = common.IfThen(nodeBuffer == nil, trienode.NewNodeSet(types.EmptyRootHash), nodeBuffer)
-
-	// if nodeBuffer == nil || len(nodeBuffer.Nodes) == 0 {
-	// 	return nil
-	// }
-
-	// DB update
-	if err := this.ethdb.Update(latestRoot, types.EmptyRootHash, block, trienode.NewWithNodeSet(nodeBuffer), nil); err != nil { // Move to DB dirty node set
-		return err
-	}
-
-	if err := this.ethdb.Commit(latestRoot, false); err != nil {
-		return err
-	}
-
-	// keys, _ := this.acctCache.KVs()
-	// for _, k := range keys {
-	// acct, err := this.GetAccountFromTrie(k, &ethmpt.AccessListCache{})
-	// acctBuffer, err := this.worldStateTrie.Get([]byte(k))
-	// if err != nil || len(acctBuffer) == 0 {
-	// 	panic(err)
-	// }
-	// for _, state := range stateGroups {
-	// 	hash := ethcommon.BytesToHash([]byte(state[0].First))
-	// 	if _, err := acct.IsProvable(hash); err != nil {
-	// 		panic("pp ")
-	// 	}
-	// }
-	// }
-
-	this.worldStateTrie, err = ethmpt.NewParallel(ethmpt.TrieID(latestRoot), this.ethdb)
-
-	// for _, k := range keys {
-	// 	acctBuffer, err := this.GetAccountFromTrie(k, &ethmpt.AccessListCache{})
-	// 	if err != nil || acctBuffer == nil {
-	// 		panic(err)
-	// 	}
-	// }
+	var err error
+	this.worldStateTrie, err = commitToDB(this.worldStateTrie, this.ethdb, block)
 	return err
 }
 

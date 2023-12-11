@@ -10,7 +10,7 @@ import (
 	// ethapi "github.com/ethereum/go-ethereum/internal/ethapi"
 )
 
-// Copied from ETH
+// Types copied from ETH
 type AccountResult struct {
 	Address      ethcommon.Address `json:"address"`
 	AccountProof []string          `json:"accountProof"`

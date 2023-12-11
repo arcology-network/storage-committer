@@ -21,7 +21,6 @@ import (
 	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/ethereum/go-ethereum/rlp"
 	ethmpt "github.com/ethereum/go-ethereum/trie"
-	"github.com/ethereum/go-ethereum/trie/trienode"
 	"github.com/holiman/uint256"
 	"golang.org/x/crypto/sha3"
 )
@@ -252,45 +251,9 @@ func (*Account) Decode(buffer []byte) *Account {
 
 // Write the DB
 func (this *Account) Commit(block uint64) error {
-	for i := range this.keyBuffer {
-		// err := this.storageTrie.Update([]byte(k[i]), v[i])
-		// if err != nil {
-		// 	fmt.Printf("*************update err***key=%v**k=%v,%v\n", keys[i], k, err)
-		// }
-		vi, err := this.storageTrie.Get([]byte(this.keyBuffer[i]))
-		if err != nil {
-			fmt.Printf("*********get err*********k=%v,%v\n", this.keyBuffer[i], err)
-		}
-		if !bytes.Equal(vi, this.valBuffer[i]) {
-			fmt.Printf("*********get err********k=%v,%v\n", this.keyBuffer[i], err)
-		}
-	}
-
-	root, nodes, err := this.storageTrie.Commit(false) // Finalized the trie
-	if err != nil {
-		return err
-	}
-
-	if root != this.Root {
-		return errors.New("Root mismatched")
-	}
-
-	// Initialize an empty node set, even there is no change
-	nodes = common.IfThen(nodes == nil, trienode.NewNodeSet(types.EmptyRootHash), nodes)
-
-	if err := this.ethdb.Update(root, types.EmptyRootHash, block, trienode.NewWithNodeSet(nodes), nil); err != nil { // Move to DB dirty node set
-		return err
-	}
-
-	if err := this.ethdb.Commit(root, false); err != nil { // Write to DB
-		this.ethdb.Commit(root, false)
-		return err
-	}
-
-	this.storageTrie, err = ethmpt.NewParallel(ethmpt.TrieID(root), this.ethdb)
-
-	return err
-	// return this.ethdb.Commit(root, false) // Write to DB
+	var err error
+	this.storageTrie, err = commitToDB(this.storageTrie, this.ethdb, block)
+	return err // Write to DB
 }
 
 func (this *Account) Hash(key []byte) []byte {
