@@ -1,7 +1,6 @@
 package storage
 
 import (
-	common "github.com/arcology-network/common-lib/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	ethmpt "github.com/ethereum/go-ethereum/trie"
 	"github.com/ethereum/go-ethereum/trie/trienode"
@@ -15,7 +14,9 @@ func commitToDB(trie *ethmpt.Trie, ethdb *ethmpt.Database, block uint64) (*ethmp
 		return nil, err
 	}
 
-	nodes = common.IfThen(nodes == nil, trienode.NewNodeSet(types.EmptyRootHash), nodes)
+	if nodes == nil {
+		return ethmpt.NewParallel(ethmpt.TrieID(root), ethdb)
+	}
 
 	// DB update
 	if err := ethdb.Update(root, types.EmptyRootHash, block, trienode.NewWithNodeSet(nodes), nil); err != nil { // Move to DB dirty node set

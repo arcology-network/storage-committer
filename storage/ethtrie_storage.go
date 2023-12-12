@@ -74,11 +74,11 @@ func NewLevelDBDataStore(dir string) *EthDataStore {
 }
 
 func (this *EthDataStore) Clear() {
-	var err error
-	this.worldStateTrie, err = ethmpt.NewParallel(ethmpt.TrieID(this.worldStateTrie.Hash()), this.ethdb) // reopen the trie for future use
-	if err != nil {
-		panic(err)
-	}
+	// var err error
+	// this.worldStateTrie, err = ethmpt.NewParallel(ethmpt.TrieID(this.worldStateTrie.Hash()), this.ethdb) // reopen the trie for future use
+	// if err != nil {
+	// 	panic(err)
+	// }
 }
 
 func (this *EthDataStore) Hash(key string) []byte {
@@ -294,13 +294,13 @@ func (this *EthDataStore) Commit(block uint64) error {
 		}
 	})
 
-	keys, _ := this.acctCache.KVs()
-	for _, k := range keys {
-		acctBuffer, err := this.worldStateTrie.Get([]byte(k))
-		if err != nil || len(acctBuffer) == 0 {
-			panic(err)
-		}
-	}
+	// keys, _ := this.acctCache.KVs()
+	// for _, k := range keys {
+	// 	acctBuffer, err := this.worldStateTrie.Get([]byte(k))
+	// 	if err != nil || len(acctBuffer) == 0 {
+	// 		panic(err)
+	// 	}
+	// }
 
 	var err error
 	this.worldStateTrie, err = commitToDB(this.worldStateTrie, this.ethdb, block)
