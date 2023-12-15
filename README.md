@@ -5,7 +5,7 @@ The [Ethereum](https://github.com/ethereum) ecosystem incorporates the Ethereum 
 
 The Ethererum state trie, designed specifically for calculating the hash root, proves its utility in the hash generation process. In the absence of such a requirement, utilizing a plain database directly is considered a more efficient alternative. A notable limitation of the original design is its inability to manage concurrency . Attempting to have multiple EVMs share the same Trie introduces thread safety problems.
 
-##  Concurrent State Management
+##  Integration
 The primary objective is to introduce a dedicated state cache engineered to support **multiple EVMs concurrently processing multiple transactions.** The module serves as the coordinator for accesses initiated by multiple EVM instances. The original storage module, consisting of a trie and a primary database, remains in read-only during execution and undergoes updates only once when a block cycle concludes. 
 
 <p align="center">
