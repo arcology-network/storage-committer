@@ -10,6 +10,7 @@ import (
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/concurrenturl"
 	ccurl "github.com/arcology-network/concurrenturl"
+	cache "github.com/arcology-network/concurrenturl/cache"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
@@ -25,7 +26,7 @@ func TestConcurrentDB(t *testing.T) {
 	store := chooseDataStore()
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	// url := ccurl.NewConcurrentUrl(store)
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 
 	alice := AliceAccount()
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
@@ -94,7 +95,7 @@ func TestEthWorldTrieProof(t *testing.T) {
 	store := chooseDataStore()
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 
 	alice := AliceAccount()
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
@@ -203,7 +204,7 @@ func TestEthWorldTrieProof(t *testing.T) {
 func TestGetProofAPI(t *testing.T) {
 	store := ccurlstorage.NewParallelEthMemDataStore()
 	// url := ccurl.NewConcurrentUrl(ccurlstorage.NewParallelEthMemDataStore())
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 
 	alice := AliceAccount()
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {

@@ -12,6 +12,7 @@ import (
 	orderedset "github.com/arcology-network/common-lib/container/set"
 	"github.com/arcology-network/concurrenturl"
 	ccurl "github.com/arcology-network/concurrenturl"
+	cache "github.com/arcology-network/concurrenturl/cache"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
@@ -28,7 +29,7 @@ func TestSize(t *testing.T) {
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -62,7 +63,7 @@ func TestReadWriteAt(t *testing.T) {
 
 	alice := AliceAccount()
 	// url := ccurl.NewConcurrentUrl(store)
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -109,7 +110,7 @@ func TestAddThenDeletePath(t *testing.T) {
 	alice := AliceAccount()
 
 	url := ccurl.NewConcurrentUrl(store)
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
@@ -168,7 +169,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -226,7 +227,7 @@ func TestBasic(t *testing.T) {
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -343,7 +344,7 @@ func TestBasic(t *testing.T) {
 func TestPathAddThenDelete(t *testing.T) {
 	store := chooseDataStore()
 	url := ccurl.NewConcurrentUrl(store)
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 	alice := AliceAccount()
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
@@ -426,7 +427,7 @@ func TestUrl1(t *testing.T) {
 	store := chooseDataStore()
 	// store := chooseDataStore()
 	url := ccurl.NewConcurrentUrl(store)
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 	alice := AliceAccount()
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
@@ -517,7 +518,7 @@ func TestUrl2(t *testing.T) {
 	store := chooseDataStore()
 	// store := datastore.NewDataStore(nil, nil, nil, encoder, decoder)
 	url := ccurl.NewConcurrentUrl(store)
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 	alice := AliceAccount()
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
@@ -640,7 +641,7 @@ func TestUrl2(t *testing.T) {
 	}
 
 	// The elem-00 has been deleted, only "elem-001", "elem-002" left
-	meta, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
+	meta, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
 	keys = meta1.(*orderedset.OrderedSet).Keys()
 	if !reflect.DeepEqual(keys, []string{"elem-001", "elem-002"}) {
 		t.Error("Error: keys don't match")
@@ -740,7 +741,7 @@ func TestTransientDBv2(t *testing.T) {
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -770,7 +771,7 @@ func TestCustomCodec(t *testing.T) {
 	store := datastore.NewDataStore(nil, policy, memdb.NewMemDB(), storage.Rlp{}.Encode, storage.Rlp{}.Decode)
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}

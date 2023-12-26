@@ -9,6 +9,7 @@ import (
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/concurrenturl"
 	ccurl "github.com/arcology-network/concurrenturl"
+	cache "github.com/arcology-network/concurrenturl/cache"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
@@ -20,7 +21,7 @@ func TestMultiAccountCreation(t *testing.T) {
 
 	store.Inject((ccurlcommon.ETH10_ACCOUNT_PREFIX), commutative.NewPath())
 
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 
 	accounts := make([]string, 10)
 	for i := 0; i < len(accounts); i++ {

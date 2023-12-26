@@ -28,7 +28,7 @@ func (Fee) Reader(v interface{}) uint64 { // Call this before setting the value 
 
 func (Fee) Writer(key string, v interface{}, writecache interfaces.WriteCache) int64 { // May get refunds sometimes
 	committedSize := uint64(0)
-	committedv, _ := writecache.Store().Retrive(key, v)
+	committedv, _ := writecache.ReadOnlyDataStore().Retrive(key, v)
 	if data, ok := committedv.([]byte); ok {
 		committedSize = uint64(len(data))
 	} else {

@@ -11,6 +11,7 @@ import (
 	"github.com/arcology-network/concurrenturl"
 	ccurl "github.com/arcology-network/concurrenturl"
 	arbitrator "github.com/arcology-network/concurrenturl/arbitrator"
+	cache "github.com/arcology-network/concurrenturl/cache"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
@@ -22,7 +23,7 @@ import (
 func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	store := chooseDataStore()
 
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 
 	meta := commutative.NewPath()
 	writeCache.Write(ccurlcommon.SYSTEM, ccurlcommon.ETH10_ACCOUNT_PREFIX, meta)
@@ -68,7 +69,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	store := chooseDataStore()
 
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 	meta := commutative.NewPath()
 	writeCache.Write(ccurlcommon.SYSTEM, ccurlcommon.ETH10_ACCOUNT_PREFIX, meta)
 	trans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
@@ -130,7 +131,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}

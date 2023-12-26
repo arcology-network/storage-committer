@@ -1,4 +1,4 @@
-package indexer
+package cache
 
 import (
 	"errors"
@@ -13,7 +13,9 @@ import (
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	concurrenturlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/commutative"
-	"github.com/arcology-network/concurrenturl/interfaces"
+	"github.com/arcology-network/concurrenturl/indexer"
+	intf "github.com/arcology-network/concurrenturl/interfaces"
+	"github.com/arcology-network/concurrenturl/noncommutative"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 )
 
@@ -23,27 +25,71 @@ const (
 )
 
 type WriteCache struct {
-	store    interfaces.ReadOnlyDataStore
-	kvDict   map[string]interfaces.Univalue // Local KV lookup
-	platform interfaces.Platform
-	buffer   []interfaces.Univalue // Transition + access record buffer
+	store    intf.ReadOnlyDataStore
+	kvDict   map[string]intf.Univalue // Local KV lookup
+	platform intf.Platform
+	buffer   []intf.Univalue // Transition + access record buffer
 	uniPool  *mempool.Mempool
 }
 
-func NewWriteCache(store interfaces.ReadOnlyDataStore, args ...interface{}) *WriteCache {
+func NewWriteCache(store intf.ReadOnlyDataStore, args ...interface{}) *WriteCache {
 	var writeCache WriteCache
 	writeCache.store = store
-	writeCache.kvDict = make(map[string]interfaces.Univalue)
+	writeCache.kvDict = make(map[string]intf.Univalue)
 	writeCache.platform = concurrenturlcommon.NewPlatform()
-	writeCache.buffer = make([]interfaces.Univalue, 0, 64)
+	writeCache.buffer = make([]intf.Univalue, 0, 64)
 
 	writeCache.uniPool = mempool.NewMempool("writecache-univalue", func() interface{} { return new(univalue.Univalue) })
 	return &writeCache
 }
 
-func (this *WriteCache) SetStore(store interfaces.ReadOnlyDataStore) { this.store = store }
-func (this *WriteCache) Store() interfaces.ReadOnlyDataStore         { return this.store }
-func (this *WriteCache) Cache() *map[string]interfaces.Univalue      { return &this.kvDict }
+// CreateNewAccount creates a new account in the write cache.
+// It returns the transitions and an error, if any.
+func (this *WriteCache) CreateNewAccount(tx uint32, acct string) ([]intf.Univalue, error) {
+	paths, typeids := ccurlcommon.NewPlatform().GetBuiltins(acct)
+
+	transitions := []intf.Univalue{}
+	for i, path := range paths {
+		var v interface{}
+		switch typeids[i] {
+		case commutative.PATH: // Path
+			v = commutative.NewPath()
+
+		case uint8(reflect.Kind(noncommutative.STRING)): // delta big int
+			v = noncommutative.NewString("")
+
+		case uint8(reflect.Kind(commutative.UINT256)): // delta big int
+			v = commutative.NewUnboundedU256()
+
+		case uint8(reflect.Kind(commutative.UINT64)):
+			v = commutative.NewUnboundedUint64()
+
+		case uint8(reflect.Kind(noncommutative.INT64)):
+			v = new(noncommutative.Int64)
+
+		case uint8(reflect.Kind(noncommutative.BYTES)):
+			v = noncommutative.NewBytes([]byte{})
+		}
+
+		if !this.IfExists(path) {
+			transitions = append(transitions, univalue.NewUnivalue(tx, path, 0, 1, 0, v, nil))
+
+			if _, err := this.Write(tx, path, v); err != nil { // root path
+				return nil, err
+			}
+
+			if !this.IfExists(path) {
+				_, err := this.Write(tx, path, v)
+				return transitions, err // root path
+			}
+		}
+	}
+	return transitions, nil
+}
+
+// func (this *WriteCache) SetStore(store intf.ReadOnlyDataStore) { this.store = store }
+func (this *WriteCache) ReadOnlyDataStore() intf.ReadOnlyDataStore { return this.store }
+func (this *WriteCache) Cache() *map[string]intf.Univalue          { return &this.kvDict }
 
 func (this *WriteCache) NewUnivalue() *univalue.Univalue {
 	v := this.uniPool.Get().(*univalue.Univalue)
@@ -51,11 +97,11 @@ func (this *WriteCache) NewUnivalue() *univalue.Univalue {
 }
 
 // If the access has been recorded
-func (this *WriteCache) GetOrInit(tx uint32, path string, T any) interfaces.Univalue {
+func (this *WriteCache) GetOrInit(tx uint32, path string, T any) intf.Univalue {
 	unival := this.kvDict[path]
 	if unival == nil { // Not in the kvDict, check the datastore
 		unival = this.NewUnivalue()
-		unival.(*univalue.Univalue).Init(tx, path, 0, 0, 0, common.FilterFirst(this.Store().Retrive(path, T)), this)
+		unival.(*univalue.Univalue).Init(tx, path, 0, 0, 0, common.FilterFirst(this.ReadOnlyDataStore().Retrive(path, T)), this)
 		this.kvDict[path] = unival // Adding to kvDict
 	}
 	return unival
@@ -69,7 +115,7 @@ func (this *WriteCache) Read(tx uint32, path string, T any) (interface{}, interf
 func (this *WriteCache) ReadEx(tx uint32, path string, T any) (interface{}, uint64) {
 	univ := this.GetOrInit(tx, path, T)
 	// return univalue.Get(tx, path, nil), univalue
-	return univ.Get(tx, path, nil), 0 //Fee{}.Reader(univ.(interfaces.Univalue))
+	return univ.Get(tx, path, nil), 0 //Fee{}.Reader(univ.(intf.Univalue))
 }
 
 // Read th Nth element under a path
@@ -112,24 +158,24 @@ func (this *WriteCache) Peek(path string, T any) (interface{}, interface{}) {
 		return univ.Value(), univ
 	}
 
-	v, _ := this.Store().Retrive(path, T)
+	v, _ := this.ReadOnlyDataStore().Retrive(path, T)
 	univ := univalue.NewUnivalue(ccurlcommon.SYSTEM, path, 0, 0, 0, v, nil)
 	return univ.Value(), univ
 }
 
 func (this *WriteCache) Retrive(path string, T any) (interface{}, error) {
 	typedv, _ := this.Peek(path, T)
-	if typedv == nil || typedv.(interfaces.Type).IsDeltaApplied() {
+	if typedv == nil || typedv.(intf.Type).IsDeltaApplied() {
 		return typedv, nil
 	}
 
-	rawv, _, _ := typedv.(interfaces.Type).Get()
-	return typedv.(interfaces.Type).New(rawv, nil, nil, typedv.(interfaces.Type).Min(), typedv.(interfaces.Type).Max()), nil // Return in a new univalue
+	rawv, _, _ := typedv.(intf.Type).Get()
+	return typedv.(intf.Type).New(rawv, nil, nil, typedv.(intf.Type).Min(), typedv.(intf.Type).Max()), nil // Return in a new univalue
 }
 
-func (this *WriteCache) Do(tx uint32, path string, doer interface{}, T any) interface{} {
+func (this *WriteCache) Do(tx uint32, path string, doer interface{}, T any) (interface{}, error) {
 	univalue := this.GetOrInit(tx, path, T)
-	return univalue.Do(tx, path, doer)
+	return univalue.Do(tx, path, doer), nil
 }
 
 func (this *WriteCache) Write(tx uint32, path string, value interface{}) (int64, error) {
@@ -160,33 +206,33 @@ func (this *WriteCache) IfExists(path string) bool {
 	return this.store.IfExists(path) //this.RetriveShallow(path, nil) != nil
 }
 
-func (this *WriteCache) AddTransitions(transitions []interfaces.Univalue) {
+func (this *WriteCache) AddTransitions(transitions []intf.Univalue) {
 	if len(transitions) == 0 {
 		return
 	}
 
-	newPathCreations := common.MoveIf(&transitions, func(v interfaces.Univalue) bool {
+	newPathCreations := common.MoveIf(&transitions, func(v intf.Univalue) bool {
 		return common.IsPath(*v.GetPath()) && !v.Preexist()
 	})
 
 	// Remove the changes from the existing paths, as they will be updated automatically when inserting sub elements.
-	transitions = common.RemoveIf(&transitions, func(v interfaces.Univalue) bool {
+	transitions = common.RemoveIf(&transitions, func(v intf.Univalue) bool {
 		return common.IsPath(*v.GetPath())
 	})
 
 	// Not necessary at the moment, but good for the future if multiple level containers are available
-	newPathCreations = Univalues(Sorter(newPathCreations))
-	common.Foreach(newPathCreations, func(v *interfaces.Univalue, _ int) {
+	newPathCreations = indexer.Univalues(indexer.Sorter(newPathCreations))
+	common.Foreach(newPathCreations, func(v *intf.Univalue, _ int) {
 		(*v).Merge(this) // Write back to the parent writecache
 	})
 
-	common.Foreach(transitions, func(v *interfaces.Univalue, _ int) {
+	common.Foreach(transitions, func(v *intf.Univalue, _ int) {
 		(*v).Merge(this) // Write back to the parent writecache
 	})
 }
 
 func (this *WriteCache) Clear() {
-	this.kvDict = make(map[string]interfaces.Univalue)
+	this.kvDict = make(map[string]intf.Univalue)
 }
 
 func (this *WriteCache) Equal(other *WriteCache) bool {
@@ -204,16 +250,16 @@ func (this *WriteCache) Equal(other *WriteCache) bool {
 	return cacheFlag
 }
 
-func (this *WriteCache) Export(preprocessors ...func([]interfaces.Univalue) []interfaces.Univalue) []interfaces.Univalue {
+func (this *WriteCache) Export(preprocessors ...func([]intf.Univalue) []intf.Univalue) []intf.Univalue {
 	this.buffer = common.MapValues(this.kvDict) //this.buffer[:0]
 
 	for _, processor := range preprocessors {
-		this.buffer = common.IfThenDo1st(processor != nil, func() []interfaces.Univalue {
+		this.buffer = common.IfThenDo1st(processor != nil, func() []intf.Univalue {
 			return processor(this.buffer)
 		}, this.buffer)
 	}
 
-	common.RemoveIf(&this.buffer, func(v interfaces.Univalue) bool { return v.Reads() == 0 && v.IsReadOnly() }) // Remove peeks
+	common.RemoveIf(&this.buffer, func(v intf.Univalue) bool { return v.Reads() == 0 && v.IsReadOnly() }) // Remove peeks
 	return this.buffer
 }
 

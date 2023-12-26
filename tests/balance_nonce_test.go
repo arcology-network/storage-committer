@@ -7,6 +7,7 @@ import (
 
 	"github.com/arcology-network/concurrenturl"
 	ccurl "github.com/arcology-network/concurrenturl"
+	cache "github.com/arcology-network/concurrenturl/cache"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
@@ -19,7 +20,7 @@ func TestSimpleBalance(t *testing.T) {
 	store := chooseDataStore()
 
 	url := ccurl.NewConcurrentUrl(store)
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 
 	alice := AliceAccount()
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
@@ -90,7 +91,7 @@ func TestBalance(t *testing.T) {
 	store := chooseDataStore()
 
 	// url := ccurl.NewConcurrentUrl(store)
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 	alice := AliceAccount()
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
@@ -179,7 +180,7 @@ func TestNonce(t *testing.T) {
 
 	alice := AliceAccount()
 
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -227,7 +228,7 @@ func TestNonce(t *testing.T) {
 func TestMultipleNonces(t *testing.T) {
 	store := chooseDataStore()
 
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 
 	url0 := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()

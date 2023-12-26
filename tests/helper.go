@@ -6,6 +6,7 @@ import (
 
 	"github.com/arcology-network/common-lib/common"
 	orderedset "github.com/arcology-network/common-lib/container/set"
+	cache "github.com/arcology-network/concurrenturl/cache"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	"github.com/arcology-network/concurrenturl/indexer"
@@ -15,7 +16,7 @@ import (
 
 func Create_Ctrn_0(account string, store interfaces.Datastore) ([]byte, []interfaces.Univalue, error) {
 	// url := ccurl.NewConcurrentUrl(store)
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 
 	path := commutative.NewPath() // create a path
 	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", path); err != nil {
@@ -37,7 +38,7 @@ func Create_Ctrn_0(account string, store interfaces.Datastore) ([]byte, []interf
 
 func ParallelInsert_Ctrn_0(account string, store interfaces.Datastore) ([]byte, error) {
 	// url := ccurl.NewConcurrentUrl(store)
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 	path := commutative.NewPath() // create a path
 	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", path); err != nil {
 		return []byte{}, err
@@ -57,7 +58,7 @@ func ParallelInsert_Ctrn_0(account string, store interfaces.Datastore) ([]byte, 
 
 func Create_Ctrn_1(account string, store interfaces.Datastore) ([]byte, error) {
 	// url := ccurl.NewConcurrentUrl(store)
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 	path := commutative.NewPath() // create a path
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/", path); err != nil {
 		return []byte{}, err
@@ -75,7 +76,7 @@ func Create_Ctrn_1(account string, store interfaces.Datastore) ([]byte, error) {
 	return indexer.Univalues(transitions).Encode(), nil
 }
 
-func CheckPaths(account string, writeCache *indexer.WriteCache) error {
+func CheckPaths(account string, writeCache *cache.WriteCache) error {
 	v, _ := writeCache.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-00", new(noncommutative.String))
 	if v.(string) != "tx0-elem-00" {
 		return errors.New("Error: Not match")

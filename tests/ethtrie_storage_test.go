@@ -16,6 +16,7 @@ import (
 	"github.com/arcology-network/common-lib/merkle"
 	"github.com/arcology-network/concurrenturl"
 	ccurl "github.com/arcology-network/concurrenturl"
+	cache "github.com/arcology-network/concurrenturl/cache"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
@@ -38,7 +39,7 @@ import (
 func TestTrieUpdates(t *testing.T) {
 	store := chooseDataStore()
 	// url := ccurl.NewConcurrentUrl(store)
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 
 	alice := AliceAccount()
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
@@ -188,7 +189,7 @@ func TestEthStorageConnection(t *testing.T) {
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
 	// writeCache := url.WriteCache()
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -215,7 +216,7 @@ func TestBasicAddRead(t *testing.T) {
 	alice := AliceAccount()
 	// url := ccurl.NewConcurrentUrl(store)
 	// writeCache := url.WriteCache()
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
@@ -288,7 +289,7 @@ func TestEthDataStoreAddDeleteRead(t *testing.T) {
 	// store := chooseDataStore()
 
 	// writeCache := url.WriteCache()
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 	alice := AliceAccount()
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
@@ -380,7 +381,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 
 	alice := AliceAccount()
 
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -438,7 +439,7 @@ func BenchmarkMultipleAccountCommitDataStore(b *testing.B) {
 	store := datastore.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode) // Native data store
 
 	// url := ccurl.NewConcurrentUrl(store)
-	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
 
 	alice := AliceAccount()
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {

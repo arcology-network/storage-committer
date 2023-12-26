@@ -108,6 +108,10 @@ type Univalue interface { // value type
 }
 
 type WriteCache interface {
+	CreateNewAccount(uint32, string) ([]Univalue, error)
+	IfExists(string) bool
+	ReadOnlyDataStore() ReadOnlyDataStore
+
 	Read(uint32, string, any) (interface{}, interface{})
 	Peek(string, any) (interface{}, interface{})
 	Write(uint32, string, interface{}) (int64, error)
@@ -118,7 +122,6 @@ type WriteCache interface {
 	// ExportAll( ...func([]ccurlintf.Univalue) []ccurlintf.Univalue) ([]ccurlintf.Univalue, []ccurlintf.Univalue)
 	Retrive(string, any) (interface{}, error)
 	Cache() *map[string]Univalue
-	Store() ReadOnlyDataStore
 }
 
 type ReadOnlyDataStore interface {
