@@ -69,6 +69,47 @@ func (this *ConcurrentUrl) Clear() {
 	this.imuImporter.Clear()
 }
 
+func CreateNewAccount(tx uint32, acct string, platform *ccurlcommon.Platform, writeCache *indexer.WriteCache) ([]interfaces.Univalue, error) {
+	paths, typeids := platform.GetBuiltins(acct)
+
+	transitions := []interfaces.Univalue{}
+	for i, path := range paths {
+		var v interface{}
+		switch typeids[i] {
+		case commutative.PATH: // Path
+			v = commutative.NewPath()
+
+		case uint8(reflect.Kind(noncommutative.STRING)): // delta big int
+			v = noncommutative.NewString("")
+
+		case uint8(reflect.Kind(commutative.UINT256)): // delta big int
+			v = commutative.NewUnboundedU256()
+
+		case uint8(reflect.Kind(commutative.UINT64)):
+			v = commutative.NewUnboundedUint64()
+
+		case uint8(reflect.Kind(noncommutative.INT64)):
+			v = new(noncommutative.Int64)
+
+		case uint8(reflect.Kind(noncommutative.BYTES)):
+			v = noncommutative.NewBytes([]byte{})
+		}
+
+		if !writeCache.IfExists(path) {
+			transitions = append(transitions, univalue.NewUnivalue(tx, path, 0, 1, 0, v, nil))
+
+			if err := writeCache.Write(tx, path, v); err != nil { // root path
+				return nil, err
+			}
+
+			if !writeCache.IfExists(path) {
+				return transitions, writeCache.Write(tx, path, v) // root path
+			}
+		}
+	}
+	return transitions, nil
+}
+
 // load accounts
 func (this *ConcurrentUrl) NewAccount(tx uint32, acct string) ([]interfaces.Univalue, error) {
 	paths, typeids := this.Platform.GetBuiltins(acct)
@@ -332,12 +373,12 @@ func (this *ConcurrentUrl) Commit(txs []uint32) *ConcurrentUrl {
 	return this
 }
 
-func (this *ConcurrentUrl) Export(preprocessors ...func([]interfaces.Univalue) []interfaces.Univalue) []interfaces.Univalue {
-	return this.writeCache.Export(preprocessors...)
-}
+// func (this *ConcurrentUrl) Export(preprocessors ...func([]interfaces.Univalue) []interfaces.Univalue) []interfaces.Univalue {
+// 	return this.writeCache.Export(preprocessors...)
+// }
 
 func (this *ConcurrentUrl) ExportAll(preprocessors ...func([]interfaces.Univalue) []interfaces.Univalue) ([]interfaces.Univalue, []interfaces.Univalue) {
-	all := this.Export(indexer.Sorter)
+	all := this.writeCache.Export(indexer.Sorter)
 	// indexer.Univalues(all).Print()
 
 	accesses := indexer.Univalues(common.Clone(all)).To(indexer.ITCAccess{})

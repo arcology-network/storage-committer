@@ -28,7 +28,7 @@ func Create_Ctrn_0(account string, store interfaces.Datastore) ([]byte, []interf
 		return []byte{}, nil, err
 	}
 
-	rawTrans := url.Export(indexer.Sorter)
+	rawTrans := url.WriteCache().Export(indexer.Sorter)
 	transitions := indexer.Univalues(common.Clone(rawTrans)).To(indexer.ITCTransition{})
 	return indexer.Univalues(transitions).Encode(), transitions, nil
 }
@@ -48,7 +48,7 @@ func ParallelInsert_Ctrn_0(account string, store interfaces.Datastore) ([]byte, 
 		return []byte{}, err
 	}
 
-	transitions := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	transitions := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	return indexer.Univalues(transitions).Encode(), nil
 }
 
@@ -67,7 +67,7 @@ func Create_Ctrn_1(account string, store interfaces.Datastore) ([]byte, error) {
 		return []byte{}, err
 	}
 
-	transitions := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	transitions := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	return indexer.Univalues(transitions).Encode(), nil
 }
 

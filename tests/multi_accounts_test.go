@@ -27,7 +27,7 @@ func TestMultiAccountCreation(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	raw := url.Export(indexer.Sorter)
+	raw := url.WriteCache().Export(indexer.Sorter)
 	acctTrans := indexer.Univalues(common.Clone(raw)).To(indexer.ITCTransition{})
 
 	paths := ccurlcommon.NewPlatform().GetSysPaths()

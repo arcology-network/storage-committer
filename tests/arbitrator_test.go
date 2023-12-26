@@ -25,7 +25,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	meta := commutative.NewPath()
 
 	url.Write(ccurlcommon.SYSTEM, ccurlcommon.ETH10_ACCOUNT_PREFIX, meta)
-	trans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	trans := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans).Encode()).(indexer.Univalues))
 
 	url.Sort()
@@ -34,16 +34,16 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	alice := AliceAccount()
 	url.Init(store)
 	url.NewAccount(1, alice) // NewAccount account structure {
-	// accesses1, transitions1 := url.Export(indexer.Sorter)
-	accesses1 := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCAccess{})
-	indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	// accesses1, transitions1 := url.WriteCache().Export(indexer.Sorter)
+	accesses1 := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCAccess{})
+	indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	bob := datacompression.RandomAccount()
 	url2 := ccurl.NewConcurrentUrl(store)
 	url2.NewAccount(2, bob) // NewAccount account structure {
 
-	accesses2 := indexer.Univalues(common.Clone(url2.Export(indexer.Sorter))).To(indexer.ITCAccess{})
-	indexer.Univalues(common.Clone(url2.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	accesses2 := indexer.Univalues(common.Clone(url2.WriteCache().Export(indexer.Sorter))).To(indexer.ITCAccess{})
+	indexer.Univalues(common.Clone(url2.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	arib := (&arbitrator.Arbitrator{})
 
@@ -62,7 +62,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	url := ccurl.NewConcurrentUrl(store)
 	meta := commutative.NewPath()
 	url.Write(ccurlcommon.SYSTEM, ccurlcommon.ETH10_ACCOUNT_PREFIX, meta)
-	trans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	trans := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans).Encode()).(indexer.Univalues))
 	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -74,8 +74,8 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path1) // create a path
 	// url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-1"))
 	// url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-1"))
-	// accesses1, _ := url.Export(indexer.Sorter)
-	raw := url.Export(indexer.Sorter)
+	// accesses1, _ := url.WriteCache().Export(indexer.Sorter)
+	raw := url.WriteCache().Export(indexer.Sorter)
 	accesses1 := indexer.Univalues(common.Clone(raw)).To(indexer.IPCTransition{})
 
 	url2 := ccurl.NewConcurrentUrl(store)
@@ -84,8 +84,8 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path2)
 	// url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-2"))
 	// url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-2"))
-	// accesses2, _ := url2.Export(indexer.Sorter)
-	accesses2 := indexer.Univalues(common.Clone(url2.Export(indexer.Sorter))).To(indexer.ITCAccess{})
+	// accesses2, _ := url2.WriteCache().Export(indexer.Sorter)
+	accesses2 := indexer.Univalues(common.Clone(url2.WriteCache().Export(indexer.Sorter))).To(indexer.ITCAccess{})
 
 	// accesses1.Print()
 	// fmt.Print(" ++++++++++++++++++++++++++++++++++++++++++++++++ ")
@@ -110,7 +110,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	}
 
 	// url.Write(ccurlcommon.SYSTEM, ccurlcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
-	acctTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	acctTrans := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
 	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -120,9 +120,9 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/", commutative.NewPath()) // create a path
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-1"))
 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-1"))
-	// accesses1, transitions1 := url.Export(indexer.Sorter)
-	accesses1 := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCAccess{})
-	transitions1 := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	// accesses1, transitions1 := url.WriteCache().Export(indexer.Sorter)
+	accesses1 := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCAccess{})
+	transitions1 := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	url2 := ccurl.NewConcurrentUrl(store)
 	url2.NewAccount(2, alice)      // NewAccount account structure {
@@ -132,9 +132,9 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-2"))
 	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-2"))
 
-	// accesses2, transitions2 := url2.Export(indexer.Sorter)
-	accesses2 := indexer.Univalues(common.Clone(url2.Export(indexer.Sorter))).To(indexer.ITCAccess{})
-	transitions2 := indexer.Univalues(common.Clone(url2.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	// accesses2, transitions2 := url2.WriteCache().Export(indexer.Sorter)
+	accesses2 := indexer.Univalues(common.Clone(url2.WriteCache().Export(indexer.Sorter))).To(indexer.ITCAccess{})
+	transitions2 := indexer.Univalues(common.Clone(url2.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	IDVec := append(common.Fill(make([]uint32, len(accesses1)), 0), common.Fill(make([]uint32, len(accesses2)), 1)...)
 	ids := (&arbitrator.Arbitrator{}).Detect(IDVec, append(accesses1, accesses2...))
@@ -160,16 +160,16 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	}
 
 	// accesses3, transitions3 := url3.Export(indexer.Sorter)
-	accesses3 := indexer.Univalues(common.Clone(url3.Export(indexer.Sorter))).To(indexer.ITCAccess{})
-	transitions3 := indexer.Univalues(common.Clone(url3.Export(indexer.Sorter))).To(indexer.IPCTransition{})
+	accesses3 := indexer.Univalues(common.Clone(url3.WriteCache().Export(indexer.Sorter))).To(indexer.ITCAccess{})
+	transitions3 := indexer.Univalues(common.Clone(url3.WriteCache().Export(indexer.Sorter))).To(indexer.IPCTransition{})
 
 	url4 := ccurl.NewConcurrentUrl(store)
 	if _, err := url4.Write(4, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("url4-1-by-tx-3")); err != nil {
 		t.Error(err)
 	}
 	// accesses4, transitions4 := url4.Export(indexer.Sorter)
-	accesses4 := indexer.Univalues(common.Clone(url4.Export(indexer.Sorter))).To(indexer.ITCAccess{})
-	transitions4 := indexer.Univalues(common.Clone(url4.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	accesses4 := indexer.Univalues(common.Clone(url4.WriteCache().Export(indexer.Sorter))).To(indexer.ITCAccess{})
+	transitions4 := indexer.Univalues(common.Clone(url4.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	IDVec = append(common.Fill(make([]uint32, len(accesses3)), 0), common.Fill(make([]uint32, len(accesses4)), 1)...)
 	ids = (&arbitrator.Arbitrator{}).Detect(IDVec, append(accesses3, accesses4...))

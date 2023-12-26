@@ -53,7 +53,7 @@ func TestTrieUpdates(t *testing.T) {
 		t.Error(err)
 	}
 
-	url.Import(indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{}))
+	url.Import(indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.IPCTransition{}))
 	url.Sort()
 	url.Finalize([]uint32{ccurlcommon.SYSTEM})
 	url.WriteToDbBuffer() // Export transitions and save them to the DB buffer.
@@ -86,7 +86,7 @@ func TestTrieUpdates(t *testing.T) {
 		t.Error("Error: AccountCache should be 3, actual", ds.AccountCache.Size())
 	}
 
-	url.Import(indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{}))
+	url.Import(indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.IPCTransition{}))
 	url.Sort()
 	url.Finalize([]uint32{ccurlcommon.SYSTEM})
 	url.WriteToDbBuffer() // Export transitions and save them to the DB buffer.
@@ -109,7 +109,7 @@ func TestTrieUpdates(t *testing.T) {
 		t.Error(err)
 	}
 
-	url.Import(indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{}))
+	url.Import(indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.IPCTransition{}))
 	url.Sort()
 	url.Finalize([]uint32{ccurlcommon.SYSTEM})
 	url.WriteToDbBuffer() // Export transitions and save them to the DB buffer.
@@ -189,7 +189,7 @@ func TestEthStorageConnection(t *testing.T) {
 		t.Error(err)
 	}
 
-	trans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{})
+	trans := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.IPCTransition{})
 	url.Import(trans)
 	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -281,7 +281,7 @@ func TestEthDataStoreAddDeleteRead(t *testing.T) {
 		fmt.Println(err)
 	}
 
-	acctTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{})
+	acctTrans := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.IPCTransition{})
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
 
 	url.Sort()
@@ -368,8 +368,8 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 		t.Error(err)
 	}
 
-	// _, trans := url.Export(indexer.Sorter)
-	trans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{})
+	// _, trans := url.WriteCache().Export(indexer.Sorter)
+	trans := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.IPCTransition{})
 	acctTrans := (&indexer.Univalues{}).Decode(indexer.Univalues(trans).Encode()).(indexer.Univalues)
 
 	//values := indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).([]interfaces.Univalue)
@@ -385,7 +385,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 		t.Error(err)
 	}
 
-	transitions := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{})
+	transitions := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.IPCTransition{})
 	url.Import((&indexer.Univalues{}).Decode(indexer.Univalues(transitions).Encode()).(indexer.Univalues))
 
 	url.Sort()
@@ -401,7 +401,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 		t.Error(err)
 	}
 
-	trans = indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{})
+	trans = indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.IPCTransition{})
 	url.Import((&indexer.Univalues{}).Decode(indexer.Univalues(trans).Encode()).(indexer.Univalues))
 	url.Sort()
 	url.Commit([]uint32{1})

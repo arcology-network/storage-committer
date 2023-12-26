@@ -23,8 +23,8 @@ func TestAuxTrans(t *testing.T) {
 		t.Error(err)
 	}
 
-	// _, trans00 := url.Export(indexer.Sorter)
-	acctTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	// _, trans00 := url.WriteCache().Export(indexer.Sorter)
+	acctTrans := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
 
@@ -79,7 +79,7 @@ func TestAuxTrans(t *testing.T) {
 		}
 	}
 
-	transitions := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	transitions := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	if !reflect.DeepEqual(transitions[0].Value().(interfaces.Type).Delta().(*commutative.PathDelta).Added(), []string{"elem-000"}) {
 		t.Error("keys don't match")
 	}
@@ -111,8 +111,8 @@ func TestCheckAccessRecords(t *testing.T) {
 		t.Error(err)
 	}
 
-	// _, trans00 := url.Export(indexer.Sorter)
-	trans00 := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	// _, trans00 := url.WriteCache().Export(indexer.Sorter)
+	trans00 := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans00).Encode()).(indexer.Univalues))
 
@@ -125,8 +125,8 @@ func TestCheckAccessRecords(t *testing.T) {
 		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/") // create a path
 	}
 
-	// _, trans10 := url.Export(indexer.Sorter)
-	trans10 := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	// _, trans10 := url.WriteCache().Export(indexer.Sorter)
+	trans10 := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans10).Encode()).(indexer.Univalues))
 
@@ -142,7 +142,7 @@ func TestCheckAccessRecords(t *testing.T) {
 		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/2") // create a path
 	}
 
-	// accesses10, trans11 := url.Export(indexer.Sorter)
+	// accesses10, trans11 := url.WriteCache().Export(indexer.Sorter)
 	// url.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans11).Encode()).(indexer.Univalues))
 
 	// url.Sort()

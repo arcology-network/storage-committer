@@ -24,7 +24,7 @@ func TestAccumulatorUpperLimit(t *testing.T) {
 		t.Error(err)
 	}
 
-	trans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	trans := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	transV := []interfaces.Univalue(trans)
 	balanceDeltas := common.CopyIf(transV, func(v interfaces.Univalue) bool { return strings.LastIndex(*v.GetPath(), "/balance") > 0 })
 
@@ -65,7 +65,7 @@ func TestAccumulatorLowerLimit(t *testing.T) {
 		t.Error(err)
 	}
 
-	trans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	trans := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	transV := []interfaces.Univalue(trans)
 	balanceDeltas := common.CopyIf(transV, func(v interfaces.Univalue) bool { return strings.LastIndex(*v.GetPath(), "/balance") > 0 })
 
