@@ -178,9 +178,15 @@ func TestNonce(t *testing.T) {
 
 	url1 := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
-	if _, err := url1.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+
+	writeCache := url1.WriteCache()
+	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
+
+	// if _, err := url1.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	// 	t.Error(err)
+	// }
 
 	if _, err := url1.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewBoundedUint64(0, math.MaxInt64)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
@@ -244,9 +250,15 @@ func TestMultipleNonces(t *testing.T) {
 
 	url1 := ccurl.NewConcurrentUrl(store)
 	bob := BobAccount()
-	if _, err := url1.NewAccount(ccurlcommon.SYSTEM, bob); err != nil { // NewAccount account structure {
+
+	writeCache = url1.WriteCache()
+	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, bob, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
+
+	// if _, err := url1.NewAccount(ccurlcommon.SYSTEM, bob); err != nil { // NewAccount account structure {
+	// 	t.Error(err)
+	// }
 
 	url0.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUnboundedUint64())
 

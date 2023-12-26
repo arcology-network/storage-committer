@@ -31,6 +31,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans).Encode()).(indexer.Univalues))
 
 	url.Sort()
+
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	alice := AliceAccount()
@@ -143,7 +144,12 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 	url.Init(store)
 
-	url.NewAccount(1, alice)
+	// url.NewAccount(1, alice)
+	writeCache = url.WriteCache()
+	if _, err := concurrenturl.CreateNewAccount(1, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
+		t.Error(err)
+	}
+
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/", commutative.NewPath()) // create a path
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-1"))
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-1"))

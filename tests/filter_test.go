@@ -27,7 +27,11 @@ func TestTransitionFilters(t *testing.T) {
 	url := ccurl.NewConcurrentUrl(store)
 	writeCache := url.WriteCache()
 	concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache)
-	url.NewAccount(ccurlcommon.SYSTEM, bob)
+	// url.NewAccount(ccurlcommon.SYSTEM, bob)
+
+	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, bob, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
+		t.Error(err)
+	}
 
 	raw := url.WriteCache().Export(indexer.Sorter)
 
@@ -112,7 +116,9 @@ func TestAccessFilters(t *testing.T) {
 	url := ccurl.NewConcurrentUrl(store)
 	writeCache := url.WriteCache()
 	concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache)
-	url.NewAccount(ccurlcommon.SYSTEM, bob)
+	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, bob, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
+		t.Error(err)
+	}
 
 	raw := url.WriteCache().Export(indexer.Sorter)
 

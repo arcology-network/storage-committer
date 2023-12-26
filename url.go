@@ -112,46 +112,46 @@ func CreateNewAccount(tx uint32, acct string, platform *ccurlcommon.Platform, wr
 }
 
 // load accounts
-func (this *ConcurrentUrl) NewAccount(tx uint32, acct string) ([]interfaces.Univalue, error) {
-	paths, typeids := this.Platform.GetBuiltins(acct)
+// func (this *ConcurrentUrl) NewAccount(tx uint32, acct string) ([]interfaces.Univalue, error) {
+// 	paths, typeids := this.Platform.GetBuiltins(acct)
 
-	transitions := []interfaces.Univalue{}
-	for i, path := range paths {
-		var v interface{}
-		switch typeids[i] {
-		case commutative.PATH: // Path
-			v = commutative.NewPath()
+// 	transitions := []interfaces.Univalue{}
+// 	for i, path := range paths {
+// 		var v interface{}
+// 		switch typeids[i] {
+// 		case commutative.PATH: // Path
+// 			v = commutative.NewPath()
 
-		case uint8(reflect.Kind(noncommutative.STRING)): // delta big int
-			v = noncommutative.NewString("")
+// 		case uint8(reflect.Kind(noncommutative.STRING)): // delta big int
+// 			v = noncommutative.NewString("")
 
-		case uint8(reflect.Kind(commutative.UINT256)): // delta big int
-			v = commutative.NewUnboundedU256()
+// 		case uint8(reflect.Kind(commutative.UINT256)): // delta big int
+// 			v = commutative.NewUnboundedU256()
 
-		case uint8(reflect.Kind(commutative.UINT64)):
-			v = commutative.NewUnboundedUint64()
+// 		case uint8(reflect.Kind(commutative.UINT64)):
+// 			v = commutative.NewUnboundedUint64()
 
-		case uint8(reflect.Kind(noncommutative.INT64)):
-			v = new(noncommutative.Int64)
+// 		case uint8(reflect.Kind(noncommutative.INT64)):
+// 			v = new(noncommutative.Int64)
 
-		case uint8(reflect.Kind(noncommutative.BYTES)):
-			v = noncommutative.NewBytes([]byte{})
-		}
+// 		case uint8(reflect.Kind(noncommutative.BYTES)):
+// 			v = noncommutative.NewBytes([]byte{})
+// 		}
 
-		if !this.writeCache.IfExists(path) {
-			transitions = append(transitions, univalue.NewUnivalue(tx, path, 0, 1, 0, v, nil))
+// 		if !this.writeCache.IfExists(path) {
+// 			transitions = append(transitions, univalue.NewUnivalue(tx, path, 0, 1, 0, v, nil))
 
-			if _, err := this.writeCache.Write(tx, path, v); err != nil { // root path
-				return nil, err
-			}
+// 			if _, err := this.writeCache.Write(tx, path, v); err != nil { // root path
+// 				return nil, err
+// 			}
 
-			if !this.writeCache.IfExists(path) {
-				return transitions, common.FilterSecond(this.writeCache.Write(tx, path, v)) // root path
-			}
-		}
-	}
-	return transitions, nil
-}
+// 			if !this.writeCache.IfExists(path) {
+// 				return transitions, common.FilterSecond(this.writeCache.Write(tx, path, v)) // root path
+// 			}
+// 		}
+// 	}
+// 	return transitions, nil
+// }
 
 func (this *ConcurrentUrl) IfExists(path string) bool {
 	return this.writeCache.IfExists(path)

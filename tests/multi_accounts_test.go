@@ -7,6 +7,7 @@ import (
 
 	datacompression "github.com/arcology-network/common-lib/addrcompressor"
 	"github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/concurrenturl"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
@@ -24,9 +25,14 @@ func TestMultiAccountCreation(t *testing.T) {
 	accounts := make([]string, 10)
 	for i := 0; i < len(accounts); i++ {
 		accounts[i] = datacompression.RandomAccount()
-		if _, err := url.NewAccount(0, accounts[i]); err != nil { // Preload account structure {
+
+		if _, err := concurrenturl.CreateNewAccount(0, accounts[i], ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 			t.Error(err)
 		}
+
+		// if _, err := url.NewAccount(0, accounts[i]); err != nil { // Preload account structure {
+		// 	t.Error(err)
+		// }
 	}
 	raw := writeCache.Export(indexer.Sorter)
 	acctTrans := indexer.Univalues(common.Clone(raw)).To(indexer.ITCTransition{})

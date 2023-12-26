@@ -75,7 +75,7 @@ func TestUnivalueCodec(t *testing.T) {
 
 	url := ccurl.NewConcurrentUrl(store)
 	writeCache := url.WriteCache()
-	url.NewAccount(ccurlcommon.SYSTEM, fmt.Sprint("rand.Int()"))
+	// url.NewAccount(ccurlcommon.SYSTEM, fmt.Sprint("rand.Int()"))
 	concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, fmt.Sprint("rand.Int()"), ccurlcommon.NewPlatform(), writeCache)
 
 	transVec := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.IPCTransition{})
