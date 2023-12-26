@@ -309,7 +309,8 @@ func TestStateUpdate(t *testing.T) {
 	url.Commit([]uint32{0, 1})
 	//need to encode delta only now it encodes everything
 
-	if err := CheckPaths(alice, url); err != nil {
+	writeCache.Clear()
+	if err := CheckPaths(alice, writeCache); err != nil {
 		t.Error(err)
 	}
 

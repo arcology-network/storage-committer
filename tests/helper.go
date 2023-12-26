@@ -6,7 +6,7 @@ import (
 
 	"github.com/arcology-network/common-lib/common"
 	orderedset "github.com/arcology-network/common-lib/container/set"
-	ccurl "github.com/arcology-network/concurrenturl"
+	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	"github.com/arcology-network/concurrenturl/indexer"
 	"github.com/arcology-network/concurrenturl/interfaces"
@@ -14,8 +14,8 @@ import (
 )
 
 func Create_Ctrn_0(account string, store interfaces.Datastore) ([]byte, []interfaces.Univalue, error) {
-	url := ccurl.NewConcurrentUrl(store)
-	writeCache := url.WriteCache()
+	// url := ccurl.NewConcurrentUrl(store)
+	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
 
 	path := commutative.NewPath() // create a path
 	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", path); err != nil {
@@ -36,8 +36,8 @@ func Create_Ctrn_0(account string, store interfaces.Datastore) ([]byte, []interf
 }
 
 func ParallelInsert_Ctrn_0(account string, store interfaces.Datastore) ([]byte, error) {
-	url := ccurl.NewConcurrentUrl(store)
-	writeCache := url.WriteCache()
+	// url := ccurl.NewConcurrentUrl(store)
+	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
 	path := commutative.NewPath() // create a path
 	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", path); err != nil {
 		return []byte{}, err
@@ -56,8 +56,8 @@ func ParallelInsert_Ctrn_0(account string, store interfaces.Datastore) ([]byte, 
 }
 
 func Create_Ctrn_1(account string, store interfaces.Datastore) ([]byte, error) {
-	url := ccurl.NewConcurrentUrl(store)
-	writeCache := url.WriteCache()
+	// url := ccurl.NewConcurrentUrl(store)
+	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
 	path := commutative.NewPath() // create a path
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/", path); err != nil {
 		return []byte{}, err
@@ -75,42 +75,42 @@ func Create_Ctrn_1(account string, store interfaces.Datastore) ([]byte, error) {
 	return indexer.Univalues(transitions).Encode(), nil
 }
 
-func CheckPaths(account string, url *ccurl.ConcurrentUrl) error {
-	v, _ := url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-00", new(noncommutative.String))
+func CheckPaths(account string, writeCache *indexer.WriteCache) error {
+	v, _ := writeCache.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-00", new(noncommutative.String))
 	if v.(string) != "tx0-elem-00" {
 		return errors.New("Error: Not match")
 	}
 
-	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-01", new(noncommutative.String))
+	v, _ = writeCache.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-01", new(noncommutative.String))
 	if v.(string) != "tx0-elem-01" {
 		return errors.New("Error: Not match")
 	}
 
-	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/elem-00", new(noncommutative.String))
+	v, _ = writeCache.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/elem-00", new(noncommutative.String))
 	if v.(string) != "tx1-elem-00" {
 		return errors.New("Error: Not match")
 	}
 
-	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/elem-01", new(noncommutative.String))
+	v, _ = writeCache.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/elem-01", new(noncommutative.String))
 	if v.(string) != "tx1-elem-00" {
 		return errors.New("Error: Not match")
 	}
 
 	//Read the path
-	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", new(commutative.Path))
+	v, _ = writeCache.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", new(commutative.Path))
 	keys := v.(*orderedset.OrderedSet).Keys()
 	if !reflect.DeepEqual(keys, []string{"elem-00", "elem-01"}) {
 		return errors.New("Error: Path don't match !")
 	}
 
 	// Read the path again
-	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", new(commutative.Path))
+	v, _ = writeCache.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", new(commutative.Path))
 	keys = v.(*orderedset.OrderedSet).Keys()
 	if !reflect.DeepEqual(keys, []string{"elem-00", "elem-01"}) {
 		return errors.New("Error: Path don't match !")
 	}
 
-	v, _ = url.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/", new(commutative.Path))
+	v, _ = writeCache.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/", new(commutative.Path))
 	keys = v.(*orderedset.OrderedSet).Keys()
 	if !reflect.DeepEqual(keys, []string{"elem-00", "elem-01"}) {
 		return errors.New("Error: Path don't match !")

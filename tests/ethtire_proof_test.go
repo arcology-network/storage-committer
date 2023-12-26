@@ -24,8 +24,9 @@ import (
 func TestConcurrentDB(t *testing.T) {
 	store := chooseDataStore()
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
-	url := ccurl.NewConcurrentUrl(store)
-	writeCache := url.WriteCache()
+	// url := ccurl.NewConcurrentUrl(store)
+	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+
 	alice := AliceAccount()
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
@@ -77,11 +78,11 @@ func TestConcurrentDB(t *testing.T) {
 			// func() {
 			for i := 0; i < 1000; i++ {
 				hash := ethcommon.BytesToHash(codec.Uint64(uint64(i)).Encode())
-				if v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/"+hexutil.Encode(hash[:]), new(noncommutative.String)); v != string(codec.Uint64(i).Encode()) {
+				if v, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/"+hexutil.Encode(hash[:]), new(noncommutative.String)); v != string(codec.Uint64(i).Encode()) {
 					t.Error("Mismatch")
 				}
 
-				if v, _ := url.Read(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/"+hexutil.Encode(hash[:]), new(noncommutative.String)); v != string(codec.Uint64(i).Encode()) {
+				if v, _ := writeCache.Read(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/"+hexutil.Encode(hash[:]), new(noncommutative.String)); v != string(codec.Uint64(i).Encode()) {
 					t.Error("Mismatch")
 				}
 			}
@@ -92,8 +93,9 @@ func TestConcurrentDB(t *testing.T) {
 func TestEthWorldTrieProof(t *testing.T) {
 	store := chooseDataStore()
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
-	url := ccurl.NewConcurrentUrl(store)
-	writeCache := url.WriteCache()
+
+	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+
 	alice := AliceAccount()
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
@@ -109,11 +111,14 @@ func TestEthWorldTrieProof(t *testing.T) {
 	// }
 
 	acctTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+
+	url := ccurl.NewConcurrentUrl(store)
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
 	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
-
 	url.Init(store)
+
+	writeCache.Clear()
 	path := commutative.NewPath()
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
 
@@ -128,6 +133,7 @@ func TestEthWorldTrieProof(t *testing.T) {
 
 	url.Init(store)
 
+	writeCache.Clear()
 	// Delete an non-existing entry, should NOT appear in the transitions
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/4", nil); err == nil {
 		t.Error("Deleting an non-existing entry should've flaged an error", err)
@@ -143,11 +149,11 @@ func TestEthWorldTrieProof(t *testing.T) {
 		t.Error("Failed to write", err)
 	}
 
-	if v, err := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/4", nil); v != "124" {
+	if v, err := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/4", nil); v != "124" {
 		t.Error("Wrong return value", err)
 	}
 
-	if v, _ := url.Read(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000000", new(noncommutative.String)); v != "124" {
+	if v, _ := writeCache.Read(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000000", new(noncommutative.String)); v != "124" {
 		t.Error("Error: Wrong return value")
 	}
 
@@ -164,7 +170,6 @@ func TestEthWorldTrieProof(t *testing.T) {
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
 	url.Sort()
 	url.Commit([]uint32{1})
-
 	url.Init(store)
 
 	/* Account Proofs */
@@ -196,8 +201,9 @@ func TestEthWorldTrieProof(t *testing.T) {
 }
 
 func TestGetProofAPI(t *testing.T) {
-	url := ccurl.NewConcurrentUrl(ccurlstorage.NewParallelEthMemDataStore())
-	writeCache := url.WriteCache()
+	store := ccurlstorage.NewParallelEthMemDataStore()
+	// url := ccurl.NewConcurrentUrl(ccurlstorage.NewParallelEthMemDataStore())
+	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
 
 	alice := AliceAccount()
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
@@ -211,10 +217,13 @@ func TestGetProofAPI(t *testing.T) {
 
 	acctTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.IPCTransition{})
 	ts := indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues)
+
+	url := ccurl.NewConcurrentUrl(store)
 	url.Import(ts)
 	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
+	writeCache.Clear()
 	/* Alice updates */
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
 		t.Error(err)
@@ -251,8 +260,8 @@ func TestGetProofAPI(t *testing.T) {
 	url.Sort()
 	url.Commit([]uint32{1})
 
-	store := url.Importer().Store().(*storage.EthDataStore)
-
+	// store := url.Importer().Store().(*storage.EthDataStore)
+	writeCache.Clear()
 	/* Get proof direcly */
 	bobAcct, _ := store.GetAccount(bob, &ethmpt.AccessListCache{})
 	kstr, _ := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000000")
@@ -267,7 +276,7 @@ func TestGetProofAPI(t *testing.T) {
 		t.Error(err)
 	}
 
-	if v, _ := url.Read(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000000", new(noncommutative.String)); v != "124" {
+	if v, _ := writeCache.Read(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000000", new(noncommutative.String)); v != "124" {
 		t.Error("Error: Wrong return value")
 	}
 

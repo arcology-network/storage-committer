@@ -9,7 +9,6 @@ import (
 	"github.com/arcology-network/common-lib/common"
 	orderedset "github.com/arcology-network/common-lib/container/set"
 	"github.com/arcology-network/concurrenturl"
-	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
@@ -24,8 +23,8 @@ func TestTransitionFilters(t *testing.T) {
 	alice := datacompression.RandomAccount()
 	bob := datacompression.RandomAccount()
 
-	url := ccurl.NewConcurrentUrl(store)
-	writeCache := url.WriteCache()
+	// url := ccurl.NewConcurrentUrl(store)
+	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
 
 	// writeCache = indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
 
@@ -116,8 +115,8 @@ func TestAccessFilters(t *testing.T) {
 	alice := datacompression.RandomAccount()
 	bob := datacompression.RandomAccount()
 
-	url := ccurl.NewConcurrentUrl(store)
-	writeCache := url.WriteCache()
+	// url := ccurl.NewConcurrentUrl(store)
+	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
 	concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache)
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, bob, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
