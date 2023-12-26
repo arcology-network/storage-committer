@@ -8,12 +8,18 @@ import (
 	"strings"
 
 	common "github.com/arcology-network/common-lib/common"
+	orderedset "github.com/arcology-network/common-lib/container/set"
 	mempool "github.com/arcology-network/common-lib/mempool"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	concurrenturlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/commutative"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
+)
+
+const (
+	READ_NONEXIST          = uint64(3)
+	READ_COMMITTED_FROM_DB = uint64(1000) // Read for the state db
 )
 
 type WriteCache struct {
@@ -58,6 +64,46 @@ func (this *WriteCache) GetOrInit(tx uint32, path string, T any) interfaces.Univ
 func (this *WriteCache) Read(tx uint32, path string, T any) (interface{}, interface{}) {
 	univalue := this.GetOrInit(tx, path, T)
 	return univalue.Get(tx, path, nil), univalue
+}
+
+func (this *WriteCache) ReadEx(tx uint32, path string, T any) (interface{}, uint64) {
+	univ := this.GetOrInit(tx, path, T)
+	// return univalue.Get(tx, path, nil), univalue
+	return univ.Get(tx, path, nil), 0 //Fee{}.Reader(univ.(interfaces.Univalue))
+}
+
+// Read th Nth element under a path
+func (this *WriteCache) getKeyByIdx(tx uint32, path string, idx uint64) (interface{}, uint64, error) {
+	if !common.IsPath(path) {
+		return nil, READ_NONEXIST, errors.New("Error: Not a path!!!")
+	}
+
+	meta, readFee := this.ReadEx(tx, path, new(commutative.Path)) // read the container meta
+	return common.IfThen(meta == nil,
+		meta,
+		common.IfThenDo1st(idx < uint64(len(meta.(*orderedset.OrderedSet).Keys())), func() interface{} { return path + meta.(*orderedset.OrderedSet).Keys()[idx] }, nil),
+	), readFee, nil
+}
+
+func (this *WriteCache) ReadAt(tx uint32, path string, idx uint64, T any) (interface{}, uint64, error) {
+	if key, Fee, err := this.getKeyByIdx(tx, path, idx); err == nil && key != nil {
+		v, Fee := this.ReadEx(tx, key.(string), T)
+		return v, Fee, nil
+	} else {
+		return key, Fee, err
+	}
+}
+
+func (this *WriteCache) WriteAt(tx uint32, path string, idx uint64, T any) (int64, error) {
+	if !common.IsPath(path) {
+		return int64(READ_NONEXIST), errors.New("Error: Not a path!!!")
+	}
+
+	if key, Fee, err := this.getKeyByIdx(tx, path, idx); err == nil {
+		return this.Write(tx, key.(string), T)
+	} else {
+		return int64(Fee), err
+	}
 }
 
 // Get the value directly, skip the access counting at the univalue level
