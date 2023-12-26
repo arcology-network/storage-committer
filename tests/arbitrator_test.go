@@ -23,21 +23,22 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	store := chooseDataStore()
 
 	url := ccurl.NewConcurrentUrl(store)
-	writeCache := url.WriteCache()
+	// writeCache := url.WriteCache()
+	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+
 	meta := commutative.NewPath()
 
 	writeCache.Write(ccurlcommon.SYSTEM, ccurlcommon.ETH10_ACCOUNT_PREFIX, meta)
 	trans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans).Encode()).(indexer.Univalues))
-
 	url.Sort()
-
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
 
 	alice := AliceAccount()
 	url.Init(store)
 	// url.NewAccount(1, alice) // NewAccount account structure {
-	writeCache = url.WriteCache()
+	writeCache.Clear()                                                                                                          // = url.WriteCache()
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -72,10 +73,11 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	store := chooseDataStore()
 
 	url := ccurl.NewConcurrentUrl(store)
-	writeCache := url.WriteCache()
+	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
 	meta := commutative.NewPath()
 	writeCache.Write(ccurlcommon.SYSTEM, ccurlcommon.ETH10_ACCOUNT_PREFIX, meta)
 	trans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans).Encode()).(indexer.Univalues))
 	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -84,7 +86,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	alice := AliceAccount()
 	// url.NewAccount(1, alice) // NewAccount account structure {
 
-	writeCache = url.WriteCache()
+	writeCache.Clear()                                                                                         // = url.WriteCache()
 	if _, err := concurrenturl.CreateNewAccount(1, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -132,7 +134,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
-	writeCache := url.WriteCache()
+	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -145,7 +147,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	url.Init(store)
 
 	// url.NewAccount(1, alice)
-	writeCache = url.WriteCache()
+	writeCache.Clear()
 	if _, err := concurrenturl.CreateNewAccount(1, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -158,7 +160,8 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	transitions1 := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	url2 := ccurl.NewConcurrentUrl(store)
-	writeCache = url2.WriteCache()
+	// writeCache = url2.WriteCache()
+	writeCache.Clear()
 	if _, err := concurrenturl.CreateNewAccount(2, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	} // NewAccount account structure {
