@@ -250,10 +250,11 @@ func TestMultipleNonces(t *testing.T) {
 	// trans := (url0.Export(indexer.Sorter))
 	trans0 := indexer.Univalues((writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
-	url1 := ccurl.NewConcurrentUrl(store)
+	// url1 := ccurl.NewConcurrentUrl(store)
+
 	bob := BobAccount()
 
-	writeCache = url1.WriteCache()
+	// writeCache = url1.WriteCache()
 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, bob, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -262,27 +263,27 @@ func TestMultipleNonces(t *testing.T) {
 	// 	t.Error(err)
 	// }
 
-	url0.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUnboundedUint64())
+	writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUnboundedUint64())
 
-	if _, err := url1.Write(0, "blcc://eth1.0/account/"+bob+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
+	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+bob+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+bob+"/balance")
 	}
 
-	if _, err := url1.Write(0, "blcc://eth1.0/account/"+bob+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
+	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+bob+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+bob+"/balance")
 	}
 
-	nonce, _ := url1.Read(0, "blcc://eth1.0/account/"+bob+"/nonce", new(commutative.Uint64))
+	nonce, _ := writeCache.Read(0, "blcc://eth1.0/account/"+bob+"/nonce", new(commutative.Uint64))
 	bobNonce := nonce.(uint64)
 	if bobNonce != 2 {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
 	}
 
-	raw := (url1.WriteCache().Export(indexer.Sorter))
+	raw := (writeCache.Export(indexer.Sorter))
 	trans1 := indexer.Univalues(raw).To(indexer.ITCTransition{})
 	// ccurltype.SetInvariate(trans1, "nonce")
 
-	nonce, _ = url1.Read(0, "blcc://eth1.0/account/"+bob+"/nonce", new(commutative.Uint64))
+	nonce, _ = writeCache.Read(0, "blcc://eth1.0/account/"+bob+"/nonce", new(commutative.Uint64))
 	bobNonce = nonce.(uint64)
 	if bobNonce != 2 {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
@@ -291,7 +292,7 @@ func TestMultipleNonces(t *testing.T) {
 	url0.Import(trans0)
 	url0.Import(trans1)
 
-	nonce, _ = url1.Read(0, "blcc://eth1.0/account/"+bob+"/nonce", new(commutative.Uint64))
+	nonce, _ = writeCache.Read(0, "blcc://eth1.0/account/"+bob+"/nonce", new(commutative.Uint64))
 	bobNonce = nonce.(uint64)
 	if bobNonce != 2 {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be 2", " actual: ", bobNonce)
@@ -300,13 +301,13 @@ func TestMultipleNonces(t *testing.T) {
 	url0.Sort()
 	url0.Commit([]uint32{0})
 
-	nonce, _ = url1.Read(0, "blcc://eth1.0/account/"+bob+"/nonce", new(commutative.Uint64))
+	nonce, _ = writeCache.Read(0, "blcc://eth1.0/account/"+bob+"/nonce", new(commutative.Uint64))
 	bobNonce = nonce.(uint64)
 	if bobNonce != 2 {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be 2", " actual: ", bobNonce)
 	}
 
-	nonce, _ = url0.Read(0, "blcc://eth1.0/account/"+bob+"/nonce", new(commutative.Uint64))
+	nonce, _ = writeCache.Read(0, "blcc://eth1.0/account/"+bob+"/nonce", new(commutative.Uint64))
 	bobNonce = nonce.(uint64)
 	if bobNonce != 2 {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)

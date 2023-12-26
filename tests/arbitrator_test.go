@@ -99,22 +99,22 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	raw := writeCache.Export(indexer.Sorter)
 	accesses1 := indexer.Univalues(common.Clone(raw)).To(indexer.IPCTransition{})
 
-	url2 := ccurl.NewConcurrentUrl(store)
-	writeCache = url2.WriteCache()
+	// url2 := ccurl.NewConcurrentUrl(store)
+	writeCache.Clear()                                                                                         // = url2.WriteCache()
 	if _, err := concurrenturl.CreateNewAccount(2, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	} // NewAccount account structure {
 
-	writeCache = url2.WriteCache()
+	// writeCache = url2.WriteCache()
 	if _, err := concurrenturl.CreateNewAccount(1, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	path2 := commutative.NewPath() // create a path
-	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path2)
+	writeCache.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path2)
 	// url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-2"))
 	// url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-2"))
 	// accesses2, _ := url2.WriteCache().Export(indexer.Sorter)
-	accesses2 := indexer.Univalues(common.Clone(url2.WriteCache().Export(indexer.Sorter))).To(indexer.ITCAccess{})
+	accesses2 := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCAccess{})
 
 	// accesses1.Print()
 	// fmt.Print(" ++++++++++++++++++++++++++++++++++++++++++++++++ ")
@@ -159,7 +159,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	accesses1 := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCAccess{})
 	transitions1 := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
-	url2 := ccurl.NewConcurrentUrl(store)
+	// url2 := ccurl.NewConcurrentUrl(store)
 	// writeCache = url2.WriteCache()
 	writeCache.Clear()
 	if _, err := concurrenturl.CreateNewAccount(2, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
@@ -167,13 +167,13 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	} // NewAccount account structure {
 	path2 := commutative.NewPath() // create a path
 
-	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/", path2)
-	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-2"))
-	url2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-2"))
+	writeCache.Write(2, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/", path2)
+	writeCache.Write(2, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-2"))
+	writeCache.Write(2, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-2"))
 
 	// accesses2, transitions2 := url2.WriteCache().Export(indexer.Sorter)
-	accesses2 := indexer.Univalues(common.Clone(url2.WriteCache().Export(indexer.Sorter))).To(indexer.ITCAccess{})
-	transitions2 := indexer.Univalues(common.Clone(url2.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	accesses2 := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCAccess{})
+	transitions2 := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	IDVec := append(common.Fill(make([]uint32, len(accesses1)), 0), common.Fill(make([]uint32, len(accesses2)), 1)...)
 	ids := (&arbitrator.Arbitrator{}).Detect(IDVec, append(accesses1, accesses2...))
@@ -192,23 +192,25 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	url.Import(out)
 	url.Sort()
 	url.Commit(toCommit)
+	writeCache.Clear()
 
-	url3 := ccurl.NewConcurrentUrl(store)
-	if _, err := url3.Write(3, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("url3-1-by-tx-3")); err != nil {
+	// url3 := ccurl.NewConcurrentUrl(store)
+	if _, err := writeCache.Write(3, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("url3-1-by-tx-3")); err != nil {
 		t.Error(err)
 	}
 
 	// accesses3, transitions3 := url3.Export(indexer.Sorter)
-	accesses3 := indexer.Univalues(common.Clone(url3.WriteCache().Export(indexer.Sorter))).To(indexer.ITCAccess{})
-	transitions3 := indexer.Univalues(common.Clone(url3.WriteCache().Export(indexer.Sorter))).To(indexer.IPCTransition{})
+	accesses3 := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCAccess{})
+	transitions3 := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.IPCTransition{})
 
-	url4 := ccurl.NewConcurrentUrl(store)
-	if _, err := url4.Write(4, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("url4-1-by-tx-3")); err != nil {
+	writeCache.Clear()
+	// url4 := ccurl.NewConcurrentUrl(store)
+	if _, err := writeCache.Write(4, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("url4-1-by-tx-3")); err != nil {
 		t.Error(err)
 	}
 	// accesses4, transitions4 := url4.Export(indexer.Sorter)
-	accesses4 := indexer.Univalues(common.Clone(url4.WriteCache().Export(indexer.Sorter))).To(indexer.ITCAccess{})
-	transitions4 := indexer.Univalues(common.Clone(url4.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	accesses4 := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCAccess{})
+	transitions4 := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	IDVec = append(common.Fill(make([]uint32, len(accesses3)), 0), common.Fill(make([]uint32, len(accesses4)), 1)...)
 	ids = (&arbitrator.Arbitrator{}).Detect(IDVec, append(accesses3, accesses4...))
@@ -229,8 +231,10 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	// url.Import(url.Decode(indexer.Univalues(append(transitions3, transitions4...)).Encode()))
 	url.Sort()
 	url.Commit(toCommit)
+	url.Init(store)
 
-	v, _ := url3.Read(3, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", new(noncommutative.String))
+	writeCache.Clear()
+	v, _ := writeCache.Read(3, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", new(noncommutative.String))
 	if v == nil || v.(string) != "url3-1-by-tx-3" {
 		t.Error("Error: Wrong value, expecting:", "url3-1-by-tx-3 ", "actual:", v)
 	}

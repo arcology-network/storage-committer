@@ -19,8 +19,8 @@ func TestMultiAccountCreation(t *testing.T) {
 	// store := datastore.NewDataStore(nil, datastore.NewCachePolicy(0, 1), datastore.NewMemDB(), encoder, decoder)
 
 	store.Inject((ccurlcommon.ETH10_ACCOUNT_PREFIX), commutative.NewPath())
-	url := ccurl.NewConcurrentUrl(store)
-	writeCache := url.WriteCache()
+
+	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
 
 	accounts := make([]string, 10)
 	for i := 0; i < len(accounts); i++ {
@@ -42,10 +42,11 @@ func TestMultiAccountCreation(t *testing.T) {
 		t.Error("Error: Transition counts don't match up")
 	}
 
+	url := ccurl.NewConcurrentUrl(store)
 	url.Import(acctTrans)
 	url.Sort()
 	url.Commit([]uint32{0})
-
+	writeCache.Clear()
 	// acctTrans = indexer.Univalues(common.Clone(raw)).To(indexer.ITCTransition{})
 	// encoded := indexer.Univalues(acctTrans).Encode()
 

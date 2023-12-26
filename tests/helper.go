@@ -16,6 +16,7 @@ import (
 func Create_Ctrn_0(account string, store interfaces.Datastore) ([]byte, []interfaces.Univalue, error) {
 	url := ccurl.NewConcurrentUrl(store)
 	writeCache := url.WriteCache()
+
 	path := commutative.NewPath() // create a path
 	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", path); err != nil {
 		return []byte{}, nil, err
