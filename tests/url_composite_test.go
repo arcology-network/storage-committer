@@ -50,17 +50,17 @@ func TestAuxTrans(t *testing.T) {
 	}
 
 	// Try to read an nonexistent path, should fail !
-	if value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-1", new(commutative.Path)); value != nil {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-1", new(commutative.Path)); value != nil {
 		t.Error("Path shouldn't be not found")
 	}
 
 	// Try to read an nonexistent entry from an nonexistent path, should fail !
-	if value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-1/elem-000", new(noncommutative.String)); value != nil {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-1/elem-000", new(noncommutative.String)); value != nil {
 		t.Error("Shouldn't be not found")
 	}
 
 	//try again
-	if value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", new(noncommutative.String)); value != nil {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", new(noncommutative.String)); value != nil {
 		t.Error("Shouldn't be not found")
 	}
 
@@ -70,12 +70,12 @@ func TestAuxTrans(t *testing.T) {
 	}
 
 	// Read the entry back
-	if value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", new(noncommutative.Int64)); value.(int64) != 1111 {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", new(noncommutative.Int64)); value.(int64) != 1111 {
 		t.Error("Shouldn't be not found")
 	}
 
 	// Read the path
-	if value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path)); value == nil {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path)); value == nil {
 		t.Error(value)
 	} else {
 		keys := value.(*orderedset.OrderedSet).Keys()
@@ -95,7 +95,7 @@ func TestAuxTrans(t *testing.T) {
 	}
 
 	// wrong condition, value should still exists
-	if value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path)); value == nil {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path)); value == nil {
 		t.Error("The variable has been cleared")
 	}
 
@@ -177,7 +177,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	// 	t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/3") // create a path
 	// }
 
-	v1, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path))
+	v1, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path))
 	keys := v1.(*orderedset.OrderedSet).Keys()
 	if len(keys) != 3 {
 		t.Error("Error: There should be 3 elements only!!! actual = ", len(keys)) // create a path

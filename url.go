@@ -191,7 +191,7 @@ func CreateNewAccount(tx uint32, acct string, platform *ccurlcommon.Platform, wr
 // 	if typedv != nil {
 // 		v, _, _ = typedv.(interfaces.Type).Get()
 // 	}
-// 	return v, Fee{}.Reader(univ.(interfaces.Univalue))
+// return v, Fee{}.Reader(univ.(interfaces.Univalue))
 // }
 
 // func (this *ConcurrentUrl) PeekCommitted(path string, T any) (interface{}, uint64) {
@@ -347,7 +347,7 @@ func (this *ConcurrentUrl) Finalize(txs []uint32) *ConcurrentUrl {
 	return this
 }
 
-func (this *ConcurrentUrl) WriteToDbBuffer() [32]byte {
+func (this *ConcurrentUrl) CopyToDbBuffer() [32]byte {
 	keys, values := this.importer.KVs()
 	invKeys, invVals := this.imuImporter.KVs()
 
@@ -367,7 +367,7 @@ func (this *ConcurrentUrl) Commit(txs []uint32) *ConcurrentUrl {
 		return this
 	}
 	this.Finalize(txs)
-	this.WriteToDbBuffer() // Export transitions and save them to the DB buffer.
+	this.CopyToDbBuffer() // Export transitions and save them to the DB buffer.
 	this.SaveToDB()
 	return this
 }

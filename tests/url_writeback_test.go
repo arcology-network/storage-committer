@@ -67,11 +67,11 @@ func TestAddAndDelete(t *testing.T) {
 		t.Error("Failed to write", err)
 	}
 
-	if v, err := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/4", nil); v != "124" {
+	if v, _, err := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/4", nil); v != "124" {
 		t.Error("Wrong return value", err)
 	}
 
-	if v, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000000", new(noncommutative.String)); v != "124" {
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000000", new(noncommutative.String)); v != "124" {
 		t.Error("Error: Wrong return value")
 	}
 }
@@ -143,12 +143,12 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 	url.Commit([]uint32{1})
 	writeCache.Clear()
 
-	if v, _ := writeCache.Read(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", new(noncommutative.Int64)); v == nil {
+	if v, _, _ := writeCache.Read(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", new(noncommutative.Int64)); v == nil {
 		t.Error("Error: Failed to read the key !")
 	}
 
 	// url2 := ccurl.NewConcurrentUrl(store)
-	if v, _ := writeCache.Read(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", new(noncommutative.Int64)); v.(int64) != 1 {
+	if v, _, _ := writeCache.Read(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", new(noncommutative.Int64)); v.(int64) != 1 {
 		t.Error("Error: Failed to read the key !")
 	}
 
@@ -156,7 +156,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 	// _, deleteTrans := url2.WriteCache().Export(indexer.Sorter)
 	deleteTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
-	if v, _ := writeCache.Read(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", new(noncommutative.Int64)); v != nil {
+	if v, _, _ := writeCache.Read(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", new(noncommutative.Int64)); v != nil {
 		t.Error("Error: Failed to read the key !")
 	}
 
@@ -166,7 +166,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 	url3.Commit([]uint32{1, 2})
 	writeCache.Clear()
 
-	if v, _ := writeCache.Read(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", new(noncommutative.Int64)); v != nil {
+	if v, _, _ := writeCache.Read(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", new(noncommutative.Int64)); v != nil {
 		t.Error("Error: Failed to delete the entry !")
 	}
 }
@@ -248,7 +248,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	url.Sort()
 	url.Commit([]uint32{1})
 
-	_1, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", new(noncommutative.String))
+	_1, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", new(noncommutative.String))
 	if _1 != "1" {
 		t.Error("Error: Not match")
 	}
@@ -259,7 +259,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewString("3"))
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/2", noncommutative.NewString("4"))
 
-	outpath, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
+	outpath, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
 	keys := outpath.(*orderedset.OrderedSet).Keys()
 	if reflect.DeepEqual(keys, []string{"1", "2", "3", "4"}) {
 		t.Error("Error: Not match")
@@ -315,7 +315,7 @@ func TestStateUpdate(t *testing.T) {
 		t.Error(err)
 	}
 
-	v, _ := writeCache.Read(9, "blcc://eth1.0/account/"+alice+"/storage/", &commutative.Path{}) //system doesn't generate sub paths for /storage/
+	v, _, _ := writeCache.Read(9, "blcc://eth1.0/account/"+alice+"/storage/", &commutative.Path{}) //system doesn't generate sub paths for /storage/
 	// if v.(*commutative.Path).CommittedLength() != 2 {
 	// 	t.Error("Error: Wrong sub paths")
 	// }
@@ -324,7 +324,7 @@ func TestStateUpdate(t *testing.T) {
 	// 	t.Error("Error: Didn't find the subpath!")
 	// }
 
-	v, _ = writeCache.Read(9, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
+	v, _, _ = writeCache.Read(9, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
 	keys := v.(*orderedset.OrderedSet).Keys()
 	if !reflect.DeepEqual(keys, []string{"elem-00", "elem-01"}) {
 		t.Error("Error: Keys don't match !")
@@ -335,7 +335,7 @@ func TestStateUpdate(t *testing.T) {
 		t.Error("Error: Cann't delete a path twice !")
 	}
 
-	if v, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{}); v != nil {
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{}); v != nil {
 		t.Error("Error: The path should be gone already !")
 	}
 
@@ -347,7 +347,7 @@ func TestStateUpdate(t *testing.T) {
 	url.Commit([]uint32{1})
 
 	writeCache.Clear()
-	if v, _ := writeCache.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{}); v != nil {
+	if v, _, _ := writeCache.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{}); v != nil {
 		t.Error("Error: Should be gone already !")
 	}
 }

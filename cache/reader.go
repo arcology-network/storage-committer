@@ -25,6 +25,7 @@ import (
 	orderedset "github.com/arcology-network/common-lib/container/set"
 	"github.com/arcology-network/concurrenturl/commutative"
 	"github.com/arcology-network/concurrenturl/interfaces"
+	intf "github.com/arcology-network/concurrenturl/interfaces"
 )
 
 func (this *WriteCache) IndexOf(tx uint32, path string, key interface{}, T any) (uint64, uint64) {
@@ -57,13 +58,27 @@ func (this *WriteCache) KeyAt(tx uint32, path string, index interface{}, T any) 
 	return "", READ_NONEXIST
 }
 
-// func (this *Write) Peek(path string, T any) (interface{}, uint64) {
-// 	typedv, univ := this.writeCache.Peek(path, T)
+func (this *WriteCache) Peek(path string, T any) (interface{}, uint64) {
+	_, univ := this.Find(path, T)
+	v, _, _ := univ.(intf.Univalue).Value().(interfaces.Type).Get()
+	return v, Fee{}.Reader(univ)
+}
+
+// func (this *WriteCache) Peek(path string, T any) (interface{}, uint64) {
+// 	univ, ok := this.kvDict[path]
 // 	var v interface{}
-// 	if typedv != nil {
-// 		v, _, _ = typedv.(interfaces.Type).Get()
+// 	if ok {
+// 		v, _, _ := univ.Value().(interfaces.Type).Get()
+// 		return v, Fee{}.Reader(univ.(interfaces.Univalue))
 // 	}
-// 	return v, Fee{}.Reader(univ.(interfaces.Univalue))
+
+// 	retrivedv := common.FilterSecond(this.ReadOnlyDataStore().Retrive(path, T))
+// 	univ = univalue.NewUnivalue(ccurlcommon.SYSTEM, path, 0, 0, 0, retrivedv, nil)
+
+// 	if univ.Value() != nil {
+// 		v, _, _ = univ.Value().(interfaces.Type).Get()
+// 	}
+// 	return v, Fee{}.Reader(univ)
 // }
 
 func (this *WriteCache) PeekCommitted(path string, T any) (interface{}, uint64) {
@@ -72,46 +87,38 @@ func (this *WriteCache) PeekCommitted(path string, T any) (interface{}, uint64) 
 }
 
 // func (this *WriteCache) Read(tx uint32, path string, T any) (interface{}, uint64) {
-// 	typedv, univ := this.writeCache.Read(tx, path, T)
+// 	typedv, univ := this.read(tx, path, T)
 // 	// fmt.Println("Read: ", path, "|", typedv)
 // 	return typedv, Fee{}.Reader(univ.(interfaces.Univalue))
 // }
 
-// func (this *WriteCache) Write(tx uint32, path string, value interface{}) (int64, error) {
-// 	// fmt.Println("Write: ", path, "|", value)
-// 	fee := int64(0) //Fee{}.Writer(path, value, this.writeCache)
-// 	if value == nil || (value != nil && value.(interfaces.Type).TypeID() != uint8(reflect.Invalid)) {
-// 		return fee, common.FilterSecond(this.writeCache.Write(tx, path, value))
-// 	}
-
-// 	return fee, errors.New("Error: Unknown data type !")
-// }
-
-// func (this *WriteCache) Do(tx uint32, path string, doer interface{}, T any) (interface{}, error) {
-// 	return this.writeCache.Do(tx, path, doer, T), nil
-// }
+func (this *WriteCache) Do(tx uint32, path string, doer interface{}, T any) (interface{}, error) {
+	univalue := this.GetOrInit(tx, path, T)
+	return univalue.Do(tx, path, doer), nil
+}
 
 // Read th Nth element under a path
-// func (this *WriteCache) getKeyByIdx(tx uint32, path string, idx uint64) (interface{}, uint64, error) {
-// 	if !common.IsPath(path) {
-// 		return nil, READ_NONEXIST, errors.New("Error: Not a path!!!")
-// 	}
+func (this *WriteCache) getKeyByIdx(tx uint32, path string, idx uint64) (interface{}, uint64, error) {
+	if !common.IsPath(path) {
+		return nil, READ_NONEXIST, errors.New("Error: Not a path!!!")
+	}
 
-// 	meta, readFee := this.Read(tx, path, new(commutative.Path)) // read the container meta
-// 	return common.IfThen(meta == nil,
-// 		meta,
-// 		common.IfThenDo1st(idx < uint64(len(meta.(*orderedset.OrderedSet).Keys())), func() interface{} { return path + meta.(*orderedset.OrderedSet).Keys()[idx] }, nil),
-// 	), readFee, nil
-// }
+	meta, _, readFee := this.Read(tx, path, new(commutative.Path)) // read the container meta
+	return common.IfThen(meta == nil,
+		meta,
+		common.IfThenDo1st(idx < uint64(len(meta.(*orderedset.OrderedSet).Keys())), func() interface{} { return path + meta.(*orderedset.OrderedSet).Keys()[idx] }, nil),
+	), readFee, nil
+}
 
-// func (this *WriteCache) ReadAt(tx uint32, path string, idx uint64, T any) (interface{}, uint64, error) {
-// 	if key, Fee, err := this.getKeyByIdx(tx, path, idx); err == nil && key != nil {
-// 		v, Fee := this.Read(tx, key.(string), T)
-// 		return v, Fee, nil
-// 	} else {
-// 		return key, Fee, err
-// 	}
-// }
+// Read th Nth element under a path
+func (this *WriteCache) ReadAt(tx uint32, path string, idx uint64, T any) (interface{}, uint64, error) {
+	if key, Fee, err := this.getKeyByIdx(tx, path, idx); err == nil && key != nil {
+		v, _, Fee := this.Read(tx, key.(string), T)
+		return v, Fee, nil
+	} else {
+		return key, Fee, err
+	}
+}
 
 // Read th Nth element under a path
 func (this *WriteCache) DoAt(tx uint32, path string, idx uint64, do interface{}, T any) (interface{}, uint64, error) {
@@ -130,7 +137,7 @@ func (this *WriteCache) PopBack(tx uint32, path string, T any) (interface{}, int
 	}
 	pathDecoder := T
 
-	meta, Fee := this.ReadEx(tx, path, pathDecoder) // read the container meta
+	meta, _, Fee := this.Read(tx, path, pathDecoder) // read the container meta
 
 	subkeys := meta.(*orderedset.OrderedSet).Keys()
 	if subkeys == nil || len(subkeys) == 0 {
@@ -139,7 +146,7 @@ func (this *WriteCache) PopBack(tx uint32, path string, T any) (interface{}, int
 
 	key := path + subkeys[len(subkeys)-1]
 
-	value, Fee := this.ReadEx(tx, key, pathDecoder)
+	value, _, Fee := this.Read(tx, key, pathDecoder)
 	if value == nil {
 		return nil, int64(Fee), errors.New("Error: Empty container!")
 	}
@@ -148,15 +155,15 @@ func (this *WriteCache) PopBack(tx uint32, path string, T any) (interface{}, int
 	return value, writeFee, err
 }
 
-// Read th Nth element under a path
-// func (this *WriteCache) WriteAt(tx uint32, path string, idx uint64, T any) (int64, error) {
-// 	if !common.IsPath(path) {
-// 		return int64(READ_NONEXIST), errors.New("Error: Not a path!!!")
-// 	}
+// // Read th Nth element under a path
+func (this *WriteCache) WriteAt(tx uint32, path string, idx uint64, T any) (int64, error) {
+	if !common.IsPath(path) {
+		return int64(READ_NONEXIST), errors.New("Error: Not a path!!!")
+	}
 
-// 	if key, Fee, err := this.getKeyByIdx(tx, path, idx); err == nil {
-// 		return this.Write(tx, key.(string), T)
-// 	} else {
-// 		return int64(Fee), err
-// 	}
-// }
+	if key, Fee, err := this.getKeyByIdx(tx, path, idx); err == nil {
+		return this.Write(tx, key.(string), T)
+	} else {
+		return int64(Fee), err
+	}
+}

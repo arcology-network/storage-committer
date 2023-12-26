@@ -84,7 +84,7 @@ type Univalue interface { // value type
 	Value() interface{}
 	SetValue(interface{}) Univalue
 
-	Merge(WriteCache)
+	CopyTo(interface{})
 	GetUnimeta() interface{}
 	GetCache() interface{}
 	New(interface{}, interface{}, interface{}) interface{}
@@ -107,22 +107,22 @@ type Univalue interface { // value type
 	Print()
 }
 
-type WriteCache interface {
-	CreateNewAccount(uint32, string) ([]Univalue, error)
-	IfExists(string) bool
-	ReadOnlyDataStore() ReadOnlyDataStore
+// type WriteCache interface {
+// 	CreateNewAccount(uint32, string) ([]Univalue, error)
+// 	IfExists(string) bool
+// 	ReadOnlyDataStore() ReadOnlyDataStore
 
-	Read(uint32, string, any) (interface{}, interface{})
-	Peek(string, any) (interface{}, interface{})
-	Write(uint32, string, interface{}) (int64, error)
-	AddTransitions([]Univalue)
-	// Export() []Univalue
+// 	Read(uint32, string, any) (interface{}, interface{})
+// 	Peek(string, any) (interface{}, interface{})
+// 	Write(uint32, string, interface{}) (int64, error)
+// 	AddTransitions([]Univalue)
+// 	// Export() []Univalue
 
-	Export(...func([]Univalue) []Univalue) []Univalue
-	// ExportAll( ...func([]ccurlintf.Univalue) []ccurlintf.Univalue) ([]ccurlintf.Univalue, []ccurlintf.Univalue)
-	Retrive(string, any) (interface{}, error)
-	Cache() *map[string]Univalue
-}
+// 	Export(...func([]Univalue) []Univalue) []Univalue
+// 	// ExportAll( ...func([]ccurlintf.Univalue) []ccurlintf.Univalue) ([]ccurlintf.Univalue, []ccurlintf.Univalue)
+// 	Retrive(string, any) (interface{}, error)
+// 	Cache() *map[string]Univalue
+// }
 
 type ReadOnlyDataStore interface {
 	IfExists(string) bool

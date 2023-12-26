@@ -231,7 +231,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	url.Init(store)
 
 	writeCache.Clear()
-	v, _ := writeCache.Read(3, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", new(noncommutative.String))
+	v, _, _ := writeCache.Read(3, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", new(noncommutative.String))
 	if v == nil || v.(string) != "url3-1-by-tx-3" {
 		t.Error("Error: Wrong value, expecting:", "url3-1-by-tx-3 ", "actual:", v)
 	}

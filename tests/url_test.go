@@ -42,11 +42,11 @@ func TestSize(t *testing.T) {
 		t.Error(err)
 	}
 
-	if v, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path)); v == nil {
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path)); v == nil {
 		t.Error("Error: The path should exists")
 	}
 
-	v, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/ele0", new(noncommutative.String))
+	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/ele0", new(noncommutative.String))
 	if v == nil || v.(string) != "124" {
 		t.Error("Error: The path should exists")
 	}
@@ -143,7 +143,7 @@ func TestAddThenDeletePath(t *testing.T) {
 	// url.Sort()
 	// url.Commit([]uint32{1})
 
-	v, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
+	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
 	if v == nil {
 		t.Error("Error: The path should exists")
 	}
@@ -200,7 +200,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 	url.Commit([]uint32{1})
 	writeCache.Clear()
 
-	v, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
+	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
 	if v == nil {
 		t.Error("Error: The path should exists")
 	}
@@ -217,7 +217,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 	url.Init(store)
 
 	writeCache.Clear()
-	if v, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path)); v != nil {
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path)); v != nil {
 		t.Error("Error: The path should have been deleted")
 	}
 }
@@ -253,22 +253,22 @@ func TestBasic(t *testing.T) {
 	}
 
 	// Try to read an nonexistent path, should fail !
-	if value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-1", nil); value != nil {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-1", nil); value != nil {
 		t.Error("Error: Path shouldn't be not found")
 	}
 
 	// Try to read an nonexistent entry from an nonexistent path, should fail !
-	if value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-1/elem-000", nil); value != nil {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-1/elem-000", nil); value != nil {
 		t.Error("Error: Shouldn't be not found")
 	}
 
 	// try again
-	if value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", nil); value != nil {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", nil); value != nil {
 		t.Error("Error: Shouldn't be not found")
 	}
 
 	// try to read an nonexistent path
-	if value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", nil); value != nil {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", nil); value != nil {
 		t.Error("Error: Failed to write blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-000")
 	}
 
@@ -287,12 +287,12 @@ func TestBasic(t *testing.T) {
 	// }
 
 	// Read the entry back
-	if value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", new(noncommutative.Int64)); value.(int64) != 1111 {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", new(noncommutative.Int64)); value.(int64) != 1111 {
 		t.Error("Error: Wrong value")
 	}
 
 	// Read the path
-	if value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path)); value == nil {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path)); value == nil {
 		t.Error(value)
 	} else {
 		target := value.(*orderedset.OrderedSet).Keys()
@@ -316,7 +316,7 @@ func TestBasic(t *testing.T) {
 	}
 
 	// wrong condition, value should still exists
-	if value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{}); value == nil {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{}); value == nil {
 		t.Error("Error: The variable has been cleared !")
 	}
 
@@ -330,12 +330,12 @@ func TestBasic(t *testing.T) {
 
 	/* =========== The second cycle ==============*/
 	//try reading an element written in the previous cycle
-	if value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", new(noncommutative.Int64)); value == nil {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", new(noncommutative.Int64)); value == nil {
 		t.Error("Error: Entry not found")
 	}
 
 	bob := BobAccount()
-	if value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+bob+"/storage/ctrn-0/elem-000", new(noncommutative.Int64)); value != nil {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+bob+"/storage/ctrn-0/elem-000", new(noncommutative.Int64)); value != nil {
 		t.Error("Error: Wrong value")
 	}
 
@@ -381,15 +381,15 @@ func TestPathAddThenDelete(t *testing.T) {
 		t.Error(err)
 	}
 
-	if value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{}); value != nil {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{}); value != nil {
 		t.Error("not found")
 	}
 
-	if value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", new(noncommutative.Int64)); value != nil {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", new(noncommutative.Int64)); value != nil {
 		t.Error("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-000 not found")
 	}
 
-	if value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", new(noncommutative.Int64)); value != nil {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", new(noncommutative.Int64)); value != nil {
 		t.Error("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-001 not found")
 	}
 
@@ -406,15 +406,15 @@ func TestPathAddThenDelete(t *testing.T) {
 		t.Error(err)
 	}
 
-	if value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-888", new(noncommutative.Int64)); value == nil {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-888", new(noncommutative.Int64)); value == nil {
 		t.Error("not found")
 	}
 
-	if value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-999", new(noncommutative.Int64)); value == nil {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-999", new(noncommutative.Int64)); value == nil {
 		t.Error("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-000 not found")
 	}
 
-	meta, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
+	meta, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
 	keys := meta.(*orderedset.OrderedSet).Keys()
 	if meta == nil || len(keys) != 2 ||
 		keys[0] != "elem-888" ||
@@ -481,19 +481,19 @@ func TestUrl1(t *testing.T) {
 		t.Error(err)
 	}
 
-	if value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", new(noncommutative.Int64)); value == nil || value.(int64) != 5555 {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", new(noncommutative.Int64)); value == nil || value.(int64) != 5555 {
 		t.Error("Error: Wrong value")
 	}
 
-	if value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", new(noncommutative.Int64)); value == nil || value.(int64) != 6666 {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", new(noncommutative.Int64)); value == nil || value.(int64) != 6666 {
 		t.Error("Error: Wrong value")
 	}
 
-	if value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-002", new(noncommutative.Int64)); value == nil || value.(int64) != 7777 {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-002", new(noncommutative.Int64)); value == nil || value.(int64) != 7777 {
 		t.Error("Error: Wrong value")
 	}
 
-	if meta, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{}); meta == nil {
+	if meta, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{}); meta == nil {
 		t.Error("Error: not found")
 	}
 
@@ -509,7 +509,7 @@ func TestUrl1(t *testing.T) {
 		t.Error("Error: keys don't match")
 	}
 
-	if meta, _ := writeCache.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/", &commutative.Path{}); meta == nil {
+	if meta, _, _ := writeCache.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/", &commutative.Path{}); meta == nil {
 		t.Error("Error: The variable has been cleared")
 	}
 }
@@ -562,29 +562,29 @@ func TestUrl2(t *testing.T) {
 	}
 
 	// Read an nonexistent path, shouldn't succeed
-	if v, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-1/elem-002", new(noncommutative.Int64)); v != nil {
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-1/elem-002", new(noncommutative.Int64)); v != nil {
 		t.Error("Error:  /ctrn-1/ does not exist, the read should fail!!")
 	}
 
 	// Add the first element
-	if value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", new(noncommutative.Int64)); value == nil || value.(int64) != 1111 {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", new(noncommutative.Int64)); value == nil || value.(int64) != 1111 {
 		t.Error("Error: Failed to Read: " + "/ctrn-0/elem-000")
 	}
 
 	// Try to read an nonexistent element, should leave a access record
-	if value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-005", nil); value != nil {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-005", nil); value != nil {
 		t.Error("Error: Failed to Read: " + "/ctrn-0/elem-005")
 	}
 
 	// Update then return path meta info
-	meta0, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
+	meta0, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
 	keys := meta0.(*orderedset.OrderedSet).Keys()
 	if !reflect.DeepEqual(keys, []string{"elem-000", "elem-001", "elem-002"}) {
 		t.Error("Error: Keys don't match")
 	}
 
 	// Do again
-	meta1, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
+	meta1, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
 	keys = meta1.(*orderedset.OrderedSet).Keys()
 	if !reflect.DeepEqual(keys, []string{"elem-000", "elem-001", "elem-002"}) {
 		t.Error("Error: Keys don't match")
@@ -631,17 +631,17 @@ func TestUrl2(t *testing.T) {
 		t.Error("Error: Failed to delete: " + "blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-000")
 	}
 
-	if value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", new(noncommutative.Int64)); value != nil {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", new(noncommutative.Int64)); value != nil {
 		t.Error("Error: The element wasn't successfully deleted")
 	}
 
 	// Check elem-00's value
-	if value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", new(noncommutative.Int64)); value.(int64) != 2222 {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", new(noncommutative.Int64)); value.(int64) != 2222 {
 		t.Error("Error: The element wasn't found")
 	}
 
 	// The elem-00 has been deleted, only "elem-001", "elem-002" left
-	meta, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
+	meta, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
 	keys = meta1.(*orderedset.OrderedSet).Keys()
 	if !reflect.DeepEqual(keys, []string{"elem-001", "elem-002"}) {
 		t.Error("Error: keys don't match")
@@ -653,18 +653,18 @@ func TestUrl2(t *testing.T) {
 	}
 
 	// Check elem-00's value
-	if value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", new(noncommutative.Int64)); value.(int64) != 9999 {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", new(noncommutative.Int64)); value.(int64) != 9999 {
 		t.Error("Error: The element wasn't successfully deleted")
 	}
 
 	// Update then read the path info again
-	meta, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
+	meta, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
 	keys = meta.(*orderedset.OrderedSet).Keys()
 	if !reflect.DeepEqual(keys, []string{"elem-001", "elem-002", "elem-000"}) {
 		t.Error("Error: keys don't match")
 	}
 
-	v, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/elem-0", new(noncommutative.Int64))
+	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/elem-0", new(noncommutative.Int64))
 	if v == nil {
 		t.Error("Error: keys don't match")
 	}
@@ -678,22 +678,22 @@ func TestUrl2(t *testing.T) {
 		t.Error(err, "Failed to remove path: "+"/ctrn-0/")
 	}
 
-	if v, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{}); v != nil { /* The path should be gone by now */
+	if v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{}); v != nil { /* The path should be gone by now */
 		t.Error("Error: The key should not exist!")
 	}
 
-	if v, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0", new(noncommutative.Int64)); v != nil { /* all the sub paths should be gone by now*/
+	if v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0", new(noncommutative.Int64)); v != nil { /* all the sub paths should be gone by now*/
 		t.Error("Error: The key should not exist!")
 	}
 
 	/*  Read the storage path to see what is left*/
-	v, _ = writeCache.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/", &commutative.Path{})
+	v, _, _ = writeCache.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/", &commutative.Path{})
 	keys = v.(*orderedset.OrderedSet).Keys()
 	if !reflect.DeepEqual(keys, []string{}) {
 		t.Error("Error: Should be empty!!")
 	}
 
-	v, _ = writeCache.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/", &commutative.Path{})
+	v, _, _ = writeCache.Read(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/", &commutative.Path{})
 	keys = v.(*orderedset.OrderedSet).Keys()
 	if !reflect.DeepEqual(keys, []string{}) {
 		t.Error("Error: Should be empty!!")
@@ -791,7 +791,7 @@ func TestCustomCodec(t *testing.T) {
 	// commutative.NewU256Delta(100)
 	// writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/balance", &commutative.U256{value: 100})
 
-	value, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/balance", &commutative.U256{})
+	value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/balance", &commutative.U256{})
 	valueAdd := value.(uint256.Int)
 	if value == nil || (&valueAdd).ToBig().Uint64() != 0 {
 		t.Error("Error: Wrong value", value.(*uint256.Int).ToBig().Uint64())

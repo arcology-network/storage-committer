@@ -95,13 +95,19 @@ func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{
 	return this.value
 }
 
-func (this *Univalue) Merge(writeCache interfaces.WriteCache) {
+func (this *Univalue) CopyTo(writable interface{}) {
+	writeCache := writable.(interface {
+		Read(uint32, string, interface{}) (interface{}, interface{}, uint64)
+		Write(uint32, string, interface{}) (int64, error)
+		Find(string, interface{}) (interface{}, interface{})
+	})
+
 	common.IfThenDo(this.writes == 0 && this.deltaWrites == 0,
 		func() { writeCache.Read(this.tx, *this.GetPath(), this.value) }, // Add reads
 		func() { writeCache.Write(this.tx, *this.GetPath(), this.value) },
 	)
 
-	_, univ := writeCache.Peek(*this.GetPath(), nil)
+	_, univ := writeCache.Find(*this.GetPath(), nil)
 	readsDiff := this.Reads() - univ.(interfaces.Univalue).Reads()
 	writesDiff := this.Writes() - univ.(interfaces.Univalue).Writes()
 	deltaWriteDiff := this.DeltaWrites() - univ.(interfaces.Univalue).DeltaWrites()

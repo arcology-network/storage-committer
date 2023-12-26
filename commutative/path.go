@@ -6,7 +6,7 @@ import (
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	orderedset "github.com/arcology-network/common-lib/container/set"
-	"github.com/arcology-network/concurrenturl/interfaces"
+	intf "github.com/arcology-network/concurrenturl/interfaces"
 )
 
 type Path struct {
@@ -14,7 +14,7 @@ type Path struct {
 	delta *PathDelta
 }
 
-func NewPath() interfaces.Type {
+func NewPath() intf.Type {
 	this := &Path{
 		value: orderedset.NewOrderedSet([]string{}),
 		delta: NewPathDelta([]string{}, []string{}),
@@ -84,10 +84,10 @@ func (this *Path) New(value, delta, sign, min, max interface{}) interface{} {
 	}
 }
 
-func (this *Path) ApplyDelta(v interface{}) (interfaces.Type, int, error) { // Apply the transitions to the original value
+func (this *Path) ApplyDelta(v interface{}) (intf.Type, int, error) { // Apply the transitions to the original value
 	toAdd := this.delta.addDict.Keys() // The value should only contain committed keys
 	toRemove := this.delta.Removed()
-	univals := v.([]interfaces.Univalue)
+	univals := v.([]intf.Univalue)
 	for i := 0; i < len(univals); i++ {
 		if univals[i].GetPath() == nil { // Not in the whitelist
 			continue
@@ -97,7 +97,7 @@ func (this *Path) ApplyDelta(v interface{}) (interfaces.Type, int, error) { // A
 			return nil, 0, nil
 		}
 
-		delta := univals[i].Value().(interfaces.Type).Delta().(*PathDelta)
+		delta := univals[i].Value().(intf.Type).Delta().(*PathDelta)
 		toAdd = append(toAdd, delta.Added()...)
 		toRemove = append(toRemove, delta.Removed()...)
 	}
@@ -126,7 +126,10 @@ func (this *Path) Set(value interface{}, source interface{}) (interface{}, uint3
 	targetPath := source.([]interface{})[0].(string)
 	myPath := source.([]interface{})[1].(string)
 	tx := source.([]interface{})[2].(uint32)
-	writeCache := source.([]interface{})[3].(interfaces.WriteCache)
+	writeCache := source.([]interface{})[3].(interface {
+		Write(tx uint32, key string, value interface{}) (int64, error)
+		Cache() *map[string]intf.Univalue
+	})
 
 	if common.IsPath(targetPath) && len(targetPath) == len(myPath) { // Delete or rewrite the path
 		if value == nil { // Delete the path and all its elements
