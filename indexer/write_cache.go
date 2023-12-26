@@ -86,7 +86,7 @@ func (this *WriteCache) Do(tx uint32, path string, doer interface{}, T any) inte
 	return univalue.Do(tx, path, doer)
 }
 
-func (this *WriteCache) Write(tx uint32, path string, value interface{}) error {
+func (this *WriteCache) Write(tx uint32, path string, value interface{}) (int64, error) {
 	parentPath := common.GetParentPath(path)
 	if this.IfExists(parentPath) || tx == ccurlcommon.SYSTEM { // The parent path exists or to inject the path directly
 		univalue := this.GetOrInit(tx, path, value) // Get a univalue wrapper
@@ -98,9 +98,9 @@ func (this *WriteCache) Write(tx uint32, path string, value interface{}) error {
 				err = parentMeta.Set(tx, path, univalue.Value(), this)
 			}
 		}
-		return err
+		return 0, err
 	}
-	return errors.New("Error: The parent path doesn't exist: " + parentPath)
+	return 0, errors.New("Error: The parent path doesn't exist: " + parentPath)
 }
 
 func (this *WriteCache) IfExists(path string) bool {

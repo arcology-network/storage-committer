@@ -19,8 +19,10 @@ func TestSimpleBalance(t *testing.T) {
 	store := chooseDataStore()
 
 	url := ccurl.NewConcurrentUrl(store)
+	writeCache := url.WriteCache()
+
 	alice := AliceAccount()
-	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -87,8 +89,9 @@ func TestBalance(t *testing.T) {
 	store := chooseDataStore()
 
 	url := ccurl.NewConcurrentUrl(store)
+	writeCache := url.WriteCache()
 	alice := AliceAccount()
-	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -226,11 +229,11 @@ func TestMultipleNonces(t *testing.T) {
 	}
 
 	writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUnboundedUint64())
-	if err := writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
+	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
-	if err := writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
+	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 

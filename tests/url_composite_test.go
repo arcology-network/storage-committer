@@ -6,6 +6,7 @@ import (
 
 	"github.com/arcology-network/common-lib/common"
 	orderedset "github.com/arcology-network/common-lib/container/set"
+	"github.com/arcology-network/concurrenturl"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
@@ -17,9 +18,10 @@ import (
 func TestAuxTrans(t *testing.T) {
 	store := chooseDataStore()
 	url := ccurl.NewConcurrentUrl(store)
+	writeCache := url.WriteCache()
 
 	alice := AliceAccount()
-	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -106,8 +108,9 @@ func TestCheckAccessRecords(t *testing.T) {
 	store := chooseDataStore()
 
 	url := ccurl.NewConcurrentUrl(store)
+	writeCache := url.WriteCache()
 	alice := AliceAccount()
-	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 

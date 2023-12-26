@@ -17,9 +17,10 @@ package ccurltest
 // 	memDB := cachedstorage.NewMemDB()
 // 	policy := cachedstorage.NewCachePolicy(10000000, 1.0)
 // 	store := cachedstorage.NewDataStore(nil, policy, memDB, storage.Codec{}.Encode, storage.Codec{}.Decode)
-// 	url := ccurl.NewConcurrentUrl(store)
+// 		url := ccurl.NewConcurrentUrl(store)
+// writeCache := url.WriteCache()
 // 	alice := AliceAccount()
-// 	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+// 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 // 		t.Error(err)
 // 	}
 
@@ -76,9 +77,10 @@ package ccurltest
 // 	}
 
 // 	store := cachedstorage.NewDataStore(nil, policy, memDB, storage.Codec{}.Encode, storage.Codec{}.Decode, excludeMemDB)
-// 	url := ccurl.NewConcurrentUrl(store)
+// 		url := ccurl.NewConcurrentUrl(store)
+// writeCache := url.WriteCache()
 // 	alice := AliceAccount()
-// 	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+// 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 // 		t.Error(err)
 // 	}
 
@@ -94,7 +96,8 @@ package ccurltest
 
 // 	acctTrans = indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
-// 	// url := ccurl.NewConcurrentUrl(store)
+// 	// 	url := ccurl.NewConcurrentUrl(store)
+// writeCache := url.WriteCache()
 
 // 	url.WriteCache().Clear()
 

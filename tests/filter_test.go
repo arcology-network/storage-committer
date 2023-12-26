@@ -8,6 +8,7 @@ import (
 	datacompression "github.com/arcology-network/common-lib/addrcompressor"
 	"github.com/arcology-network/common-lib/common"
 	orderedset "github.com/arcology-network/common-lib/container/set"
+	"github.com/arcology-network/concurrenturl"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/commutative"
@@ -24,7 +25,8 @@ func TestTransitionFilters(t *testing.T) {
 	bob := datacompression.RandomAccount()
 
 	url := ccurl.NewConcurrentUrl(store)
-	url.NewAccount(ccurlcommon.SYSTEM, alice)
+	writeCache := url.WriteCache()
+	concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache)
 	url.NewAccount(ccurlcommon.SYSTEM, bob)
 
 	raw := url.WriteCache().Export(indexer.Sorter)
@@ -108,7 +110,8 @@ func TestAccessFilters(t *testing.T) {
 	bob := datacompression.RandomAccount()
 
 	url := ccurl.NewConcurrentUrl(store)
-	url.NewAccount(ccurlcommon.SYSTEM, alice)
+	writeCache := url.WriteCache()
+	concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache)
 	url.NewAccount(ccurlcommon.SYSTEM, bob)
 
 	raw := url.WriteCache().Export(indexer.Sorter)

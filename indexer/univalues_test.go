@@ -3,8 +3,8 @@ package indexer
 import (
 	"testing"
 
+	datacompressor "github.com/arcology-network/common-lib/addrcompressor"
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/common-lib/datacompression"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
@@ -14,7 +14,7 @@ import (
 
 /* Commutative Int64 Test */
 func TestUnivaluesCodecPathMeta(t *testing.T) {
-	alice := datacompression.RandomAccount()
+	alice := datacompressor.RandomAccount()
 
 	u64 := commutative.NewBoundedUint64(0, 100)
 	in0 := univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/u64-000", 3, 4, 0, u64, nil)
@@ -55,7 +55,7 @@ func TestUnivaluesCodecPathMeta(t *testing.T) {
 }
 
 func TestUnivaluesCodecU256(t *testing.T) {
-	alice := datacompression.RandomAccount() /* Commutative Int64 Test */
+	alice := datacompressor.RandomAccount() /* Commutative Int64 Test */
 
 	// meta:= commutative.NewPath()
 	u256 := commutative.NewBoundedU256(uint256.NewInt(0), uint256.NewInt(100))
@@ -79,7 +79,7 @@ func TestUnivaluesCodecU256(t *testing.T) {
 
 func TestUnivaluesCodeMeta(t *testing.T) {
 	/* Commutative Int64 Test */
-	alice := datacompression.RandomAccount()
+	alice := datacompressor.RandomAccount()
 
 	meta := commutative.NewPath()
 	meta.(*commutative.Path).SetSubs([]string{"e-01", "e-001", "e-002", "e-002"})

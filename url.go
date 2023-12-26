@@ -98,12 +98,13 @@ func CreateNewAccount(tx uint32, acct string, platform *ccurlcommon.Platform, wr
 		if !writeCache.IfExists(path) {
 			transitions = append(transitions, univalue.NewUnivalue(tx, path, 0, 1, 0, v, nil))
 
-			if err := writeCache.Write(tx, path, v); err != nil { // root path
+			if _, err := writeCache.Write(tx, path, v); err != nil { // root path
 				return nil, err
 			}
 
 			if !writeCache.IfExists(path) {
-				return transitions, writeCache.Write(tx, path, v) // root path
+				_, err := writeCache.Write(tx, path, v)
+				return transitions, err // root path
 			}
 		}
 	}
@@ -140,12 +141,12 @@ func (this *ConcurrentUrl) NewAccount(tx uint32, acct string) ([]interfaces.Univ
 		if !this.writeCache.IfExists(path) {
 			transitions = append(transitions, univalue.NewUnivalue(tx, path, 0, 1, 0, v, nil))
 
-			if err := this.writeCache.Write(tx, path, v); err != nil { // root path
+			if _, err := this.writeCache.Write(tx, path, v); err != nil { // root path
 				return nil, err
 			}
 
 			if !this.writeCache.IfExists(path) {
-				return transitions, this.writeCache.Write(tx, path, v) // root path
+				return transitions, common.FilterSecond(this.writeCache.Write(tx, path, v)) // root path
 			}
 		}
 	}
@@ -210,7 +211,7 @@ func (this *ConcurrentUrl) Write(tx uint32, path string, value interface{}) (int
 	// fmt.Println("Write: ", path, "|", value)
 	fee := int64(0) //Fee{}.Writer(path, value, this.writeCache)
 	if value == nil || (value != nil && value.(interfaces.Type).TypeID() != uint8(reflect.Invalid)) {
-		return fee, this.writeCache.Write(tx, path, value)
+		return fee, common.FilterSecond(this.writeCache.Write(tx, path, value))
 	}
 
 	return fee, errors.New("Error: Unknown data type !")
@@ -377,15 +378,15 @@ func (this *ConcurrentUrl) Commit(txs []uint32) *ConcurrentUrl {
 // 	return this.writeCache.Export(preprocessors...)
 // }
 
-func (this *ConcurrentUrl) ExportAll(preprocessors ...func([]interfaces.Univalue) []interfaces.Univalue) ([]interfaces.Univalue, []interfaces.Univalue) {
-	all := this.writeCache.Export(indexer.Sorter)
-	// indexer.Univalues(all).Print()
+// func (this *ConcurrentUrl) ExportAll(preprocessors ...func([]interfaces.Univalue) []interfaces.Univalue) ([]interfaces.Univalue, []interfaces.Univalue) {
+// 	all := this.writeCache.Export(indexer.Sorter)
+// 	// indexer.Univalues(all).Print()
 
-	accesses := indexer.Univalues(common.Clone(all)).To(indexer.ITCAccess{})
-	transitions := indexer.Univalues(common.Clone(all)).To(indexer.ITCTransition{})
+// 	accesses := indexer.Univalues(common.Clone(all)).To(indexer.ITCAccess{})
+// 	transitions := indexer.Univalues(common.Clone(all)).To(indexer.ITCTransition{})
 
-	return accesses, transitions
-}
+// 	return accesses, transitions
+// }
 
 func (this *ConcurrentUrl) Print() {
 	this.writeCache.Print()

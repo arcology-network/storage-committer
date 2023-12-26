@@ -11,6 +11,7 @@ import (
 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage/datastore"
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/concurrenturl"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
@@ -73,7 +74,10 @@ func TestUnivalueCodec(t *testing.T) {
 	transitions := []interfaces.Univalue{}
 
 	url := ccurl.NewConcurrentUrl(store)
+	writeCache := url.WriteCache()
 	url.NewAccount(ccurlcommon.SYSTEM, fmt.Sprint("rand.Int()"))
+	concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, fmt.Sprint("rand.Int()"), ccurlcommon.NewPlatform(), writeCache)
+
 	transVec := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.IPCTransition{})
 	transitions = append(transitions, transVec...)
 
@@ -95,7 +99,11 @@ func TestUnivaluesCodec(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		acct := datacompression.RandomAccount()
 		url := ccurl.NewConcurrentUrl(store)
-		url.NewAccount(ccurlcommon.SYSTEM, acct)
+		writeCache := url.WriteCache()
+		// url.NewAccount(ccurlcommon.SYSTEM, acct)
+
+		concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, acct, ccurlcommon.NewPlatform(), writeCache)
+
 		transVec := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
 		transitions = append(transitions, transVec...)
 	}

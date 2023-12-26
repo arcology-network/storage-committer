@@ -19,6 +19,7 @@ func TestMultiAccountCreation(t *testing.T) {
 
 	store.Inject((ccurlcommon.ETH10_ACCOUNT_PREFIX), commutative.NewPath())
 	url := ccurl.NewConcurrentUrl(store)
+	writeCache := url.WriteCache()
 
 	accounts := make([]string, 10)
 	for i := 0; i < len(accounts); i++ {
@@ -27,7 +28,7 @@ func TestMultiAccountCreation(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	raw := url.WriteCache().Export(indexer.Sorter)
+	raw := writeCache.Export(indexer.Sorter)
 	acctTrans := indexer.Univalues(common.Clone(raw)).To(indexer.ITCTransition{})
 
 	paths := ccurlcommon.NewPlatform().GetSysPaths()
