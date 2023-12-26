@@ -50,7 +50,7 @@ func TestSize(t *testing.T) {
 		t.Error("Error: The path should exists")
 	}
 
-	raw := url.WriteCache().Export(indexer.Sorter)
+	raw := writeCache.Export(indexer.Sorter)
 	acctTrans := indexer.Univalues(common.Clone(raw)).To(indexer.IPCTransition{})
 
 	indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode())
@@ -119,9 +119,9 @@ func TestAddThenDeletePath(t *testing.T) {
 	// 	t.Error(err)
 	// }
 
-	// _, acctTrans := url.WriteCache().Export(indexer.Sorter)
+	// _, acctTrans := writeCache.Export(indexer.Sorter)
 
-	// acctTrans := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.IPCTransition{})
+	// acctTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.IPCTransition{})
 
 	// buffer := indexer.Univalues(acctTrans).Encode()
 	// out := indexer.Univalues{}.Decode(buffer).(indexer.Univalues)
@@ -137,7 +137,7 @@ func TestAddThenDeletePath(t *testing.T) {
 		t.Error(err)
 	}
 
-	// transitions := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.IPCTransition{})
+	// transitions := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.IPCTransition{})
 	// url.Import(indexer.Univalues{}.Decode(indexer.Univalues(transitions).Encode()).(indexer.Univalues))
 	// url.Sort()
 	// url.Commit([]uint32{1})
@@ -152,7 +152,7 @@ func TestAddThenDeletePath(t *testing.T) {
 		t.Error(err)
 	}
 
-	// acctTrans = indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.IPCTransition{})
+	// acctTrans = indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.IPCTransition{})
 	// buffer = indexer.Univalues(acctTrans).Encode()
 	// url.Import(indexer.Univalues{}.Decode(buffer).(indexer.Univalues))
 	// url.Sort()
@@ -173,8 +173,8 @@ func TestAddThenDeletePath2(t *testing.T) {
 		t.Error(err)
 	}
 
-	// _, trans := url.WriteCache().Export(indexer.Sorter)
-	trans := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.IPCTransition{})
+	// _, trans := writeCache.Export(indexer.Sorter)
+	trans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.IPCTransition{})
 	acctTrans := (&indexer.Univalues{}).Decode(indexer.Univalues(trans).Encode()).(indexer.Univalues)
 
 	//values := indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).([]interfaces.Univalue)
@@ -190,7 +190,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 		t.Error(err)
 	}
 
-	transitions := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.IPCTransition{})
+	transitions := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.IPCTransition{})
 	url.Import((&indexer.Univalues{}).Decode(indexer.Univalues(transitions).Encode()).(indexer.Univalues))
 
 	url.Sort()
@@ -206,7 +206,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 		t.Error(err)
 	}
 
-	trans = indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.IPCTransition{})
+	trans = indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.IPCTransition{})
 	url.Import((&indexer.Univalues{}).Decode(indexer.Univalues(trans).Encode()).(indexer.Univalues))
 	url.Sort()
 	url.Commit([]uint32{1})
@@ -226,7 +226,7 @@ func TestBasic(t *testing.T) {
 		t.Error(err)
 	}
 
-	acctTrans := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.IPCTransition{})
+	acctTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.IPCTransition{})
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
 	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -294,7 +294,7 @@ func TestBasic(t *testing.T) {
 		}
 	}
 
-	trans := common.Clone(url.WriteCache().Export(indexer.Sorter))
+	trans := common.Clone(writeCache.Export(indexer.Sorter))
 	transitions := indexer.Univalues(trans).To(indexer.ITCTransition{})
 
 	// indexer.Univalues(transitions).Print()
@@ -343,7 +343,7 @@ func TestPathAddThenDelete(t *testing.T) {
 		fmt.Println(err)
 	}
 
-	acctTrans := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.IPCTransition{})
+	acctTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.IPCTransition{})
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
 
 	url.Sort()
@@ -426,7 +426,7 @@ func TestUrl1(t *testing.T) {
 		fmt.Println(err)
 	}
 
-	raw := url.WriteCache().Export(indexer.Sorter)
+	raw := writeCache.Export(indexer.Sorter)
 	acctTrans := indexer.Univalues(common.Clone(raw)).To(indexer.ITCTransition{})
 	// accesses := indexer.Univalues(common.Clone(this.buffer)).To(indexer.ITCAccess{})
 
@@ -490,7 +490,7 @@ func TestUrl1(t *testing.T) {
 	}
 
 	// Export all access records and state transitions
-	transitions := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	transitions := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	// v, _, _ := transitions[0].Value().(interfaces.Type).Get()
 	if (*transitions[0].Value().(*noncommutative.String)) != "ctrn-0" {
 		t.Error("Error: keys don't match")
@@ -516,7 +516,7 @@ func TestUrl2(t *testing.T) {
 		t.Error(err)
 	}
 
-	acctTrans := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.IPCTransition{})
+	acctTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.IPCTransition{})
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
 	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -691,9 +691,9 @@ func TestUrl2(t *testing.T) {
 	}
 
 	/*  Export all */
-	// accessRecords, transitions := url.WriteCache().Export(indexer.Sorter)
-	accessRecords := indexer.Univalues(common.Clone(url.WriteCache().Export())).To(indexer.ITCAccess{})
-	transitions := indexer.Univalues(common.Clone(url.WriteCache().Export())).To(indexer.ITCTransition{})
+	// accessRecords, transitions := writeCache.Export(indexer.Sorter)
+	accessRecords := indexer.Univalues(common.Clone(writeCache.Export())).To(indexer.ITCAccess{})
+	transitions := indexer.Univalues(common.Clone(writeCache.Export())).To(indexer.ITCTransition{})
 
 	// 3 writes + 1 affiliated write
 	value := univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, nil, nil)
@@ -737,7 +737,7 @@ func TestTransientDBv2(t *testing.T) {
 		t.Error(err)
 	}
 
-	raw := url.WriteCache().Export(indexer.Sorter)
+	raw := writeCache.Export(indexer.Sorter)
 	acctTrans := indexer.Univalues(common.Clone(raw)).To(indexer.IPCTransition{})
 
 	indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode())
@@ -767,7 +767,7 @@ func TestCustomCodec(t *testing.T) {
 		t.Error(err)
 	}
 
-	raw := url.WriteCache().Export(indexer.Sorter)
+	raw := writeCache.Export(indexer.Sorter)
 	acctTrans := indexer.Univalues(common.Clone(raw)).To(indexer.IPCTransition{})
 
 	buffer := indexer.Univalues(acctTrans).Encode()

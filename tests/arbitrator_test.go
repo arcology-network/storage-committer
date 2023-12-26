@@ -27,7 +27,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	meta := commutative.NewPath()
 
 	writeCache.Write(ccurlcommon.SYSTEM, ccurlcommon.ETH10_ACCOUNT_PREFIX, meta)
-	trans := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	trans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans).Encode()).(indexer.Univalues))
 
 	url.Sort()
@@ -42,9 +42,9 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 		t.Error(err)
 	}
 
-	// accesses1, transitions1 := url.WriteCache().Export(indexer.Sorter)
-	accesses1 := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCAccess{})
-	indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	// accesses1, transitions1 := writeCache.Export(indexer.Sorter)
+	accesses1 := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCAccess{})
+	indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	bob := datacompression.RandomAccount()
 	url2 := ccurl.NewConcurrentUrl(store)
@@ -75,7 +75,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	writeCache := url.WriteCache()
 	meta := commutative.NewPath()
 	writeCache.Write(ccurlcommon.SYSTEM, ccurlcommon.ETH10_ACCOUNT_PREFIX, meta)
-	trans := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	trans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans).Encode()).(indexer.Univalues))
 	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -93,8 +93,8 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path1) // create a path
 	// writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-1"))
 	// writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-1"))
-	// accesses1, _ := url.WriteCache().Export(indexer.Sorter)
-	raw := url.WriteCache().Export(indexer.Sorter)
+	// accesses1, _ := writeCache.Export(indexer.Sorter)
+	raw := writeCache.Export(indexer.Sorter)
 	accesses1 := indexer.Univalues(common.Clone(raw)).To(indexer.IPCTransition{})
 
 	url2 := ccurl.NewConcurrentUrl(store)
@@ -138,7 +138,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	}
 
 	// writeCache.Write(ccurlcommon.SYSTEM, ccurlcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
-	acctTrans := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	acctTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
 	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
@@ -153,9 +153,9 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/", commutative.NewPath()) // create a path
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-1"))
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-1"))
-	// accesses1, transitions1 := url.WriteCache().Export(indexer.Sorter)
-	accesses1 := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCAccess{})
-	transitions1 := indexer.Univalues(common.Clone(url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	// accesses1, transitions1 := writeCache.Export(indexer.Sorter)
+	accesses1 := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCAccess{})
+	transitions1 := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	url2 := ccurl.NewConcurrentUrl(store)
 	writeCache = url2.WriteCache()

@@ -41,8 +41,8 @@ func TestSimpleBalance(t *testing.T) {
 	}
 
 	// Export variables
-	// _, in := url.WriteCache().Export(indexer.Sorter)
-	in := indexer.Univalues((url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	// _, in := writeCache.Export(indexer.Sorter)
+	in := indexer.Univalues((writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	buffer := indexer.Univalues(in).Encode()
 	out := indexer.Univalues{}.Decode(buffer).(indexer.Univalues)
@@ -74,8 +74,8 @@ func TestSimpleBalance(t *testing.T) {
 	}
 
 	// records, trans := url2.WriteCache().Export(indexer.Sorter)
-	trans := indexer.Univalues((url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
-	records := indexer.Univalues((url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCAccess{})
+	trans := indexer.Univalues((writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	records := indexer.Univalues((writeCache.Export(indexer.Sorter))).To(indexer.ITCAccess{})
 
 	indexer.Univalues(trans).Encode()
 	for _, v := range records {
@@ -161,7 +161,7 @@ func TestBalance(t *testing.T) {
 	}
 
 	// Export variables
-	transitions := indexer.Univalues((url.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	transitions := indexer.Univalues((writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	// for i := range transitions {
 	trans := transitions[9]
 

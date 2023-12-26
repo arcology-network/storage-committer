@@ -26,6 +26,9 @@ func TestTransitionFilters(t *testing.T) {
 
 	url := ccurl.NewConcurrentUrl(store)
 	writeCache := url.WriteCache()
+
+	// writeCache = indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+
 	concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache)
 	// url.NewAccount(ccurlcommon.SYSTEM, bob)
 
@@ -33,7 +36,7 @@ func TestTransitionFilters(t *testing.T) {
 		t.Error(err)
 	}
 
-	raw := url.WriteCache().Export(indexer.Sorter)
+	raw := writeCache.Export(indexer.Sorter)
 
 	acctTrans := indexer.Univalues(common.Clone(raw)).To(indexer.IPCTransition{})
 
@@ -120,7 +123,7 @@ func TestAccessFilters(t *testing.T) {
 		t.Error(err)
 	}
 
-	raw := url.WriteCache().Export(indexer.Sorter)
+	raw := writeCache.Export(indexer.Sorter)
 
 	raw[0].Value().(*commutative.Path).SetSubs([]string{"k0", "k1"})
 	raw[0].Value().(*commutative.Path).SetAdded([]string{"123", "456"})
