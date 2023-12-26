@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
+	datacompression "github.com/arcology-network/common-lib/addrcompressor"
+	datastore "github.com/arcology-network/common-lib/cachedstorage/datastore"
 	"github.com/arcology-network/common-lib/common"
-	datacompression "github.com/arcology-network/common-lib/datacompression"
 	"github.com/arcology-network/common-lib/merkle"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
@@ -26,8 +26,8 @@ import (
 
 func BenchmarkAccountMerkleImportPerf(b *testing.B) {
 	// lut := datacompression.NewCompressionLut()
-	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
-	// fileDB, err := cachedstorage.NewFileDB(ROOT_PATH, 8, 2)
+	// store := datastore.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+	// fileDB, err := datastore.NewFileDB(ROOT_PATH, 8, 2)
 	// if err != nil {
 	// 	b.Error(err)
 	// 	return
@@ -51,14 +51,14 @@ func BenchmarkAccountMerkleImportPerf(b *testing.B) {
 }
 
 func BenchmarkSingleAccountCommit(b *testing.B) {
-	// fileDB, err := cachedstorage.NewFileDB(ROOT_PATH, 8, 2)
+	// fileDB, err := datastore.NewFileDB(ROOT_PATH, 8, 2)
 	// if err != nil {
 	// 	b.Error(err)
 	// 	return
 	// }
 	store := chooseDataStore()
 
-	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+	// store := datastore.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
 	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
@@ -94,7 +94,7 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 }
 
 func BenchmarkMultipleAccountCommit(b *testing.B) {
-	// fileDB, err := cachedstorage.NewFileDB(ROOT_PATH, 8, 2)
+	// fileDB, err := datastore.NewFileDB(ROOT_PATH, 8, 2)
 	// if err != nil {
 	// 	b.Error(err)
 	// 	return
@@ -156,7 +156,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 }
 
 func BenchmarkUrlAddThenDelete(b *testing.B) {
-	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+	store := datastore.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
 	meta := commutative.NewPath()
 	url.Write(ccurlcommon.SYSTEM, ccurlcommon.ETH10_ACCOUNT_PREFIX, meta)
@@ -193,7 +193,7 @@ func BenchmarkUrlAddThenDelete(b *testing.B) {
 }
 
 func BenchmarkUrlAddThenPop(b *testing.B) {
-	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+	store := datastore.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
 	meta := commutative.NewPath()
 	url.Write(ccurlcommon.SYSTEM, ccurlcommon.ETH10_ACCOUNT_PREFIX, meta)
@@ -313,7 +313,7 @@ func BenchmarkShrinkSlice(b *testing.B) {
 }
 
 func BenchmarkEncodeTransitions(b *testing.B) {
-	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+	store := datastore.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	url := ccurl.NewConcurrentUrl(store)
 
 	alice := AliceAccount()
@@ -367,13 +367,13 @@ func BenchmarkEncodeTransitions(b *testing.B) {
 
 func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	// lut := datacompression.NewCompressionLut()
-	// fileDB, err := cachedstorage.NewFileDB(ROOT_PATH, 8, 2)
+	// fileDB, err := datastore.NewFileDB(ROOT_PATH, 8, 2)
 	// if err != nil {
 	// 	b.Error(err)
 	// 	return
 	// }
 	store := chooseDataStore()
-	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+	// store := datastore.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	store.Inject((ccurlcommon.ETH10_ACCOUNT_PREFIX), commutative.NewPath())
 
 	t0 := time.Now()
@@ -592,7 +592,7 @@ func (s String) Less(b btree.Item) bool {
 // }
 
 func BenchmarkTransitionImport(b *testing.B) {
-	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+	store := datastore.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	meta := commutative.NewPath()
 	store.Inject((ccurlcommon.ETH10_ACCOUNT_PREFIX), meta)
 
@@ -621,7 +621,7 @@ func BenchmarkTransitionImport(b *testing.B) {
 }
 
 // func BenchmarkConcurrentTransitionImport(b *testing.B) {
-// 	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+// 	store := datastore.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 // 	meta := commutative.NewPath()
 // 	store.Inject((ccurlcommon.ETH10_ACCOUNT_PREFIX), meta)
 
@@ -651,7 +651,7 @@ func BenchmarkTransitionImport(b *testing.B) {
 // }
 
 func BenchmarkRandomAccountSort(t *testing.B) {
-	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+	store := datastore.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 	meta := commutative.NewPath()
 	store.Inject((ccurlcommon.ETH10_ACCOUNT_PREFIX), meta)
 

@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
+	datacompression "github.com/arcology-network/common-lib/addrcompressor"
 	"github.com/arcology-network/common-lib/common"
 	orderedset "github.com/arcology-network/common-lib/container/set"
-	"github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/commutative"

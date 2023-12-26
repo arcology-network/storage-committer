@@ -6,15 +6,15 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/arcology-network/common-lib/cachedstorage"
-	datacompression "github.com/arcology-network/common-lib/datacompression"
+	datacompression "github.com/arcology-network/common-lib/addrcompressor"
+	datastore "github.com/arcology-network/common-lib/cachedstorage/datastore"
 )
 
 type ReadonlyClient struct {
 	addr         string
 	path         string
 	uncompressor *datacompression.CompressionLut
-	localStore   *cachedstorage.DataStore
+	localStore   *datastore.DataStore
 }
 
 func NewReadonlyClient(addr string, path string, lut *datacompression.CompressionLut, args ...interface{}) *ReadonlyClient {
@@ -25,7 +25,7 @@ func NewReadonlyClient(addr string, path string, lut *datacompression.Compressio
 	}
 
 	if len(args) > 0 && args[0] != nil {
-		readonlyClient.localStore = args[0].(*cachedstorage.DataStore)
+		readonlyClient.localStore = args[0].(*datastore.DataStore)
 	}
 	return readonlyClient
 }

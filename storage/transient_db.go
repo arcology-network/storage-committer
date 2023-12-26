@@ -4,20 +4,21 @@ import (
 	"crypto/sha256"
 	"math"
 
-	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
+	datastore "github.com/arcology-network/common-lib/cachedstorage/datastore"
+	memdb "github.com/arcology-network/common-lib/cachedstorage/memdb"
 	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
 type TransientDB struct {
-	*cachedstorage.DataStore
+	*datastore.DataStore
 	readonlyParent interfaces.Datastore
 }
 
 func NewTransientDB(readonlyParent interfaces.Datastore) interfaces.Datastore {
 	return &TransientDB{
-		DataStore: cachedstorage.NewDataStore(
+		DataStore: datastore.NewDataStore(
 			nil,
-			cachedstorage.NewCachePolicy(math.MaxUint64, 1), cachedstorage.NewMemDB(), Rlp{}.Encode, Rlp{}.Decode,
+			datastore.NewCachePolicy(math.MaxUint64, 1), memdb.NewMemDB(), Rlp{}.Encode, Rlp{}.Decode,
 		),
 		readonlyParent: readonlyParent,
 	}

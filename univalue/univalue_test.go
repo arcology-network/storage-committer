@@ -3,10 +3,10 @@ package univalue
 import (
 	"testing"
 
+	"github.com/arcology-network/common-lib/addrcompressor"
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/common-lib/datacompression"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
-	"github.com/arcology-network/concurrenturl/interfaces"
+	interfaces "github.com/arcology-network/concurrenturl/interface"
 	"github.com/holiman/uint256"
 )
 
@@ -111,7 +111,7 @@ func TestUnivalueCodeMeta(t *testing.T) {
 
 func TestUnimetaCodecUint64(t *testing.T) {
 	/* Commutative Int64 Test */
-	alice := datacompression.AliceAccount()
+	alice := addrcompressor.AliceAccount()
 
 	// meta:= commutative.NewPath()
 	u256 := commutative.NewBoundedUint64(0, 100).(*commutative.Uint64)

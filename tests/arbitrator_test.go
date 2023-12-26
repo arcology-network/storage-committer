@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
+	datacompression "github.com/arcology-network/common-lib/addrcompressor"
 	common "github.com/arcology-network/common-lib/common"
-	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl"
 	arbitrator "github.com/arcology-network/concurrenturl/arbitrator"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"

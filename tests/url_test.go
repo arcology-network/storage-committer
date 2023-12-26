@@ -5,7 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
+	datastore "github.com/arcology-network/common-lib/cachedstorage/datastore"
+	"github.com/arcology-network/common-lib/cachedstorage/memdb"
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	orderedset "github.com/arcology-network/common-lib/container/set"
@@ -494,7 +495,7 @@ func TestUrl1(t *testing.T) {
 
 func TestUrl2(t *testing.T) {
 	store := chooseDataStore()
-	// store := cachedstorage.NewDataStore(nil, nil, nil, encoder, decoder)
+	// store := datastore.NewDataStore(nil, nil, nil, encoder, decoder)
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
 	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
@@ -736,14 +737,14 @@ func TestTransientDBv2(t *testing.T) {
 }
 
 func TestCustomCodec(t *testing.T) {
-	// fileDB, err := cachedstorage.NewFileDB(ROOT_PATH, 8, 2)
+	// fileDB, err := datastore.NewFileDB(ROOT_PATH, 8, 2)
 	// if err != nil {
 	// 	t.Error(err)
 	// 	return
 	// }
 
-	policy := cachedstorage.NewCachePolicy(0, 1)
-	store := cachedstorage.NewDataStore(nil, policy, cachedstorage.NewMemDB(), storage.Rlp{}.Encode, storage.Rlp{}.Decode)
+	policy := datastore.NewCachePolicy(0, 1)
+	store := datastore.NewDataStore(nil, policy, memdb.NewMemDB(), storage.Rlp{}.Encode, storage.Rlp{}.Decode)
 	alice := AliceAccount()
 	url := ccurl.NewConcurrentUrl(store)
 	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {

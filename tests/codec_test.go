@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
+	datacompression "github.com/arcology-network/common-lib/addrcompressor"
+	cachedstorage "github.com/arcology-network/common-lib/cachedstorage/datastore"
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"

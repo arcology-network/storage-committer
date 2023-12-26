@@ -5,8 +5,8 @@ import (
 
 	// codec "github.com/arcology-network/common-lib/codec"
 
+	datacompression "github.com/arcology-network/common-lib/addrcompressor"
 	"github.com/arcology-network/common-lib/common"
-	datacompression "github.com/arcology-network/common-lib/datacompression"
 	ccurl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
@@ -15,7 +15,7 @@ import (
 
 func TestMultiAccountCreation(t *testing.T) {
 	store := chooseDataStore()
-	// store := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
+	// store := datastore.NewDataStore(nil, datastore.NewCachePolicy(0, 1), datastore.NewMemDB(), encoder, decoder)
 
 	store.Inject((ccurlcommon.ETH10_ACCOUNT_PREFIX), commutative.NewPath())
 	url := ccurl.NewConcurrentUrl(store)

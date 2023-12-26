@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"net/http"
 
-	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
+	datastore "github.com/arcology-network/common-lib/cachedstorage/datastore"
 )
 
 type ReadonlyServer struct {
 	addr      string
-	dataStore *cachedstorage.DataStore
+	dataStore *datastore.DataStore
 	encoder   func(interface{}) []byte
 	decoder   func([]byte) (interface{}, error)
 }
 
-func NewReadonlyServer(addr string, encoder func(interface{}) []byte, decoder func([]byte) (interface{}, error), dataStore *cachedstorage.DataStore) *ReadonlyServer {
+func NewReadonlyServer(addr string, encoder func(interface{}) []byte, decoder func([]byte) (interface{}, error), dataStore *datastore.DataStore) *ReadonlyServer {
 	return &ReadonlyServer{
 		addr:      addr,
 		dataStore: dataStore,

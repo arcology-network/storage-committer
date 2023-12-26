@@ -96,7 +96,6 @@ type Univalue interface { // value type
 	IsReadOnly() bool
 	IsConcurrentWritable() bool
 	// Clone() interface{}
-
 	GetEncoded() []byte
 	Size() uint32
 	Encode() []byte
@@ -113,13 +112,16 @@ type WriteCache interface {
 	Peek(string, any) (interface{}, interface{})
 	Write(uint32, string, interface{}) error
 	AddTransitions([]Univalue)
+	// Export() []Univalue
 
+	Export(...func([]Univalue) []Univalue) []Univalue
+	// ExportAll( ...func([]ccurlintf.Univalue) []ccurlintf.Univalue) ([]ccurlintf.Univalue, []ccurlintf.Univalue)
 	Retrive(string, any) (interface{}, error)
 	Cache() *map[string]Univalue
-	Store() DataStoreReader
+	Store() ReadOnlyDataStore
 }
 
-type DataStoreReader interface {
+type ReadOnlyDataStore interface {
 	IfExists(string) bool
 	Retrive(string, any) (interface{}, error)
 }

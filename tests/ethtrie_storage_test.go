@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
+	datastore "github.com/arcology-network/common-lib/cachedstorage/datastore"
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	orderedset "github.com/arcology-network/common-lib/container/set"
@@ -413,7 +413,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 
 func BenchmarkMultipleAccountCommitDataStore(b *testing.B) {
 	// store := chooseDataStore() // Eth data store
-	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode) // Native data store
+	store := datastore.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode) // Native data store
 
 	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()

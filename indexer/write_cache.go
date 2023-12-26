@@ -17,14 +17,14 @@ import (
 )
 
 type WriteCache struct {
-	store    interfaces.DataStoreReader
+	store    interfaces.ReadOnlyDataStore
 	kvDict   map[string]interfaces.Univalue // Local KV lookup
 	platform interfaces.Platform
 	buffer   []interfaces.Univalue // Transition + access record buffer
 	uniPool  *mempool.Mempool
 }
 
-func NewWriteCache(store interfaces.DataStoreReader, args ...interface{}) *WriteCache {
+func NewWriteCache(store interfaces.ReadOnlyDataStore, args ...interface{}) *WriteCache {
 	var writeCache WriteCache
 	writeCache.store = store
 	writeCache.kvDict = make(map[string]interfaces.Univalue)
@@ -35,9 +35,9 @@ func NewWriteCache(store interfaces.DataStoreReader, args ...interface{}) *Write
 	return &writeCache
 }
 
-func (this *WriteCache) SetStore(store interfaces.DataStoreReader) { this.store = store }
-func (this *WriteCache) Store() interfaces.DataStoreReader         { return this.store }
-func (this *WriteCache) Cache() *map[string]interfaces.Univalue    { return &this.kvDict }
+func (this *WriteCache) SetStore(store interfaces.ReadOnlyDataStore) { this.store = store }
+func (this *WriteCache) Store() interfaces.ReadOnlyDataStore         { return this.store }
+func (this *WriteCache) Cache() *map[string]interfaces.Univalue      { return &this.kvDict }
 
 func (this *WriteCache) NewUnivalue() *univalue.Univalue {
 	v := this.uniPool.Get().(*univalue.Univalue)
