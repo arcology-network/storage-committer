@@ -616,8 +616,10 @@ func BenchmarkTransitionImport(b *testing.B) {
 	store.Inject((ccurlcommon.ETH10_ACCOUNT_PREFIX), meta)
 
 	t0 := time.Now()
-	url := ccurl.NewConcurrentUrl(store)
-	writeCache := url.WriteCache()
+
+	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
+
+	// writeCache := url.WriteCache()
 	for i := 0; i < 150000; i++ {
 		acct := datacompression.RandomAccount()
 		if _, err := concurrenturl.CreateNewAccount(0, acct, ccurlcommon.NewPlatform(), writeCache); err != nil { // Preload account structure {
@@ -635,6 +637,7 @@ func BenchmarkTransitionImport(b *testing.B) {
 
 	fmt.Println("-------------")
 	t0 = time.Now()
+	url := ccurl.NewConcurrentUrl(store)
 	url.Import(acctTrans)
 	accountMerkle.Import(acctTrans)
 	fmt.Println("url + accountMerkle Import "+fmt.Sprint(150000*9), time.Since(t0))

@@ -22,24 +22,22 @@ import (
 func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	store := chooseDataStore()
 
-	url := ccurl.NewConcurrentUrl(store)
-	// writeCache := url.WriteCache()
 	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
 
 	meta := commutative.NewPath()
-
 	writeCache.Write(ccurlcommon.SYSTEM, ccurlcommon.ETH10_ACCOUNT_PREFIX, meta)
 	trans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
+	url := ccurl.NewConcurrentUrl(store)
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans).Encode()).(indexer.Univalues))
 	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})
+	writeCache.Clear()
 
 	alice := AliceAccount()
-	url.Init(store)
+	// url.Init(store)
 	// url.NewAccount(1, alice) // NewAccount account structure {
-	writeCache.Clear()                                                                                                          // = url.WriteCache()
-	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
+	if _, err := concurrenturl.CreateNewAccount(1, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -47,16 +45,14 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	accesses1 := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCAccess{})
 	indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
+	writeCache.Clear()
 	bob := datacompression.RandomAccount()
-	url2 := ccurl.NewConcurrentUrl(store)
-	// url2.NewAccount(2, bob) // NewAccount account structure {
-
 	if _, err := concurrenturl.CreateNewAccount(2, bob, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
-	accesses2 := indexer.Univalues(common.Clone(url2.WriteCache().Export(indexer.Sorter))).To(indexer.ITCAccess{})
-	indexer.Univalues(common.Clone(url2.WriteCache().Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	accesses2 := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCAccess{})
+	indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
 	arib := (&arbitrator.Arbitrator{})
 
@@ -65,19 +61,19 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 
 	conflictdict, _, _ := arbitrator.Conflicts(ids).ToDict()
 	if len(*conflictdict) != 0 {
-		t.Error("Error: There shouldn be 0 conflict")
+		t.Error("Error: There should be NO conflict")
 	}
 }
 
 func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	store := chooseDataStore()
 
-	url := ccurl.NewConcurrentUrl(store)
 	writeCache := indexer.NewWriteCache(store, ccurlcommon.NewPlatform())
 	meta := commutative.NewPath()
 	writeCache.Write(ccurlcommon.SYSTEM, ccurlcommon.ETH10_ACCOUNT_PREFIX, meta)
 	trans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
+	url := ccurl.NewConcurrentUrl(store)
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans).Encode()).(indexer.Univalues))
 	url.Sort()
 	url.Commit([]uint32{ccurlcommon.SYSTEM})

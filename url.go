@@ -40,8 +40,8 @@ func (this *ConcurrentUrl) New(args ...interface{}) *ConcurrentUrl {
 	}
 }
 
-func (this *ConcurrentUrl) WriteCache() *indexer.WriteCache { return this.writeCache }
-func (this *ConcurrentUrl) Importer() *indexer.Importer     { return this.importer }
+// func (this *ConcurrentUrl) WriteCache() *indexer.WriteCache { return this.writeCache }
+func (this *ConcurrentUrl) Importer() *indexer.Importer { return this.importer }
 
 // Get data from the DB direcly, still under conflict protection
 func (this *ConcurrentUrl) ReadCommitted(tx uint32, key string, T any) (interface{}, uint64) {
@@ -49,7 +49,7 @@ func (this *ConcurrentUrl) ReadCommitted(tx uint32, key string, T any) (interfac
 		return v, Fee
 	}
 
-	v, _ := this.WriteCache().Store().Retrive(key, T)
+	v, _ := this.writeCache.Store().Retrive(key, T)
 	if v == nil {
 		return v, Fee{}.Reader(univalue.NewUnivalue(tx, key, 1, 0, 0, v, nil))
 	}
