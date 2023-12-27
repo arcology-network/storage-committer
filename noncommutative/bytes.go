@@ -5,7 +5,7 @@ import (
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/concurrenturl/interfaces"
+	intf "github.com/arcology-network/concurrenturl/interfaces"
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
@@ -16,7 +16,7 @@ type Bytes struct {
 	value       codec.Bytes
 }
 
-func NewBytes(v []byte) interfaces.Type {
+func NewBytes(v []byte) intf.Type {
 	b := make([]byte, len(v))
 	copy(b, v)
 	return &Bytes{
@@ -87,10 +87,10 @@ func (this *Bytes) Set(value interface{}, _ interface{}) (interface{}, uint32, u
 	return this, 0, 1, 0, nil
 }
 
-func (this *Bytes) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
-	vec := v.([]interfaces.Univalue)
-	for i := 0; i < len(vec); i++ {
-		v := vec[i].Value()
+func (this *Bytes) ApplyDelta(typedVals []intf.Type) (intf.Type, int, error) {
+	// vec := v.([]*univalue.Univalue)
+	for _, v := range typedVals {
+		// v := vec[i].Value()
 		if this == nil && v != nil { // New value
 			this = v.(*Bytes)
 		}
@@ -111,7 +111,7 @@ func (this *Bytes) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
 	if this == nil {
 		return nil, 0, nil
 	}
-	return this, len(vec), nil
+	return this, len(typedVals), nil
 }
 
 func (this *Bytes) StorageEncode() []byte {

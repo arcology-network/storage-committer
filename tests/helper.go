@@ -11,10 +11,11 @@ import (
 	importer "github.com/arcology-network/concurrenturl/importer"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
+	"github.com/arcology-network/concurrenturl/univalue"
 	cache "github.com/arcology-network/eu/cache"
 )
 
-func Create_Ctrn_0(account string, store interfaces.Datastore) ([]byte, []interfaces.Univalue, error) {
+func Create_Ctrn_0(account string, store interfaces.Datastore) ([]byte, []*univalue.Univalue, error) {
 	// committer := ccurl.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 
@@ -32,7 +33,7 @@ func Create_Ctrn_0(account string, store interfaces.Datastore) ([]byte, []interf
 	}
 
 	rawTrans := writeCache.Export(importer.Sorter)
-	transitions := importer.Univalues(common.Clone(rawTrans)).To(importer.ITCTransition{})
+	transitions := importer.Univalues(common.Clone(rawTrans)).To(importer.ITTransition{})
 	return importer.Univalues(transitions).Encode(), transitions, nil
 }
 
@@ -52,7 +53,7 @@ func ParallelInsert_Ctrn_0(account string, store interfaces.Datastore) ([]byte, 
 		return []byte{}, err
 	}
 
-	transitions := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
+	transitions := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 	return importer.Univalues(transitions).Encode(), nil
 }
 
@@ -72,7 +73,7 @@ func Create_Ctrn_1(account string, store interfaces.Datastore) ([]byte, error) {
 		return []byte{}, err
 	}
 
-	transitions := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
+	transitions := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 	return importer.Univalues(transitions).Encode(), nil
 }
 

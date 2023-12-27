@@ -107,13 +107,13 @@ package ccurltest
 // 	for i := 0; i < len(keys); i++ {
 // 		keys[i] = fmt.Sprint(i)
 // 		nVals[i] = univalue.NewUnivalue(uint32(i), keys[i], 1, 1, 2, noncommutative.NewInt64(int64(i))).Value()
-// 		encoded[i] = storage.Codec{}.Encode(nVals[i]) // this is wrong  !!!
+// 		encoded[i] = committercommon.Codec{}.Encode(nVals[i]) // this is wrong  !!!
 // 	}
 
 // 	persistentDB := cachedstorage.NewMemDB()
 // 	persistentDB.BatchSet(keys, encoded)
 // 	cachePolicy := cachedstorage.NewCachePolicy(1, 0.8)
-// 	dataStore := cachedstorage.NewDataStore(nil, cachePolicy, persistentDB, storage.Codec{}.Encode, storage.Codec{}.Decode)
+// 	dataStore := cachedstorage.NewDataStore(nil, cachePolicy, persistentDB, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
 
 // 	// First insertion
 // 	dataStore.BatchInject(keys, nVals)

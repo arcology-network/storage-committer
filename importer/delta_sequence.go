@@ -6,13 +6,13 @@ import (
 
 	common "github.com/arcology-network/common-lib/common"
 	committercommon "github.com/arcology-network/concurrenturl/common"
-	"github.com/arcology-network/concurrenturl/interfaces"
+	intf "github.com/arcology-network/concurrenturl/interfaces"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 )
 
 type DeltaSequence struct {
 	key         string
-	transitions []interfaces.Univalue
+	transitions []*univalue.Univalue
 	lock        sync.RWMutex
 	rawBytes    interface{}
 }
@@ -20,7 +20,7 @@ type DeltaSequence struct {
 func NewDeltaSequence(key string, importer *Importer) *DeltaSequence {
 	return &DeltaSequence{
 		key:         key,
-		transitions: make([]interfaces.Univalue, 0, 16),
+		transitions: make([]*univalue.Univalue, 0, 16),
 		rawBytes:    common.FilterFirst(importer.store.Retrive(key, nil)),
 		// initial: (&univalue.Univalue{}).Init(committercommon.SYSTEM, key, 0, 0, 0, encoded, importer.Store()),
 	}
@@ -32,10 +32,10 @@ func (this *DeltaSequence) Reset(key string) *DeltaSequence {
 	return this
 }
 
-func (this *DeltaSequence) Add(v interfaces.Univalue) *DeltaSequence {
+func (this *DeltaSequence) Add(v *univalue.Univalue) *DeltaSequence {
 	this.lock.Lock()
 	defer this.lock.Unlock()
-	this.transitions = append(this.transitions, v.(*univalue.Univalue))
+	this.transitions = append(this.transitions, v)
 	return this
 }
 
@@ -58,19 +58,20 @@ func (this *DeltaSequence) Sort() {
 }
 
 func (this *DeltaSequence) Finalize() *univalue.Univalue {
-	common.RemoveIf(&this.transitions, func(v interfaces.Univalue) bool {
+	common.RemoveIf(&this.transitions, func(v *univalue.Univalue) bool {
 		return v.GetPath() == nil
 	})
 
 	if len(this.transitions) == 0 {
 		return nil
 	}
-	finalized := this.transitions[0].(*univalue.Univalue)
+
+	finalized := this.transitions[0]
 
 	if (this.rawBytes != nil) && (finalized.Value() != nil) { // Value update not an assignment or deletion
 		if encoded, ok := this.rawBytes.([]byte); ok {
-			v := finalized.Value().(interfaces.Type).StorageDecode(encoded).(interfaces.Type).Value()
-			finalized.Value().(interfaces.Type).SetValue(v)
+			v := finalized.Value().(intf.Type).StorageDecode(encoded).(intf.Type).Value()
+			finalized.Value().(intf.Type).SetValue(v)
 		}
 	}
 
@@ -79,26 +80,6 @@ func (this *DeltaSequence) Finalize() *univalue.Univalue {
 	}
 	return finalized
 }
-
-// func (this *DeltaSequence) Finalize() *univalue.Univalue {
-// 	if len(this.transitions) == 0 {
-// 		return nil
-// 	}
-// 	finalized := this.transitions[0].(*univalue.Univalue)
-
-// 	if (this.rawBytes != nil) && (finalized.Value() != nil) { // Value update not an assignment or deletion
-// 		var v interface{}
-// 		if encoded, ok := this.rawBytes.([]byte); ok {
-// 			v = finalized.Value().(interfaces.Type).StorageDecode(encoded).(interfaces.Type).Value()
-// 			finalized.Value().(interfaces.Type).SetValue(v)
-// 		}
-// 	}
-
-// 	if err := finalized.ApplyDelta(this.transitions[1:]); err != nil {
-// 		panic(err)
-// 	}
-// 	return finalized
-// }
 
 func (this *DeltaSequence) Reclaim() {
 	for i := range this.transitions {

@@ -3,8 +3,8 @@ package univalue
 import (
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/concurrenturl/interfaces"
-	storage "github.com/arcology-network/concurrenturl/storage"
+	committercommon "github.com/arcology-network/concurrenturl/common"
+	intf "github.com/arcology-network/concurrenturl/interfaces"
 )
 
 func (this *Univalue) Encode() []byte {
@@ -21,14 +21,14 @@ func (this *Univalue) Sizes() []uint32 {
 	return []uint32{
 		this.HeaderSize(),
 		this.Unimeta.Size(),
-		this.value.(interfaces.Type).Size(),
+		this.value.(intf.Type).Size(),
 	}
 }
 
 func (this *Univalue) Size() uint32 {
 	return this.HeaderSize() +
 		this.Unimeta.Size() +
-		common.IfThenDo1st(this.value != nil, func() uint32 { return this.value.(interfaces.Type).Size() }, 0)
+		common.IfThenDo1st(this.value != nil, func() uint32 { return this.value.(intf.Type).Size() }, 0)
 }
 
 func (this *Univalue) FillHeader(buffer []byte) int {
@@ -36,7 +36,7 @@ func (this *Univalue) FillHeader(buffer []byte) int {
 		buffer,
 		[]uint32{
 			this.Unimeta.Size(),
-			common.IfThenDo1st(this.value != nil, func() uint32 { return this.value.(interfaces.Type).Size() }, 0),
+			common.IfThenDo1st(this.value != nil, func() uint32 { return this.value.(intf.Type).Size() }, 0),
 		},
 	)
 }
@@ -46,7 +46,7 @@ func (this *Univalue) EncodeToBuffer(buffer []byte) int {
 
 	offset += this.Unimeta.EncodeToBuffer(buffer[offset:])
 	offset += common.IfThenDo1st(this.value != nil, func() int {
-		return codec.Bytes(this.value.(interfaces.Type).Encode()).EncodeToBuffer(buffer[offset:])
+		return codec.Bytes(this.value.(intf.Type).Encode()).EncodeToBuffer(buffer[offset:])
 	}, 0)
 
 	return offset
@@ -55,11 +55,11 @@ func (this *Univalue) EncodeToBuffer(buffer []byte) int {
 func (this *Univalue) Decode(buffer []byte) interface{} {
 	fields := codec.Byteset{}.Decode(buffer).(codec.Byteset)
 	unimeta := (&Unimeta{}).Decode(fields[0]).(*Unimeta)
-	// v := (&storage.Codec{unimeta.vType}).Decode(fields[1])
+	// v := (&committercommon.Codec{unimeta.vType}).Decode(fields[1])
 
 	return &Univalue{
 		*unimeta,
-		(&storage.Codec{unimeta.vType}).Decode(fields[1], this.value),
+		(&committercommon.Codec{unimeta.vType}).Decode(fields[1], this.value),
 		fields[1], // Keep copy, should expire as soon as the value is updated
 	}
 }
@@ -69,12 +69,12 @@ func (this *Univalue) GetEncoded() []byte {
 		return []byte{}
 	}
 
-	if this.Value().(interfaces.Type).IsCommutative() {
-		return this.value.(interfaces.Type).Value().(codec.Encodable).Encode()
+	if this.Value().(intf.Type).IsCommutative() {
+		return this.value.(intf.Type).Value().(codec.Encodable).Encode()
 	}
 
 	if len(this.cache) > 0 {
-		return this.value.(interfaces.Type).Value().(codec.Encodable).Encode()
+		return this.value.(intf.Type).Value().(codec.Encodable).Encode()
 	}
 	return this.cache
 }

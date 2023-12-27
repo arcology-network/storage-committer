@@ -27,6 +27,7 @@ import (
 	intf "github.com/arcology-network/StorageCommitter/interfaces"
 	common "github.com/arcology-network/common-lib/common"
 	orderedset "github.com/arcology-network/common-lib/container/set"
+	"github.com/arcology-network/concurrenturl/univalue"
 )
 
 func (this *WriteCache) IndexOf(tx uint32, path string, key interface{}, T any) (uint64, uint64) {
@@ -36,7 +37,7 @@ func (this *WriteCache) IndexOf(tx uint32, path string, key interface{}, T any) 
 
 	getter := func(v interface{}) (uint32, uint32, uint32, interface{}) { return 1, 0, 0, v }
 	if v, err := this.Do(tx, path, getter, T); err == nil {
-		pathInfo := v.(interfaces.Univalue).Value()
+		pathInfo := v.(*univalue.Univalue).Value()
 		if common.IsType[*commutative.Path](pathInfo) && common.IsType[string](key) {
 			return pathInfo.(*commutative.Path).View().IdxOf(key.(string)), 0
 		}
@@ -51,7 +52,7 @@ func (this *WriteCache) KeyAt(tx uint32, path string, index interface{}, T any) 
 
 	getter := func(v interface{}) (uint32, uint32, uint32, interface{}) { return 1, 0, 0, v }
 	if v, err := this.Do(tx, path, getter, T); err == nil {
-		pathInfo := v.(interfaces.Univalue).Value()
+		pathInfo := v.(*univalue.Univalue).Value()
 		if common.IsType[*commutative.Path](pathInfo) && common.IsType[uint64](index) {
 			return pathInfo.(*commutative.Path).View().KeyAt(index.(uint64)), 0
 		}
@@ -70,11 +71,11 @@ func (this *WriteCache) Peek(path string, T any) (interface{}, uint64) {
 // 	var v interface{}
 // 	if ok {
 // 		v, _, _ := univ.Value().(interfaces.Type).Get()
-// 		return v, Fee{}.Reader(univ.(interfaces.Univalue))
+// 		return v, Fee{}.Reader(univ.(*univalue.Univalue))
 // 	}
 
 // 	retrivedv := common.FilterSecond(this.ReadOnlyDataStore().Retrive(path, T))
-// 	univ = univalue.NewUnivalue(committercommon.SYSTEM, path, 0, 0, 0, retrivedv, nil)
+// 	univ = univalue.NewUnivalue(ccurlcommon.SYSTEM, path, 0, 0, 0, retrivedv, nil)
 
 // 	if univ.Value() != nil {
 // 		v, _, _ = univ.Value().(interfaces.Type).Get()
@@ -90,7 +91,7 @@ func (this *WriteCache) PeekCommitted(path string, T any) (interface{}, uint64) 
 func (this *WriteCache) Read(tx uint32, path string, T any) (interface{}, uint64) {
 	typedv, univ := this.read(tx, path, T)
 	// fmt.Println("Read: ", path, "|", typedv)
-	return typedv, Fee{}.Reader(univ.(interfaces.Univalue))
+	return typedv, Fee{}.Reader(univ.(*univalue.Univalue))
 }
 
 func (this *WriteCache) Write(tx uint32, path string, value interface{}) (int64, error) {

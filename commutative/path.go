@@ -84,20 +84,24 @@ func (this *Path) New(value, delta, sign, min, max interface{}) interface{} {
 	}
 }
 
-func (this *Path) ApplyDelta(v interface{}) (intf.Type, int, error) { // Apply the transitions to the original value
+// ApplyDelta applies all the deltas from the non-conflicting transitions to the original value and returns the new value.
+func (this *Path) ApplyDelta(typedVals []intf.Type) (intf.Type, int, error) {
 	toAdd := this.delta.addDict.Keys() // The value should only contain committed keys
 	toRemove := this.delta.Removed()
-	univals := v.([]intf.Univalue)
-	for i := 0; i < len(univals); i++ {
-		if univals[i].GetPath() == nil { // Not in the whitelist
-			continue
+	// univals := v.([]intf.Univalue)
+	for i := 0; i < len(typedVals); i++ {
+		// if univals[i].GetPath() == nil { // Not in the whitelist
+		// 	continue
+		// }
+
+		// When the value is nil, it means this is a deletion and when this is true, the size of the typedVals should also be 1.
+		// This is because the deletion is also a write operation and there has to be at most one write operation across all the trasitions.
+		// It is guaranteed by the conflict management mechanism.
+		if typedVals[i] == nil { // Deletion
+			return nil, 1, nil
 		}
 
-		if univals[i].Value() == nil { // Deletion
-			return nil, 0, nil
-		}
-
-		delta := univals[i].Value().(intf.Type).Delta().(*PathDelta)
+		delta := typedVals[i].Delta().(*PathDelta)
 		toAdd = append(toAdd, delta.Added()...)
 		toRemove = append(toRemove, delta.Removed()...)
 	}
@@ -118,17 +122,19 @@ func (this *Path) ApplyDelta(v interface{}) (intf.Type, int, error) { // Apply t
 	return &Path{
 		orderedset.NewOrderedSet(keys), // committed keys + added - removed
 		NewPathDelta([]string{}, []string{}),
-	}, len(univals), nil
+	}, len(typedVals), nil
 }
 
-// Write and afflicated operations
+// Set sets the value of the key to the given value and returns the new value, the number of keys added, the number of
+// keys removed and the number of keys updated.
 func (this *Path) Set(value interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
 	targetPath := source.([]interface{})[0].(string)
 	myPath := source.([]interface{})[1].(string)
 	tx := source.([]interface{})[2].(uint32)
 	writeCache := source.([]interface{})[3].(interface {
 		Write(tx uint32, key string, value interface{}) (int64, error)
-		Cache() *map[string]intf.Univalue
+		// Cache() *map[string]*univalue.Univalue
+		InCache(path string) (interface{}, bool)
 	})
 
 	if common.IsPath(targetPath) && len(targetPath) == len(myPath) { // Delete or rewrite the path
@@ -153,7 +159,8 @@ func (this *Path) Set(value interface{}, source interface{}) (interface{}, uint3
 		this.value.Insert(subkey)
 	}
 
-	preexists := (*writeCache.Cache())[targetPath].Preexist()
+	univ, _ := writeCache.InCache(targetPath)
+	preexists := univ.(interface{ Preexist() bool }).Preexist()
 	this.delta.ProcessKey(subkey, value, preexists)
 	return this, 0, 0, 1, nil
 }

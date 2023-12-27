@@ -38,8 +38,8 @@ func TestUnivaluesCodecPathMeta(t *testing.T) {
 	// in2.writes = 8
 	// in2.deltaWrites = 9
 
-	in := []interfaces.Univalue{in0, in1, in2}
-	buffer := Univalues([]interfaces.Univalue{in0, in1, in2}).Encode()
+	in := []*univalue.Univalue{in0, in1, in2}
+	buffer := Univalues([]*univalue.Univalue{in0, in1, in2}).Encode()
 	out := Univalues{}.Decode(buffer).(Univalues)
 
 	if !Univalues(in).Equal(out) {

@@ -14,9 +14,7 @@ import (
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	importer "github.com/arcology-network/concurrenturl/importer"
-	"github.com/arcology-network/concurrenturl/interfaces"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
-	storage "github.com/arcology-network/concurrenturl/storage"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 	cache "github.com/arcology-network/eu/cache"
 	rlp "github.com/ethereum/go-ethereum/rlp"
@@ -69,21 +67,21 @@ func TestNoncommutativeCodec(t *testing.T) {
 }
 
 func TestUnivalueCodec(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
-	transitions := []interfaces.Univalue{}
+	store := cachedstorage.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
+	transitions := []*univalue.Univalue{}
 
 	// committer := ccurl.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 	// committer.NewAccount(committercommon.SYSTEM, fmt.Sprint("rand.Int()"))
 	writeCache.CreateNewAccount(committercommon.SYSTEM, fmt.Sprint("rand.Int()"))
 
-	transVec := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPCTransition{})
+	transVec := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	transitions = append(transitions, transVec...)
 
 	for i := 0; i < len(transitions); i++ {
 		buffer := transitions[i].Encode()
 		in := transitions[i]
-		out := (&univalue.Univalue{}).Decode(buffer).(interfaces.Univalue)
+		out := (&univalue.Univalue{}).Decode(buffer).(*univalue.Univalue)
 		// out.(*univalue.Univalue).ClearReserve()
 
 		if !in.Equal(out) {
@@ -93,8 +91,8 @@ func TestUnivalueCodec(t *testing.T) {
 }
 
 func TestUnivaluesCodec(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
-	transitions := []interfaces.Univalue{}
+	store := cachedstorage.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
+	transitions := []*univalue.Univalue{}
 	for i := 0; i < 10; i++ {
 		acct := datacompression.RandomAccount()
 		// committer := ccurl.NewStorageCommitter(store)
@@ -103,7 +101,7 @@ func TestUnivaluesCodec(t *testing.T) {
 
 		writeCache.CreateNewAccount(committercommon.SYSTEM, acct)
 
-		transVec := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
+		transVec := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 		transitions = append(transitions, transVec...)
 	}
 	t0 := time.Now()
@@ -111,14 +109,13 @@ func TestUnivaluesCodec(t *testing.T) {
 	fmt.Println("Encode() ", len(transitions), " univalue in :", time.Since(t0))
 
 	t0 = time.Now()
-	out := (importer.Univalues([]interfaces.Univalue{})).Decode(buffer).(importer.Univalues)
+	out := (importer.Univalues([]*univalue.Univalue{})).Decode(buffer).(importer.Univalues)
 	fmt.Println("Decode() ", len(transitions), " univalue in :", time.Since(t0))
 
 	for i := 0; i < len(transitions); i++ {
 		tran := transitions[i]
-		univ := out[i].(*univalue.Univalue)
-		univ.ClearCache()
-		if !reflect.DeepEqual(tran, univ) {
+		out[i].ClearCache()
+		if !reflect.DeepEqual(tran, out[i]) {
 			fmt.Println("Error: Missmatched")
 		}
 	}

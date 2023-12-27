@@ -4,6 +4,7 @@ package storagecommitter
 import (
 	"github.com/arcology-network/common-lib/common"
 	committercommon "github.com/arcology-network/concurrenturl/common"
+	"github.com/arcology-network/concurrenturl/univalue"
 
 	importer "github.com/arcology-network/concurrenturl/importer"
 	interfaces "github.com/arcology-network/concurrenturl/interfaces"
@@ -50,8 +51,8 @@ func (this *StorageCommitter) Clear() {
 }
 
 // Import imports the given transitions into the StorageCommitter.
-func (this *StorageCommitter) Import(transitions []interfaces.Univalue, args ...interface{}) *StorageCommitter {
-	invTransitions := make([]interfaces.Univalue, 0, len(transitions))
+func (this *StorageCommitter) Import(transitions []*univalue.Univalue, args ...interface{}) *StorageCommitter {
+	invTransitions := make([]*univalue.Univalue, 0, len(transitions))
 
 	for i := 0; i < len(transitions); i++ {
 		if transitions[i].Persistent() { // Peristent transitions are immune to conflict detection

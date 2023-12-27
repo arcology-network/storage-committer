@@ -16,7 +16,7 @@ package ccurltest
 // func TestPartialCache(t *testing.T) {
 // 	memDB := cachedstorage.NewMemDB()
 // 	policy := cachedstorage.NewCachePolicy(10000000, 1.0)
-// 	store := cachedstorage.NewDataStore(nil, policy, memDB, storage.Codec{}.Encode, storage.Codec{}.Decode)
+// 	store := cachedstorage.NewDataStore(nil, policy, memDB, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
 // 		committer := ccurl.NewStorageCommitter(store)
 // writeCache := committer.WriteCache()
 // 	alice := AliceAccount()
@@ -25,7 +25,7 @@ package ccurltest
 // 	}
 
 // 	committer.Write(committercommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
-// 	acctTrans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
+// 	acctTrans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 // 	committer.Import(importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues))
 // 	committer.Sort()
 // 	committer.Commit([]uint32{committercommon.SYSTEM})
@@ -37,7 +37,7 @@ package ccurltest
 // 	}
 
 // 	committer.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999"))
-// 	acctTrans = importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
+// 	acctTrans = importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 // 	committer.Importer().Store().(*cachedstorage.DataStore).Cache().Clear()
 // 	committer.Import(importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues), true, excludeMemDB) // The changes will be discarded.
 // 	committer.Sort()
@@ -76,7 +76,7 @@ package ccurltest
 // 		return name == "*cachedstorage.MemDB"
 // 	}
 
-// 	store := cachedstorage.NewDataStore(nil, policy, memDB, storage.Codec{}.Encode, storage.Codec{}.Decode, excludeMemDB)
+// 	store := cachedstorage.NewDataStore(nil, policy, memDB, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode, excludeMemDB)
 // 		committer := ccurl.NewStorageCommitter(store)
 // writeCache := committer.WriteCache()
 // 	alice := AliceAccount()
@@ -85,7 +85,7 @@ package ccurltest
 // 	}
 
 // 	committer.Write(committercommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
-// 	acctTrans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
+// 	acctTrans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 // 	committer.Import(importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues))
 // 	committer.Sort()
 // 	committer.Commit([]uint32{committercommon.SYSTEM})
@@ -94,7 +94,7 @@ package ccurltest
 // 		t.Error(err)
 // 	}
 
-// 	acctTrans = importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
+// 	acctTrans = importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
 // 	// 	committer := ccurl.NewStorageCommitter(store)
 // writeCache := committer.WriteCache()

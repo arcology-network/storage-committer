@@ -5,9 +5,8 @@ import (
 	"fmt"
 
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/concurrenturl/interfaces"
+	intf "github.com/arcology-network/concurrenturl/interfaces"
 )
-
 
 func (this *Univalue) Checksum() [32]byte {
 	return sha256.Sum256(this.Encode())
@@ -23,10 +22,10 @@ func (this *Univalue) Print() {
 	fmt.Print(spaces+"preexists: ", this.preexists)
 
 	fmt.Print(spaces+"path: ", *this.path, "      ")
-	common.IfThenDo(this.value != nil, func() { this.value.(interfaces.Type).Print() }, func() { fmt.Print("nil") })
+	common.IfThenDo(this.value != nil, func() { this.value.(intf.Type).Print() }, func() { fmt.Print("nil") })
 }
 
-func (this *Univalue) Equal(other interfaces.Univalue) bool {
+func (this *Univalue) Equal(other *Univalue) bool {
 	if this.value == nil && other.Value() == nil {
 		return true
 	}
@@ -35,7 +34,7 @@ func (this *Univalue) Equal(other interfaces.Univalue) bool {
 		return false
 	}
 
-	vFlag := this.value.(interfaces.Type).Equal(other.Value().(interfaces.Type))
+	vFlag := this.value.(intf.Type).Equal(other.Value().(intf.Type))
 	return this.tx == other.GetTx() &&
 		*this.path == *other.GetPath() &&
 		this.reads == other.Reads() &&

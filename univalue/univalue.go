@@ -6,7 +6,7 @@ import (
 	"reflect"
 
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/concurrenturl/interfaces"
+	intf "github.com/arcology-network/concurrenturl/interfaces"
 )
 
 type Univalue struct {
@@ -20,7 +20,7 @@ type Univalue struct {
 func NewUnivalue(tx uint32, key string, reads, writes uint32, deltaWrites uint32, v interface{}, source interface{}) *Univalue {
 	return &Univalue{
 		Unimeta{
-			vType:       common.IfThenDo1st(v != nil, func() uint8 { return v.(interfaces.Type).TypeID() }, uint8(reflect.Invalid)),
+			vType:       common.IfThenDo1st(v != nil, func() uint8 { return v.(intf.Type).TypeID() }, uint8(reflect.Invalid)),
 			tx:          tx,
 			path:        &key,
 			reads:       reads,
@@ -33,7 +33,7 @@ func NewUnivalue(tx uint32, key string, reads, writes uint32, deltaWrites uint32
 	}
 }
 
-func (*Univalue) New(meta, value, cache interface{}) interface{} {
+func (*Univalue) New(meta, value, cache interface{}) *Univalue {
 	return &Univalue{
 		*meta.(*Unimeta),
 		value,
@@ -41,13 +41,13 @@ func (*Univalue) New(meta, value, cache interface{}) interface{} {
 	}
 }
 
-func (this *Univalue) From(v interfaces.Univalue) interface{} { return v }
+func (this *Univalue) From(v *Univalue) interface{} { return v }
 
 // func (this *Univalue) IsHotLoaded() bool             { return this.reads > 1 }
 func (this *Univalue) SetTx(txId uint32)  { this.tx = txId }
 func (this *Univalue) ClearCache()        { this.cache = this.cache[:0] }
 func (this *Univalue) Value() interface{} { return this.value }
-func (this *Univalue) SetValue(newValue interface{}) interfaces.Univalue {
+func (this *Univalue) SetValue(newValue interface{}) *Univalue {
 	if this.value != nil && reflect.TypeOf(this.value) != reflect.TypeOf(newValue) && newValue != nil {
 		panic("Wrong type")
 	}
@@ -59,7 +59,7 @@ func (this *Univalue) GetUnimeta() interface{} { return &this.Unimeta }
 func (this *Univalue) GetCache() interface{}   { return this.cache }
 
 func (this *Univalue) Init(tx uint32, key string, reads, writes, deltaWrites uint32, v interface{}, args ...interface{}) *Univalue {
-	this.vType = common.IfThenDo1st(v != nil, func() uint8 { return v.(interfaces.Type).TypeID() }, uint8(reflect.Invalid))
+	this.vType = common.IfThenDo1st(v != nil, func() uint8 { return v.(intf.Type).TypeID() }, uint8(reflect.Invalid))
 	this.tx = tx
 	this.path = &key
 	this.reads = reads
@@ -86,7 +86,7 @@ func (this *Univalue) Do(tx uint32, path string, doer interface{}) interface{} {
 
 func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{} {
 	if this.value != nil {
-		tempV, r, w := this.value.(interfaces.Type).Get() //RW: Affiliated reads and writes
+		tempV, r, w := this.value.(intf.Type).Get() //RW: Affiliated reads and writes
 		this.reads += r
 		this.writes += w
 		return tempV
@@ -108,13 +108,13 @@ func (this *Univalue) CopyTo(writable interface{}) {
 	)
 
 	_, univ := writeCache.Find(*this.GetPath(), nil)
-	readsDiff := this.Reads() - univ.(interfaces.Univalue).Reads()
-	writesDiff := this.Writes() - univ.(interfaces.Univalue).Writes()
-	deltaWriteDiff := this.DeltaWrites() - univ.(interfaces.Univalue).DeltaWrites()
+	readsDiff := this.Reads() - univ.(*Univalue).Reads()
+	writesDiff := this.Writes() - univ.(*Univalue).Writes()
+	deltaWriteDiff := this.DeltaWrites() - univ.(*Univalue).DeltaWrites()
 
-	univ.(interfaces.Univalue).IncrementReads(readsDiff)
-	univ.(interfaces.Univalue).IncrementWrites(writesDiff)
-	univ.(interfaces.Univalue).IncrementDeltaWrites(deltaWriteDiff)
+	univ.(*Univalue).IncrementReads(readsDiff)
+	univ.(*Univalue).IncrementWrites(writesDiff)
+	univ.(*Univalue).IncrementDeltaWrites(deltaWriteDiff)
 }
 
 func (this *Univalue) Set(tx uint32, path string, typedV interface{}, importer interface{}) error { // update the value
@@ -125,8 +125,8 @@ func (this *Univalue) Set(tx uint32, path string, typedV interface{}, importer i
 	}
 
 	if this.Value() == nil { // Added a new value or try to delete an non-existent value
-		this.vType = typedV.(interfaces.Type).TypeID()
-		v, r, w, dw := typedV.(interfaces.Type).CopyTo(typedV)
+		this.vType = typedV.(intf.Type).TypeID()
+		v, r, w, dw := typedV.(intf.Type).CopyTo(typedV)
 		this.value = v
 		this.writes += w
 		this.reads += r
@@ -135,16 +135,16 @@ func (this *Univalue) Set(tx uint32, path string, typedV interface{}, importer i
 	}
 
 	if this.writes == 0 && this.value != nil && typedV != nil { // Make a deep copy if haven't done so
-		this.value = this.value.(interfaces.Type).Clone()
+		this.value = this.value.(intf.Type).Clone()
 	}
 
-	v, r, w, dw, err := this.value.(interfaces.Type).Set(typedV, []interface{}{path, *this.path, tx, importer}) // Update one the current value
+	v, r, w, dw, err := this.value.(intf.Type).Set(typedV, []interface{}{path, *this.path, tx, importer}) // Update one the current value
 	this.value = v
 	this.writes += w
 	this.reads += r
 	this.deltaWrites += dw
 
-	if typedV == nil && this.Value().(interfaces.Type).IsSelf(path) { // Delete the entry but keep the access record.
+	if typedV == nil && this.Value().(intf.Type).IsSelf(path) { // Delete the entry but keep the access record.
 		this.vType = uint8(reflect.Invalid)
 		this.value = typedV // Delete the value
 		this.writes++
@@ -153,21 +153,28 @@ func (this *Univalue) Set(tx uint32, path string, typedV interface{}, importer i
 }
 
 // Check & Merge attributes
-func (this *Univalue) ApplyDelta(v interface{}) error {
-	vec := v.([]interfaces.Univalue)
+func (this *Univalue) ApplyDelta(vec []*Univalue) error {
+	// vec := v.([]*Univalue)
 
 	/* Precheck & Merge attributes*/
 	for i := 0; i < len(vec); i++ {
-		this.PrecheckAttributes(vec[i].(*Univalue))
+		this.PrecheckAttributes(vec[i])
 		this.writes += vec[i].Writes()
 		this.reads += vec[i].Reads()
 		this.deltaWrites += vec[i].DeltaWrites()
 	}
 
 	// Apply transitions
+	typedVals := common.Append(vec, func(v *Univalue) intf.Type {
+		if v.Value() != nil {
+			return v.Value().(intf.Type)
+		}
+		return nil
+	})
+
 	var err error
 	if this.Value() != nil {
-		if this.value, _, err = this.Value().(interfaces.Type).ApplyDelta(v); err != nil {
+		if this.value, _, err = this.Value().(intf.Type).ApplyDelta(typedVals); err != nil {
 			return err
 		}
 	}
@@ -187,7 +194,7 @@ func (this *Univalue) PrecheckAttributes(other *Univalue) {
 		panic("Error: Value type mismatched!") // Read only variable should never be here.
 	}
 
-	if this.preexists && this.Value().(interfaces.Type).IsCommutative() && this.Reads() > 0 && this.IsConcurrentWritable() == other.IsConcurrentWritable() {
+	if this.preexists && this.Value().(intf.Type).IsCommutative() && this.Reads() > 0 && this.IsConcurrentWritable() == other.IsConcurrentWritable() {
 		this.Print()
 		fmt.Println("================================================================")
 		other.Print()
@@ -206,7 +213,7 @@ func (this *Univalue) PrecheckAttributes(other *Univalue) {
 func (this *Univalue) Clone() interface{} {
 	v := &Univalue{
 		this.Unimeta.Clone(),
-		common.IfThenDo1st(this.value != nil, func() interface{} { return this.value.(interfaces.Type).Clone() }, this.value),
+		common.IfThenDo1st(this.value != nil, func() interface{} { return this.value.(intf.Type).Clone() }, this.value),
 		common.Clone(this.cache),
 	}
 	return v

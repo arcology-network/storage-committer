@@ -12,8 +12,8 @@ const (
 )
 
 var (
-	// encoder = storage.Codec{}.Encode
-	// decoder = storage.Codec{}.Decode
+	// encoder = committercommon.Codec{}.Encode
+	// decoder = committercommon.Codec{}.Decode
 
 	encoder = storage.Rlp{}.Encode
 	decoder = storage.Rlp{}.Decode

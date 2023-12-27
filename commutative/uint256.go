@@ -8,6 +8,7 @@ import (
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
+	intf "github.com/arcology-network/concurrenturl/interfaces"
 	uint256 "github.com/holiman/uint256"
 )
 
@@ -195,10 +196,10 @@ func (this *U256) Set(newDelta interface{}, source interface{}) (interface{}, ui
 	return this, 0, 0, 1, errors.New("Error: Value out of range")
 }
 
-func (this *U256) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
-	vec := v.([]interfaces.Univalue)
-	for i := 0; i < len(vec); i++ {
-		v := vec[i].Value()
+func (this *U256) ApplyDelta(typedVals []intf.Type) (interfaces.Type, int, error) {
+	// vec := v.([]*univalue.Univalue)
+	for i, v := range typedVals {
+		// v := vec[i].Value()
 		if this == nil && v != nil { // New value
 			this = v.(*U256)
 		}
@@ -221,7 +222,7 @@ func (this *U256) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
 	newValue, _, _ := this.Get()
 	this.value = (newValue.(uint256.Int))
 	this.delta.Clear()
-	return this, len(vec), nil
+	return this, len(typedVals), nil
 }
 
 func (this *U256) Print() {

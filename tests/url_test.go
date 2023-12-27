@@ -51,7 +51,7 @@ func TestSize(t *testing.T) {
 	}
 
 	raw := writeCache.Export(importer.Sorter)
-	acctTrans := importer.Univalues(common.Clone(raw)).To(importer.IPCTransition{})
+	acctTrans := importer.Univalues(common.Clone(raw)).To(importer.IPTransition{})
 
 	importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode())
 	committer.Import(acctTrans)
@@ -121,7 +121,7 @@ func TestAddThenDeletePath(t *testing.T) {
 
 	// _, acctTrans := writeCache.Export(importer.Sorter)
 
-	// acctTrans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPCTransition{})
+	// acctTrans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 
 	// buffer := importer.Univalues(acctTrans).Encode()
 	// out := importer.Univalues{}.Decode(buffer).(importer.Univalues)
@@ -137,7 +137,7 @@ func TestAddThenDeletePath(t *testing.T) {
 		t.Error(err)
 	}
 
-	// transitions := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPCTransition{})
+	// transitions := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	// committer.Import(importer.Univalues{}.Decode(importer.Univalues(transitions).Encode()).(importer.Univalues))
 	// committer.Sort()
 	// committer.Commit([]uint32{1})
@@ -152,7 +152,7 @@ func TestAddThenDeletePath(t *testing.T) {
 		t.Error(err)
 	}
 
-	// acctTrans = importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPCTransition{})
+	// acctTrans = importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	// buffer = importer.Univalues(acctTrans).Encode()
 	// committer.Import(importer.Univalues{}.Decode(buffer).(importer.Univalues))
 	// committer.Sort()
@@ -174,10 +174,10 @@ func TestAddThenDeletePath2(t *testing.T) {
 	}
 
 	// _, trans := writeCache.Export(importer.Sorter)
-	trans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPCTransition{})
+	trans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	acctTrans := (&importer.Univalues{}).Decode(importer.Univalues(trans).Encode()).(importer.Univalues)
 
-	//values := importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).([]interfaces.Univalue)
+	//values := importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).([]*univalue.Univalue)
 	ts := importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues)
 	committer.Import(ts)
 	committer.Sort()
@@ -192,7 +192,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 		t.Error(err)
 	}
 
-	transitions := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPCTransition{})
+	transitions := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	committer.Import((&importer.Univalues{}).Decode(importer.Univalues(transitions).Encode()).(importer.Univalues))
 
 	committer.Sort()
@@ -209,7 +209,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 		t.Error(err)
 	}
 
-	trans = importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPCTransition{})
+	trans = importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	committer.Import((&importer.Univalues{}).Decode(importer.Univalues(trans).Encode()).(importer.Univalues))
 	committer.Sort()
 	committer.Commit([]uint32{1})
@@ -231,7 +231,7 @@ func TestBasic(t *testing.T) {
 		t.Error(err)
 	}
 
-	acctTrans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPCTransition{})
+	acctTrans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	committer.Import(importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues))
 	committer.Sort()
 	committer.Commit([]uint32{committercommon.SYSTEM})
@@ -251,12 +251,12 @@ func TestBasic(t *testing.T) {
 		t.Error(err)
 	}
 
-	// Try to read an nonexistent path, should fail !
+	// Try to read an NONEXISTENT path, should fail !
 	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-1", nil); value != nil {
 		t.Error("Error: Path shouldn't be not found")
 	}
 
-	// Try to read an nonexistent entry from an nonexistent path, should fail !
+	// Try to read an NONEXIST nonexistent entry from an nonexistent path, should fail !
 	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-1/elem-000", nil); value != nil {
 		t.Error("Error: Shouldn't be not found")
 	}
@@ -301,7 +301,9 @@ func TestBasic(t *testing.T) {
 	}
 
 	trans := common.Clone(writeCache.Export(importer.Sorter))
-	transitions := importer.Univalues(trans).To(importer.ITCTransition{})
+	transitions := importer.Univalues(trans).To(importer.ITTransition{})
+
+	// failed to filter a read on noneexist element
 
 	// importer.Univalues(transitions).Print()
 
@@ -319,9 +321,9 @@ func TestBasic(t *testing.T) {
 		t.Error("Error: The variable has been cleared !")
 	}
 
-	// data := importer.Univalues(transitions).To(importer.IPCTransition{})
+	// data := importer.Univalues(transitions).To(importer.IPTransition{})
 
-	buffer := importer.Univalues(importer.Univalues(transitions).To(importer.IPCTransition{})).Encode()
+	buffer := importer.Univalues(importer.Univalues(transitions).To(importer.IPTransition{})).Encode()
 	committer.Import(importer.Univalues{}.Decode(buffer).(importer.Univalues))
 	// committer.Import(committer.Decode(importer.Univalues(transitions).Encode()))
 	committer.Sort()
@@ -349,7 +351,7 @@ func TestPathAddThenDelete(t *testing.T) {
 		fmt.Println(err)
 	}
 
-	acctTrans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPCTransition{})
+	acctTrans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	committer.Import(importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues))
 
 	committer.Sort()
@@ -433,8 +435,8 @@ func TestUrl1(t *testing.T) {
 	}
 
 	raw := writeCache.Export(importer.Sorter)
-	acctTrans := importer.Univalues(common.Clone(raw)).To(importer.ITCTransition{})
-	// accesses := importer.Univalues(common.Clone(this.buffer)).To(importer.ITCAccess{})
+	acctTrans := importer.Univalues(common.Clone(raw)).To(importer.ITTransition{})
+	// accesses := importer.Univalues(common.Clone(this.buffer)).To(importer.ITAccess{})
 
 	committer.Import(importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues))
 
@@ -497,7 +499,7 @@ func TestUrl1(t *testing.T) {
 	}
 
 	// Export all access records and state transitions
-	transitions := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
+	transitions := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 	// v, _, _ := transitions[0].Value().(interfaces.Type).Get()
 	if (*transitions[0].Value().(*noncommutative.String)) != "ctrn-0" {
 		t.Error("Error: keys don't match")
@@ -523,7 +525,7 @@ func TestUrl2(t *testing.T) {
 		t.Error(err)
 	}
 
-	acctTrans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPCTransition{})
+	acctTrans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	committer.Import(importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues))
 	committer.Sort()
 	committer.Commit([]uint32{committercommon.SYSTEM})
@@ -700,8 +702,8 @@ func TestUrl2(t *testing.T) {
 
 	/*  Export all */
 	// accessRecords, transitions := writeCache.Export(importer.Sorter)
-	accessRecords := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITCAccess{})
-	transitions := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITCTransition{})
+	accessRecords := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITAccess{})
+	transitions := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITTransition{})
 
 	// 3 writes + 1 affiliated write
 	value := univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, nil, nil)
@@ -729,7 +731,7 @@ func TestUrl2(t *testing.T) {
 	out := importer.Univalues{}.Decode(buffer).(importer.Univalues)
 
 	for i := range transitions {
-		if !transitions[i].(*univalue.Univalue).Equal(out[i].(*univalue.Univalue)) {
+		if !transitions[i].Equal(out[i]) {
 			t.Error("Error: transitions don't match")
 		}
 	}
@@ -746,7 +748,7 @@ func TestTransientDBv2(t *testing.T) {
 	}
 
 	raw := writeCache.Export(importer.Sorter)
-	acctTrans := importer.Univalues(common.Clone(raw)).To(importer.IPCTransition{})
+	acctTrans := importer.Univalues(common.Clone(raw)).To(importer.IPTransition{})
 
 	importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode())
 	committer.Import(acctTrans)
@@ -776,7 +778,7 @@ func TestCustomCodec(t *testing.T) {
 	}
 
 	raw := writeCache.Export(importer.Sorter)
-	acctTrans := importer.Univalues(common.Clone(raw)).To(importer.IPCTransition{})
+	acctTrans := importer.Univalues(common.Clone(raw)).To(importer.IPTransition{})
 
 	buffer := importer.Univalues(acctTrans).Encode()
 	importer.Univalues{}.Decode(buffer)

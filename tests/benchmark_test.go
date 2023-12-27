@@ -16,7 +16,6 @@ import (
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	importer "github.com/arcology-network/concurrenturl/importer"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
-	storage "github.com/arcology-network/concurrenturl/storage"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 	cache "github.com/arcology-network/eu/cache"
 	orderedmap "github.com/elliotchance/orderedmap"
@@ -27,7 +26,7 @@ import (
 
 func BenchmarkAccountMerkleImportPerf(b *testing.B) {
 	// lut := datacompression.NewCompressionLut()
-	// store := datastore.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+	// store := datastore.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
 	// fileDB, err := datastore.NewFileDB(ROOT_PATH, 8, 2)
 	// if err != nil {
 	// 	b.Error(err)
@@ -45,7 +44,7 @@ func BenchmarkAccountMerkleImportPerf(b *testing.B) {
 			b.Error(err)
 		}
 	}
-	acct := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCAccess{})
+	acct := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITAccess{})
 
 	t0 := time.Now()
 	importer.Univalues(acct).Encode()
@@ -74,7 +73,7 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 
 	//t0 = time.Now()
 	// _, transitions := writeCache.Export(nil)
-	transitions := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITCAccess{})
+	transitions := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITAccess{})
 
 	// in := importer.Univalues(transitions).Encode()
 	//out := importer.Univalues{}.Decode(in).(importer.Univalues)
@@ -135,7 +134,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	fmt.Println("Write 2500 accounts in :", time.Since(t0))
 
 	t0 = time.Now()
-	trans := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITCTransition{})
+	trans := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITTransition{})
 	fmt.Println("Export:", time.Since(t0))
 
 	committer := ccurl.NewStorageCommitter(store)
@@ -159,12 +158,12 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 }
 
 func BenchmarkUrlAddThenDelete(b *testing.B) {
-	store := datastore.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+	store := datastore.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
 
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 	meta := commutative.NewPath()
 	writeCache.Write(committercommon.SYSTEM, committercommon.ETH10_ACCOUNT_PREFIX, meta)
-	trans := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITCTransition{})
+	trans := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITTransition{})
 
 	committer := ccurl.NewStorageCommitter(store)
 	committer.Import(trans)
@@ -198,14 +197,14 @@ func BenchmarkUrlAddThenDelete(b *testing.B) {
 }
 
 func BenchmarkUrlAddThenPop(b *testing.B) {
-	store := datastore.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+	store := datastore.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
 
 	// writeCache := committer.WriteCache()
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 	meta := commutative.NewPath()
 	writeCache.Write(committercommon.SYSTEM, committercommon.ETH10_ACCOUNT_PREFIX, meta)
 
-	trans := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITCTransition{})
+	trans := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITTransition{})
 
 	committer := ccurl.NewStorageCommitter(store)
 	committer.Import(importer.Univalues{}.Decode(importer.Univalues(trans).Encode()).(importer.Univalues))
@@ -321,15 +320,15 @@ func BenchmarkShrinkSlice(b *testing.B) {
 }
 
 func BenchmarkEncodeTransitions(b *testing.B) {
-	store := datastore.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+	store := datastore.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
 
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 
 	alice := AliceAccount()
 	writeCache.CreateNewAccount(committercommon.SYSTEM, alice)
-	// acctTrans := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITCAccess{})
+	// acctTrans := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITAccess{})
 
-	acctTrans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCAccess{})
+	acctTrans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITAccess{})
 
 	committer := ccurl.NewStorageCommitter(store)
 	committer.Import(importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues))
@@ -346,7 +345,7 @@ func BenchmarkEncodeTransitions(b *testing.B) {
 	}
 	fmt.Println("Write "+fmt.Sprint(10000), time.Since(t0))
 
-	acctTrans = importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCAccess{})
+	acctTrans = importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITAccess{})
 
 	t0 = time.Now()
 	importer.Univalues(acctTrans).Encode()
@@ -383,7 +382,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	// 	return
 	// }
 	store := chooseDataStore()
-	// store := datastore.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+	// store := datastore.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
 	store.Inject((committercommon.ETH10_ACCOUNT_PREFIX), commutative.NewPath())
 
 	t0 := time.Now()
@@ -398,7 +397,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	fmt.Println("Write "+fmt.Sprint(100000*9), time.Since(t0))
 
 	t0 = time.Now()
-	acctTrans := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITCTransition{})
+	acctTrans := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITTransition{})
 
 	fmt.Println("Export "+fmt.Sprint(100000*9), time.Since(t0))
 
@@ -604,7 +603,7 @@ func (s String) Less(b btree.Item) bool {
 // }
 
 func BenchmarkTransitionImport(b *testing.B) {
-	store := datastore.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+	store := datastore.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
 	meta := commutative.NewPath()
 	store.Inject((committercommon.ETH10_ACCOUNT_PREFIX), meta)
 
@@ -622,7 +621,7 @@ func BenchmarkTransitionImport(b *testing.B) {
 	fmt.Println("Write "+fmt.Sprint(100000*9), time.Since(t0))
 
 	t0 = time.Now()
-	acctTrans := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITCAccess{})
+	acctTrans := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITAccess{})
 
 	fmt.Println("Export "+fmt.Sprint(150000*9), time.Since(t0))
 
@@ -637,7 +636,7 @@ func BenchmarkTransitionImport(b *testing.B) {
 }
 
 // func BenchmarkConcurrentTransitionImport(b *testing.B) {
-// 	store := datastore.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+// 	store := datastore.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
 // 	meta := commutative.NewPath()
 // 	store.Inject((committercommon.ETH10_ACCOUNT_PREFIX), meta)
 
@@ -653,7 +652,7 @@ func BenchmarkTransitionImport(b *testing.B) {
 // 	fmt.Println("Write "+fmt.Sprint(100000*9), time.Since(t0))
 
 // 	t0 = time.Now()
-// 	acctTrans := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITCAccess{})
+// 	acctTrans := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITAccess{})
 
 // 	fmt.Println("Export "+fmt.Sprint(150000*9), time.Since(t0))
 
@@ -668,7 +667,7 @@ func BenchmarkTransitionImport(b *testing.B) {
 // }
 
 func BenchmarkRandomAccountSort(t *testing.B) {
-	store := datastore.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
+	store := datastore.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
 	meta := commutative.NewPath()
 	store.Inject((committercommon.ETH10_ACCOUNT_PREFIX), meta)
 
@@ -684,7 +683,7 @@ func BenchmarkRandomAccountSort(t *testing.B) {
 	fmt.Println("Write "+fmt.Sprint(100000*9), time.Since(t0))
 
 	t0 = time.Now()
-	in := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITCAccess{})
+	in := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITAccess{})
 
 	t0 = time.Now()
 	importer.Univalues(in).Sort(nil)

@@ -6,21 +6,21 @@ import (
 	common "github.com/arcology-network/common-lib/common"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	importer "github.com/arcology-network/concurrenturl/importer"
-	"github.com/arcology-network/concurrenturl/interfaces"
+	"github.com/arcology-network/concurrenturl/univalue"
 )
 
 type Arbitrator struct {
 	groupIDs    []uint32
-	transitions []interfaces.Univalue
+	transitions []*univalue.Univalue
 }
 
-func (this *Arbitrator) Insert(groupIDs []uint32, newTrans []interfaces.Univalue) int {
+func (this *Arbitrator) Insert(groupIDs []uint32, newTrans []*univalue.Univalue) int {
 	this.transitions = append(this.transitions, newTrans...)
 	this.groupIDs = append(this.groupIDs, groupIDs...)
 	return len(this.groupIDs)
 }
 
-func (this *Arbitrator) Detect(groupIDs []uint32, newTrans []interfaces.Univalue) []*Conflict {
+func (this *Arbitrator) Detect(groupIDs []uint32, newTrans []*univalue.Univalue) []*Conflict {
 	if this.Insert(groupIDs, newTrans) == 0 {
 		return []*Conflict{}
 	}
@@ -28,7 +28,7 @@ func (this *Arbitrator) Detect(groupIDs []uint32, newTrans []interfaces.Univalue
 	// t0 := time.Now()
 	importer.Univalues(newTrans).Sort(groupIDs)
 
-	ranges := common.FindAllIndics(newTrans, func(lhv, rhv interfaces.Univalue) bool {
+	ranges := common.FindAllIndics(newTrans, func(lhv, rhv *univalue.Univalue) bool {
 		return *lhv.GetPath() == *rhv.GetPath()
 	})
 
@@ -42,12 +42,12 @@ func (this *Arbitrator) Detect(groupIDs []uint32, newTrans []interfaces.Univalue
 		if newTrans[ranges[i]].Writes() == 0 {
 			if newTrans[ranges[i]].IsConcurrentWritable() { // Delta write only
 				offset = common.LocateFirstIf(newTrans[ranges[i]+1:ranges[i+1]],
-					func(v interfaces.Univalue) bool {
+					func(v *univalue.Univalue) bool {
 						return !v.IsConcurrentWritable()
 					})
 			} else { // Read only
 				offset = common.LocateFirstIf(newTrans[ranges[i]+1:ranges[i+1]],
-					func(v interfaces.Univalue) bool {
+					func(v *univalue.Univalue) bool {
 						return v.Writes() > 0 || v.DeltaWrites() > 0
 					})
 			}
@@ -59,7 +59,7 @@ func (this *Arbitrator) Detect(groupIDs []uint32, newTrans []interfaces.Univalue
 		}
 
 		conflictTxs := []uint32{}
-		common.Foreach(newTrans[ranges[i]+offset:ranges[i+1]], func(v *interfaces.Univalue, _ int) {
+		common.Foreach(newTrans[ranges[i]+offset:ranges[i+1]], func(v **univalue.Univalue, _ int) {
 			conflictTxs = append(conflictTxs, (*v).GetTx())
 		})
 
@@ -77,12 +77,12 @@ func (this *Arbitrator) Detect(groupIDs []uint32, newTrans []interfaces.Univalue
 			if newTrans[ranges[i]].Writes() == 0 {
 				if newTrans[ranges[i]].IsConcurrentWritable() { // Delta write only
 					offset = common.LocateFirstIf(newTrans[ranges[i]+1:ranges[i+1]],
-						func(v interfaces.Univalue) bool {
+						func(v *univalue.Univalue) bool {
 							return !v.IsConcurrentWritable()
 						})
 				} else { // Read only
 					offset = common.LocateFirstIf(newTrans[ranges[i]+1:ranges[i+1]],
-						func(v interfaces.Univalue) bool {
+						func(v *univalue.Univalue) bool {
 							return v.Writes() > 0 || v.DeltaWrites() > 0
 						})
 				}
@@ -91,7 +91,7 @@ func (this *Arbitrator) Detect(groupIDs []uint32, newTrans []interfaces.Univalue
 		}
 
 		dict := common.MapFromArray(conflictTxs, true) //Conflict dict
-		trans := common.CopyIf(newTrans[ranges[i]+offset:ranges[i+1]], func(v interfaces.Univalue) bool { return (*dict)[v.GetTx()] })
+		trans := common.CopyIf(newTrans[ranges[i]+offset:ranges[i+1]], func(v *univalue.Univalue) bool { return (*dict)[v.GetTx()] })
 
 		if outOfLimits := (&Accumulator{}).CheckMinMax(trans); outOfLimits != nil {
 			conflicts = append(conflicts, outOfLimits...)

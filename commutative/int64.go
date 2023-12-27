@@ -5,7 +5,7 @@ import (
 	"math"
 
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/concurrenturl/interfaces"
+	intf "github.com/arcology-network/concurrenturl/interfaces"
 )
 
 type Int64 struct {
@@ -107,10 +107,10 @@ func (this *Int64) isUnderflow(delta int64) bool {
 		(this.min > delta || flag)
 }
 
-func (this *Int64) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
-	vec := v.([]interfaces.Univalue)
-	for i := 0; i < len(vec); i++ {
-		v := vec[i].Value()
+func (this *Int64) ApplyDelta(typedVals []intf.Type) (intf.Type, int, error) {
+	// vec := v.([]*univalue.Univalue)
+	for i, v := range typedVals {
+		// v := typedVals[i].Value()
 		if this == nil && v != nil { // New value
 			this = v.(*Int64)
 		}
@@ -120,7 +120,7 @@ func (this *Int64) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
 		}
 
 		if this != nil && v != nil {
-			if _, _, _, _, err := this.Set(v.(*Int64), nil); err != nil {
+			if _, _, _, _, err := this.Set(v, nil); err != nil {
 				return nil, i, err
 			}
 		}
@@ -131,12 +131,12 @@ func (this *Int64) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
 	}
 
 	if this == nil {
-		return nil, 0, errors.New("Error: Nil value")
+		return nil, 0, errors.New("Error: A commutative int64 can't be nil")
 	}
 
 	this.value += this.delta
 	this.delta = 0
-	return this, len(vec), nil
+	return this, len(typedVals), nil
 }
 
 func (this *Int64) Hash(hasher func([]byte) []byte) []byte {

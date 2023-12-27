@@ -1,7 +1,5 @@
 package univalue
 
-import "github.com/arcology-network/concurrenturl/interfaces"
-
 type Unimeta struct {
 	vType       uint8
 	persistent  bool
@@ -58,7 +56,7 @@ func (this *Unimeta) Preexist() bool   { return this.preexists } // Exist in cac
 func (this *Unimeta) Persistent() bool { return this.persistent }
 
 func (this *Unimeta) CheckPreexist(key string, source interface{}) bool {
-	return source.(interfaces.ReadOnlyDataStore).IfExists(key)
+	return source.(interface{ IfExists(string) bool }).IfExists(key)
 }
 
 func (this *Unimeta) Equal(other *Unimeta) bool {

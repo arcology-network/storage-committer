@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"sort"
 
-	"github.com/arcology-network/concurrenturl/interfaces"
+	univalue "github.com/arcology-network/concurrenturl/univalue"
 )
 
-func Sorter(univals []interfaces.Univalue) []interfaces.Univalue {
+func Sorter(univals []*univalue.Univalue) []*univalue.Univalue {
 	sort.SliceStable(univals, func(i, j int) bool {
 		lhs := (*(univals[i].GetPath()))
 		rhs := (*(univals[j].GetPath()))

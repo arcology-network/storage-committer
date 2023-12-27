@@ -43,7 +43,7 @@ type Type interface { // value type
 	Get() (interface{}, uint32, uint32) // Value, reads and writes, no deltawrites.
 	Set(interface{}, interface{}) (interface{}, uint32, uint32, uint32, error)
 	CopyTo(interface{}) (interface{}, uint32, uint32, uint32)
-	ApplyDelta(interface{}) (Type, int, error)
+	ApplyDelta([]Type) (Type, int, error)
 	IsSelf(interface{}) bool
 
 	MemSize() uint32 // Size in memory
@@ -60,52 +60,52 @@ type Type interface { // value type
 	Print()
 }
 
-type Univalue interface { // value type
-	TypeID() uint8
-	Reads() uint32
-	Writes() uint32
-	DeltaWrites() uint32
+// type Univalue interface { // value type
+// 	TypeID() uint8
+// 	Reads() uint32
+// 	Writes() uint32
+// 	DeltaWrites() uint32
 
-	From(Univalue) interface{}
-	Do(uint32, string, interface{}) interface{}
-	Clone() interface{}
+// 	From(Univalue) interface{}
+// 	Do(uint32, string, interface{}) interface{}
+// 	Clone() interface{}
 
-	IncrementReads(uint32)
-	IncrementWrites(uint32)
-	IncrementDeltaWrites(uint32)
+// 	IncrementReads(uint32)
+// 	IncrementWrites(uint32)
+// 	IncrementDeltaWrites(uint32)
 
-	// IsHotLoaded() bool
-	Set(uint32, string, interface{}, interface{}) error
-	Get(uint32, string, interface{}) interface{}
-	GetTx() uint32
-	SetTx(uint32)
-	GetPath() *string
-	SetPath(*string)
-	Value() interface{}
-	SetValue(interface{}) Univalue
+// 	// IsHotLoaded() bool
+// 	Set(uint32, string, interface{}, interface{}) error
+// 	Get(uint32, string, interface{}) interface{}
+// 	GetTx() uint32
+// 	SetTx(uint32)
+// 	GetPath() *string
+// 	SetPath(*string)
+// 	Value() interface{}
+// 	SetValue(interface{}) Univalue
 
-	CopyTo(interface{})
-	GetUnimeta() interface{}
-	GetCache() interface{}
-	New(interface{}, interface{}, interface{}) interface{}
+// 	CopyTo(interface{})
+// 	GetUnimeta() interface{}
+// 	GetCache() interface{}
+// 	New(interface{}, interface{}, interface{}) interface{}
 
-	ApplyDelta(interface{}) error
-	Preexist() bool
+// 	ApplyDelta(interface{}) error
+// 	Preexist() bool
 
-	Persistent() bool
-	IsReadOnly() bool
-	IsConcurrentWritable() bool
-	// Clone() interface{}
-	GetEncoded() []byte
-	Size() uint32
-	Encode() []byte
-	EncodeToBuffer([]byte) int
-	Decode([]byte) interface{}
-	ClearCache()
+// 	Persistent() bool
+// 	IsReadOnly() bool
+// 	IsConcurrentWritable() bool
+// 	// Clone() interface{}
+// 	GetEncoded() []byte
+// 	Size() uint32
+// 	Encode() []byte
+// 	EncodeToBuffer([]byte) int
+// 	Decode([]byte) interface{}
+// 	ClearCache()
 
-	Equal(Univalue) bool
-	Print()
-}
+// 	Equal(Univalue) bool
+// 	Print()
+// }
 
 // type WriteCache interface {
 // 	CreateNewAccount(uint32, string) ([]Univalue, error)

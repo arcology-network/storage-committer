@@ -12,6 +12,7 @@ import (
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
+	"github.com/arcology-network/concurrenturl/univalue"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -227,8 +228,8 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Typ
 func (this *Account) Precommit(keys []string, values []interface{}) {
 	this.UpdateAccountTrie(keys, common.Append(values,
 		func(v interface{}) interfaces.Type {
-			if v.(interfaces.Univalue).Value() != nil {
-				return v.(interfaces.Univalue).Value().(interfaces.Type)
+			if v.(*univalue.Univalue).Value() != nil {
+				return v.(*univalue.Univalue).Value().(interfaces.Type)
 			}
 			return nil
 		}))

@@ -12,7 +12,7 @@ import (
 type Importer struct {
 	numThreads int
 	store      interfaces.Datastore
-	byTx       map[uint32][]interfaces.Univalue
+	byTx       map[uint32][]*univalue.Univalue
 	deltaDict  *ccmap.ConcurrentMap
 
 	platform interfaces.Platform
@@ -28,7 +28,7 @@ func NewImporter(store interfaces.Datastore, platform interfaces.Platform, args 
 	importer.numThreads = 8
 	importer.store = store
 
-	importer.byTx = make(map[uint32][]interfaces.Univalue)
+	importer.byTx = make(map[uint32][]*univalue.Univalue)
 	importer.platform = platform
 	importer.deltaDict = ccmap.NewConcurrentMap()
 
@@ -63,14 +63,14 @@ func (this *Importer) IfExists(key string) bool {
 	return false
 }
 
-func (this *Importer) Import(txTrans []interfaces.Univalue, args ...interface{}) {
+func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) {
 	commitIfAbsent := common.IfThenDo1st(len(args) > 0 && args[0] != nil, func() bool { return args[0].(bool) }, true) //Write if absent from local
 
-	common.RemoveIf(&txTrans, func(univ interfaces.Univalue) bool {
+	common.RemoveIf(&txTrans, func(univ *univalue.Univalue) bool {
 		return univ.Preexist() && this.store.IfExists(*univ.GetPath()) && !commitIfAbsent //preexists but not available locally, happen with a partial cache
 	})
 
-	common.Foreach(txTrans, func(univ *interfaces.Univalue, _ int) { // Create new sequences all at once
+	common.Foreach(txTrans, func(univ **univalue.Univalue, _ int) { // Create new sequences all at once
 		if v, _ := this.deltaDict.Get(*(*univ).GetPath()); v == nil {
 			this.deltaDict.Set(*(*univ).GetPath(), NewDeltaSequence(*(*univ).GetPath(), this))
 		}
@@ -87,7 +87,7 @@ func (this *Importer) Import(txTrans []interfaces.Univalue, args ...interface{})
 	for i := 0; i < len(txTrans); i++ { // Update the transaction ID index
 		if v := txTrans[i]; v != nil {
 			tran := this.byTx[v.GetTx()]
-			this.byTx[v.GetTx()] = append(common.IfThen(tran == nil, make([]interfaces.Univalue, 0, 32), tran), v)
+			this.byTx[v.GetTx()] = append(common.IfThen(tran == nil, make([]*univalue.Univalue, 0, 32), tran), v)
 		}
 	}
 }
@@ -110,10 +110,10 @@ func (this *Importer) WhilteList(whitelist []uint32) []error {
 
 		if _, ok := whitelisted[txid]; !ok {
 			for _, v := range vec {
-				v.(*univalue.Univalue).SetPath(nil) // Mark its status
+				v.SetPath(nil) // Mark its status
 			}
 		}
-		// common.Foreach(vec, func(v *interfaces.Univalue) {
+		// common.Foreach(vec, func(v **univalue.Univalue) {
 		// 	_, ok := allowDict[k]
 		// 	return !ok
 		// })

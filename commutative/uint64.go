@@ -7,6 +7,7 @@ import (
 	codec "github.com/arcology-network/common-lib/codec"
 	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
+	intf "github.com/arcology-network/concurrenturl/interfaces"
 )
 
 // type Selector []bool
@@ -87,10 +88,10 @@ func (this *Uint64) Set(v interface{}, source interface{}) (interface{}, uint32,
 	return this, 0, 0, 1, nil
 }
 
-func (this *Uint64) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
-	vec := v.([]interfaces.Univalue)
-	for i := 0; i < len(vec); i++ {
-		v := vec[i].Value()
+func (this *Uint64) ApplyDelta(typedVals []intf.Type) (interfaces.Type, int, error) {
+	// vec := v.([]*univalue.Univalue)
+	for i, v := range typedVals {
+		// v := vec[i].Value()
 		if this == nil && v != nil { // New value
 			this = v.(*Uint64)
 		}
@@ -100,7 +101,7 @@ func (this *Uint64) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
 		}
 
 		if this != nil && v != nil {
-			if _, _, _, _, err := this.Set(v.(*Uint64), nil); err != nil {
+			if _, _, _, _, err := this.Set(v, nil); err != nil {
 				return nil, i, err
 			}
 		}
@@ -116,7 +117,7 @@ func (this *Uint64) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
 
 	this.value += this.delta
 	this.delta = 0
-	return this, len(vec), nil
+	return this, len(typedVals), nil
 }
 
 func (this *Uint64) Hash(hasher func([]byte) []byte) []byte {

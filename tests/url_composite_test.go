@@ -26,7 +26,7 @@ func TestAuxTrans(t *testing.T) {
 	}
 
 	// _, trans00 := writeCache.Export(importer.Sorter)
-	acctTrans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
+	acctTrans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
 	committer.Import(importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues))
 
@@ -83,7 +83,7 @@ func TestAuxTrans(t *testing.T) {
 		}
 	}
 
-	transitions := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
+	transitions := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 	if !reflect.DeepEqual(transitions[0].Value().(interfaces.Type).Delta().(*commutative.PathDelta).Added(), []string{"elem-000"}) {
 		t.Error("keys don't match")
 	}
@@ -117,7 +117,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	}
 
 	// _, trans00 := writeCache.Export(importer.Sorter)
-	trans00 := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
+	trans00 := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
 	committer.Import(importer.Univalues{}.Decode(importer.Univalues(trans00).Encode()).(importer.Univalues))
 
@@ -131,7 +131,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	}
 
 	// _, trans10 := writeCache.Export(importer.Sorter)
-	trans10 := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
+	trans10 := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
 	committer.Import(importer.Univalues{}.Decode(importer.Univalues(trans10).Encode()).(importer.Univalues))
 

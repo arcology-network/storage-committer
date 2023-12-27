@@ -10,6 +10,7 @@ import (
 	merkle "github.com/arcology-network/common-lib/merkle"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
+	univalue "github.com/arcology-network/concurrenturl/univalue"
 )
 
 const (
@@ -53,7 +54,7 @@ func (this *AccountMerkle) GetMerkles() *map[string]*merkle.Merkle {
 }
 
 // Insert to the merkle tree
-func (this *AccountMerkle) Import(transitions []interfaces.Univalue) {
+func (this *AccountMerkle) Import(transitions []*univalue.Univalue) {
 	offset := committercommon.ETH10_ACCOUNT_PREFIX_LENGTH
 	for _, v := range transitions {
 		path := *v.GetPath()

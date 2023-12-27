@@ -11,7 +11,7 @@ import (
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/commutative"
 	importer "github.com/arcology-network/concurrenturl/importer"
-	"github.com/arcology-network/concurrenturl/interfaces"
+	univalue "github.com/arcology-network/concurrenturl/univalue"
 	cache "github.com/arcology-network/eu/cache"
 	"github.com/holiman/uint256"
 )
@@ -37,7 +37,7 @@ func TestTransitionFilters(t *testing.T) {
 
 	raw := writeCache.Export(importer.Sorter)
 
-	acctTrans := importer.Univalues(common.Clone(raw)).To(importer.IPCTransition{})
+	acctTrans := importer.Univalues(common.Clone(raw)).To(importer.IPTransition{})
 
 	if !acctTrans[1].Value().(*commutative.U256).Equal(raw[1].Value()) {
 		t.Error("Error: Non-path commutative should have the values!!")
@@ -76,7 +76,7 @@ func TestTransitionFilters(t *testing.T) {
 		t.Error("Error: Max altered")
 	}
 
-	copied := importer.Univalues(common.Clone(acctTrans)).To(importer.IPCTransition{})
+	copied := importer.Univalues(common.Clone(acctTrans)).To(importer.IPTransition{})
 
 	// Test Path
 	if v := copied[0].Value().(*commutative.Path).Value().(*orderedset.OrderedSet); len(v.Keys()) != 0 {
@@ -133,7 +133,7 @@ func TestAccessFilters(t *testing.T) {
 	raw[1].Value().(*commutative.U256).SetMin(*uint256.NewInt(1))
 	raw[1].Value().(*commutative.U256).SetMax(*uint256.NewInt(2222222))
 
-	acctTrans := importer.Univalues(common.Clone(raw)).To(importer.IPCAccess{})
+	acctTrans := importer.Univalues(common.Clone(raw)).To(importer.IPAccess{})
 
 	if acctTrans[0].Value() != nil {
 		t.Error("Error: Value altered")
@@ -155,7 +155,7 @@ func TestAccessFilters(t *testing.T) {
 		t.Error("Error: A non-path commutative variable should have the initial value")
 	}
 
-	idx, v := common.FindFirstIf(acctTrans, func(v interfaces.Univalue) bool {
+	idx, v := common.FindFirstIf(acctTrans, func(v *univalue.Univalue) bool {
 		return strings.Index(*v.GetPath(), "/balance") == -1 && strings.Index(*v.GetPath(), "/nonce") == -1 && v.Value() != nil
 	})
 

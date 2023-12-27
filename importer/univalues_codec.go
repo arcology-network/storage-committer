@@ -5,7 +5,6 @@ import (
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/concurrenturl/interfaces"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 )
 
@@ -30,7 +29,7 @@ func (this Univalues) Encode(selector ...interface{}) []byte {
 	worker := func(start, end, index int, args ...interface{}) {
 		for i := start; i < end; i++ {
 			if this[i] != nil {
-				lengths[i] = this[i].(interfaces.Univalue).Size()
+				lengths[i] = this[i].Size()
 			}
 		}
 	}
@@ -48,7 +47,7 @@ func (this Univalues) Encode(selector ...interface{}) []byte {
 	worker = func(start, end, index int, args ...interface{}) {
 		for i := start; i < end; i++ {
 			codec.Uint32(offsets[i]).EncodeToBuffer(buffer[(i+1)*codec.UINT32_LEN:])
-			this[i].(interfaces.Univalue).EncodeToBuffer(buffer[headerLen+offsets[i]:])
+			this[i].EncodeToBuffer(buffer[headerLen+offsets[i]:])
 		}
 	}
 	common.ParallelWorker(len(this), 6, worker)
@@ -61,11 +60,11 @@ func (Univalues) Decode(bytes []byte) interface{} {
 	}
 
 	buffers := [][]byte(codec.Byteset{}.Decode(bytes).(codec.Byteset))
-	univalues := make([]interfaces.Univalue, len(buffers))
+	univalues := make([]*univalue.Univalue, len(buffers))
 	worker := func(start, end, index int, args ...interface{}) {
 		for i := start; i < end; i++ {
 			v := (&univalue.Univalue{}).Decode(buffers[i])
-			univalues[i] = v.(interfaces.Univalue)
+			univalues[i] = v.(*univalue.Univalue)
 		}
 	}
 	common.ParallelWorker(len(buffers), 6, worker)
@@ -73,7 +72,7 @@ func (Univalues) Decode(bytes []byte) interface{} {
 }
 
 // func (Univalues) DecodeV2(bytesset [][]byte, get func() interface{}, put func(interface{})) Univalues {
-// 	univalues := make([]interfaces.Univalue, len(bytesset))
+// 	univalues := make([]*univalue.Univalue, len(bytesset))
 // 	for i := range bytesset {
 // 		v := get().(*Univalue)
 // 		v.reclaimFunc = put
