@@ -14,7 +14,7 @@ import (
 	ccurl "github.com/arcology-network/concurrenturl"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
-	indexer "github.com/arcology-network/concurrenturl/importer"
+	importer "github.com/arcology-network/concurrenturl/importer"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	storage "github.com/arcology-network/concurrenturl/storage"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
@@ -45,10 +45,10 @@ func BenchmarkAccountMerkleImportPerf(b *testing.B) {
 			b.Error(err)
 		}
 	}
-	acct := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCAccess{})
+	acct := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCAccess{})
 
 	t0 := time.Now()
-	indexer.Univalues(acct).Encode()
+	importer.Univalues(acct).Encode()
 	b.Log("Transition Encoding: ", len(acct), time.Since(t0))
 }
 
@@ -74,10 +74,10 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 
 	//t0 = time.Now()
 	// _, transitions := writeCache.Export(nil)
-	transitions := indexer.Univalues(common.Clone(writeCache.Export())).To(indexer.ITCAccess{})
+	transitions := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITCAccess{})
 
-	// in := indexer.Univalues(transitions).Encode()
-	//out := indexer.Univalues{}.Decode(in).(indexer.Univalues)
+	// in := importer.Univalues(transitions).Encode()
+	//out := importer.Univalues{}.Decode(in).(importer.Univalues)
 
 	//fmt.Println("Export:", time.Since(t0))
 
@@ -135,7 +135,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	fmt.Println("Write 2500 accounts in :", time.Since(t0))
 
 	t0 = time.Now()
-	trans := indexer.Univalues(common.Clone(writeCache.Export())).To(indexer.ITCTransition{})
+	trans := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITCTransition{})
 	fmt.Println("Export:", time.Since(t0))
 
 	committer := ccurl.NewStorageCommitter(store)
@@ -164,7 +164,7 @@ func BenchmarkUrlAddThenDelete(b *testing.B) {
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 	meta := commutative.NewPath()
 	writeCache.Write(committercommon.SYSTEM, committercommon.ETH10_ACCOUNT_PREFIX, meta)
-	trans := indexer.Univalues(common.Clone(writeCache.Export())).To(indexer.ITCTransition{})
+	trans := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITCTransition{})
 
 	committer := ccurl.NewStorageCommitter(store)
 	committer.Import(trans)
@@ -205,10 +205,10 @@ func BenchmarkUrlAddThenPop(b *testing.B) {
 	meta := commutative.NewPath()
 	writeCache.Write(committercommon.SYSTEM, committercommon.ETH10_ACCOUNT_PREFIX, meta)
 
-	trans := indexer.Univalues(common.Clone(writeCache.Export())).To(indexer.ITCTransition{})
+	trans := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITCTransition{})
 
 	committer := ccurl.NewStorageCommitter(store)
-	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans).Encode()).(indexer.Univalues))
+	committer.Import(importer.Univalues{}.Decode(importer.Univalues(trans).Encode()).(importer.Univalues))
 	committer.Sort()
 	committer.Commit([]uint32{committercommon.SYSTEM})
 
@@ -327,12 +327,12 @@ func BenchmarkEncodeTransitions(b *testing.B) {
 
 	alice := AliceAccount()
 	writeCache.CreateNewAccount(committercommon.SYSTEM, alice)
-	// acctTrans := indexer.Univalues(common.Clone(writeCache.Export())).To(indexer.ITCAccess{})
+	// acctTrans := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITCAccess{})
 
-	acctTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCAccess{})
+	acctTrans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCAccess{})
 
 	committer := ccurl.NewStorageCommitter(store)
-	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
+	committer.Import(importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues))
 
 	committer.Sort()
 	committer.Commit([]uint32{committercommon.SYSTEM})
@@ -346,10 +346,10 @@ func BenchmarkEncodeTransitions(b *testing.B) {
 	}
 	fmt.Println("Write "+fmt.Sprint(10000), time.Since(t0))
 
-	acctTrans = indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCAccess{})
+	acctTrans = importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCAccess{})
 
 	t0 = time.Now()
-	indexer.Univalues(acctTrans).Encode()
+	importer.Univalues(acctTrans).Encode()
 	fmt.Println("Encode "+fmt.Sprint(len(acctTrans)), time.Since(t0))
 
 	/* Forward Iter */
@@ -398,13 +398,13 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	fmt.Println("Write "+fmt.Sprint(100000*9), time.Since(t0))
 
 	t0 = time.Now()
-	acctTrans := indexer.Univalues(common.Clone(writeCache.Export())).To(indexer.ITCTransition{})
+	acctTrans := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITCTransition{})
 
 	fmt.Println("Export "+fmt.Sprint(100000*9), time.Since(t0))
 
 	t0 = time.Now()
 
-	// transitions := indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues)
+	// transitions := importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues)
 	committer := ccurl.NewStorageCommitter(store)
 	committer.Import(acctTrans)
 	committer.Sort()
@@ -622,11 +622,11 @@ func BenchmarkTransitionImport(b *testing.B) {
 	fmt.Println("Write "+fmt.Sprint(100000*9), time.Since(t0))
 
 	t0 = time.Now()
-	acctTrans := indexer.Univalues(common.Clone(writeCache.Export())).To(indexer.ITCAccess{})
+	acctTrans := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITCAccess{})
 
 	fmt.Println("Export "+fmt.Sprint(150000*9), time.Since(t0))
 
-	accountMerkle := indexer.NewAccountMerkle(committercommon.NewPlatform(), rlpEncoder, merkle.Keccak256{}.Hash)
+	accountMerkle := importer.NewAccountMerkle(committercommon.NewPlatform(), rlpEncoder, merkle.Keccak256{}.Hash)
 
 	fmt.Println("-------------")
 	t0 = time.Now()
@@ -653,11 +653,11 @@ func BenchmarkTransitionImport(b *testing.B) {
 // 	fmt.Println("Write "+fmt.Sprint(100000*9), time.Since(t0))
 
 // 	t0 = time.Now()
-// 	acctTrans := indexer.Univalues(common.Clone(writeCache.Export())).To(indexer.ITCAccess{})
+// 	acctTrans := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITCAccess{})
 
 // 	fmt.Println("Export "+fmt.Sprint(150000*9), time.Since(t0))
 
-// 	accountMerkle := indexer.NewAccountMerkle(committercommon.NewPlatform(), rlpEncoder, merkle.Keccak256{}.Hash)
+// 	accountMerkle := importer.NewAccountMerkle(committercommon.NewPlatform(), rlpEncoder, merkle.Keccak256{}.Hash)
 
 // 	t0 = time.Now()
 // 	common.ParallelExecute(
@@ -684,18 +684,18 @@ func BenchmarkRandomAccountSort(t *testing.B) {
 	fmt.Println("Write "+fmt.Sprint(100000*9), time.Since(t0))
 
 	t0 = time.Now()
-	in := indexer.Univalues(common.Clone(writeCache.Export())).To(indexer.ITCAccess{})
+	in := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITCAccess{})
 
 	t0 = time.Now()
-	indexer.Univalues(in).Sort(nil)
+	importer.Univalues(in).Sort(nil)
 	fmt.Println("Univalues(in).Sort()", len(in), "entires in :", time.Since(t0))
 
 	// t0 = time.Now()
-	// indexer.Univalues(in).SortByDefault()
+	// importer.Univalues(in).SortByDefault()
 	// fmt.Println("Univalues(in).SortByDefault()", len(in), "entires in :", time.Since(t0))
 
 	// t0 = time.Now()
-	// indexer.Univalues(in).SortWithQuickMethod()
+	// importer.Univalues(in).SortWithQuickMethod()
 	// fmt.Println("Univalues(in).SortWithQuickMethod()", len(in), "entires in :", time.Since(t0))
 
 }

@@ -10,7 +10,7 @@ import (
 	ccurl "github.com/arcology-network/concurrenturl"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
-	indexer "github.com/arcology-network/concurrenturl/importer"
+	importer "github.com/arcology-network/concurrenturl/importer"
 	cache "github.com/arcology-network/eu/cache"
 )
 
@@ -34,8 +34,8 @@ func TestMultiAccountCreation(t *testing.T) {
 		// 	t.Error(err)
 		// }
 	}
-	raw := writeCache.Export(indexer.Sorter)
-	acctTrans := indexer.Univalues(common.Clone(raw)).To(indexer.ITCTransition{})
+	raw := writeCache.Export(importer.Sorter)
+	acctTrans := importer.Univalues(common.Clone(raw)).To(importer.ITCTransition{})
 
 	paths := committercommon.NewPlatform().GetSysPaths()
 	if len(acctTrans) != len(paths)*len(accounts) {
@@ -47,15 +47,15 @@ func TestMultiAccountCreation(t *testing.T) {
 	committer.Sort()
 	committer.Commit([]uint32{0})
 	writeCache.Clear()
-	// acctTrans = indexer.Univalues(common.Clone(raw)).To(indexer.ITCTransition{})
-	// encoded := indexer.Univalues(acctTrans).Encode()
+	// acctTrans = importer.Univalues(common.Clone(raw)).To(importer.ITCTransition{})
+	// encoded := importer.Univalues(acctTrans).Encode()
 
-	// out := indexer.Univalues{}.Decode(encoded).(indexer.Univalues)
+	// out := importer.Univalues{}.Decode(encoded).(importer.Univalues)
 	// if len(acctTrans) != len(out) {
 	// 	t.Error("Error: Transition counts don't match up")
 	// }
 
-	// accountMerkle := indexer.NewAccountMerkle(committer.Platform, rlpEncoder, merkle.Keccak256{}.Hash)
+	// accountMerkle := importer.NewAccountMerkle(committer.Platform, rlpEncoder, merkle.Keccak256{}.Hash)
 	// accountMerkle.Import(out)
 	// accountMerkle.Build()
 }

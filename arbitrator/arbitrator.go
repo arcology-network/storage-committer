@@ -1,11 +1,11 @@
-package indexer
+package importer
 
 import (
 	"errors"
 
 	common "github.com/arcology-network/common-lib/common"
 	committercommon "github.com/arcology-network/concurrenturl/common"
-	indexer "github.com/arcology-network/concurrenturl/importer"
+	importer "github.com/arcology-network/concurrenturl/importer"
 	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
@@ -26,7 +26,7 @@ func (this *Arbitrator) Detect(groupIDs []uint32, newTrans []interfaces.Univalue
 	}
 
 	// t0 := time.Now()
-	indexer.Univalues(newTrans).Sort(groupIDs)
+	importer.Univalues(newTrans).Sort(groupIDs)
 
 	ranges := common.FindAllIndics(newTrans, func(lhv, rhv interfaces.Univalue) bool {
 		return *lhv.GetPath() == *rhv.GetPath()

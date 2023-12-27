@@ -117,7 +117,7 @@ func (this *Univalue) CopyTo(writable interface{}) {
 	univ.(interfaces.Univalue).IncrementDeltaWrites(deltaWriteDiff)
 }
 
-func (this *Univalue) Set(tx uint32, path string, typedV interface{}, indexer interface{}) error { // update the value
+func (this *Univalue) Set(tx uint32, path string, typedV interface{}, importer interface{}) error { // update the value
 	this.tx = tx
 	if this.Value() == nil && typedV == nil {
 		this.writes++ // Delete an non-existing value
@@ -138,7 +138,7 @@ func (this *Univalue) Set(tx uint32, path string, typedV interface{}, indexer in
 		this.value = this.value.(interfaces.Type).Clone()
 	}
 
-	v, r, w, dw, err := this.value.(interfaces.Type).Set(typedV, []interface{}{path, *this.path, tx, indexer}) // Update one the current value
+	v, r, w, dw, err := this.value.(interfaces.Type).Set(typedV, []interface{}{path, *this.path, tx, importer}) // Update one the current value
 	this.value = v
 	this.writes += w
 	this.reads += r

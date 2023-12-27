@@ -8,7 +8,7 @@ import (
 	ccurl "github.com/arcology-network/concurrenturl"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
-	indexer "github.com/arcology-network/concurrenturl/importer"
+	importer "github.com/arcology-network/concurrenturl/importer"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 	cache "github.com/arcology-network/eu/cache"
@@ -41,10 +41,10 @@ func TestSimpleBalance(t *testing.T) {
 	}
 
 	// Export variables
-	in := indexer.Univalues((writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	in := importer.Univalues((writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
 
-	buffer := indexer.Univalues(in).Encode()
-	out := indexer.Univalues{}.Decode(buffer).(indexer.Univalues)
+	buffer := importer.Univalues(in).Encode()
+	out := importer.Univalues{}.Decode(buffer).(importer.Univalues)
 	for i := range in {
 		if !in[i].(*univalue.Univalue).Equal(out[i].(*univalue.Univalue)) {
 			t.Error("Accesses don't match")
@@ -72,10 +72,10 @@ func TestSimpleBalance(t *testing.T) {
 		t.Error("Error: Wrong blcc://eth1.0/account/alice/balance value")
 	}
 
-	trans := indexer.Univalues((writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
-	records := indexer.Univalues((writeCache.Export(indexer.Sorter))).To(indexer.ITCAccess{})
+	trans := importer.Univalues((writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
+	records := importer.Univalues((writeCache.Export(importer.Sorter))).To(importer.ITCAccess{})
 
-	indexer.Univalues(trans).Encode()
+	importer.Univalues(trans).Encode()
 	for _, v := range records {
 		if v.Writes() == v.Reads() && v.Writes() == 0 && v.DeltaWrites() == 0 {
 			t.Error("Error: Write == Reads == DeltaWrites == 0")
@@ -158,7 +158,7 @@ func TestBalance(t *testing.T) {
 	}
 
 	// Export variables
-	transitions := indexer.Univalues((writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	transitions := importer.Univalues((writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
 	// for i := range transitions {
 	trans := transitions[9]
 
@@ -202,7 +202,7 @@ func TestNonce(t *testing.T) {
 		t.Error("Error: blcc://eth1.0/account/alice/nonce should be ", 6)
 	}
 
-	trans := indexer.Univalues((writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	trans := importer.Univalues((writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
 
 	committer := ccurl.NewStorageCommitter(store)
 	committer.Import(trans)
@@ -234,7 +234,7 @@ func TestMultipleNonces(t *testing.T) {
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
-	trans0 := indexer.Univalues((writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	trans0 := importer.Univalues((writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
 
 	bob := BobAccount()
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, bob); err != nil { // NewAccount account structure {
@@ -256,8 +256,8 @@ func TestMultipleNonces(t *testing.T) {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
 	}
 
-	raw := (writeCache.Export(indexer.Sorter))
-	trans1 := indexer.Univalues(raw).To(indexer.ITCTransition{})
+	raw := (writeCache.Export(importer.Sorter))
+	trans1 := importer.Univalues(raw).To(importer.ITCTransition{})
 	// ccurltype.SetInvariate(trans1, "nonce")
 
 	nonce, _, _ = writeCache.Read(0, "blcc://eth1.0/account/"+bob+"/nonce", new(commutative.Uint64))

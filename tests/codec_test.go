@@ -13,7 +13,7 @@ import (
 	"github.com/arcology-network/common-lib/common"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
-	indexer "github.com/arcology-network/concurrenturl/importer"
+	importer "github.com/arcology-network/concurrenturl/importer"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	storage "github.com/arcology-network/concurrenturl/storage"
@@ -77,7 +77,7 @@ func TestUnivalueCodec(t *testing.T) {
 	// committer.NewAccount(committercommon.SYSTEM, fmt.Sprint("rand.Int()"))
 	writeCache.CreateNewAccount(committercommon.SYSTEM, fmt.Sprint("rand.Int()"))
 
-	transVec := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.IPCTransition{})
+	transVec := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPCTransition{})
 	transitions = append(transitions, transVec...)
 
 	for i := 0; i < len(transitions); i++ {
@@ -103,15 +103,15 @@ func TestUnivaluesCodec(t *testing.T) {
 
 		writeCache.CreateNewAccount(committercommon.SYSTEM, acct)
 
-		transVec := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+		transVec := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
 		transitions = append(transitions, transVec...)
 	}
 	t0 := time.Now()
-	buffer := indexer.Univalues(transitions).Encode()
+	buffer := importer.Univalues(transitions).Encode()
 	fmt.Println("Encode() ", len(transitions), " univalue in :", time.Since(t0))
 
 	t0 = time.Now()
-	out := (indexer.Univalues([]interfaces.Univalue{})).Decode(buffer).(indexer.Univalues)
+	out := (importer.Univalues([]interfaces.Univalue{})).Decode(buffer).(importer.Univalues)
 	fmt.Println("Decode() ", len(transitions), " univalue in :", time.Since(t0))
 
 	for i := 0; i < len(transitions); i++ {

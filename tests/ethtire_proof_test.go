@@ -11,7 +11,7 @@ import (
 	ccurl "github.com/arcology-network/concurrenturl"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
-	indexer "github.com/arcology-network/concurrenturl/importer"
+	importer "github.com/arcology-network/concurrenturl/importer"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	ccurlstorage "github.com/arcology-network/concurrenturl/storage"
 	storage "github.com/arcology-network/concurrenturl/storage"
@@ -110,10 +110,10 @@ func TestEthWorldTrieProof(t *testing.T) {
 	// 	t.Error(err)
 	// }
 
-	acctTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	acctTrans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
 
 	committer := ccurl.NewStorageCommitter(store)
-	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
+	committer.Import(importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues))
 	committer.Sort()
 	committer.Commit([]uint32{committercommon.SYSTEM})
 	committer.Init(store)
@@ -126,8 +126,8 @@ func TestEthWorldTrieProof(t *testing.T) {
 		t.Error(err)
 	}
 
-	acctTrans = indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
-	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
+	acctTrans = importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
+	committer.Import(importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues))
 	committer.Sort()
 	committer.Commit([]uint32{1})
 
@@ -139,7 +139,7 @@ func TestEthWorldTrieProof(t *testing.T) {
 		t.Error("Deleting an non-existing entry should've flaged an error", err)
 	}
 
-	raw := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	raw := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
 	if acctTrans := raw; len(acctTrans) != 0 {
 		t.Error("Error: Wrong number of transitions")
 	}
@@ -166,8 +166,8 @@ func TestEthWorldTrieProof(t *testing.T) {
 	// 	t.Error(err)
 	// }
 
-	acctTrans = indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
-	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
+	acctTrans = importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
+	committer.Import(importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues))
 	committer.Sort()
 	committer.Commit([]uint32{1})
 	committer.Init(store)
@@ -215,8 +215,8 @@ func TestGetProofAPI(t *testing.T) {
 		t.Error(err)
 	}
 
-	acctTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.IPCTransition{})
-	ts := indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues)
+	acctTrans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPCTransition{})
+	ts := importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues)
 
 	committer := ccurl.NewStorageCommitter(store)
 	committer.Import(ts)
@@ -254,8 +254,8 @@ func TestGetProofAPI(t *testing.T) {
 		t.Error(err)
 	}
 
-	acctTrans = indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.IPCTransition{})
-	ts = indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues)
+	acctTrans = importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPCTransition{})
+	ts = importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues)
 	committer.Import(ts)
 	committer.Sort()
 	committer.Commit([]uint32{1})

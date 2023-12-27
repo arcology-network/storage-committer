@@ -8,7 +8,7 @@ import (
 	orderedset "github.com/arcology-network/common-lib/container/set"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
-	indexer "github.com/arcology-network/concurrenturl/importer"
+	importer "github.com/arcology-network/concurrenturl/importer"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	cache "github.com/arcology-network/eu/cache"
@@ -31,9 +31,9 @@ func Create_Ctrn_0(account string, store interfaces.Datastore) ([]byte, []interf
 		return []byte{}, nil, err
 	}
 
-	rawTrans := writeCache.Export(indexer.Sorter)
-	transitions := indexer.Univalues(common.Clone(rawTrans)).To(indexer.ITCTransition{})
-	return indexer.Univalues(transitions).Encode(), transitions, nil
+	rawTrans := writeCache.Export(importer.Sorter)
+	transitions := importer.Univalues(common.Clone(rawTrans)).To(importer.ITCTransition{})
+	return importer.Univalues(transitions).Encode(), transitions, nil
 }
 
 func ParallelInsert_Ctrn_0(account string, store interfaces.Datastore) ([]byte, error) {
@@ -52,8 +52,8 @@ func ParallelInsert_Ctrn_0(account string, store interfaces.Datastore) ([]byte, 
 		return []byte{}, err
 	}
 
-	transitions := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
-	return indexer.Univalues(transitions).Encode(), nil
+	transitions := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
+	return importer.Univalues(transitions).Encode(), nil
 }
 
 func Create_Ctrn_1(account string, store interfaces.Datastore) ([]byte, error) {
@@ -72,8 +72,8 @@ func Create_Ctrn_1(account string, store interfaces.Datastore) ([]byte, error) {
 		return []byte{}, err
 	}
 
-	transitions := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
-	return indexer.Univalues(transitions).Encode(), nil
+	transitions := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
+	return importer.Univalues(transitions).Encode(), nil
 }
 
 func CheckPaths(account string, writeCache *cache.WriteCache) error {

@@ -12,7 +12,7 @@ import (
 	arbitrator "github.com/arcology-network/concurrenturl/arbitrator"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
-	indexer "github.com/arcology-network/concurrenturl/importer"
+	importer "github.com/arcology-network/concurrenturl/importer"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
@@ -26,10 +26,10 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 
 	meta := commutative.NewPath()
 	writeCache.Write(committercommon.SYSTEM, committercommon.ETH10_ACCOUNT_PREFIX, meta)
-	trans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	trans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
 
 	committer := ccurl.NewStorageCommitter(store)
-	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans).Encode()).(indexer.Univalues))
+	committer.Import(importer.Univalues{}.Decode(importer.Univalues(trans).Encode()).(importer.Univalues))
 	committer.Sort()
 	committer.Commit([]uint32{committercommon.SYSTEM})
 	writeCache.Clear()
@@ -41,9 +41,9 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 		t.Error(err)
 	}
 
-	// accesses1, transitions1 := writeCache.Export(indexer.Sorter)
-	accesses1 := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCAccess{})
-	indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	// accesses1, transitions1 := writeCache.Export(importer.Sorter)
+	accesses1 := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCAccess{})
+	importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
 
 	writeCache.Clear()
 	bob := datacompression.RandomAccount()
@@ -51,8 +51,8 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 		t.Error(err)
 	}
 
-	accesses2 := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCAccess{})
-	indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	accesses2 := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCAccess{})
+	importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
 
 	arib := (&arbitrator.Arbitrator{})
 
@@ -71,10 +71,10 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 	meta := commutative.NewPath()
 	writeCache.Write(committercommon.SYSTEM, committercommon.ETH10_ACCOUNT_PREFIX, meta)
-	trans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	trans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
 
 	committer := ccurl.NewStorageCommitter(store)
-	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans).Encode()).(indexer.Univalues))
+	committer.Import(importer.Univalues{}.Decode(importer.Univalues(trans).Encode()).(importer.Univalues))
 	committer.Sort()
 	committer.Commit([]uint32{committercommon.SYSTEM})
 
@@ -91,9 +91,9 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path1) // create a path
 	// writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-1"))
 	// writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-1"))
-	// accesses1, _ := writeCache.Export(indexer.Sorter)
-	raw := writeCache.Export(indexer.Sorter)
-	accesses1 := indexer.Univalues(common.Clone(raw)).To(indexer.IPCTransition{})
+	// accesses1, _ := writeCache.Export(importer.Sorter)
+	raw := writeCache.Export(importer.Sorter)
+	accesses1 := importer.Univalues(common.Clone(raw)).To(importer.IPCTransition{})
 
 	// committer := ccurl.NewStorageCommitter(store)
 	writeCache.Clear()                                               // = committer.WriteCache()
@@ -109,8 +109,8 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	writeCache.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path2)
 	// committer.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-2"))
 	// committer.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-2"))
-	// accesses2, _ := committer.WriteCache().Export(indexer.Sorter)
-	accesses2 := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCAccess{})
+	// accesses2, _ := committer.WriteCache().Export(importer.Sorter)
+	accesses2 := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCAccess{})
 
 	// accesses1.Print()
 	// fmt.Print(" ++++++++++++++++++++++++++++++++++++++++++++++++ ")
@@ -136,8 +136,8 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	}
 
 	// writeCache.Write(committercommon.SYSTEM, committercommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
-	acctTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
-	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
+	acctTrans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
+	committer.Import(importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues))
 	committer.Sort()
 	committer.Commit([]uint32{committercommon.SYSTEM})
 	committer.Init(store)
@@ -151,9 +151,9 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/", commutative.NewPath()) // create a path
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-1"))
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-1"))
-	// accesses1, transitions1 := writeCache.Export(indexer.Sorter)
-	accesses1 := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCAccess{})
-	transitions1 := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	// accesses1, transitions1 := writeCache.Export(importer.Sorter)
+	accesses1 := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCAccess{})
+	transitions1 := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
 
 	// committer := ccurl.NewStorageCommitter(store)
 	// writeCache = committer.WriteCache()
@@ -167,9 +167,9 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	writeCache.Write(2, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-2"))
 	writeCache.Write(2, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-2"))
 
-	// accesses2, transitions2 := committer.WriteCache().Export(indexer.Sorter)
-	accesses2 := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCAccess{})
-	transitions2 := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	// accesses2, transitions2 := committer.WriteCache().Export(importer.Sorter)
+	accesses2 := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCAccess{})
+	transitions2 := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
 
 	IDVec := append(common.Fill(make([]uint32, len(accesses1)), 0), common.Fill(make([]uint32, len(accesses2)), 1)...)
 	ids := (&arbitrator.Arbitrator{}).Detect(IDVec, append(accesses1, accesses2...))
@@ -183,8 +183,8 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 
 	toCommit := common.Exclude([]uint32{1, 2}, common.MapKeys(*conflictDict))
 
-	in := indexer.Univalues(append(transitions1, transitions2...)).Encode()
-	out := indexer.Univalues{}.Decode(in).(indexer.Univalues)
+	in := importer.Univalues(append(transitions1, transitions2...)).Encode()
+	out := importer.Univalues{}.Decode(in).(importer.Univalues)
 	committer.Import(out)
 	committer.Sort()
 	committer.Commit(toCommit)
@@ -195,18 +195,18 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 		t.Error(err)
 	}
 
-	// accesses3, transitions3 := url3.Export(indexer.Sorter)
-	accesses3 := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCAccess{})
-	transitions3 := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.IPCTransition{})
+	// accesses3, transitions3 := url3.Export(importer.Sorter)
+	accesses3 := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCAccess{})
+	transitions3 := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPCTransition{})
 
 	writeCache.Clear()
 	// url4 := ccurl.NewStorageCommitter(store)
 	if _, err := writeCache.Write(4, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("url4-1-by-tx-3")); err != nil {
 		t.Error(err)
 	}
-	// accesses4, transitions4 := url4.Export(indexer.Sorter)
-	accesses4 := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCAccess{})
-	transitions4 := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	// accesses4, transitions4 := url4.Export(importer.Sorter)
+	accesses4 := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCAccess{})
+	transitions4 := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
 
 	IDVec = append(common.Fill(make([]uint32, len(accesses3)), 0), common.Fill(make([]uint32, len(accesses4)), 1)...)
 	ids = (&arbitrator.Arbitrator{}).Detect(IDVec, append(accesses3, accesses4...))
@@ -218,13 +218,13 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	}
 	toCommit = common.Exclude([]uint32{3, 4}, conflictTx)
 
-	in = indexer.Univalues(append(transitions3, transitions4...)).Encode()
-	out = indexer.Univalues{}.Decode(in).(indexer.Univalues)
+	in = importer.Univalues(append(transitions3, transitions4...)).Encode()
+	out = importer.Univalues{}.Decode(in).(importer.Univalues)
 
 	acctTrans = append(transitions3, transitions4...)
-	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
+	committer.Import(importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues))
 
-	// committer.Import(committer.Decode(indexer.Univalues(append(transitions3, transitions4...)).Encode()))
+	// committer.Import(committer.Decode(importer.Univalues(append(transitions3, transitions4...)).Encode()))
 	committer.Sort()
 	committer.Commit(toCommit)
 	committer.Init(store)

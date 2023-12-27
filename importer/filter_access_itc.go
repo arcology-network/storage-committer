@@ -1,4 +1,4 @@
-package indexer
+package importer
 
 import (
 	common "github.com/arcology-network/common-lib/common"

@@ -1,4 +1,4 @@
-package indexer
+package importer
 
 // type ImmuneTransitions struct{ interfaces.Univalue }
 

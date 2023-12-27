@@ -5,10 +5,10 @@ import (
 	"crypto/sha256"
 	"sort"
 
+	ccurlcommon "github.com/arcology-network/StorageCommitter/common"
+	"github.com/arcology-network/StorageCommitter/interfaces"
+	univalue "github.com/arcology-network/StorageCommitter/univalue"
 	"github.com/arcology-network/common-lib/common"
-	committercommon "github.com/arcology-network/concurrenturl/common"
-	"github.com/arcology-network/concurrenturl/interfaces"
-	univalue "github.com/arcology-network/concurrenturl/univalue"
 )
 
 type Univalues []interfaces.Univalue
@@ -94,7 +94,7 @@ func (this Univalues) Sort(groupIDs []uint32) Univalues {
 			groupID: groupIDs[i],
 			length:  len(bytes),
 			str:     *str,
-			bytes:   bytes[committercommon.ETH10_ACCOUNT_PREFIX_LENGTH:],
+			bytes:   bytes[ccurlcommon.ETH10_ACCOUNT_PREFIX_LENGTH:],
 			tx:      this[i].GetTx(),
 			value:   this[i],
 		}
@@ -127,19 +127,19 @@ func (this Univalues) Sort(groupIDs []uint32) Univalues {
 	return this
 }
 
-// func (this Univalues) CompressKeys(dict *committercommon.Dict) {
+// func (this Univalues) CompressKeys(dict *ccurlcommon.Dict) {
 // 	for i, univ := range this {
-// 		compressedKey := (*univ.GetPath())[committercommon.ETH10_ACCOUNT_PREFIX_LENGTH:committercommon.ETH10_ACCOUNT_FULL_LENGTH]
-// 		newKey := dict.Compress(compressedKey, nil) + (*univ.GetPath())[committercommon.ETH10_ACCOUNT_FULL_LENGTH:]
+// 		compressedKey := (*univ.GetPath())[ccurlcommon.ETH10_ACCOUNT_PREFIX_LENGTH:ccurlcommon.ETH10_ACCOUNT_FULL_LENGTH]
+// 		newKey := dict.Compress(compressedKey, nil) + (*univ.GetPath())[ccurlcommon.ETH10_ACCOUNT_FULL_LENGTH:]
 // 		this[i].SetPath(&newKey)
 // 	}
 // }
 
-// func (this Univalues) DecompressKeys(dict *committercommon.Dict) {
+// func (this Univalues) DecompressKeys(dict *ccurlcommon.Dict) {
 // 	for i := range this {
 // 		key := *this[i].GetPath()
 // 		idx := strings.Index(*this[i].GetPath(), "/")
-// 		newKey := committercommon.ETH10 + dict.Decompress(key[:idx]) + key[idx:]
+// 		newKey := ccurlcommon.ETH10 + dict.Decompress(key[:idx]) + key[idx:]
 // 		this[i].SetPath(&newKey)
 // 	}
 // }

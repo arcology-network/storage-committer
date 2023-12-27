@@ -10,7 +10,7 @@ import (
 	orderedset "github.com/arcology-network/common-lib/container/set"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/commutative"
-	indexer "github.com/arcology-network/concurrenturl/importer"
+	importer "github.com/arcology-network/concurrenturl/importer"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	cache "github.com/arcology-network/eu/cache"
 	"github.com/holiman/uint256"
@@ -35,9 +35,9 @@ func TestTransitionFilters(t *testing.T) {
 		t.Error(err)
 	}
 
-	raw := writeCache.Export(indexer.Sorter)
+	raw := writeCache.Export(importer.Sorter)
 
-	acctTrans := indexer.Univalues(common.Clone(raw)).To(indexer.IPCTransition{})
+	acctTrans := importer.Univalues(common.Clone(raw)).To(importer.IPCTransition{})
 
 	if !acctTrans[1].Value().(*commutative.U256).Equal(raw[1].Value()) {
 		t.Error("Error: Non-path commutative should have the values!!")
@@ -76,7 +76,7 @@ func TestTransitionFilters(t *testing.T) {
 		t.Error("Error: Max altered")
 	}
 
-	copied := indexer.Univalues(common.Clone(acctTrans)).To(indexer.IPCTransition{})
+	copied := importer.Univalues(common.Clone(acctTrans)).To(importer.IPCTransition{})
 
 	// Test Path
 	if v := copied[0].Value().(*commutative.Path).Value().(*orderedset.OrderedSet); len(v.Keys()) != 0 {
@@ -122,7 +122,7 @@ func TestAccessFilters(t *testing.T) {
 		t.Error(err)
 	}
 
-	raw := writeCache.Export(indexer.Sorter)
+	raw := writeCache.Export(importer.Sorter)
 
 	raw[0].Value().(*commutative.Path).SetSubs([]string{"k0", "k1"})
 	raw[0].Value().(*commutative.Path).SetAdded([]string{"123", "456"})
@@ -133,7 +133,7 @@ func TestAccessFilters(t *testing.T) {
 	raw[1].Value().(*commutative.U256).SetMin(*uint256.NewInt(1))
 	raw[1].Value().(*commutative.U256).SetMax(*uint256.NewInt(2222222))
 
-	acctTrans := indexer.Univalues(common.Clone(raw)).To(indexer.IPCAccess{})
+	acctTrans := importer.Univalues(common.Clone(raw)).To(importer.IPCAccess{})
 
 	if acctTrans[0].Value() != nil {
 		t.Error("Error: Value altered")

@@ -1,4 +1,4 @@
-package indexer
+package importer
 
 import (
 	"sort"
@@ -17,12 +17,12 @@ type DeltaSequence struct {
 	rawBytes    interface{}
 }
 
-func NewDeltaSequence(key string, indexer *Importer) *DeltaSequence {
+func NewDeltaSequence(key string, importer *Importer) *DeltaSequence {
 	return &DeltaSequence{
 		key:         key,
 		transitions: make([]interfaces.Univalue, 0, 16),
-		rawBytes:    common.FilterFirst(indexer.store.Retrive(key, nil)),
-		// initial: (&univalue.Univalue{}).Init(committercommon.SYSTEM, key, 0, 0, 0, encoded, indexer.Store()),
+		rawBytes:    common.FilterFirst(importer.store.Retrive(key, nil)),
+		// initial: (&univalue.Univalue{}).Init(committercommon.SYSTEM, key, 0, 0, 0, encoded, importer.Store()),
 	}
 }
 
