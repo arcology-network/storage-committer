@@ -8,7 +8,7 @@ import (
 	arbitrator "github.com/arcology-network/concurrenturl/arbitrator"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
-	indexer "github.com/arcology-network/concurrenturl/indexer"
+	indexer "github.com/arcology-network/concurrenturl/importer"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	cache "github.com/arcology-network/eu/cache"
 	"github.com/holiman/uint256"
@@ -18,7 +18,7 @@ func TestAccumulatorUpperLimit(t *testing.T) {
 	store := chooseDataStore()
 
 	alice := AliceAccount()
-	// url := ccurl.NewStorageCommitter(store)
+	// committer := ccurl.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {

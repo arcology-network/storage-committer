@@ -11,7 +11,7 @@ import (
 	ccurl "github.com/arcology-network/concurrenturl"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
-	indexer "github.com/arcology-network/concurrenturl/indexer"
+	indexer "github.com/arcology-network/concurrenturl/importer"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	ccurlstorage "github.com/arcology-network/concurrenturl/storage"
 	storage "github.com/arcology-network/concurrenturl/storage"
@@ -24,7 +24,7 @@ import (
 func TestConcurrentDB(t *testing.T) {
 	store := chooseDataStore()
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
-	// url := ccurl.NewStorageCommitter(store)
+	// committer := ccurl.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 
 	alice := AliceAccount()
@@ -38,7 +38,7 @@ func TestConcurrentDB(t *testing.T) {
 		t.Error(err)
 	}
 
-	// if _, err := url.NewAccount(committercommon.SYSTEM, bob); err != nil { // NewAccount account structure {
+	// if _, err := committer.NewAccount(committercommon.SYSTEM, bob); err != nil { // NewAccount account structure {
 	// 	t.Error(err)
 	// }
 
@@ -106,17 +106,17 @@ func TestEthWorldTrieProof(t *testing.T) {
 		t.Error(err)
 	}
 
-	// if _, err := url.NewAccount(committercommon.SYSTEM, bob); err != nil { // NewAccount account structure {
+	// if _, err := committer.NewAccount(committercommon.SYSTEM, bob); err != nil { // NewAccount account structure {
 	// 	t.Error(err)
 	// }
 
 	acctTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
-	url := ccurl.NewStorageCommitter(store)
-	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
-	url.Sort()
-	url.Commit([]uint32{committercommon.SYSTEM})
-	url.Init(store)
+	committer := ccurl.NewStorageCommitter(store)
+	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
+	committer.Sort()
+	committer.Commit([]uint32{committercommon.SYSTEM})
+	committer.Init(store)
 
 	writeCache.Clear()
 	path := commutative.NewPath()
@@ -127,11 +127,11 @@ func TestEthWorldTrieProof(t *testing.T) {
 	}
 
 	acctTrans = indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
-	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
-	url.Sort()
-	url.Commit([]uint32{1})
+	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
+	committer.Sort()
+	committer.Commit([]uint32{1})
 
-	url.Init(store)
+	committer.Init(store)
 
 	writeCache.Clear()
 	// Delete an non-existing entry, should NOT appear in the transitions
@@ -167,13 +167,13 @@ func TestEthWorldTrieProof(t *testing.T) {
 	// }
 
 	acctTrans = indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
-	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
-	url.Sort()
-	url.Commit([]uint32{1})
-	url.Init(store)
+	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
+	committer.Sort()
+	committer.Commit([]uint32{1})
+	committer.Init(store)
 
 	/* Account Proofs */
-	dstore := url.Importer().Store().(*storage.EthDataStore)
+	dstore := committer.Importer().Store().(*storage.EthDataStore)
 	if _, err := dstore.IsProvable((alice)); err != nil {
 		t.Error(err)
 	}
@@ -202,7 +202,7 @@ func TestEthWorldTrieProof(t *testing.T) {
 
 func TestGetProofAPI(t *testing.T) {
 	store := ccurlstorage.NewParallelEthMemDataStore()
-	// url := ccurl.NewStorageCommitter(ccurlstorage.NewParallelEthMemDataStore())
+	// committer := ccurl.NewStorageCommitter(ccurlstorage.NewParallelEthMemDataStore())
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 
 	alice := AliceAccount()
@@ -218,10 +218,10 @@ func TestGetProofAPI(t *testing.T) {
 	acctTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.IPCTransition{})
 	ts := indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues)
 
-	url := ccurl.NewStorageCommitter(store)
-	url.Import(ts)
-	url.Sort()
-	url.Commit([]uint32{committercommon.SYSTEM})
+	committer := ccurl.NewStorageCommitter(store)
+	committer.Import(ts)
+	committer.Sort()
+	committer.Commit([]uint32{committercommon.SYSTEM})
 
 	writeCache.Clear()
 	/* Alice updates */
@@ -256,11 +256,11 @@ func TestGetProofAPI(t *testing.T) {
 
 	acctTrans = indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.IPCTransition{})
 	ts = indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues)
-	url.Import(ts)
-	url.Sort()
-	url.Commit([]uint32{1})
+	committer.Import(ts)
+	committer.Sort()
+	committer.Commit([]uint32{1})
 
-	// store := url.Importer().Store().(*storage.EthDataStore)
+	// store := committer.Importer().Store().(*storage.EthDataStore)
 	writeCache.Clear()
 	/* Get proof direcly */
 	bobAcct, _ := store.GetAccount(bob, &ethmpt.AccessListCache{})

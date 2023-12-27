@@ -8,7 +8,7 @@ package ccurltest
 // 	"github.com/arcology-network/common-lib/common"
 // 	ccurl "github.com/arcology-network/concurrenturl"
 // 	committercommon "github.com/arcology-network/concurrenturl/common"
-// 	indexer "github.com/arcology-network/concurrenturl/indexer"
+// 	indexer "github.com/arcology-network/concurrenturl/importer"
 // 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 // 	storage "github.com/arcology-network/concurrenturl/storage"
 // )
@@ -17,18 +17,18 @@ package ccurltest
 // 	memDB := cachedstorage.NewMemDB()
 // 	policy := cachedstorage.NewCachePolicy(10000000, 1.0)
 // 	store := cachedstorage.NewDataStore(nil, policy, memDB, storage.Codec{}.Encode, storage.Codec{}.Decode)
-// 		url := ccurl.NewStorageCommitter(store)
-// writeCache := url.WriteCache()
+// 		committer := ccurl.NewStorageCommitter(store)
+// writeCache := committer.WriteCache()
 // 	alice := AliceAccount()
 // 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 // 		t.Error(err)
 // 	}
 
-// 	url.Write(committercommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
+// 	committer.Write(committercommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
 // 	acctTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
-// 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
-// 	url.Sort()
-// 	url.Commit([]uint32{committercommon.SYSTEM})
+// 	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
+// 	committer.Sort()
+// 	committer.Commit([]uint32{committercommon.SYSTEM})
 
 // 	/* Filter persistent data source */
 // 	excludeMemDB := func(db cachedstorage.PersistentStorageInterface) bool { // Do not access MemDB
@@ -36,14 +36,14 @@ package ccurltest
 // 		return name != "*cachedstorage.MemDB"
 // 	}
 
-// 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999"))
+// 	committer.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999"))
 // 	acctTrans = indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
-// 	url.Importer().Store().(*cachedstorage.DataStore).Cache().Clear()
-// 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues), true, excludeMemDB) // The changes will be discarded.
-// 	url.Sort()
-// 	url.Commit([]uint32{1})
+// 	committer.Importer().Store().(*cachedstorage.DataStore).Cache().Clear()
+// 	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues), true, excludeMemDB) // The changes will be discarded.
+// 	committer.Sort()
+// 	committer.Commit([]uint32{1})
 
-// 	// if v, _ := url.Read(2, "blcc://eth1.0/account/"+alice+"/storage/1234"); v == nil {
+// 	// if v, _ := committer.Read(2, "blcc://eth1.0/account/"+alice+"/storage/1234"); v == nil {
 // 	// 	t.Error("Error: The entry shouldn't be in the DB !")
 // 	// } else {
 // 	// 	if string(*(v.(*noncommutative.String))) != "1234" {
@@ -52,13 +52,13 @@ package ccurltest
 // 	// }
 
 // 	/* Don't filter persistent data source	*/
-// 	url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999"))
-// 	url.Importer().Store().(*cachedstorage.DataStore).Cache().Clear()                                 // Make sure only the persistent storage has the data.
-// 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues)) // This should take effect
-// 	url.Sort()
-// 	url.Commit([]uint32{1})
+// 	committer.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999"))
+// 	committer.Importer().Store().(*cachedstorage.DataStore).Cache().Clear()                                 // Make sure only the persistent storage has the data.
+// 	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues)) // This should take effect
+// 	committer.Sort()
+// 	committer.Commit([]uint32{1})
 
-// 	if v, _ := url.Read(2, "blcc://eth1.0/account/"+alice+"/storage/1234"); v == nil {
+// 	if v, _ := committer.Read(2, "blcc://eth1.0/account/"+alice+"/storage/1234"); v == nil {
 // 		t.Error("Error: The entry shouldn't be in the DB !")
 // 	} else {
 // 		if v.(string) != "9999" {
@@ -77,38 +77,38 @@ package ccurltest
 // 	}
 
 // 	store := cachedstorage.NewDataStore(nil, policy, memDB, storage.Codec{}.Encode, storage.Codec{}.Decode, excludeMemDB)
-// 		url := ccurl.NewStorageCommitter(store)
-// writeCache := url.WriteCache()
+// 		committer := ccurl.NewStorageCommitter(store)
+// writeCache := committer.WriteCache()
 // 	alice := AliceAccount()
 // 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 // 		t.Error(err)
 // 	}
 
-// 	url.Write(committercommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
+// 	committer.Write(committercommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
 // 	acctTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
-// 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
-// 	url.Sort()
-// 	url.Commit([]uint32{committercommon.SYSTEM})
+// 	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
+// 	committer.Sort()
+// 	committer.Commit([]uint32{committercommon.SYSTEM})
 
-// 	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999")); err != nil {
+// 	if _, err := committer.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999")); err != nil {
 // 		t.Error(err)
 // 	}
 
 // 	acctTrans = indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
-// 	// 	url := ccurl.NewStorageCommitter(store)
-// writeCache := url.WriteCache()
+// 	// 	committer := ccurl.NewStorageCommitter(store)
+// writeCache := committer.WriteCache()
 
-// 	url.WriteCache().Clear()
+// 	committer.WriteCache().Clear()
 
-// 	// ccmap2 := url.Importer().Store().(*cachedstorage.DataStore).Cache()
+// 	// ccmap2 := committer.Importer().Store().(*cachedstorage.DataStore).Cache()
 // 	// fmt.Print(ccmap2)
 // 	out := indexer.Univalues{}.Decode(indexer.Univalues(common.Clone(acctTrans)).Encode()).(indexer.Univalues)
-// 	url.Import(out, true, excludeMemDB) // The changes will be discarded.
-// 	url.Sort()
-// 	url.Commit([]uint32{1})
+// 	committer.Import(out, true, excludeMemDB) // The changes will be discarded.
+// 	committer.Sort()
+// 	committer.Commit([]uint32{1})
 
-// 	if v, _ := url.Read(2, "blcc://eth1.0/account/"+alice+"/storage/1234"); v == nil {
+// 	if v, _ := committer.Read(2, "blcc://eth1.0/account/"+alice+"/storage/1234"); v == nil {
 // 		t.Error("Error: The entry shouldn't be in the DB as the persistent DB has been excluded !")
 // 	} else {
 // 		if v.(string) != "9999" {

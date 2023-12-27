@@ -10,7 +10,7 @@ import (
 	ccurl "github.com/arcology-network/concurrenturl"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
-	indexer "github.com/arcology-network/concurrenturl/indexer"
+	indexer "github.com/arcology-network/concurrenturl/importer"
 	cache "github.com/arcology-network/eu/cache"
 )
 
@@ -30,7 +30,7 @@ func TestMultiAccountCreation(t *testing.T) {
 			t.Error(err)
 		}
 
-		// if _, err := url.NewAccount(0, accounts[i]); err != nil { // Preload account structure {
+		// if _, err := committer.NewAccount(0, accounts[i]); err != nil { // Preload account structure {
 		// 	t.Error(err)
 		// }
 	}
@@ -42,10 +42,10 @@ func TestMultiAccountCreation(t *testing.T) {
 		t.Error("Error: Transition counts don't match up")
 	}
 
-	url := ccurl.NewStorageCommitter(store)
-	url.Import(acctTrans)
-	url.Sort()
-	url.Commit([]uint32{0})
+	committer := ccurl.NewStorageCommitter(store)
+	committer.Import(acctTrans)
+	committer.Sort()
+	committer.Commit([]uint32{0})
 	writeCache.Clear()
 	// acctTrans = indexer.Univalues(common.Clone(raw)).To(indexer.ITCTransition{})
 	// encoded := indexer.Univalues(acctTrans).Encode()
@@ -55,7 +55,7 @@ func TestMultiAccountCreation(t *testing.T) {
 	// 	t.Error("Error: Transition counts don't match up")
 	// }
 
-	// accountMerkle := indexer.NewAccountMerkle(url.Platform, rlpEncoder, merkle.Keccak256{}.Hash)
+	// accountMerkle := indexer.NewAccountMerkle(committer.Platform, rlpEncoder, merkle.Keccak256{}.Hash)
 	// accountMerkle.Import(out)
 	// accountMerkle.Build()
 }

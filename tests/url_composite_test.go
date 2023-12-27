@@ -9,7 +9,7 @@ import (
 	ccurl "github.com/arcology-network/concurrenturl"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
-	indexer "github.com/arcology-network/concurrenturl/indexer"
+	indexer "github.com/arcology-network/concurrenturl/importer"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	cache "github.com/arcology-network/eu/cache"
@@ -17,7 +17,7 @@ import (
 
 func TestAuxTrans(t *testing.T) {
 	store := chooseDataStore()
-	url := ccurl.NewStorageCommitter(store)
+	committer := ccurl.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 
 	alice := AliceAccount()
@@ -28,12 +28,12 @@ func TestAuxTrans(t *testing.T) {
 	// _, trans00 := writeCache.Export(indexer.Sorter)
 	acctTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
-	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
+	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
 
-	url.Sort()
-	url.Commit([]uint32{committercommon.SYSTEM}) // Commit
+	committer.Sort()
+	committer.Commit([]uint32{committercommon.SYSTEM}) // Commit
 
-	url.Init(store)
+	committer.Init(store)
 	// create a path
 	writeCache.Clear()
 
@@ -101,15 +101,15 @@ func TestAuxTrans(t *testing.T) {
 	in := indexer.Univalues(transitions).Encode()
 	out := indexer.Univalues{}.Decode(in).(indexer.Univalues)
 
-	url.Import(out)
-	url.Sort()
-	url.Commit([]uint32{1})
+	committer.Import(out)
+	committer.Sort()
+	committer.Commit([]uint32{1})
 }
 
 func TestCheckAccessRecords(t *testing.T) {
 	store := chooseDataStore()
 
-	url := ccurl.NewStorageCommitter(store)
+	committer := ccurl.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 	alice := AliceAccount()
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
@@ -119,12 +119,12 @@ func TestCheckAccessRecords(t *testing.T) {
 	// _, trans00 := writeCache.Export(indexer.Sorter)
 	trans00 := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
-	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans00).Encode()).(indexer.Univalues))
+	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans00).Encode()).(indexer.Univalues))
 
-	url.Sort()
-	url.Commit([]uint32{1}) // Commit
+	committer.Sort()
+	committer.Commit([]uint32{1}) // Commit
 
-	url.Init(store)
+	committer.Init(store)
 	path := commutative.NewPath()
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/") // create a path
@@ -133,12 +133,12 @@ func TestCheckAccessRecords(t *testing.T) {
 	// _, trans10 := writeCache.Export(indexer.Sorter)
 	trans10 := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
-	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans10).Encode()).(indexer.Univalues))
+	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans10).Encode()).(indexer.Univalues))
 
-	url.Sort()
-	url.Commit([]uint32{1}) // Commit
+	committer.Sort()
+	committer.Commit([]uint32{1}) // Commit
 
-	url.Init(store)
+	committer.Init(store)
 	writeCache.Clear()
 
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewInt64(1111)); err != nil {
@@ -150,22 +150,22 @@ func TestCheckAccessRecords(t *testing.T) {
 	}
 
 	// accesses10, trans11 := writeCache.Export(indexer.Sorter)
-	// url.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans11).Encode()).(indexer.Univalues))
+	// committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(trans11).Encode()).(indexer.Univalues))
 
-	// url.Sort()
-	// url.Commit([]uint32{1}) // Commit
+	// committer.Sort()
+	// committer.Commit([]uint32{1}) // Commit
 
-	// url = ccurl.NewStorageCommitter(store)
+	// committer = ccurl.NewStorageCommitter(store)
 	// if len(trans11) != 3 {
 	// 	t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/2") // create a path
 	// }
 
 	// if len(trans11) != 3 {
-	// 	t.Error("Error: There should be 3 transitions in url") // create a path
+	// 	t.Error("Error: There should be 3 transitions in committer") // create a path
 	// }
 
 	// if len(accesses10) != 3 {
-	// 	t.Error("Error: There should be 3 accesse records url") // create a path
+	// 	t.Error("Error: There should be 3 accesse records committer") // create a path
 	// }
 
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/3", noncommutative.NewInt64(3333)); err != nil {

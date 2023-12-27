@@ -9,7 +9,7 @@ import (
 	ccurl "github.com/arcology-network/concurrenturl"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
-	indexer "github.com/arcology-network/concurrenturl/indexer"
+	indexer "github.com/arcology-network/concurrenturl/importer"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	cache "github.com/arcology-network/eu/cache"
 )
@@ -17,7 +17,7 @@ import (
 func TestAddAndDelete(t *testing.T) {
 	store := chooseDataStore()
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
-	url := ccurl.NewStorageCommitter(store)
+	committer := ccurl.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 
 	alice := AliceAccount()
@@ -26,16 +26,16 @@ func TestAddAndDelete(t *testing.T) {
 	}
 
 	acctTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
-	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
-	url.Sort()
-	url.Commit([]uint32{committercommon.SYSTEM})
+	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
+	committer.Sort()
+	committer.Commit([]uint32{committercommon.SYSTEM})
 
 	// acctTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
-	url.Import(indexer.Univalues{})
-	url.Sort()
-	url.Commit([]uint32{committercommon.SYSTEM})
+	committer.Import(indexer.Univalues{})
+	committer.Sort()
+	committer.Commit([]uint32{committercommon.SYSTEM})
 
-	url.Init(store)
+	committer.Init(store)
 	path := commutative.NewPath()
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
 
@@ -44,11 +44,11 @@ func TestAddAndDelete(t *testing.T) {
 	}
 
 	acctTrans = indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
-	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
-	url.Sort()
-	url.Commit([]uint32{1})
+	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
+	committer.Sort()
+	committer.Commit([]uint32{1})
 
-	url.Init(store)
+	committer.Init(store)
 	writeCache.Clear()
 
 	// Delete an non-existing entry, should NOT appear in the transitions
@@ -78,7 +78,7 @@ func TestAddAndDelete(t *testing.T) {
 func TestEmptyNodeSet(t *testing.T) {
 	store := chooseDataStore()
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
-	url := ccurl.NewStorageCommitter(store)
+	committer := ccurl.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 
 	alice := AliceAccount()
@@ -87,24 +87,24 @@ func TestEmptyNodeSet(t *testing.T) {
 	}
 
 	acctTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
-	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
-	url.Sort()
-	url.Commit([]uint32{committercommon.SYSTEM})
+	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
+	committer.Sort()
+	committer.Commit([]uint32{committercommon.SYSTEM})
 
 	// acctTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
-	url.Import(indexer.Univalues{})
-	url.Sort()
-	url.Commit([]uint32{committercommon.SYSTEM})
+	committer.Import(indexer.Univalues{})
+	committer.Sort()
+	committer.Commit([]uint32{committercommon.SYSTEM})
 
-	url.Import(indexer.Univalues{})
-	url.Sort()
-	url.Commit([]uint32{committercommon.SYSTEM})
+	committer.Import(indexer.Univalues{})
+	committer.Sort()
+	committer.Commit([]uint32{committercommon.SYSTEM})
 }
 
 func TestRecursiveDeletionSameBatch(t *testing.T) {
 	store := chooseDataStore()
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
-	url := ccurl.NewStorageCommitter(store)
+	committer := ccurl.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 
 	alice := AliceAccount()
@@ -114,32 +114,32 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 
 	acctTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
-	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
-	url.Sort()
-	url.Commit([]uint32{committercommon.SYSTEM})
+	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
+	committer.Sort()
+	committer.Commit([]uint32{committercommon.SYSTEM})
 
-	url.Init(store)
+	committer.Init(store)
 	// create a path
 	path := commutative.NewPath()
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
 	// _, addPath := writeCache.Export(indexer.Sorter)
 	addPath := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
-	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(addPath).Encode()).(indexer.Univalues))
-	// url.Import(url.Decode(indexer.Univalues(addPath).Encode()))
-	url.Sort()
-	url.Commit([]uint32{1})
-	url.Init(store)
+	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(addPath).Encode()).(indexer.Univalues))
+	// committer.Import(committer.Decode(indexer.Univalues(addPath).Encode()))
+	committer.Sort()
+	committer.Commit([]uint32{1})
+	committer.Init(store)
 
 	writeCache.Clear()
 
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewInt64(1))
 	// _, addTrans := writeCache.Export(indexer.Sorter)
 	addTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
-	// url.Import(url.Decode(indexer.Univalues(addTrans).Encode()))
-	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(addTrans).Encode()).(indexer.Univalues))
-	url.Sort()
-	url.Commit([]uint32{1})
+	// committer.Import(committer.Decode(indexer.Univalues(addTrans).Encode()))
+	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(addTrans).Encode()).(indexer.Univalues))
+	committer.Sort()
+	committer.Commit([]uint32{1})
 	writeCache.Clear()
 
 	if v, _, _ := writeCache.Read(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", new(noncommutative.Int64)); v == nil {
@@ -181,12 +181,12 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 	}
 	acctTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
-	url := ccurl.NewStorageCommitter(store)
-	url.Import(acctTrans)
-	url.Sort()
-	url.Commit([]uint32{committercommon.SYSTEM})
+	committer := ccurl.NewStorageCommitter(store)
+	committer.Import(acctTrans)
+	committer.Sort()
+	committer.Commit([]uint32{committercommon.SYSTEM})
 
-	url.Init(store)
+	committer.Init(store)
 	path := commutative.NewPath()
 	_, err := writeCache.Write(committercommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", path)
 
@@ -195,11 +195,11 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 	}
 
 	acctTrans = indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
-	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
-	url.Sort()
-	url.Commit([]uint32{1})
+	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
+	committer.Sort()
+	committer.Commit([]uint32{1})
 
-	url.Init(store)
+	committer.Init(store)
 
 	writeCache.Clear()
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/4", nil)
@@ -223,14 +223,14 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 
 	in := indexer.Univalues(acctTrans).Encode()
 	out := indexer.Univalues{}.Decode(in).(indexer.Univalues)
-	// url.Import(url.Decode(indexer.Univalues(out).Encode()))
+	// committer.Import(committer.Decode(indexer.Univalues(out).Encode()))
 
-	url := ccurl.NewStorageCommitter(store)
-	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(out).Encode()).(indexer.Univalues))
-	url.Sort()
-	url.Commit([]uint32{committercommon.SYSTEM})
+	committer := ccurl.NewStorageCommitter(store)
+	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(out).Encode()).(indexer.Univalues))
+	committer.Sort()
+	committer.Commit([]uint32{committercommon.SYSTEM})
 
-	url.Init(store)
+	committer.Init(store)
 	// create a path
 	path := commutative.NewPath()
 	writeCache.Clear()
@@ -242,17 +242,17 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	acctTrans = indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	in = indexer.Univalues(acctTrans).Encode()
 	out = indexer.Univalues{}.Decode(in).(indexer.Univalues)
-	// url.Import(url.Decode(indexer.Univalues(out).Encode()))
-	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(out).Encode()).(indexer.Univalues))
-	url.Sort()
-	url.Commit([]uint32{1})
+	// committer.Import(committer.Decode(indexer.Univalues(out).Encode()))
+	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(out).Encode()).(indexer.Univalues))
+	committer.Sort()
+	committer.Commit([]uint32{1})
 
 	_1, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", new(noncommutative.String))
 	if _1 != "1" {
 		t.Error("Error: Not match")
 	}
 
-	url.Init(store)
+	committer.Init(store)
 	writeCache.Clear()
 
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewString("3"))
@@ -282,12 +282,12 @@ func TestStateUpdate(t *testing.T) {
 	// _, initTrans := writeCache.Export(indexer.Sorter)
 	initTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
-	// url.Import(url.Decode(indexer.Univalues(initTrans).Encode()))
-	url := ccurl.NewStorageCommitter(store)
-	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(initTrans).Encode()).(indexer.Univalues))
-	url.Sort()
-	url.Commit([]uint32{committercommon.SYSTEM})
-	url.Init(store)
+	// committer.Import(committer.Decode(indexer.Univalues(initTrans).Encode()))
+	committer := ccurl.NewStorageCommitter(store)
+	committer.Import(indexer.Univalues{}.Decode(indexer.Univalues(initTrans).Encode()).(indexer.Univalues))
+	committer.Sort()
+	committer.Commit([]uint32{committercommon.SYSTEM})
+	committer.Init(store)
 
 	writeCache.Clear()
 	tx0bytes, trans, err := Create_Ctrn_0(alice, store)
@@ -303,10 +303,10 @@ func TestStateUpdate(t *testing.T) {
 
 	tx1Out := indexer.Univalues{}.Decode(tx1bytes).(indexer.Univalues)
 
-	// url.Import(url.Decode(indexer.Univalues(append(tx0Out, tx1Out...)).Encode()))
-	url.Import((append(tx0Out, tx1Out...)))
-	url.Sort()
-	url.Commit([]uint32{0, 1})
+	// committer.Import(committer.Decode(indexer.Univalues(append(tx0Out, tx1Out...)).Encode()))
+	committer.Import((append(tx0Out, tx1Out...)))
+	committer.Sort()
+	committer.Commit([]uint32{0, 1})
 	//need to encode delta only now it encodes everything
 
 	writeCache.Clear()
@@ -341,9 +341,9 @@ func TestStateUpdate(t *testing.T) {
 	transitions := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 	out := indexer.Univalues{}.Decode(indexer.Univalues(transitions).Encode()).(indexer.Univalues)
 
-	url.Import(out)
-	url.Sort()
-	url.Commit([]uint32{1})
+	committer.Import(out)
+	committer.Sort()
+	committer.Commit([]uint32{1})
 
 	writeCache.Clear()
 	if v, _, _ := writeCache.Read(committercommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{}); v != nil {

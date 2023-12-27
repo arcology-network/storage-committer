@@ -5,7 +5,7 @@ import (
 
 	common "github.com/arcology-network/common-lib/common"
 	committercommon "github.com/arcology-network/concurrenturl/common"
-	"github.com/arcology-network/concurrenturl/indexer"
+	indexer "github.com/arcology-network/concurrenturl/importer"
 	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
