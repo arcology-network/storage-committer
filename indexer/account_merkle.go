@@ -8,7 +8,7 @@ import (
 	common "github.com/arcology-network/common-lib/common"
 	mempool "github.com/arcology-network/common-lib/mempool"
 	merkle "github.com/arcology-network/common-lib/merkle"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	committercommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
@@ -54,7 +54,7 @@ func (this *AccountMerkle) GetMerkles() *map[string]*merkle.Merkle {
 
 // Insert to the merkle tree
 func (this *AccountMerkle) Import(transitions []interfaces.Univalue) {
-	offset := ccurlcommon.ETH10_ACCOUNT_PREFIX_LENGTH
+	offset := committercommon.ETH10_ACCOUNT_PREFIX_LENGTH
 	for _, v := range transitions {
 		path := *v.GetPath()
 		pos := strings.Index(path[offset:], "/")
@@ -78,7 +78,7 @@ func (this *AccountMerkle) Build(keys []string, encodedVals [][]byte) []*string 
 	}
 
 	t0 := time.Now()
-	offset := ccurlcommon.ETH10_ACCOUNT_PREFIX_LENGTH
+	offset := committercommon.ETH10_ACCOUNT_PREFIX_LENGTH
 	ranges, ParseAccountAddrs := this.markAccountRange(keys)
 	builder := func(start, end, index int, args ...interface{}) {
 		mempool := this.nodePool.GetTlsMempool(index)
@@ -120,8 +120,8 @@ func (this *AccountMerkle) markAccountRange(paths []string) ([]int, []*string) {
 	positions = append(positions, 0)
 	current := paths[0]
 	for i := 1; i < len(paths); i++ {
-		p0 := current[:ccurlcommon.ETH10_ACCOUNT_PREFIX_LENGTH+ccurlcommon.ETH10_ACCOUNT_LENGTH]
-		p1 := paths[i][:ccurlcommon.ETH10_ACCOUNT_PREFIX_LENGTH+ccurlcommon.ETH10_ACCOUNT_LENGTH]
+		p0 := current[:committercommon.ETH10_ACCOUNT_PREFIX_LENGTH+committercommon.ETH10_ACCOUNT_LENGTH]
+		p1 := paths[i][:committercommon.ETH10_ACCOUNT_PREFIX_LENGTH+committercommon.ETH10_ACCOUNT_LENGTH]
 		if p0 != p1 {
 			current = paths[i]
 			positions = append(positions, i)

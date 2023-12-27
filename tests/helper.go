@@ -6,7 +6,7 @@ import (
 
 	"github.com/arcology-network/common-lib/common"
 	orderedset "github.com/arcology-network/common-lib/container/set"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	"github.com/arcology-network/concurrenturl/indexer"
 	"github.com/arcology-network/concurrenturl/interfaces"
@@ -15,8 +15,8 @@ import (
 )
 
 func Create_Ctrn_0(account string, store interfaces.Datastore) ([]byte, []interfaces.Univalue, error) {
-	// url := ccurl.NewConcurrentUrl(store)
-	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
+	// url := ccurl.NewStorageCommitter(store)
+	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 
 	path := commutative.NewPath() // create a path
 	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", path); err != nil {
@@ -37,8 +37,8 @@ func Create_Ctrn_0(account string, store interfaces.Datastore) ([]byte, []interf
 }
 
 func ParallelInsert_Ctrn_0(account string, store interfaces.Datastore) ([]byte, error) {
-	// url := ccurl.NewConcurrentUrl(store)
-	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
+	// url := ccurl.NewStorageCommitter(store)
+	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 	path := commutative.NewPath() // create a path
 	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", path); err != nil {
 		return []byte{}, err
@@ -57,8 +57,8 @@ func ParallelInsert_Ctrn_0(account string, store interfaces.Datastore) ([]byte, 
 }
 
 func Create_Ctrn_1(account string, store interfaces.Datastore) ([]byte, error) {
-	// url := ccurl.NewConcurrentUrl(store)
-	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
+	// url := ccurl.NewStorageCommitter(store)
+	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 	path := commutative.NewPath() // create a path
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/", path); err != nil {
 		return []byte{}, err

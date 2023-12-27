@@ -1,49 +1,43 @@
 package concurrenturl
 
 import (
-	"reflect"
-
 	"github.com/arcology-network/common-lib/common"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	committercommon "github.com/arcology-network/concurrenturl/common"
 
-	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 	interfaces "github.com/arcology-network/concurrenturl/interfaces"
-	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
-	"github.com/arcology-network/concurrenturl/univalue"
-	cache "github.com/arcology-network/eu/cache"
 )
 
-type ConcurrentUrl struct {
+type StorageCommitter struct {
 	importer    *indexer.Importer
 	imuImporter *indexer.Importer // transitions that will take effect anyway regardless of execution failures or conflicts
-	Platform    *ccurlcommon.Platform
+	Platform    *committercommon.Platform
 }
 
-func NewConcurrentUrl(store interfaces.Datastore) *ConcurrentUrl {
-	platform := ccurlcommon.NewPlatform()
-	return &ConcurrentUrl{
+func NewStorageCommitter(store interfaces.Datastore) *StorageCommitter {
+	platform := committercommon.NewPlatform()
+	return &StorageCommitter{
 		importer:    indexer.NewImporter(store, platform),
 		imuImporter: indexer.NewImporter(store, platform),
-		Platform:    platform, //[]ccurlcommon.FilteredTransitionsInterface{&indexer.NonceFilter{}, &indexer.BalanceFilter{}},
+		Platform:    platform, //[]committercommon.FilteredTransitionsInterface{&indexer.NonceFilter{}, &indexer.BalanceFilter{}},
 	}
 }
 
-func (this *ConcurrentUrl) New(args ...interface{}) *ConcurrentUrl {
-	return &ConcurrentUrl{
-		Platform: ccurlcommon.NewPlatform(),
+func (this *StorageCommitter) New(args ...interface{}) *StorageCommitter {
+	return &StorageCommitter{
+		Platform: committercommon.NewPlatform(),
 	}
 }
 
-// func (this *ConcurrentUrl) WriteCache() *indexer.WriteCache { return this.writeCache }
-func (this *ConcurrentUrl) Importer() *indexer.Importer { return this.importer }
+// func (this *StorageCommitter) WriteCache() *indexer.WriteCache { return this.writeCache }
+func (this *StorageCommitter) Importer() *indexer.Importer { return this.importer }
 
-func (this *ConcurrentUrl) Init(store interfaces.Datastore) {
+func (this *StorageCommitter) Init(store interfaces.Datastore) {
 	this.importer.Init(store)
 	this.imuImporter.Init(store)
 }
 
-func (this *ConcurrentUrl) Clear() {
+func (this *StorageCommitter) Clear() {
 	this.importer.Store().Clear()
 
 	// this.writeCache.Clear()
@@ -51,49 +45,7 @@ func (this *ConcurrentUrl) Clear() {
 	this.imuImporter.Clear()
 }
 
-func CreateNewAccount(tx uint32, acct string, platform *ccurlcommon.Platform, writeCache *cache.WriteCache) ([]interfaces.Univalue, error) {
-	paths, typeids := platform.GetBuiltins(acct)
-
-	transitions := []interfaces.Univalue{}
-	for i, path := range paths {
-		var v interface{}
-		switch typeids[i] {
-		case commutative.PATH: // Path
-			v = commutative.NewPath()
-
-		case uint8(reflect.Kind(noncommutative.STRING)): // delta big int
-			v = noncommutative.NewString("")
-
-		case uint8(reflect.Kind(commutative.UINT256)): // delta big int
-			v = commutative.NewUnboundedU256()
-
-		case uint8(reflect.Kind(commutative.UINT64)):
-			v = commutative.NewUnboundedUint64()
-
-		case uint8(reflect.Kind(noncommutative.INT64)):
-			v = new(noncommutative.Int64)
-
-		case uint8(reflect.Kind(noncommutative.BYTES)):
-			v = noncommutative.NewBytes([]byte{})
-		}
-
-		if !writeCache.IfExists(path) {
-			transitions = append(transitions, univalue.NewUnivalue(tx, path, 0, 1, 0, v, nil))
-
-			if _, err := writeCache.Write(tx, path, v); err != nil { // root path
-				return nil, err
-			}
-
-			if !writeCache.IfExists(path) {
-				_, err := writeCache.Write(tx, path, v)
-				return transitions, err // root path
-			}
-		}
-	}
-	return transitions, nil
-}
-
-func (this *ConcurrentUrl) Import(transitions []interfaces.Univalue, args ...interface{}) *ConcurrentUrl {
+func (this *StorageCommitter) Import(transitions []interfaces.Univalue, args ...interface{}) *StorageCommitter {
 	invTransitions := make([]interfaces.Univalue, 0, len(transitions))
 
 	for i := 0; i < len(transitions); i++ {
@@ -111,7 +63,7 @@ func (this *ConcurrentUrl) Import(transitions []interfaces.Univalue, args ...int
 }
 
 // Call this as s
-func (this *ConcurrentUrl) Sort() *ConcurrentUrl {
+func (this *StorageCommitter) Sort() *StorageCommitter {
 	common.ParallelExecute(
 		func() { this.imuImporter.SortDeltaSequences() },
 		func() { this.importer.SortDeltaSequences() })
@@ -119,7 +71,7 @@ func (this *ConcurrentUrl) Sort() *ConcurrentUrl {
 	return this
 }
 
-func (this *ConcurrentUrl) Finalize(txs []uint32) *ConcurrentUrl {
+func (this *StorageCommitter) Finalize(txs []uint32) *StorageCommitter {
 	if txs != nil && len(txs) == 0 { // Commit all the transactions when txs == nil
 		return this
 	}
@@ -134,7 +86,7 @@ func (this *ConcurrentUrl) Finalize(txs []uint32) *ConcurrentUrl {
 	return this
 }
 
-func (this *ConcurrentUrl) CopyToDbBuffer() [32]byte {
+func (this *StorageCommitter) CopyToDbBuffer() [32]byte {
 	keys, values := this.importer.KVs()
 	invKeys, invVals := this.imuImporter.KVs()
 
@@ -142,13 +94,13 @@ func (this *ConcurrentUrl) CopyToDbBuffer() [32]byte {
 	return this.importer.Store().Precommit(keys, values) // save the transitions to the DB buffer
 }
 
-func (this *ConcurrentUrl) SaveToDB() {
+func (this *StorageCommitter) SaveToDB() {
 	store := this.importer.Store()
 	store.Commit(0) // Commit to the state store
 	this.Clear()
 }
 
-func (this *ConcurrentUrl) Commit(txs []uint32) *ConcurrentUrl {
+func (this *StorageCommitter) Commit(txs []uint32) *StorageCommitter {
 	if txs != nil && len(txs) == 0 {
 		this.Clear()
 		return this

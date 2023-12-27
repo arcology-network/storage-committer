@@ -5,7 +5,7 @@ import (
 	"sort"
 
 	common "github.com/arcology-network/common-lib/common"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	committercommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
@@ -37,12 +37,12 @@ func (this *Accumulator) CheckMinMax(transitions []interfaces.Univalue) []*Confl
 
 	underflown := this.isOutOfLimits(*(transitions)[0].GetPath(), negatives)
 	if underflown != nil {
-		underflown.Err = errors.New(ccurlcommon.WARN_OUT_OF_LOWER_LIMIT)
+		underflown.Err = errors.New(committercommon.WARN_OUT_OF_LOWER_LIMIT)
 	}
 
 	overflown := this.isOutOfLimits(*(transitions)[0].GetPath(), positives)
 	if overflown != nil {
-		overflown.Err = errors.New(ccurlcommon.WARN_OUT_OF_UPPER_LIMIT)
+		overflown.Err = errors.New(committercommon.WARN_OUT_OF_UPPER_LIMIT)
 	}
 
 	if overflown == nil && underflown == nil {

@@ -8,9 +8,8 @@ import (
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/concurrenturl"
 	ccurl "github.com/arcology-network/concurrenturl"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
@@ -25,21 +24,21 @@ import (
 func TestConcurrentDB(t *testing.T) {
 	store := chooseDataStore()
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
-	// url := ccurl.NewConcurrentUrl(store)
-	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
+	// url := ccurl.NewStorageCommitter(store)
+	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 
 	alice := AliceAccount()
-	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
 	bob := BobAccount()
 
-	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, bob, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, bob); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
-	// if _, err := url.NewAccount(ccurlcommon.SYSTEM, bob); err != nil { // NewAccount account structure {
+	// if _, err := url.NewAccount(committercommon.SYSTEM, bob); err != nil { // NewAccount account structure {
 	// 	t.Error(err)
 	// }
 
@@ -95,28 +94,28 @@ func TestEthWorldTrieProof(t *testing.T) {
 	store := chooseDataStore()
 	// store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode)
 
-	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 
 	alice := AliceAccount()
-	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
 	bob := BobAccount()
-	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, bob, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, bob); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
-	// if _, err := url.NewAccount(ccurlcommon.SYSTEM, bob); err != nil { // NewAccount account structure {
+	// if _, err := url.NewAccount(committercommon.SYSTEM, bob); err != nil { // NewAccount account structure {
 	// 	t.Error(err)
 	// }
 
 	acctTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
-	url := ccurl.NewConcurrentUrl(store)
+	url := ccurl.NewStorageCommitter(store)
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
 	url.Sort()
-	url.Commit([]uint32{ccurlcommon.SYSTEM})
+	url.Commit([]uint32{committercommon.SYSTEM})
 	url.Init(store)
 
 	writeCache.Clear()
@@ -203,26 +202,26 @@ func TestEthWorldTrieProof(t *testing.T) {
 
 func TestGetProofAPI(t *testing.T) {
 	store := ccurlstorage.NewParallelEthMemDataStore()
-	// url := ccurl.NewConcurrentUrl(ccurlstorage.NewParallelEthMemDataStore())
-	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
+	// url := ccurl.NewStorageCommitter(ccurlstorage.NewParallelEthMemDataStore())
+	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 
 	alice := AliceAccount()
-	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
 	bob := BobAccount()
-	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, bob, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, bob); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
 	acctTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.IPCTransition{})
 	ts := indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues)
 
-	url := ccurl.NewConcurrentUrl(store)
+	url := ccurl.NewStorageCommitter(store)
 	url.Import(ts)
 	url.Sort()
-	url.Commit([]uint32{ccurlcommon.SYSTEM})
+	url.Commit([]uint32{committercommon.SYSTEM})
 
 	writeCache.Clear()
 	/* Alice updates */

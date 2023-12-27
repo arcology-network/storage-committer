@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	common "github.com/arcology-network/common-lib/common"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	committercommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/indexer"
 	"github.com/arcology-network/concurrenturl/interfaces"
 )
@@ -69,7 +69,7 @@ func (this *Arbitrator) Detect(groupIDs []uint32, newTrans []interfaces.Univalue
 				self:    newTrans[ranges[i]].GetTx(),
 				groupID: groupIDs[ranges[i]+offset : ranges[i+1]],
 				txIDs:   conflictTxs,
-				Err:     errors.New(ccurlcommon.WARN_ACCESS_CONFLICT),
+				Err:     errors.New(committercommon.WARN_ACCESS_CONFLICT),
 			},
 		)
 

@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	common "github.com/arcology-network/common-lib/common"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	committercommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 )
@@ -22,7 +22,7 @@ func NewDeltaSequence(key string, indexer *Importer) *DeltaSequence {
 		key:         key,
 		transitions: make([]interfaces.Univalue, 0, 16),
 		rawBytes:    common.FilterFirst(indexer.store.Retrive(key, nil)),
-		// initial: (&univalue.Univalue{}).Init(ccurlcommon.SYSTEM, key, 0, 0, 0, encoded, indexer.Store()),
+		// initial: (&univalue.Univalue{}).Init(committercommon.SYSTEM, key, 0, 0, 0, encoded, indexer.Store()),
 	}
 }
 
@@ -45,11 +45,11 @@ func (this *DeltaSequence) Sort() {
 	}
 
 	sort.SliceStable(this.transitions, func(i, j int) bool {
-		if this.transitions[i].GetTx() == ccurlcommon.SYSTEM {
+		if this.transitions[i].GetTx() == committercommon.SYSTEM {
 			return true
 		}
 
-		if this.transitions[j].GetTx() == ccurlcommon.SYSTEM {
+		if this.transitions[j].GetTx() == committercommon.SYSTEM {
 			return false
 		}
 

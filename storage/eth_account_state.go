@@ -8,7 +8,7 @@ import (
 
 	"github.com/arcology-network/common-lib/codec"
 	common "github.com/arcology-network/common-lib/common"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
@@ -114,8 +114,8 @@ func (this *Account) DB(key string) ethdb.Database {
 }
 
 func (this *Account) ParseStorageKey(key string) string {
-	if k := ccurlcommon.GetPathUnder(key, "/storage/native/"); len(k) > 0 {
-		ccurlcommon.GetPathUnder(key, "/storage/native/")
+	if k := committercommon.GetPathUnder(key, "/storage/native/"); len(k) > 0 {
+		committercommon.GetPathUnder(key, "/storage/native/")
 		kstr, err := hexutil.Decode(k)
 		if err != nil {
 			panic(err)
@@ -175,7 +175,7 @@ func (this *Account) Retrive(key string, T any) (interface{}, error) {
 }
 
 func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Type) error {
-	if pos, _ := common.FindFirstIf(keys, func(k string) bool { return len(k) == ccurlcommon.ETH10_ACCOUNT_FULL_LENGTH+1 }); pos >= 0 {
+	if pos, _ := common.FindFirstIf(keys, func(k string) bool { return len(k) == committercommon.ETH10_ACCOUNT_FULL_LENGTH+1 }); pos >= 0 {
 		common.RemoveAt(&keys, pos)
 		common.RemoveAt(&typedVals, pos)
 	}

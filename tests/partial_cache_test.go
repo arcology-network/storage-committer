@@ -7,7 +7,7 @@ package ccurltest
 // 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
 // 	"github.com/arcology-network/common-lib/common"
 // 	ccurl "github.com/arcology-network/concurrenturl"
-// 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+// 	committercommon "github.com/arcology-network/concurrenturl/common"
 // 	indexer "github.com/arcology-network/concurrenturl/indexer"
 // 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 // 	storage "github.com/arcology-network/concurrenturl/storage"
@@ -17,18 +17,18 @@ package ccurltest
 // 	memDB := cachedstorage.NewMemDB()
 // 	policy := cachedstorage.NewCachePolicy(10000000, 1.0)
 // 	store := cachedstorage.NewDataStore(nil, policy, memDB, storage.Codec{}.Encode, storage.Codec{}.Decode)
-// 		url := ccurl.NewConcurrentUrl(store)
+// 		url := ccurl.NewStorageCommitter(store)
 // writeCache := url.WriteCache()
 // 	alice := AliceAccount()
-// 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
+// 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 // 		t.Error(err)
 // 	}
 
-// 	url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
+// 	url.Write(committercommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
 // 	acctTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 // 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
 // 	url.Sort()
-// 	url.Commit([]uint32{ccurlcommon.SYSTEM})
+// 	url.Commit([]uint32{committercommon.SYSTEM})
 
 // 	/* Filter persistent data source */
 // 	excludeMemDB := func(db cachedstorage.PersistentStorageInterface) bool { // Do not access MemDB
@@ -77,18 +77,18 @@ package ccurltest
 // 	}
 
 // 	store := cachedstorage.NewDataStore(nil, policy, memDB, storage.Codec{}.Encode, storage.Codec{}.Decode, excludeMemDB)
-// 		url := ccurl.NewConcurrentUrl(store)
+// 		url := ccurl.NewStorageCommitter(store)
 // writeCache := url.WriteCache()
 // 	alice := AliceAccount()
-// 	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
+// 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 // 		t.Error(err)
 // 	}
 
-// 	url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
+// 	url.Write(committercommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
 // 	acctTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 // 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
 // 	url.Sort()
-// 	url.Commit([]uint32{ccurlcommon.SYSTEM})
+// 	url.Commit([]uint32{committercommon.SYSTEM})
 
 // 	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999")); err != nil {
 // 		t.Error(err)
@@ -96,7 +96,7 @@ package ccurltest
 
 // 	acctTrans = indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
-// 	// 	url := ccurl.NewConcurrentUrl(store)
+// 	// 	url := ccurl.NewStorageCommitter(store)
 // writeCache := url.WriteCache()
 
 // 	url.WriteCache().Clear()

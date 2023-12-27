@@ -4,7 +4,7 @@ import (
 	common "github.com/arcology-network/common-lib/common"
 	ccmap "github.com/arcology-network/common-lib/container/map"
 	"github.com/arcology-network/common-lib/mempool"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	committercommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 )
@@ -104,7 +104,7 @@ func (this *Importer) WhilteList(whitelist []uint32) []error {
 	}
 
 	for txid, vec := range this.byTx {
-		if txid == ccurlcommon.SYSTEM {
+		if txid == committercommon.SYSTEM {
 			continue
 		}
 

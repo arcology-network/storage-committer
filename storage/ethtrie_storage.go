@@ -6,7 +6,7 @@ import (
 
 	common "github.com/arcology-network/common-lib/common"
 	ccmap "github.com/arcology-network/common-lib/container/map"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	committercommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -117,9 +117,9 @@ func (this *EthDataStore) IsProvable(addr string) ([]byte, error) {
 func (this *EthDataStore) IfExists(key string) bool {
 	accesses := ethmpt.AccessListCache{}
 
-	_, accountKey, suffix := ccurlcommon.ParseAccountAddr(key)
+	_, accountKey, suffix := committercommon.ParseAccountAddr(key)
 	if v, _ := this.AccountCache.Get(accountKey); v != nil {
-		return len(key) == ccurlcommon.ETH10_ACCOUNT_FULL_LENGTH+1 || v.(*Account).Has(key) // If the account has the key
+		return len(key) == committercommon.ETH10_ACCOUNT_FULL_LENGTH+1 || v.(*Account).Has(key) // If the account has the key
 	}
 
 	// Not in cache, look up in the trie
@@ -147,7 +147,7 @@ func (this *EthDataStore) BatchInject(keys []string, values []interface{}) error
 	acctDict := make(map[string]*Account)
 
 	for i := 0; i < len(keys); i++ {
-		_, acctKey, _ := ccurlcommon.ParseAccountAddr(keys[i])
+		_, acctKey, _ := committercommon.ParseAccountAddr(keys[i])
 
 		account, ok := this.AccountCache.Get(acctKey)
 		if account != nil {
@@ -219,7 +219,7 @@ func (this *EthDataStore) GetAccountFromTrie(accountKey string, accesses *ethmpt
 
 func (this *EthDataStore) Retrive(key string, T any) (interface{}, error) {
 	accesses := ethmpt.AccessListCache{}
-	_, acct, _ := ccurlcommon.ParseAccountAddr(key) // Get the address
+	_, acct, _ := committercommon.ParseAccountAddr(key) // Get the address
 	account, err := this.GetAccount(acct, &accesses)
 	if account != nil {
 		return account.Retrive(key, T) // Get the storage from the key
@@ -245,7 +245,7 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 			First  string
 			Second interface{}
 		}) *string {
-			_, key, _ := ccurlcommon.ParseAccountAddr(v.First)
+			_, key, _ := committercommon.ParseAccountAddr(v.First)
 			return &key
 		})
 

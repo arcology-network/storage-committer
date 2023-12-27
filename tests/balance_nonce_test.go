@@ -5,9 +5,8 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/arcology-network/concurrenturl"
 	ccurl "github.com/arcology-network/concurrenturl"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
@@ -19,11 +18,11 @@ import (
 func TestSimpleBalance(t *testing.T) {
 	store := chooseDataStore()
 
-	url := ccurl.NewConcurrentUrl(store)
-	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
+	url := ccurl.NewStorageCommitter(store)
+	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 
 	alice := AliceAccount()
-	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -57,10 +56,10 @@ func TestSimpleBalance(t *testing.T) {
 	url.Sort()
 	url.Commit([]uint32{0, 1})
 
-	// url = ccurl.NewConcurrentUrl(store)
+	// url = ccurl.NewStorageCommitter(store)
 	// Read alice's balance again
 	writeCache.Clear()
-	// url2 := ccurl.NewConcurrentUrl(store)
+	// url2 := ccurl.NewStorageCommitter(store)
 	balance, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/balance", new(commutative.U256))
 	balanceAddr := balance.(uint256.Int)
 	if (&balanceAddr).Cmp(uint256.NewInt(33)) != 0 {
@@ -90,10 +89,10 @@ func TestSimpleBalance(t *testing.T) {
 func TestBalance(t *testing.T) {
 	store := chooseDataStore()
 
-	// url := ccurl.NewConcurrentUrl(store)
-	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
+	// url := ccurl.NewStorageCommitter(store)
+	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 	alice := AliceAccount()
-	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -180,12 +179,12 @@ func TestNonce(t *testing.T) {
 
 	alice := AliceAccount()
 
-	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
-	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
+	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
-	// if _, err := url1.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	// if _, err := url1.NewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 	// 	t.Error(err)
 	// }
 
@@ -213,7 +212,7 @@ func TestNonce(t *testing.T) {
 
 	trans := indexer.Univalues((writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
-	url1 := ccurl.NewConcurrentUrl(store)
+	url1 := ccurl.NewStorageCommitter(store)
 	url1.Import(trans)
 	url1.Sort()
 	url1.Commit([]uint32{0})
@@ -228,12 +227,12 @@ func TestNonce(t *testing.T) {
 func TestMultipleNonces(t *testing.T) {
 	store := chooseDataStore()
 
-	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 
-	url0 := ccurl.NewConcurrentUrl(store)
+	url0 := ccurl.NewStorageCommitter(store)
 	alice := AliceAccount()
 
-	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -251,16 +250,16 @@ func TestMultipleNonces(t *testing.T) {
 	// trans := (url0.Export(indexer.Sorter))
 	trans0 := indexer.Univalues((writeCache.Export(indexer.Sorter))).To(indexer.ITCTransition{})
 
-	// url1 := ccurl.NewConcurrentUrl(store)
+	// url1 := ccurl.NewStorageCommitter(store)
 
 	bob := BobAccount()
 
 	// writeCache = url1.WriteCache()
-	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, bob, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, bob); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
-	// if _, err := url1.NewAccount(ccurlcommon.SYSTEM, bob); err != nil { // NewAccount account structure {
+	// if _, err := url1.NewAccount(committercommon.SYSTEM, bob); err != nil { // NewAccount account structure {
 	// 	t.Error(err)
 	// }
 

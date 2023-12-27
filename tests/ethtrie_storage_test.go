@@ -14,9 +14,8 @@ import (
 	"github.com/arcology-network/common-lib/common"
 	orderedset "github.com/arcology-network/common-lib/container/set"
 	"github.com/arcology-network/common-lib/merkle"
-	"github.com/arcology-network/concurrenturl"
 	ccurl "github.com/arcology-network/concurrenturl"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 	"github.com/arcology-network/concurrenturl/interfaces"
@@ -38,28 +37,28 @@ import (
 // It checks the correctness of the storage updates and cache management.
 func TestTrieUpdates(t *testing.T) {
 	store := chooseDataStore()
-	// url := ccurl.NewConcurrentUrl(store)
-	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
+	// url := ccurl.NewStorageCommitter(store)
+	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 
 	alice := AliceAccount()
-	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
 	bob := BobAccount()
-	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, bob, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, bob); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
 	carol := CarolAccount()
-	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, carol, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, carol); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
-	url := ccurl.NewConcurrentUrl(store)
+	url := ccurl.NewStorageCommitter(store)
 	url.Import(indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.IPCTransition{}))
 	url.Sort()
-	url.Finalize([]uint32{ccurlcommon.SYSTEM})
+	url.Finalize([]uint32{committercommon.SYSTEM})
 	url.CopyToDbBuffer() // Export transitions and save them to the DB buffer.
 
 	ds := url.Importer().Store().(*storage.EthDataStore)
@@ -75,11 +74,11 @@ func TestTrieUpdates(t *testing.T) {
 	url.Init(store)
 	writeCache.Clear()
 
-	if _, err := writeCache.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
+	if _, err := writeCache.Write(committercommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
 		t.Error(err)
 	}
 
-	if _, err := writeCache.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ele-0", commutative.NewPath()); err != nil {
+	if _, err := writeCache.Write(committercommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ele-0", commutative.NewPath()); err != nil {
 		t.Error(err)
 	}
 
@@ -93,7 +92,7 @@ func TestTrieUpdates(t *testing.T) {
 
 	url.Import(indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.IPCTransition{}))
 	url.Sort()
-	url.Finalize([]uint32{ccurlcommon.SYSTEM})
+	url.Finalize([]uint32{committercommon.SYSTEM})
 	url.CopyToDbBuffer() // Export transitions and save them to the DB buffer.
 
 	if len(ds.DirtyAccounts) != 1 || ds.DirtyAccounts[0].Address() != alice || !ds.DirtyAccounts[0].StorageDirty {
@@ -104,21 +103,21 @@ func TestTrieUpdates(t *testing.T) {
 	url.Init(store)
 	writeCache.Clear()
 
-	if _, err := writeCache.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(100), true)); err != nil {
+	if _, err := writeCache.Write(committercommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(100), true)); err != nil {
 		t.Error(err)
 	}
 
-	if _, err := writeCache.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(uint64(11))); err != nil {
+	if _, err := writeCache.Write(committercommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(uint64(11))); err != nil {
 		t.Error(err)
 	}
 
-	if _, err := writeCache.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/code", noncommutative.NewBytes([]byte{1, 2, 3, 4})); err != nil {
+	if _, err := writeCache.Write(committercommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/code", noncommutative.NewBytes([]byte{1, 2, 3, 4})); err != nil {
 		t.Error(err)
 	}
 
 	url.Import(indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.IPCTransition{}))
 	url.Sort()
-	url.Finalize([]uint32{ccurlcommon.SYSTEM})
+	url.Finalize([]uint32{committercommon.SYSTEM})
 	url.CopyToDbBuffer() // Export transitions and save them to the DB buffer.
 
 	if len(ds.DirtyAccounts) != 1 || ds.DirtyAccounts[0].Address() != alice || ds.DirtyAccounts[0].StorageDirty {
@@ -187,21 +186,21 @@ func TestEthStorageConnection(t *testing.T) {
 	store = chooseDataStore()
 
 	alice := AliceAccount()
-	url := ccurl.NewConcurrentUrl(store)
+	url := ccurl.NewStorageCommitter(store)
 	// writeCache := url.WriteCache()
-	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
-	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
+	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
-	if _, err := writeCache.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
+	if _, err := writeCache.Write(committercommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
 		t.Error(err)
 	}
 
 	trans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.IPCTransition{})
 	url.Import(trans)
 	url.Sort()
-	url.Commit([]uint32{ccurlcommon.SYSTEM})
+	url.Commit([]uint32{committercommon.SYSTEM})
 
 	v, _, err := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", new(commutative.Path))
 	if v == nil {
@@ -214,11 +213,11 @@ func TestBasicAddRead(t *testing.T) {
 	// store := chooseDataStore()
 
 	alice := AliceAccount()
-	// url := ccurl.NewConcurrentUrl(store)
+	// url := ccurl.NewStorageCommitter(store)
 	// writeCache := url.WriteCache()
-	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 
-	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -289,19 +288,19 @@ func TestEthDataStoreAddDeleteRead(t *testing.T) {
 	// store := chooseDataStore()
 
 	// writeCache := url.WriteCache()
-	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 	alice := AliceAccount()
-	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
 	acctTrans := indexer.Univalues(common.Clone(writeCache.Export(indexer.Sorter))).To(indexer.IPCTransition{})
 
-	url := ccurl.NewConcurrentUrl(store)
+	url := ccurl.NewStorageCommitter(store)
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
 
 	url.Sort()
-	url.Commit([]uint32{ccurlcommon.SYSTEM})
+	url.Commit([]uint32{committercommon.SYSTEM})
 
 	url.Init(store)
 	// create a path
@@ -381,8 +380,8 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 
 	alice := AliceAccount()
 
-	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
-	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
+	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -393,10 +392,10 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 	//values := indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).([]interfaces.Univalue)
 	ts := indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues)
 
-	url := ccurl.NewConcurrentUrl(store)
+	url := ccurl.NewStorageCommitter(store)
 	url.Import(ts)
 	url.Sort()
-	url.Commit([]uint32{ccurlcommon.SYSTEM})
+	url.Commit([]uint32{committercommon.SYSTEM})
 	url.Init(store)
 
 	writeCache.Clear()
@@ -438,11 +437,11 @@ func BenchmarkMultipleAccountCommitDataStore(b *testing.B) {
 	// store := chooseDataStore() // Eth data store
 	store := datastore.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode) // Native data store
 
-	// url := ccurl.NewConcurrentUrl(store)
-	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
+	// url := ccurl.NewStorageCommitter(store)
+	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 
 	alice := AliceAccount()
-	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -454,11 +453,11 @@ func BenchmarkMultipleAccountCommitDataStore(b *testing.B) {
 	// t0 := time.Now()
 	for i := 0; i < 100000; i++ {
 		acct := fmt.Sprint(rand.Int())
-		if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, acct, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
+		if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, acct); err != nil { // NewAccount account structure {
 			fmt.Println(err)
 		}
 
-		// if _, err := url.NewAccount(ccurlcommon.SYSTEM, acct); err != nil { // NewAccount account structure {
+		// if _, err := url.NewAccount(committercommon.SYSTEM, acct); err != nil { // NewAccount account structure {
 		// 	fmt.Println(err)
 		// }
 

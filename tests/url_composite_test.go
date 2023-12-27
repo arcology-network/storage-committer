@@ -6,9 +6,8 @@ import (
 
 	"github.com/arcology-network/common-lib/common"
 	orderedset "github.com/arcology-network/common-lib/container/set"
-	"github.com/arcology-network/concurrenturl"
 	ccurl "github.com/arcology-network/concurrenturl"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 	"github.com/arcology-network/concurrenturl/interfaces"
@@ -18,11 +17,11 @@ import (
 
 func TestAuxTrans(t *testing.T) {
 	store := chooseDataStore()
-	url := ccurl.NewConcurrentUrl(store)
-	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
+	url := ccurl.NewStorageCommitter(store)
+	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 
 	alice := AliceAccount()
-	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -32,7 +31,7 @@ func TestAuxTrans(t *testing.T) {
 	url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
 
 	url.Sort()
-	url.Commit([]uint32{ccurlcommon.SYSTEM}) // Commit
+	url.Commit([]uint32{committercommon.SYSTEM}) // Commit
 
 	url.Init(store)
 	// create a path
@@ -110,10 +109,10 @@ func TestAuxTrans(t *testing.T) {
 func TestCheckAccessRecords(t *testing.T) {
 	store := chooseDataStore()
 
-	url := ccurl.NewConcurrentUrl(store)
-	writeCache := cache.NewWriteCache(store, ccurlcommon.NewPlatform())
+	url := ccurl.NewStorageCommitter(store)
+	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 	alice := AliceAccount()
-	if _, err := concurrenturl.CreateNewAccount(ccurlcommon.SYSTEM, alice, ccurlcommon.NewPlatform(), writeCache); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -156,7 +155,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	// url.Sort()
 	// url.Commit([]uint32{1}) // Commit
 
-	// url = ccurl.NewConcurrentUrl(store)
+	// url = ccurl.NewStorageCommitter(store)
 	// if len(trans11) != 3 {
 	// 	t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/2") // create a path
 	// }
