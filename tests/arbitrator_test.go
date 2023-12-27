@@ -129,7 +129,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	store := chooseDataStore()
 
 	alice := AliceAccount()
-	committer := ccurl.NewStorageCommitter(store)
+
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
@@ -137,6 +137,8 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 
 	// writeCache.Write(committercommon.SYSTEM, committercommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
 	acctTrans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITCTransition{})
+
+	committer := ccurl.NewStorageCommitter(store)
 	committer.Import(importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues))
 	committer.Sort()
 	committer.Commit([]uint32{committercommon.SYSTEM})

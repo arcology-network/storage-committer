@@ -1,12 +1,22 @@
-# Concurrent State Management
-The [Ethereum](https://github.com/ethereum) ecosystem incorporates the Ethereum Virtual Machine (EVM), a stateless virtual machine responsible for executing binary code compiled from Solidity source files. When the EVM interacts with state data such as input and variables, it relies on a designated database known as statedb. The outcomes of these interactions are subsequently saved within the stateDB.
+# Concurrent State Committer
+The [Ethereum ecosystem](https://github.com/ethereum) incorporates the Ethereum Virtual Machine (EVM) for transaction processing. When the EVM interacts with state data such as input and variables, it relies on a designated database known as statedb. The outcomes of these interactions are subsequently saved within the stateDB.
 
-## Limitation
+## What Is Concurrent Committer
 
-The Ethererum state trie, designed specifically for calculating the hash root, proves its utility in the hash generation process. In the absence of such a requirement, utilizing a plain database directly is considered a more efficient alternative. A notable limitation of the original design is its inability to manage concurrency . Attempting to have multiple EVMs share the same Trie introduces thread safety problems.
+A notable limitation of the original design is its inability to manage concurrency. Attempting to have multiple EVMs share the same Trie introduces thread safety problems.
+
+Arcology replace the original stateDB with [a write cache]() for every EVM instance running in parallel. 
+
+The primary objective for this project 
+
+is to introduce a dedicated state cache engineered to support **multiple EVMs concurrentVly processing multiple transactions.**
+
+
+## Responsiblities
+
 
 ##  Integration
-The primary objective is to introduce a dedicated state cache engineered to support **multiple EVMs concurrently processing multiple transactions.** The module serves as the coordinator for accesses initiated by multiple EVM instances. The original storage module, consisting of a trie and a primary database, remains in read-only during execution and undergoes updates only once when a block cycle concludes. 
+ The module serves as the coordinator for accesses initiated by multiple EVM instances. The original storage module, consisting of a trie and a primary database, remains in read-only during execution and undergoes updates only once when a block cycle concludes. 
 
 <p align="center">
   <img src="./img/committer.png" alt="committer" height="400">
