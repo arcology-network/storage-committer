@@ -8,11 +8,11 @@ import (
 	orderedset "github.com/arcology-network/common-lib/container/set"
 	"github.com/arcology-network/concurrenturl"
 	ccurl "github.com/arcology-network/concurrenturl"
-	cache "github.com/arcology-network/concurrenturl/cache"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
+	cache "github.com/arcology-network/eu/cache"
 )
 
 func TestAddAndDelete(t *testing.T) {
