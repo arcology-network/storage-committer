@@ -9,7 +9,7 @@ The Ethererum state trie, designed specifically for calculating the hash root, p
 The primary objective is to introduce a dedicated state cache engineered to support **multiple EVMs concurrently processing multiple transactions.** The module serves as the coordinator for accesses initiated by multiple EVM instances. The original storage module, consisting of a trie and a primary database, remains in read-only during execution and undergoes updates only once when a block cycle concludes. 
 
 <p align="center">
-  <img src="./img/eu_merger.png" alt="Your SVG" height="400">
+  <img src="./img/committer.png" alt="committer" height="400">
 </p>
 
 
