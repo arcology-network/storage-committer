@@ -5,11 +5,11 @@ import (
 	"reflect"
 	"testing"
 
-	datastore "github.com/arcology-network/common-lib/cachedstorage/datastore"
-	"github.com/arcology-network/common-lib/cachedstorage/memdb"
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	orderedset "github.com/arcology-network/common-lib/container/set"
+	datastore "github.com/arcology-network/common-lib/storage/datastore"
+	"github.com/arcology-network/common-lib/storage/memdb"
 	ccurl "github.com/arcology-network/concurrenturl"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/commutative"

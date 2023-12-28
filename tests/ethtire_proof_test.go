@@ -23,7 +23,7 @@ import (
 
 func TestConcurrentDB(t *testing.T) {
 	store := chooseDataStore()
-	// store := cachedstorage.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
+	// store := storage.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
 	// committer := ccurl.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 
@@ -92,7 +92,7 @@ func TestConcurrentDB(t *testing.T) {
 
 func TestEthWorldTrieProof(t *testing.T) {
 	store := chooseDataStore()
-	// store := cachedstorage.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
+	// store := storage.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
 
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 

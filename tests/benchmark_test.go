@@ -8,9 +8,9 @@ import (
 	"time"
 
 	datacompression "github.com/arcology-network/common-lib/addrcompressor"
-	datastore "github.com/arcology-network/common-lib/cachedstorage/datastore"
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/merkle"
+	datastore "github.com/arcology-network/common-lib/storage/datastore"
 	ccurl "github.com/arcology-network/concurrenturl"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"

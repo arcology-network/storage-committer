@@ -4,8 +4,8 @@ import (
 	"crypto/sha256"
 	"math"
 
-	datastore "github.com/arcology-network/common-lib/cachedstorage/datastore"
-	memdb "github.com/arcology-network/common-lib/cachedstorage/memdb"
+	datastore "github.com/arcology-network/common-lib/storage/datastore"
+	memdb "github.com/arcology-network/common-lib/storage/memdb"
 	"github.com/arcology-network/concurrenturl/interfaces"
 )
 

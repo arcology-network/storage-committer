@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
-	datastore "github.com/arcology-network/common-lib/cachedstorage/datastore"
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	orderedset "github.com/arcology-network/common-lib/container/set"
 	"github.com/arcology-network/common-lib/merkle"
+	datastore "github.com/arcology-network/common-lib/storage/datastore"
 	ccurl "github.com/arcology-network/concurrenturl"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"

@@ -27,14 +27,12 @@ is to introduce a dedicated state cache engineered to support **multiple EVMs co
 
 Below are some major Components:
 
-- **Dedicated Write Caches:** A dedicated cache for each EVM instance, and at the end of each execution cycle, extract accesses and updates.
-
-- **Conflict Detection:** Detect potential conflicts among data accesses and updates.
-
-- **Root Hash Calculation:** Consolidate all updates into a single Trie for efficient root hash calculation.
-
-- **Database Update:** Eventually, flush the accumulated updates to the primary database.
-
+| Component                   | Description                                                                   |
+|---------------------------|-------------------------------------------------------------------------------|
+| Dedicated Write Caches    | A dedicated cache for each EVM instance, extracting accesses and updates at the end of each execution cycle. |
+| Conflict Detection        | Detect potential conflicts among data accesses and updates.                    |
+| Root Hash Calculation     | Consolidate all updates into a single Trie for efficient root hash calculation. |
+| Database Update           | Eventually flush the accumulated updates to the primary database.              |
 
 
 ##  More Info

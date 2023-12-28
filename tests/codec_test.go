@@ -8,9 +8,9 @@ import (
 	"time"
 
 	datacompression "github.com/arcology-network/common-lib/addrcompressor"
-	cachedstorage "github.com/arcology-network/common-lib/cachedstorage/datastore"
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
+	storage "github.com/arcology-network/common-lib/storage/datastore"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	importer "github.com/arcology-network/concurrenturl/importer"
@@ -67,7 +67,7 @@ func TestNoncommutativeCodec(t *testing.T) {
 }
 
 func TestUnivalueCodec(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
+	store := storage.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
 	transitions := []*univalue.Univalue{}
 
 	// committer := ccurl.NewStorageCommitter(store)
@@ -91,7 +91,7 @@ func TestUnivalueCodec(t *testing.T) {
 }
 
 func TestUnivaluesCodec(t *testing.T) {
-	store := cachedstorage.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
+	store := storage.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
 	transitions := []*univalue.Univalue{}
 	for i := 0; i < 10; i++ {
 		acct := datacompression.RandomAccount()

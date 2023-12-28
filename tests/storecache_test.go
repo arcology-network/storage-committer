@@ -5,7 +5,7 @@ package ccurltest
 // 	"testing"
 // 	"time"
 
-// 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
+// 	storage "github.com/arcology-network/common-lib/storage"
 // 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 // 	storage "github.com/arcology-network/concurrenturl/storage"
 // 	univalue "github.com/arcology-network/concurrenturl/univalue"
@@ -24,9 +24,9 @@ package ccurltest
 // 			nVals[i] = univalue.NewUnivalue( uint32(i), keys[i], 2, 2, noncommutative.NewInt64(int64(i)))
 // 		}
 
-// 		persistentDB := cachedstorage.NewMemDB()
-// 		cachePolicy := cachedstorage.NewCachePolicy(1, 1.0) // 1 byte only
-// 		dataStore := cachedstorage.NewDataStore(nil, cachePolicy, persistentDB, univalue.ToBytes, univalue.FromBytes)
+// 		persistentDB := storage.NewMemDB()
+// 		cachePolicy := storage.NewCachePolicy(1, 1.0) // 1 byte only
+// 		dataStore := storage.NewDataStore(nil, cachePolicy, persistentDB, univalue.ToBytes, univalue.FromBytes)
 
 // 		// -------------------- First insertion --------------------
 // 		dataStore.BatchInject(keys, nVals)
@@ -45,8 +45,8 @@ package ccurltest
 // 			nVals[i] = univalue.NewUnivalue( uint32(i), keys[i], 129, 129, noncommutative.NewInt64(int64(i+10)))
 // 		}
 
-// 		// cachePolicy = cachedstorage.NewCachePolicy(1, 1.0) // 1 byte only
-// 		// dataStore = cachedstorage.NewDataStore(nil, cachePolicy)
+// 		// cachePolicy = storage.NewCachePolicy(1, 1.0) // 1 byte only
+// 		// dataStore = storage.NewDataStore(nil, cachePolicy)
 
 // 		// --------------Second insertion ---------------------
 // 		dataStore.BatchInject(keys, nVals)
@@ -70,9 +70,9 @@ package ccurltest
 // 			nVals[i] = univalue.NewUnivalue( uint32(i), keys[i], 1, 1, 2, noncommutative.NewInt64(int64(i)))
 // 		}
 
-// 		persistentDB := cachedstorage.NewMemDB()
-// 		cachePolicy := cachedstorage.NewCachePolicy(1, 0.8)
-// 		dataStore := cachedstorage.NewDataStore(nil, cachePolicy, persistentDB, univalue.ToBytes, univalue.FromBytes)
+// 		persistentDB := storage.NewMemDB()
+// 		cachePolicy := storage.NewCachePolicy(1, 0.8)
+// 		dataStore := storage.NewDataStore(nil, cachePolicy, persistentDB, univalue.ToBytes, univalue.FromBytes)
 
 // 		// First insertion
 // 		dataStore.BatchInject(keys, nVals)
@@ -110,10 +110,10 @@ package ccurltest
 // 		encoded[i] = committercommon.Codec{}.Encode(nVals[i]) // this is wrong  !!!
 // 	}
 
-// 	persistentDB := cachedstorage.NewMemDB()
+// 	persistentDB := storage.NewMemDB()
 // 	persistentDB.BatchSet(keys, encoded)
-// 	cachePolicy := cachedstorage.NewCachePolicy(1, 0.8)
-// 	dataStore := cachedstorage.NewDataStore(nil, cachePolicy, persistentDB, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
+// 	cachePolicy := storage.NewCachePolicy(1, 0.8)
+// 	dataStore := storage.NewDataStore(nil, cachePolicy, persistentDB, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
 
 // 	// First insertion
 // 	dataStore.BatchInject(keys, nVals)
@@ -144,8 +144,8 @@ package ccurltest
 // 		nVals[i] = univalue.NewUnivalue(uint32(i), keys[i], 1, 1, 2, noncommutative.NewInt64(int64(i)))
 // 	}
 
-// 	cachePolicy := cachedstorage.NewCachePolicy(10, 0.8)
-// 	dataStore := cachedstorage.NewDataStore(nil, cachePolicy)
+// 	cachePolicy := storage.NewCachePolicy(10, 0.8)
+// 	dataStore := storage.NewDataStore(nil, cachePolicy)
 // 	dataStore.BatchInject(keys, nVals)
 
 // 	t0 := time.Now()

@@ -16,7 +16,7 @@ import (
 
 func TestEmptyNodeSet(t *testing.T) {
 	store := chooseDataStore()
-	// store := cachedstorage.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
+	// store := storage.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
 	committer := ccurl.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 
@@ -41,7 +41,7 @@ func TestEmptyNodeSet(t *testing.T) {
 }
 func TestAddAndDelete(t *testing.T) {
 	store := chooseDataStore()
-	// store := cachedstorage.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
+	// store := storage.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
 	committer := ccurl.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 
@@ -102,7 +102,7 @@ func TestAddAndDelete(t *testing.T) {
 
 func TestRecursiveDeletionSameBatch(t *testing.T) {
 	store := chooseDataStore()
-	// store := cachedstorage.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
+	// store := storage.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
 	committer := ccurl.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 
@@ -171,7 +171,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 
 func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 	store := chooseDataStore()
-	// store := cachedstorage.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
+	// store := storage.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
 
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 	alice := AliceAccount()
@@ -210,7 +210,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 
 func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	store := chooseDataStore()
-	// store := cachedstorage.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
+	// store := storage.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
 
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 	alice := AliceAccount()
@@ -271,7 +271,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 
 func TestStateUpdate(t *testing.T) {
 	store := chooseDataStore()
-	// store := cachedstorage.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
+	// store := storage.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
 
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 	alice := AliceAccount()

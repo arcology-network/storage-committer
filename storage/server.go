@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	datastore "github.com/arcology-network/common-lib/cachedstorage/datastore"
+	datastore "github.com/arcology-network/common-lib/storage/datastore"
 )
 
 type ReadonlyServer struct {

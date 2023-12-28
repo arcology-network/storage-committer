@@ -4,7 +4,7 @@ package ccurltest
 // 	"reflect"
 // 	"testing"
 
-// 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
+// 	storage "github.com/arcology-network/common-lib/storage"
 // 	"github.com/arcology-network/common-lib/common"
 // 	ccurl "github.com/arcology-network/concurrenturl"
 // 	committercommon "github.com/arcology-network/concurrenturl/common"
@@ -14,9 +14,9 @@ package ccurltest
 // )
 
 // func TestPartialCache(t *testing.T) {
-// 	memDB := cachedstorage.NewMemDB()
-// 	policy := cachedstorage.NewCachePolicy(10000000, 1.0)
-// 	store := cachedstorage.NewDataStore(nil, policy, memDB, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
+// 	memDB := storage.NewMemDB()
+// 	policy := storage.NewCachePolicy(10000000, 1.0)
+// 	store := storage.NewDataStore(nil, policy, memDB, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
 // 		committer := ccurl.NewStorageCommitter(store)
 // writeCache := committer.WriteCache()
 // 	alice := AliceAccount()
@@ -31,14 +31,14 @@ package ccurltest
 // 	committer.Commit([]uint32{committercommon.SYSTEM})
 
 // 	/* Filter persistent data source */
-// 	excludeMemDB := func(db cachedstorage.PersistentStorageInterface) bool { // Do not access MemDB
+// 	excludeMemDB := func(db storage.PersistentStorageInterface) bool { // Do not access MemDB
 // 		name := reflect.TypeOf(db).String()
-// 		return name != "*cachedstorage.MemDB"
+// 		return name != "*storage.MemDB"
 // 	}
 
 // 	committer.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999"))
 // 	acctTrans = importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
-// 	committer.Importer().Store().(*cachedstorage.DataStore).Cache().Clear()
+// 	committer.Importer().Store().(*storage.DataStore).Cache().Clear()
 // 	committer.Import(importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues), true, excludeMemDB) // The changes will be discarded.
 // 	committer.Sort()
 // 	committer.Commit([]uint32{1})
@@ -53,7 +53,7 @@ package ccurltest
 
 // 	/* Don't filter persistent data source	*/
 // 	committer.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999"))
-// 	committer.Importer().Store().(*cachedstorage.DataStore).Cache().Clear()                                 // Make sure only the persistent storage has the data.
+// 	committer.Importer().Store().(*storage.DataStore).Cache().Clear()                                 // Make sure only the persistent storage has the data.
 // 	committer.Import(importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues)) // This should take effect
 // 	committer.Sort()
 // 	committer.Commit([]uint32{1})
@@ -68,15 +68,15 @@ package ccurltest
 // }
 
 // func TestPartialCacheWithFilter(t *testing.T) {
-// 	memDB := cachedstorage.NewMemDB()
-// 	policy := cachedstorage.NewCachePolicy(10000000, 1.0)
+// 	memDB := storage.NewMemDB()
+// 	policy := storage.NewCachePolicy(10000000, 1.0)
 
-// 	excludeMemDB := func(db cachedstorage.PersistentStorageInterface) bool { /* Filter persistent data source */
+// 	excludeMemDB := func(db storage.PersistentStorageInterface) bool { /* Filter persistent data source */
 // 		name := reflect.TypeOf(db).String()
-// 		return name == "*cachedstorage.MemDB"
+// 		return name == "*storage.MemDB"
 // 	}
 
-// 	store := cachedstorage.NewDataStore(nil, policy, memDB, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode, excludeMemDB)
+// 	store := storage.NewDataStore(nil, policy, memDB, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode, excludeMemDB)
 // 		committer := ccurl.NewStorageCommitter(store)
 // writeCache := committer.WriteCache()
 // 	alice := AliceAccount()
@@ -101,7 +101,7 @@ package ccurltest
 
 // 	committer.WriteCache().Clear()
 
-// 	// ccmap2 := committer.Importer().Store().(*cachedstorage.DataStore).Cache()
+// 	// ccmap2 := committer.Importer().Store().(*storage.DataStore).Cache()
 // 	// fmt.Print(ccmap2)
 // 	out := importer.Univalues{}.Decode(importer.Univalues(common.Clone(acctTrans)).Encode()).(importer.Univalues)
 // 	committer.Import(out, true, excludeMemDB) // The changes will be discarded.
