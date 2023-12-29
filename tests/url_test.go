@@ -167,18 +167,19 @@ func TestAddThenDeletePath2(t *testing.T) {
 	store := chooseDataStore()
 
 	alice := AliceAccount()
-	committer := ccurl.NewStorageCommitter(store)
+
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
-
 	// _, trans := writeCache.Export(importer.Sorter)
 	trans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	acctTrans := (&importer.Univalues{}).Decode(importer.Univalues(trans).Encode()).(importer.Univalues)
 
 	//values := importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).([]*univalue.Univalue)
 	ts := importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues)
+
+	committer := ccurl.NewStorageCommitter(store)
 	committer.Import(ts)
 	committer.Sort()
 	committer.Commit([]uint32{committercommon.SYSTEM})
