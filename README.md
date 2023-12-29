@@ -34,11 +34,11 @@ Below are some major Components:
 | Root Hash Calculation     | Consolidate all updates into a single Trie for efficient root hash calculation. |
 | Database Update           | Eventually flush the accumulated updates to the primary database.              |
 
+<h2> More Info  <img align="center" height="32" src="./img/info.svg">  </h2>
 
-##  More Info
 For further details and integration guidelines with Arcology, please refer to [our design documents.](https://doc.arcology.network/arcology-concurrency-control/evm-integration)
 
 
+<h2> License  <img align="center" height="32" src="./img/copyright.svg">  </h2>
 ## License
-
-All other files within this repository are licensed under the MIT License unless stated otherwise.
+This project is licensed under the MIT License.
