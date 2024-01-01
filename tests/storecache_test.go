@@ -24,7 +24,7 @@ package ccurltest
 // 			nVals[i] = univalue.NewUnivalue( uint32(i), keys[i], 2, 2, noncommutative.NewInt64(int64(i)))
 // 		}
 
-// 		persistentDB := storage.NewMemDB()
+// 		persistentDB := storage.NewMemoryDB()
 // 		cachePolicy := storage.NewCachePolicy(1, 1.0) // 1 byte only
 // 		dataStore := storage.NewDataStore(nil, cachePolicy, persistentDB, univalue.ToBytes, univalue.FromBytes)
 
@@ -70,7 +70,7 @@ package ccurltest
 // 			nVals[i] = univalue.NewUnivalue( uint32(i), keys[i], 1, 1, 2, noncommutative.NewInt64(int64(i)))
 // 		}
 
-// 		persistentDB := storage.NewMemDB()
+// 		persistentDB := storage.NewMemoryDB()
 // 		cachePolicy := storage.NewCachePolicy(1, 0.8)
 // 		dataStore := storage.NewDataStore(nil, cachePolicy, persistentDB, univalue.ToBytes, univalue.FromBytes)
 
@@ -110,7 +110,7 @@ package ccurltest
 // 		encoded[i] = committercommon.Codec{}.Encode(nVals[i]) // this is wrong  !!!
 // 	}
 
-// 	persistentDB := storage.NewMemDB()
+// 	persistentDB := storage.NewMemoryDB()
 // 	persistentDB.BatchSet(keys, encoded)
 // 	cachePolicy := storage.NewCachePolicy(1, 0.8)
 // 	dataStore := storage.NewDataStore(nil, cachePolicy, persistentDB, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)

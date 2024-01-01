@@ -14,7 +14,7 @@ package ccurltest
 
 // func TestReadonlyStorageLocal(t *testing.T) {
 // 	// Server end
-// 	persistentDB := storage.NewMemDB()
+// 	persistentDB := storage.NewMemoryDB()
 // 	serverCachePolicy := storage.NewCachePolicy(1, 0.8)
 // 	serverDataStore := storage.NewDataStore(nil, serverCachePolicy, persistentDB, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
 
@@ -75,7 +75,7 @@ package ccurltest
 
 // func TestReadonlyStorageRemote(t *testing.T) {
 // 	// Server end
-// 	persistentDB := storage.NewMemDB()
+// 	persistentDB := storage.NewMemoryDB()
 // 	serverCachePolicy := storage.NewCachePolicy(1, 0.8)
 // 	serverDataStore := storage.NewDataStore(nil, serverCachePolicy, persistentDB, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
 

@@ -18,7 +18,7 @@ func NewTransientDB(readonlyParent interfaces.Datastore) interfaces.Datastore {
 	return &TransientDB{
 		DataStore: datastore.NewDataStore(
 			nil,
-			datastore.NewCachePolicy(math.MaxUint64, 1), memdb.NewMemDB(), Rlp{}.Encode, Rlp{}.Decode,
+			datastore.NewCachePolicy(math.MaxUint64, 1), memdb.NewMemoryDB(), Rlp{}.Encode, Rlp{}.Decode,
 		),
 		readonlyParent: readonlyParent,
 	}

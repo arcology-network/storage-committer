@@ -770,7 +770,7 @@ func TestCustomCodec(t *testing.T) {
 	// }
 
 	policy := datastore.NewCachePolicy(0, 1)
-	store := datastore.NewDataStore(nil, policy, memdb.NewMemDB(), storage.Rlp{}.Encode, storage.Rlp{}.Decode)
+	store := datastore.NewDataStore(nil, policy, memdb.NewMemoryDB(), storage.Rlp{}.Encode, storage.Rlp{}.Decode)
 	alice := AliceAccount()
 	committer := ccurl.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())

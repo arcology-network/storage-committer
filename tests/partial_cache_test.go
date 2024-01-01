@@ -14,7 +14,7 @@ package ccurltest
 // )
 
 // func TestPartialCache(t *testing.T) {
-// 	memDB := storage.NewMemDB()
+// 	memDB := storage.NewMemoryDB()
 // 	policy := storage.NewCachePolicy(10000000, 1.0)
 // 	store := storage.NewDataStore(nil, policy, memDB, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
 // 		committer := ccurl.NewStorageCommitter(store)
@@ -68,7 +68,7 @@ package ccurltest
 // }
 
 // func TestPartialCacheWithFilter(t *testing.T) {
-// 	memDB := storage.NewMemDB()
+// 	memDB := storage.NewMemoryDB()
 // 	policy := storage.NewCachePolicy(10000000, 1.0)
 
 // 	excludeMemDB := func(db storage.PersistentStorageInterface) bool { /* Filter persistent data source */
