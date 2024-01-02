@@ -267,7 +267,7 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 		(*acct).Precommit(common.FromPairs(stateGroups[idx]))
 	})
 
-	encoded := common.Append(this.DirtyAccounts, func(acct *Account) []byte {
+	encoded := common.Append(this.DirtyAccounts, func(_ int, acct *Account) []byte {
 		return acct.Encode()
 	})
 
@@ -277,7 +277,7 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 	})
 
 	// Update dirty accounts to the trie.
-	errs := this.worldStateTrie.ParallelUpdate(common.Append(this.DirtyAccounts, func(acct *Account) []byte { return ([]byte(acct.addr)) }), encoded)
+	errs := this.worldStateTrie.ParallelUpdate(common.Append(this.DirtyAccounts, func(_ int, acct *Account) []byte { return ([]byte(acct.addr)) }), encoded)
 
 	// Return the first error if any.
 	if _, err := common.FindFirstIf(errs, func(err error) bool { return err != nil }); err != nil {

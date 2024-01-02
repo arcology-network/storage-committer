@@ -165,7 +165,7 @@ func (this *Univalue) ApplyDelta(vec []*Univalue) error {
 	}
 
 	// Apply transitions
-	typedVals := common.Append(vec, func(v *Univalue) intf.Type {
+	typedVals := common.Append(vec, func(_ int, v *Univalue) intf.Type {
 		if v.Value() != nil {
 			return v.Value().(intf.Type)
 		}
