@@ -206,8 +206,8 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Typ
 
 	numThd := common.IfThen(len(keys) < 1024, 4, 8)
 
-	k := common.ParallelAppend(keys, numThd, func(i int) string { return this.ParseStorageKey(keys[i]) })
-	v := common.ParallelAppend(typedVals, numThd, func(i int) []byte {
+	k := common.ParallelAppend(keys, numThd, func(i int, _ string) string { return this.ParseStorageKey(keys[i]) })
+	v := common.ParallelAppend(typedVals, numThd, func(i int, _ interfaces.Type) []byte {
 		return common.IfThenDo1st(typedVals[i] != nil, func() []byte { return typedVals[i].StorageEncode() }, []byte{})
 	})
 	this.StorageDirty = len(k) > 0
