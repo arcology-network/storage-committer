@@ -35,8 +35,8 @@ func TestUnivalueCodecUint64(t *testing.T) {
 	bytes := in.Encode()
 	v := (&Univalue{}).Decode(bytes).(*Univalue)
 
-	unimeta := v.GetUnimeta().(*Unimeta)
-	inUnimeta := in.GetUnimeta().(*Unimeta)
+	unimeta := v.GetUnimeta().(*Property)
+	inUnimeta := in.GetUnimeta().(*Property)
 	if !(*inUnimeta).Equal(unimeta) {
 		t.Error("Error")
 	}
@@ -121,7 +121,7 @@ func TestUnimetaCodecUint64(t *testing.T) {
 	in.deltaWrites = 3
 
 	bytes := in.Encode()
-	out := (&Unimeta{}).Decode(bytes).(*Unimeta)
+	out := (&Property{}).Decode(bytes).(*Property)
 
 	if in == out {
 		t.Error("Error")

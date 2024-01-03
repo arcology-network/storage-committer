@@ -44,10 +44,10 @@ func BenchmarkAccountMerkleImportPerf(b *testing.B) {
 			b.Error(err)
 		}
 	}
-	acct := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITAccess{})
+	acct := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITAccess{})
 
 	t0 := time.Now()
-	importer.Univalues(acct).Encode()
+	univalue.Univalues(acct).Encode()
 	b.Log("Transition Encoding: ", len(acct), time.Since(t0))
 }
 
@@ -73,10 +73,10 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 
 	//t0 = time.Now()
 	// _, transitions := writeCache.Export(nil)
-	transitions := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITAccess{})
+	transitions := univalue.Univalues(common.Clone(writeCache.Export())).To(importer.ITAccess{})
 
-	// in := importer.Univalues(transitions).Encode()
-	//out := importer.Univalues{}.Decode(in).(importer.Univalues)
+	// in := univalue.Univalues(transitions).Encode()
+	//out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
 
 	//fmt.Println("Export:", time.Since(t0))
 
@@ -134,7 +134,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	fmt.Println("Write 2500 accounts in :", time.Since(t0))
 
 	t0 = time.Now()
-	trans := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITTransition{})
+	trans := univalue.Univalues(common.Clone(writeCache.Export())).To(importer.ITTransition{})
 	fmt.Println("Export:", time.Since(t0))
 
 	committer := ccurl.NewStorageCommitter(store)
@@ -163,7 +163,7 @@ func BenchmarkUrlAddThenDelete(b *testing.B) {
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 	meta := commutative.NewPath()
 	writeCache.Write(committercommon.SYSTEM, committercommon.ETH10_ACCOUNT_PREFIX, meta)
-	trans := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITTransition{})
+	trans := univalue.Univalues(common.Clone(writeCache.Export())).To(importer.ITTransition{})
 
 	committer := ccurl.NewStorageCommitter(store)
 	committer.Import(trans)
@@ -204,10 +204,10 @@ func BenchmarkUrlAddThenPop(b *testing.B) {
 	meta := commutative.NewPath()
 	writeCache.Write(committercommon.SYSTEM, committercommon.ETH10_ACCOUNT_PREFIX, meta)
 
-	trans := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITTransition{})
+	trans := univalue.Univalues(common.Clone(writeCache.Export())).To(importer.ITTransition{})
 
 	committer := ccurl.NewStorageCommitter(store)
-	committer.Import(importer.Univalues{}.Decode(importer.Univalues(trans).Encode()).(importer.Univalues))
+	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 	committer.Sort()
 	committer.Commit([]uint32{committercommon.SYSTEM})
 
@@ -326,12 +326,12 @@ func BenchmarkEncodeTransitions(b *testing.B) {
 
 	alice := AliceAccount()
 	writeCache.CreateNewAccount(committercommon.SYSTEM, alice)
-	// acctTrans := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITAccess{})
+	// acctTrans := univalue.Univalues(common.Clone(writeCache.Export())).To(importer.ITAccess{})
 
-	acctTrans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITAccess{})
+	acctTrans := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITAccess{})
 
 	committer := ccurl.NewStorageCommitter(store)
-	committer.Import(importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues))
+	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	committer.Sort()
 	committer.Commit([]uint32{committercommon.SYSTEM})
@@ -345,10 +345,10 @@ func BenchmarkEncodeTransitions(b *testing.B) {
 	}
 	fmt.Println("Write "+fmt.Sprint(10000), time.Since(t0))
 
-	acctTrans = importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITAccess{})
+	acctTrans = univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITAccess{})
 
 	t0 = time.Now()
-	importer.Univalues(acctTrans).Encode()
+	univalue.Univalues(acctTrans).Encode()
 	fmt.Println("Encode "+fmt.Sprint(len(acctTrans)), time.Since(t0))
 
 	/* Forward Iter */
@@ -397,13 +397,13 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	fmt.Println("Write "+fmt.Sprint(100000*9), time.Since(t0))
 
 	t0 = time.Now()
-	acctTrans := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITTransition{})
+	acctTrans := univalue.Univalues(common.Clone(writeCache.Export())).To(importer.ITTransition{})
 
 	fmt.Println("Export "+fmt.Sprint(100000*9), time.Since(t0))
 
 	t0 = time.Now()
 
-	// transitions := importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues)
+	// transitions := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues)
 	committer := ccurl.NewStorageCommitter(store)
 	committer.Import(acctTrans)
 	committer.Sort()
@@ -621,7 +621,7 @@ func BenchmarkTransitionImport(b *testing.B) {
 	fmt.Println("Write "+fmt.Sprint(100000*9), time.Since(t0))
 
 	t0 = time.Now()
-	acctTrans := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITAccess{})
+	acctTrans := univalue.Univalues(common.Clone(writeCache.Export())).To(importer.ITAccess{})
 
 	fmt.Println("Export "+fmt.Sprint(150000*9), time.Since(t0))
 
@@ -652,7 +652,7 @@ func BenchmarkTransitionImport(b *testing.B) {
 // 	fmt.Println("Write "+fmt.Sprint(100000*9), time.Since(t0))
 
 // 	t0 = time.Now()
-// 	acctTrans := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITAccess{})
+// 	acctTrans := univalue.Univalues(common.Clone(writeCache.Export())).To(importer.ITAccess{})
 
 // 	fmt.Println("Export "+fmt.Sprint(150000*9), time.Since(t0))
 
@@ -683,18 +683,18 @@ func BenchmarkRandomAccountSort(t *testing.B) {
 	fmt.Println("Write "+fmt.Sprint(100000*9), time.Since(t0))
 
 	t0 = time.Now()
-	in := importer.Univalues(common.Clone(writeCache.Export())).To(importer.ITAccess{})
+	in := univalue.Univalues(common.Clone(writeCache.Export())).To(importer.ITAccess{})
 
 	t0 = time.Now()
-	importer.Univalues(in).Sort(nil)
+	univalue.Univalues(in).Sort(nil)
 	fmt.Println("Univalues(in).Sort()", len(in), "entires in :", time.Since(t0))
 
 	// t0 = time.Now()
-	// importer.Univalues(in).SortByDefault()
+	// univalue.Univalues(in).SortByDefault()
 	// fmt.Println("Univalues(in).SortByDefault()", len(in), "entires in :", time.Since(t0))
 
 	// t0 = time.Now()
-	// importer.Univalues(in).SortWithQuickMethod()
+	// univalue.Univalues(in).SortWithQuickMethod()
 	// fmt.Println("Univalues(in).SortWithQuickMethod()", len(in), "entires in :", time.Since(t0))
 
 }

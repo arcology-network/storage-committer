@@ -12,6 +12,7 @@ import (
 	importer "github.com/arcology-network/concurrenturl/importer"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
+	univalue "github.com/arcology-network/concurrenturl/univalue"
 	cache "github.com/arcology-network/eu/cache"
 )
 
@@ -26,9 +27,9 @@ func TestAuxTrans(t *testing.T) {
 	}
 
 	// _, trans00 := writeCache.Export(importer.Sorter)
-	acctTrans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	acctTrans := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
-	committer.Import(importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues))
+	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	committer.Sort()
 	committer.Commit([]uint32{committercommon.SYSTEM}) // Commit
@@ -83,7 +84,7 @@ func TestAuxTrans(t *testing.T) {
 		}
 	}
 
-	transitions := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	transitions := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 	if !reflect.DeepEqual(transitions[0].Value().(interfaces.Type).Delta().(*commutative.PathDelta).Added(), []string{"elem-000"}) {
 		t.Error("keys don't match")
 	}
@@ -98,8 +99,8 @@ func TestAuxTrans(t *testing.T) {
 		t.Error("The variable has been cleared")
 	}
 
-	in := importer.Univalues(transitions).Encode()
-	out := importer.Univalues{}.Decode(in).(importer.Univalues)
+	in := univalue.Univalues(transitions).Encode()
+	out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
 
 	committer.Import(out)
 	committer.Sort()
@@ -117,9 +118,9 @@ func TestCheckAccessRecords(t *testing.T) {
 	}
 
 	// _, trans00 := writeCache.Export(importer.Sorter)
-	trans00 := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	trans00 := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
-	committer.Import(importer.Univalues{}.Decode(importer.Univalues(trans00).Encode()).(importer.Univalues))
+	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans00).Encode()).(univalue.Univalues))
 
 	committer.Sort()
 	committer.Commit([]uint32{1}) // Commit
@@ -131,9 +132,9 @@ func TestCheckAccessRecords(t *testing.T) {
 	}
 
 	// _, trans10 := writeCache.Export(importer.Sorter)
-	trans10 := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	trans10 := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
-	committer.Import(importer.Univalues{}.Decode(importer.Univalues(trans10).Encode()).(importer.Univalues))
+	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans10).Encode()).(univalue.Univalues))
 
 	committer.Sort()
 	committer.Commit([]uint32{1}) // Commit
@@ -150,7 +151,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	}
 
 	// accesses10, trans11 := writeCache.Export(importer.Sorter)
-	// committer.Import(importer.Univalues{}.Decode(importer.Univalues(trans11).Encode()).(importer.Univalues))
+	// committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans11).Encode()).(univalue.Univalues))
 
 	// committer.Sort()
 	// committer.Commit([]uint32{1}) // Commit

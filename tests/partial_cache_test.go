@@ -25,8 +25,8 @@ package ccurltest
 // 	}
 
 // 	committer.Write(committercommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
-// 	acctTrans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
-// 	committer.Import(importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues))
+// 	acctTrans := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+// 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 // 	committer.Sort()
 // 	committer.Commit([]uint32{committercommon.SYSTEM})
 
@@ -37,9 +37,9 @@ package ccurltest
 // 	}
 
 // 	committer.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999"))
-// 	acctTrans = importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+// 	acctTrans = univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 // 	committer.Importer().Store().(*storage.DataStore).Cache().Clear()
-// 	committer.Import(importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues), true, excludeMemDB) // The changes will be discarded.
+// 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues), true, excludeMemDB) // The changes will be discarded.
 // 	committer.Sort()
 // 	committer.Commit([]uint32{1})
 
@@ -54,7 +54,7 @@ package ccurltest
 // 	/* Don't filter persistent data source	*/
 // 	committer.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999"))
 // 	committer.Importer().Store().(*storage.DataStore).Cache().Clear()                                 // Make sure only the persistent storage has the data.
-// 	committer.Import(importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues)) // This should take effect
+// 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues)) // This should take effect
 // 	committer.Sort()
 // 	committer.Commit([]uint32{1})
 
@@ -85,8 +85,8 @@ package ccurltest
 // 	}
 
 // 	committer.Write(committercommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
-// 	acctTrans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
-// 	committer.Import(importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues))
+// 	acctTrans := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+// 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 // 	committer.Sort()
 // 	committer.Commit([]uint32{committercommon.SYSTEM})
 
@@ -94,7 +94,7 @@ package ccurltest
 // 		t.Error(err)
 // 	}
 
-// 	acctTrans = importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+// 	acctTrans = univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
 // 	// 	committer := ccurl.NewStorageCommitter(store)
 // writeCache := committer.WriteCache()
@@ -103,7 +103,7 @@ package ccurltest
 
 // 	// ccmap2 := committer.Importer().Store().(*storage.DataStore).Cache()
 // 	// fmt.Print(ccmap2)
-// 	out := importer.Univalues{}.Decode(importer.Univalues(common.Clone(acctTrans)).Encode()).(importer.Univalues)
+// 	out := univalue.Univalues{}.Decode(univalue.Univalues(common.Clone(acctTrans)).Encode()).(univalue.Univalues)
 // 	committer.Import(out, true, excludeMemDB) // The changes will be discarded.
 // 	committer.Sort()
 // 	committer.Commit([]uint32{1})

@@ -1,28 +1,28 @@
-package importer
+package univalue
 
 import (
 	"bytes"
 	"crypto/sha256"
 	"sort"
 
-	ccurlcommon "github.com/arcology-network/StorageCommitter/common"
-	univalue "github.com/arcology-network/StorageCommitter/univalue"
 	"github.com/arcology-network/common-lib/common"
+	committercommon "github.com/arcology-network/concurrenturl/common"
 )
 
-type Univalues []*univalue.Univalue
+type Univalues []*Univalue
 
-func (this Univalues) To(filterType *univalue.Univalue) Univalues {
+func (this Univalues) To(filter interface{}) Univalues {
 	for i, v := range this {
-		v := filterType.From(v)
-		this[i] = common.IfThenDo1st(v != nil, func() *univalue.Univalue { return v.(*univalue.Univalue) }, nil)
+		this[i] = filter.(interface {
+			From(*Univalue) *Univalue
+		}).From(v)
 	}
-	common.Remove((*[]*univalue.Univalue)(&this), nil)
+	common.Remove((*[]*Univalue)(&this), nil)
 	return this
 }
 
 // Debugging only
-func (this Univalues) IfContains(target *univalue.Univalue) bool {
+func (this Univalues) IfContains(target *Univalue) bool {
 	for _, v := range this {
 		if v.Equal(target) {
 			return true
@@ -74,7 +74,7 @@ func (this Univalues) Sort(groupIDs []uint32) Univalues {
 		str     string
 		bytes   []byte
 		tx      uint32
-		value   *univalue.Univalue
+		value   *Univalue
 	}, len(this))
 
 	// t0 := time.Now()
@@ -88,12 +88,12 @@ func (this Univalues) Sort(groupIDs []uint32) Univalues {
 			str     string
 			bytes   []byte
 			tx      uint32
-			value   *univalue.Univalue
+			value   *Univalue
 		}{
 			groupID: groupIDs[i],
 			length:  len(bytes),
 			str:     *str,
-			bytes:   bytes[ccurlcommon.ETH10_ACCOUNT_PREFIX_LENGTH:],
+			bytes:   bytes[committercommon.ETH10_ACCOUNT_PREFIX_LENGTH:],
 			tx:      this[i].GetTx(),
 			value:   this[i],
 		}
@@ -115,7 +115,7 @@ func (this Univalues) Sort(groupIDs []uint32) Univalues {
 		if sortees[i].groupID != sortees[j].groupID {
 			return sortees[i].groupID < sortees[j].groupID
 		}
-		return (this[i].(*univalue.Univalue)).Less(this[j].(*univalue.Univalue))
+		return (this[i]).Less(this[j])
 	}
 
 	sort.Slice(sortees, sorter)
@@ -126,19 +126,19 @@ func (this Univalues) Sort(groupIDs []uint32) Univalues {
 	return this
 }
 
-// func (this Univalues) CompressKeys(dict *ccurlcommon.Dict) {
+// func (this Univalues) CompressKeys(dict *committercommon.Dict) {
 // 	for i, univ := range this {
-// 		compressedKey := (*univ.GetPath())[ccurlcommon.ETH10_ACCOUNT_PREFIX_LENGTH:ccurlcommon.ETH10_ACCOUNT_FULL_LENGTH]
-// 		newKey := dict.Compress(compressedKey, nil) + (*univ.GetPath())[ccurlcommon.ETH10_ACCOUNT_FULL_LENGTH:]
+// 		compressedKey := (*univ.GetPath())[committercommon.ETH10_ACCOUNT_PREFIX_LENGTH:committercommon.ETH10_ACCOUNT_FULL_LENGTH]
+// 		newKey := dict.Compress(compressedKey, nil) + (*univ.GetPath())[committercommon.ETH10_ACCOUNT_FULL_LENGTH:]
 // 		this[i].SetPath(&newKey)
 // 	}
 // }
 
-// func (this Univalues) DecompressKeys(dict *ccurlcommon.Dict) {
+// func (this Univalues) DecompressKeys(dict *committercommon.Dict) {
 // 	for i := range this {
 // 		key := *this[i].GetPath()
 // 		idx := strings.Index(*this[i].GetPath(), "/")
-// 		newKey := ccurlcommon.ETH10 + dict.Decompress(key[:idx]) + key[idx:]
+// 		newKey := committercommon.ETH10 + dict.Decompress(key[:idx]) + key[idx:]
 // 		this[i].SetPath(&newKey)
 // 	}
 // }

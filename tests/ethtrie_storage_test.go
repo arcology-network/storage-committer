@@ -56,7 +56,7 @@ func TestTrieUpdates(t *testing.T) {
 	}
 
 	committer := ccurl.NewStorageCommitter(store)
-	committer.Import(importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
+	committer.Import(univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
 	committer.Sort()
 	committer.Finalize([]uint32{committercommon.SYSTEM})
 	committer.CopyToDbBuffer() // Export transitions and save them to the DB buffer.
@@ -90,7 +90,7 @@ func TestTrieUpdates(t *testing.T) {
 		t.Error("Error: AccountCache should be 3, actual", ds.AccountCache.Size())
 	}
 
-	committer.Import(importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
+	committer.Import(univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
 	committer.Sort()
 	committer.Finalize([]uint32{committercommon.SYSTEM})
 	committer.CopyToDbBuffer() // Export transitions and save them to the DB buffer.
@@ -115,7 +115,7 @@ func TestTrieUpdates(t *testing.T) {
 		t.Error(err)
 	}
 
-	committer.Import(importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
+	committer.Import(univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
 	committer.Sort()
 	committer.Finalize([]uint32{committercommon.SYSTEM})
 	committer.CopyToDbBuffer() // Export transitions and save them to the DB buffer.
@@ -197,7 +197,7 @@ func TestEthStorageConnection(t *testing.T) {
 		t.Error(err)
 	}
 
-	trans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
+	trans := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	committer.Import(trans)
 	committer.Sort()
 	committer.Commit([]uint32{committercommon.SYSTEM})
@@ -294,10 +294,10 @@ func TestEthDataStoreAddDeleteRead(t *testing.T) {
 		fmt.Println(err)
 	}
 
-	acctTrans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
+	acctTrans := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 
 	committer := ccurl.NewStorageCommitter(store)
-	committer.Import(importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues))
+	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	committer.Sort()
 	committer.Commit([]uint32{committercommon.SYSTEM})
@@ -386,11 +386,11 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 	}
 
 	// _, trans := writeCache.Export(importer.Sorter)
-	trans := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
-	acctTrans := (&importer.Univalues{}).Decode(importer.Univalues(trans).Encode()).(importer.Univalues)
+	trans := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
+	acctTrans := (&univalue.Univalues{}).Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues)
 
-	//values := importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).([]*univalue.Univalue)
-	ts := importer.Univalues{}.Decode(importer.Univalues(acctTrans).Encode()).(importer.Univalues)
+	//values := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).([]*univalue.Univalue)
+	ts := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues)
 
 	committer := ccurl.NewStorageCommitter(store)
 	committer.Import(ts)
@@ -405,8 +405,8 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 		t.Error(err)
 	}
 
-	transitions := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
-	committer.Import((&importer.Univalues{}).Decode(importer.Univalues(transitions).Encode()).(importer.Univalues))
+	transitions := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
+	committer.Import((&univalue.Univalues{}).Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues))
 
 	committer.Sort()
 	committer.Commit([]uint32{1})
@@ -422,8 +422,8 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 		t.Error(err)
 	}
 
-	trans = importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
-	committer.Import((&importer.Univalues{}).Decode(importer.Univalues(trans).Encode()).(importer.Univalues))
+	trans = univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
+	committer.Import((&univalue.Univalues{}).Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 	committer.Sort()
 	committer.Commit([]uint32{1})
 

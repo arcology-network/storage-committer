@@ -1,11 +1,10 @@
-package importer
+package univalue
 
 import (
 	"fmt"
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	univalue "github.com/arcology-network/concurrenturl/univalue"
 )
 
 func (this Univalues) Size() int {
@@ -60,11 +59,11 @@ func (Univalues) Decode(bytes []byte) interface{} {
 	}
 
 	buffers := [][]byte(codec.Byteset{}.Decode(bytes).(codec.Byteset))
-	univalues := make([]*univalue.Univalue, len(buffers))
+	univalues := make([]*Univalue, len(buffers))
 	worker := func(start, end, index int, args ...interface{}) {
 		for i := start; i < end; i++ {
-			v := (&univalue.Univalue{}).Decode(buffers[i])
-			univalues[i] = v.(*univalue.Univalue)
+			v := (&Univalue{}).Decode(buffers[i])
+			univalues[i] = v.(*Univalue)
 		}
 	}
 	common.ParallelWorker(len(buffers), 6, worker)
@@ -72,7 +71,7 @@ func (Univalues) Decode(bytes []byte) interface{} {
 }
 
 // func (Univalues) DecodeV2(bytesset [][]byte, get func() interface{}, put func(interface{})) Univalues {
-// 	univalues := make([]*univalue.Univalue, len(bytesset))
+// 	univalues := make([]*Univalue, len(bytesset))
 // 	for i := range bytesset {
 // 		v := get().(*Univalue)
 // 		v.reclaimFunc = put

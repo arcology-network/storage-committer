@@ -75,7 +75,7 @@ func TestUnivalueCodec(t *testing.T) {
 	// committer.NewAccount(committercommon.SYSTEM, fmt.Sprint("rand.Int()"))
 	writeCache.CreateNewAccount(committercommon.SYSTEM, fmt.Sprint("rand.Int()"))
 
-	transVec := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
+	transVec := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	transitions = append(transitions, transVec...)
 
 	for i := 0; i < len(transitions); i++ {
@@ -101,15 +101,15 @@ func TestUnivaluesCodec(t *testing.T) {
 
 		writeCache.CreateNewAccount(committercommon.SYSTEM, acct)
 
-		transVec := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+		transVec := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 		transitions = append(transitions, transVec...)
 	}
 	t0 := time.Now()
-	buffer := importer.Univalues(transitions).Encode()
+	buffer := univalue.Univalues(transitions).Encode()
 	fmt.Println("Encode() ", len(transitions), " univalue in :", time.Since(t0))
 
 	t0 = time.Now()
-	out := (importer.Univalues([]*univalue.Univalue{})).Decode(buffer).(importer.Univalues)
+	out := (univalue.Univalues([]*univalue.Univalue{})).Decode(buffer).(univalue.Univalues)
 	fmt.Println("Decode() ", len(transitions), " univalue in :", time.Since(t0))
 
 	for i := 0; i < len(transitions); i++ {

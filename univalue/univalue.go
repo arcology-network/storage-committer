@@ -1,6 +1,7 @@
 package univalue
 
 import (
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"reflect"
@@ -10,7 +11,7 @@ import (
 )
 
 type Univalue struct {
-	Unimeta
+	Property
 	value interface{}
 	cache []byte
 }
@@ -19,14 +20,14 @@ type Univalue struct {
 
 func NewUnivalue(tx uint32, key string, reads, writes uint32, deltaWrites uint32, v interface{}, source interface{}) *Univalue {
 	return &Univalue{
-		Unimeta{
+		Property{
 			vType:       common.IfThenDo1st(v != nil, func() uint8 { return v.(intf.Type).TypeID() }, uint8(reflect.Invalid)),
 			tx:          tx,
 			path:        &key,
 			reads:       reads,
 			writes:      writes,
 			deltaWrites: deltaWrites,
-			preexists:   common.IfThenDo1st(source != nil, func() bool { return (&Unimeta{}).CheckPreexist(key, source) }, false),
+			preexists:   common.IfThenDo1st(source != nil, func() bool { return (&Property{}).CheckPreexist(key, source) }, false),
 		},
 		v,
 		[]byte{},
@@ -35,7 +36,7 @@ func NewUnivalue(tx uint32, key string, reads, writes uint32, deltaWrites uint32
 
 func (*Univalue) New(meta, value, cache interface{}) *Univalue {
 	return &Univalue{
-		*meta.(*Unimeta),
+		*meta.(*Property),
 		value,
 		cache.([]byte),
 	}
@@ -55,7 +56,7 @@ func (this *Univalue) SetValue(newValue interface{}) *Univalue {
 	return this
 }
 
-func (this *Univalue) GetUnimeta() interface{} { return &this.Unimeta }
+func (this *Univalue) GetUnimeta() interface{} { return &this.Property }
 func (this *Univalue) GetCache() interface{}   { return this.cache }
 
 func (this *Univalue) Init(tx uint32, key string, reads, writes, deltaWrites uint32, v interface{}, args ...interface{}) *Univalue {
@@ -66,7 +67,7 @@ func (this *Univalue) Init(tx uint32, key string, reads, writes, deltaWrites uin
 	this.writes = writes
 	this.deltaWrites = deltaWrites
 	this.value = v
-	this.preexists = common.IfThenDo1st(len(args) > 0, func() bool { return (&Unimeta{}).CheckPreexist(key, args[0]) }, false)
+	this.preexists = common.IfThenDo1st(len(args) > 0, func() bool { return (&Property{}).CheckPreexist(key, args[0]) }, false)
 	return this
 }
 
@@ -212,7 +213,7 @@ func (this *Univalue) PrecheckAttributes(other *Univalue) {
 
 func (this *Univalue) Clone() interface{} {
 	v := &Univalue{
-		this.Unimeta.Clone(),
+		this.Property.Clone(),
 		common.IfThenDo1st(this.value != nil, func() interface{} { return this.value.(intf.Type).Clone() }, this.value),
 		common.Clone(this.cache),
 	}
@@ -239,6 +240,40 @@ func (this *Univalue) Less(other *Univalue) bool {
 	if (!this.preexists || !other.preexists) && (this.preexists != other.preexists) {
 		return this.preexists
 	}
-
 	return true
+}
+
+func (this *Univalue) Checksum() [32]byte {
+	return sha256.Sum256(this.Encode())
+}
+
+func (this *Univalue) Print() {
+	spaces := " " //fmt.Sprintf("%"+strconv.Itoa(len(strings.Split(*this.path, "/"))*1)+"v", " ")
+	fmt.Print(spaces+"tx: ", this.tx)
+	fmt.Print(spaces+"reads: ", this.reads)
+	fmt.Print(spaces+"writes: ", this.writes)
+	fmt.Print(spaces+"DeltaWrites: ", this.deltaWrites)
+	fmt.Print(spaces+"persistent: ", this.persistent)
+	fmt.Print(spaces+"preexists: ", this.preexists)
+
+	fmt.Print(spaces+"path: ", *this.path, "      ")
+	common.IfThenDo(this.value != nil, func() { this.value.(intf.Type).Print() }, func() { fmt.Print("nil") })
+}
+
+func (this *Univalue) Equal(other *Univalue) bool {
+	if this.value == nil && other.Value() == nil {
+		return true
+	}
+
+	if (this.value == nil && other.Value() != nil) || (this.value != nil && other.Value() == nil) {
+		return false
+	}
+
+	vFlag := this.value.(intf.Type).Equal(other.Value().(intf.Type))
+	return this.tx == other.GetTx() &&
+		*this.path == *other.GetPath() &&
+		this.reads == other.Reads() &&
+		this.writes == other.Writes() &&
+		vFlag &&
+		this.preexists == other.Preexist()
 }

@@ -7,17 +7,17 @@ import (
 	codec "github.com/arcology-network/common-lib/codec"
 )
 
-func (this *Unimeta) Encode() []byte {
+func (this *Property) Encode() []byte {
 	buffer := make([]byte, this.Size())
 	this.EncodeToBuffer(buffer)
 	return buffer
 }
 
-func (this *Unimeta) HeaderSize() uint32 {
+func (this *Property) HeaderSize() uint32 {
 	return uint32(9 * codec.UINT32_LEN)
 }
 
-func (this *Unimeta) Size() uint32 {
+func (this *Property) Size() uint32 {
 	return this.HeaderSize() + // uint32(9*codec.UINT32_LEN) +
 		uint32(1) + // codec.Uint8(this.vType).Size() +
 		uint32(4) + // codec.Uint32(uint32(this.tx)).Size() +
@@ -29,7 +29,7 @@ func (this *Unimeta) Size() uint32 {
 		uint32(1) //+  codec.Bool(this.persistent).Size() +
 }
 
-func (this *Unimeta) FillHeader(buffer []byte) int {
+func (this *Property) FillHeader(buffer []byte) int {
 	return codec.Encoder{}.FillHeader(
 		buffer,
 		[]uint32{
@@ -45,7 +45,7 @@ func (this *Unimeta) FillHeader(buffer []byte) int {
 	)
 }
 
-func (this *Unimeta) EncodeToBuffer(buffer []byte) int {
+func (this *Property) EncodeToBuffer(buffer []byte) int {
 	offset := this.FillHeader(buffer)
 	offset += codec.Uint8(this.vType).EncodeToBuffer(buffer[offset:])
 	offset += codec.Uint32(this.tx).EncodeToBuffer(buffer[offset:])
@@ -59,7 +59,7 @@ func (this *Unimeta) EncodeToBuffer(buffer []byte) int {
 	return offset
 }
 
-func (this *Unimeta) Decode(buffer []byte) interface{} {
+func (this *Property) Decode(buffer []byte) interface{} {
 	fields := codec.Byteset{}.Decode(buffer).(codec.Byteset)
 	if len(fields) == 1 {
 		return this
@@ -78,12 +78,12 @@ func (this *Unimeta) Decode(buffer []byte) interface{} {
 	return this
 }
 
-func (this *Unimeta) GobEncode() ([]byte, error) {
+func (this *Property) GobEncode() ([]byte, error) {
 	return this.Encode(), nil
 }
 
-func (this *Unimeta) GobDecode(data []byte) error {
-	v := this.Decode(data).(*Unimeta)
+func (this *Property) GobDecode(data []byte) error {
+	v := this.Decode(data).(*Property)
 	this.vType = v.vType
 	this.path = v.path
 	this.preexists = v.preexists

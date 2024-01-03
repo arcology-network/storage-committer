@@ -11,6 +11,7 @@ import (
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	importer "github.com/arcology-network/concurrenturl/importer"
+	univalue "github.com/arcology-network/concurrenturl/univalue"
 	cache "github.com/arcology-network/eu/cache"
 )
 
@@ -35,7 +36,7 @@ func TestMultiAccountCreation(t *testing.T) {
 		// }
 	}
 	raw := writeCache.Export(importer.Sorter)
-	acctTrans := importer.Univalues(common.Clone(raw)).To(importer.ITTransition{})
+	acctTrans := univalue.Univalues(common.Clone(raw)).To(importer.ITTransition{})
 
 	paths := committercommon.NewPlatform().GetSysPaths()
 	if len(acctTrans) != len(paths)*len(accounts) {
@@ -47,10 +48,10 @@ func TestMultiAccountCreation(t *testing.T) {
 	committer.Sort()
 	committer.Commit([]uint32{0})
 	writeCache.Clear()
-	// acctTrans = importer.Univalues(common.Clone(raw)).To(importer.ITTransition{})
-	// encoded := importer.Univalues(acctTrans).Encode()
+	// acctTrans = univalue.Univalues(common.Clone(raw)).To(importer.ITTransition{})
+	// encoded := univalue.Univalues(acctTrans).Encode()
 
-	// out := importer.Univalues{}.Decode(encoded).(importer.Univalues)
+	// out := univalue.Univalues{}.Decode(encoded).(univalue.Univalues)
 	// if len(acctTrans) != len(out) {
 	// 	t.Error("Error: Transition counts don't match up")
 	// }

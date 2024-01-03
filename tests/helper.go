@@ -33,8 +33,8 @@ func Create_Ctrn_0(account string, store interfaces.Datastore) ([]byte, []*univa
 	}
 
 	rawTrans := writeCache.Export(importer.Sorter)
-	transitions := importer.Univalues(common.Clone(rawTrans)).To(importer.ITTransition{})
-	return importer.Univalues(transitions).Encode(), transitions, nil
+	transitions := univalue.Univalues(common.Clone(rawTrans)).To(importer.ITTransition{})
+	return univalue.Univalues(transitions).Encode(), transitions, nil
 }
 
 func ParallelInsert_Ctrn_0(account string, store interfaces.Datastore) ([]byte, error) {
@@ -53,8 +53,8 @@ func ParallelInsert_Ctrn_0(account string, store interfaces.Datastore) ([]byte, 
 		return []byte{}, err
 	}
 
-	transitions := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
-	return importer.Univalues(transitions).Encode(), nil
+	transitions := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	return univalue.Univalues(transitions).Encode(), nil
 }
 
 func Create_Ctrn_1(account string, store interfaces.Datastore) ([]byte, error) {
@@ -73,8 +73,8 @@ func Create_Ctrn_1(account string, store interfaces.Datastore) ([]byte, error) {
 		return []byte{}, err
 	}
 
-	transitions := importer.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
-	return importer.Univalues(transitions).Encode(), nil
+	transitions := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	return univalue.Univalues(transitions).Encode(), nil
 }
 
 func CheckPaths(account string, writeCache *cache.WriteCache) error {

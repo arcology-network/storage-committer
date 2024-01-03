@@ -22,7 +22,6 @@ import (
 
 	common "github.com/arcology-network/common-lib/common"
 	committercommon "github.com/arcology-network/concurrenturl/common"
-	importer "github.com/arcology-network/concurrenturl/importer"
 	"github.com/arcology-network/concurrenturl/univalue"
 )
 
@@ -43,7 +42,7 @@ func (this *Arbitrator) Detect(groupIDs []uint32, newTrans []*univalue.Univalue)
 	}
 
 	// t0 := time.Now()
-	importer.Univalues(newTrans).Sort(groupIDs)
+	univalue.Univalues(newTrans).Sort(groupIDs)
 
 	ranges := common.FindAllIndics(newTrans, func(lhv, rhv *univalue.Univalue) bool {
 		return *lhv.GetPath() == *rhv.GetPath()
