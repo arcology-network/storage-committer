@@ -548,11 +548,7 @@ func BenchmarkLevelDBPerformance1M(t *testing.B) {
 	}
 
 	t0 = time.Now()
-	common.ParallelWorker(len(keys), 8, func(start, end, index int, args ...interface{}) {
-		for i := start; i < end; i++ {
-			trie.Get(keys[i])
-		}
-	})
+	common.ParallelForeach(keys, 8, func(i int, _ *[]byte) { trie.Get(keys[i]) })
 	fmt.Println("Parallel Get ", len(keys), " entries in ", time.Since(t0))
 
 	t0 = time.Now()

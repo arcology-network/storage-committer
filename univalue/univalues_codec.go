@@ -25,14 +25,12 @@ func (this Univalues) Sizes() []int {
 
 func (this Univalues) Encode(selector ...interface{}) []byte {
 	lengths := make([]uint32, len(this))
-	worker := func(start, end, index int, args ...interface{}) {
-		for i := start; i < end; i++ {
-			if this[i] != nil {
-				lengths[i] = this[i].Size()
-			}
+
+	common.ParallelForeach(this, 6, func(i int, _ **Univalue) {
+		if this[i] != nil {
+			lengths[i] = this[i].Size()
 		}
-	}
-	common.ParallelWorker(len(this), 6, worker)
+	})
 
 	offsets := make([]uint32, len(this)+1)
 	for i := 0; i < len(lengths); i++ {
@@ -41,15 +39,12 @@ func (this Univalues) Encode(selector ...interface{}) []byte {
 
 	headerLen := uint32((len(this) + 1) * codec.UINT32_LEN)
 	buffer := make([]byte, headerLen+offsets[len(offsets)-1])
-
 	codec.Uint32(len(this)).EncodeToBuffer(buffer)
-	worker = func(start, end, index int, args ...interface{}) {
-		for i := start; i < end; i++ {
-			codec.Uint32(offsets[i]).EncodeToBuffer(buffer[(i+1)*codec.UINT32_LEN:])
-			this[i].EncodeToBuffer(buffer[headerLen+offsets[i]:])
-		}
-	}
-	common.ParallelWorker(len(this), 6, worker)
+
+	common.ParallelForeach(this, 6, func(i int, _ **Univalue) {
+		codec.Uint32(offsets[i]).EncodeToBuffer(buffer[(i+1)*codec.UINT32_LEN:])
+		this[i].EncodeToBuffer(buffer[headerLen+offsets[i]:])
+	})
 	return buffer
 }
 
@@ -60,13 +55,12 @@ func (Univalues) Decode(bytes []byte) interface{} {
 
 	buffers := [][]byte(codec.Byteset{}.Decode(bytes).(codec.Byteset))
 	univalues := make([]*Univalue, len(buffers))
-	worker := func(start, end, index int, args ...interface{}) {
-		for i := start; i < end; i++ {
-			v := (&Univalue{}).Decode(buffers[i])
-			univalues[i] = v.(*Univalue)
-		}
-	}
-	common.ParallelWorker(len(buffers), 6, worker)
+
+	common.ParallelForeach(buffers, 6, func(i int, _ *[]byte) {
+		v := (&Univalue{}).Decode(buffers[i])
+		univalues[i] = v.(*Univalue)
+	})
+
 	return Univalues(univalues)
 }
 

@@ -76,13 +76,10 @@ func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) 
 		}
 	})
 
-	worker := func(start, end, index int, args ...interface{}) {
-		for i := start; i < end; i++ {
-			seq, _ := this.deltaDict.Get(*txTrans[i].GetPath())
-			this.deltaDict.Set(*txTrans[i].GetPath(), seq.(*DeltaSequence).Add(txTrans[i])) // Add to the sequence
-		}
-	}
-	common.ParallelWorker(len(txTrans), this.numThreads, worker)
+	common.ParallelForeach(txTrans, this.numThreads, func(i int, _ **univalue.Univalue) {
+		seq, _ := this.deltaDict.Get(*txTrans[i].GetPath())
+		this.deltaDict.Set(*txTrans[i].GetPath(), seq.(*DeltaSequence).Add(txTrans[i])) // Add to the sequence
+	})
 
 	for i := 0; i < len(txTrans); i++ { // Update the transaction ID index
 		if v := txTrans[i]; v != nil {
@@ -123,13 +120,11 @@ func (this *Importer) WhilteList(whitelist []uint32) []error {
 
 func (this *Importer) SortDeltaSequences() {
 	this.keyBuffer = this.deltaDict.Keys()
-	sorter := func(start, end, index int, args ...interface{}) {
-		for i := start; i < end; i++ {
-			deltaSeq, _ := this.deltaDict.Get(this.keyBuffer[i])
-			deltaSeq.(*DeltaSequence).Sort() // Sort the transitions in the sequence
-		}
-	}
-	common.ParallelWorker(len(this.keyBuffer), this.numThreads, sorter)
+
+	common.ParallelForeach(this.keyBuffer, this.numThreads, func(i int, _ *string) {
+		deltaSeq, _ := this.deltaDict.Get(this.keyBuffer[i])
+		deltaSeq.(*DeltaSequence).Sort() // Sort the transitions in the sequence
+	})
 }
 
 // Merge and finalize state deltas
@@ -137,20 +132,15 @@ func (this *Importer) MergeStateDelta() {
 	this.valBuffer = this.valBuffer[:0]
 	this.valBuffer = append(this.valBuffer, make([]interface{}, len(this.keyBuffer))...)
 
-	finalizer := func(start, end, index int, args ...interface{}) {
-		// for i := 0; i < len(this.keyBuffer); i++ {
-		for i := start; i < end; i++ {
-			deltaSeq, _ := this.deltaDict.Get(this.keyBuffer[i])
-			finalized := deltaSeq.(*DeltaSequence).Finalize()
-			this.valBuffer[i] = finalized
+	common.ParallelForeach(this.keyBuffer, this.numThreads, func(i int, _ *string) {
+		deltaSeq, _ := this.deltaDict.Get(this.keyBuffer[i])
+		finalized := deltaSeq.(*DeltaSequence).Finalize()
+		this.valBuffer[i] = finalized
 
-			if finalized == nil { // Some sequences may have been deleted with transactions they belong to
-				this.keyBuffer[i] = ""
-				continue
-			}
+		if finalized == nil { // Some sequences may have been deleted with transactions they belong to
+			this.keyBuffer[i] = ""
 		}
-	}
-	common.ParallelWorker(len(this.keyBuffer), this.numThreads, finalizer)
+	})
 
 	common.Remove(&this.keyBuffer, "")
 	common.RemoveIf(&this.valBuffer, func(v interface{}) bool { return v.(*univalue.Univalue) == nil })
