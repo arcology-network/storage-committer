@@ -2,6 +2,7 @@ package ccurltest
 
 import (
 	"encoding/hex"
+	"errors"
 	"math/big"
 	"testing"
 	"time"
@@ -263,10 +264,11 @@ func TestGetProofAPI(t *testing.T) {
 
 	// store := committer.Importer().Store().(*storage.EthDataStore)
 	writeCache.Clear()
+
 	/* Get proof direcly */
-	bobAcct, _ := store.GetAccount(bob, &ethmpt.AccessListCache{})
 	kstr, _ := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000000")
 
+	bobAcct, _ := store.GetAccount(bob, &ethmpt.AccessListCache{})
 	v, err := bobAcct.Trie().Get(kstr[:])
 	if len(v) == 0 {
 		t.Error(err)
@@ -290,6 +292,43 @@ func TestGetProofAPI(t *testing.T) {
 	}
 
 	accountResult, err := proof.GetProof(bob, []string{string("0x0000000000000000000000000000000000000000000000000000000000000000")})
+	if accountResult.StorageProof[0].Value.ToInt().Cmp(big.NewInt(0)) == 0 {
+		t.Error(err)
+	}
+
+	manager := storage.NewMerkleProofManager(10, store.EthDB())
+
+	accountResult, err = manager.GetProof(roothash, bob, []string{string("0x0000000000000000000000000000000000000000000000000000000000000000")})
+	if accountResult.StorageProof[0].Value.ToInt().Cmp(big.NewInt(0)) == 0 {
+		t.Error(err)
+	}
+
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/ele1", noncommutative.NewString("8976")); err != nil {
+		t.Error(err)
+	}
+
+	acctTrans = univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
+	ts = univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues)
+	committer.Import(ts)
+	committer.Sort()
+	committer.Commit([]uint32{1})
+
+	roothash2 := store.Root()
+
+	if roothash == roothash2 {
+		t.Error(errors.New("Error: Root hash should've changed"))
+	}
+
+	// Get the merkle proof again
+	proof, err = storage.NewMerkleProof(store.EthDB(), roothash2)
+	if err != nil {
+		t.Error(err)
+	}
+	accountResult, err = proof.GetProof(bob, []string{string("0x0000000000000000000000000000000000000000000000000000000000000000")})
+	if err != nil {
+		t.Error(err)
+	}
+
 	if accountResult.StorageProof[0].Value.ToInt().Cmp(big.NewInt(0)) == 0 {
 		t.Error(err)
 	}

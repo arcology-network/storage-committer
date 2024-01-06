@@ -10,7 +10,7 @@ import (
 
 // type Bigint codec.Bigint
 
-type Bigint big.Int //has anonymous camera
+type Bigint big.Int
 
 func NewBigint(v int64) interface{} {
 	var value big.Int
