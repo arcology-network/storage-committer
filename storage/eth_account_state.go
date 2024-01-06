@@ -226,7 +226,7 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Typ
 
 func (this *Account) Precommit(keys []string, values []interface{}) {
 	this.UpdateAccountTrie(keys, common.Append(values,
-		func(v interface{}) interfaces.Type {
+		func(_ int, v interface{}) interfaces.Type {
 			if v.(interfaces.Univalue).Value() != nil {
 				return v.(interfaces.Univalue).Value().(interfaces.Type)
 			}
