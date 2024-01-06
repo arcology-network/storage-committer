@@ -252,7 +252,7 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 	this.DirtyAccounts = make([]*Account, len(accountKeys))
 
 	numThd := common.IfThen(len(accountKeys) <= 1024, 8, 16)
-	common.ParallelForeach(accountKeys, numThd, func(key *string, i int) {
+	common.ParallelForeach(accountKeys, numThd, func(i int, key *string) {
 		accesses := ethmpt.AccessListCache{}
 		if this.DirtyAccounts[i], _ = this.GetAccount(*key, &accesses); this.DirtyAccounts[i] == nil {
 			this.DirtyAccounts[i] = NewAccount(
@@ -263,7 +263,7 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 	})
 
 	// Update the account storage tries
-	common.ParallelForeach(this.DirtyAccounts, 16, func(acct **Account, idx int) {
+	common.ParallelForeach(this.DirtyAccounts, 16, func(idx int, acct **Account) {
 		(*acct).Precommit(common.FromPairs(stateGroups[idx]))
 	})
 
@@ -304,7 +304,7 @@ func (this *EthDataStore) Commit(block uint64) error {
 		}
 	})
 
-	common.ParallelForeach(this.DirtyAccounts, 16, func(acct **Account, _ int) {
+	common.ParallelForeach(this.DirtyAccounts, 16, func(_ int, acct **Account) {
 		if err := (**acct).Commit(block); err != nil {
 			panic(err)
 		}
