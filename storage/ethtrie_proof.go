@@ -76,10 +76,15 @@ type MerkleProof struct {
 }
 
 func NewMerkleProof(ethdb *ethmpt.Database, root [32]byte) (*MerkleProof, error) {
+	store, err := LoadEthDataStore(ethdb, root)
+	if err != nil {
+		return nil, err
+	}
+
 	return &MerkleProof{
 		1,
 		1,
-		LoadEthDataStore(ethdb, root),
+		store,
 		ethdb,
 	}, nil
 }
