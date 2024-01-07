@@ -33,14 +33,18 @@ type EthDataStore struct {
 	dbErr error
 }
 
-func LoadEthDataStore(triedb *ethmpt.Database, root [32]byte) *EthDataStore {
+func LoadEthDataStore(triedb *ethmpt.Database, root [32]byte) (*EthDataStore, error) {
 	trie, err := ethmpt.New(ethmpt.TrieID(root), triedb)
-	if trie == nil || err != nil {
-		return nil
+	if err != nil {
+		return nil, err
+	}
+
+	if trie == nil {
+		return errors.New("Failed to load the trie from the database with the root provided!")
 	}
 
 	diskdb := ethmpt.GetBackendDB(triedb).DBs()
-	return NewEthDataStore(trie, triedb, diskdb)
+	return NewEthDataStore(trie, triedb, diskdb), nil
 }
 
 func NewEthDataStore(trie *ethmpt.Trie, triedb *ethmpt.Database, diskdb [16]ethdb.Database) *EthDataStore {

@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"errors"
 	"sync"
 
 	"github.com/arcology-network/common-lib/common"
@@ -41,9 +40,9 @@ func (this *MerkleProofManager) GetProof(rootHash [32]byte, acctStr string, stor
 
 	merkle, _ := this.merkleDict[rootHash]
 	if merkle == nil {
-		datastore := LoadEthDataStore(this.db, rootHash)
-		if datastore == nil {
-			return nil, errors.New("Error: Fail to load the trie from the database with the root provided!")
+		datastore, err := LoadEthDataStore(this.db, rootHash)
+		if err == nil {
+			return nil, err
 		}
 
 		// Create a new merkle tree and add it to the cache.

@@ -60,7 +60,6 @@ func (Univalues) Decode(bytes []byte) interface{} {
 		v := (&Univalue{}).Decode(buffers[i])
 		univalues[i] = v.(*Univalue)
 	})
-
 	return Univalues(univalues)
 }
 
