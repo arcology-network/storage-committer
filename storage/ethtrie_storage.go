@@ -40,7 +40,7 @@ func LoadEthDataStore(triedb *ethmpt.Database, root [32]byte) (*EthDataStore, er
 	}
 
 	if trie == nil {
-		return errors.New("Failed to load the trie from the database with the root provided!")
+		return nil, errors.New("Failed to load the trie from the database with the root provided!")
 	}
 
 	diskdb := ethmpt.GetBackendDB(triedb).DBs()
