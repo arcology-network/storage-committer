@@ -134,11 +134,8 @@ func (this *Importer) MergeStateDelta() {
 
 	common.ParallelForeach(this.keyBuffer, this.numThreads, func(i int, _ *string) {
 		deltaSeq, _ := this.deltaDict.Get(this.keyBuffer[i])
-		finalized := deltaSeq.(*DeltaSequence).Finalize()
-		this.valBuffer[i] = finalized
-
-		if finalized == nil { // Some sequences may have been deleted with transactions they belong to
-			this.keyBuffer[i] = ""
+		if this.valBuffer[i] = deltaSeq.(*DeltaSequence).Finalize(); this.valBuffer[i] == nil {
+			this.keyBuffer[i] = "" // Mark the key-value pair as deleted
 		}
 	})
 

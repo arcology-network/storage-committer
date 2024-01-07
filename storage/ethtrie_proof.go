@@ -41,7 +41,7 @@ func (this *MerkleProofManager) GetProof(rootHash [32]byte, acctStr string, stor
 	merkle, _ := this.merkleDict[rootHash]
 	if merkle == nil {
 		datastore, err := LoadEthDataStore(this.db, rootHash)
-		if err == nil {
+		if err != nil {
 			return nil, err
 		}
 
