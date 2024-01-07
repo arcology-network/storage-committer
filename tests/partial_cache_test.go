@@ -28,7 +28,8 @@ package ccurltest
 // 	acctTrans := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 // 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 // 	committer.Sort()
-// 	committer.Commit([]uint32{committercommon.SYSTEM})
+// 	committer.Precommit([]uint32{committercommon.SYSTEM})
+// committer.Commit()
 
 // 	/* Filter persistent data source */
 // 	excludeMemDB := func(db storage.PersistentStorageInterface) bool { // Do not access MemDB
@@ -41,7 +42,8 @@ package ccurltest
 // 	committer.Importer().Store().(*storage.DataStore).Cache().Clear()
 // 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues), true, excludeMemDB) // The changes will be discarded.
 // 	committer.Sort()
-// 	committer.Commit([]uint32{1})
+// 	committer.Precommit([]uint32{1})
+// committer.Commit()
 
 // 	// if v, _ := committer.Read(2, "blcc://eth1.0/account/"+alice+"/storage/1234"); v == nil {
 // 	// 	t.Error("Error: The entry shouldn't be in the DB !")
@@ -56,7 +58,8 @@ package ccurltest
 // 	committer.Importer().Store().(*storage.DataStore).Cache().Clear()                                 // Make sure only the persistent storage has the data.
 // 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues)) // This should take effect
 // 	committer.Sort()
-// 	committer.Commit([]uint32{1})
+// 	committer.Precommit([]uint32{1})
+// committer.Commit()
 
 // 	if v, _ := committer.Read(2, "blcc://eth1.0/account/"+alice+"/storage/1234"); v == nil {
 // 		t.Error("Error: The entry shouldn't be in the DB !")
@@ -88,7 +91,8 @@ package ccurltest
 // 	acctTrans := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 // 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 // 	committer.Sort()
-// 	committer.Commit([]uint32{committercommon.SYSTEM})
+// 	committer.Precommit([]uint32{committercommon.SYSTEM})
+// committer.Commit()
 
 // 	if _, err := committer.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999")); err != nil {
 // 		t.Error(err)
@@ -106,7 +110,8 @@ package ccurltest
 // 	out := univalue.Univalues{}.Decode(univalue.Univalues(common.Clone(acctTrans)).Encode()).(univalue.Univalues)
 // 	committer.Import(out, true, excludeMemDB) // The changes will be discarded.
 // 	committer.Sort()
-// 	committer.Commit([]uint32{1})
+// 	committer.Precommit([]uint32{1})
+// committer.Commit()
 
 // 	if v, _ := committer.Read(2, "blcc://eth1.0/account/"+alice+"/storage/1234"); v == nil {
 // 		t.Error("Error: The entry shouldn't be in the DB as the persistent DB has been excluded !")

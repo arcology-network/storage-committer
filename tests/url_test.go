@@ -128,7 +128,8 @@ func TestAddThenDeletePath(t *testing.T) {
 
 	// committer.Import(out)
 	// committer.Sort()
-	// committer.Commit([]uint32{committercommon.SYSTEM})
+	// committer.Precommit([]uint32{committercommon.SYSTEM})
+	committer.Commit()
 
 	// committer = ccurl.NewStorageCommitter(store)
 	// create a path
@@ -140,7 +141,8 @@ func TestAddThenDeletePath(t *testing.T) {
 	// transitions := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	// committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues))
 	// committer.Sort()
-	// committer.Commit([]uint32{1})
+	// committer.Precommit([]uint32{1})
+	committer.Commit()
 
 	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
 	if v == nil {
@@ -156,7 +158,8 @@ func TestAddThenDeletePath(t *testing.T) {
 	// buffer = univalue.Univalues(acctTrans).Encode()
 	// committer.Import(univalue.Univalues{}.Decode(buffer).(univalue.Univalues))
 	// committer.Sort()
-	// committer.Commit([]uint32{1})
+	// committer.Precommit([]uint32{1})
+	committer.Commit()
 
 	// if v, _ := committer.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{}); v != nil {
 	// 	t.Error("Error: The path should have been deleted")
@@ -182,7 +185,8 @@ func TestAddThenDeletePath2(t *testing.T) {
 	committer := ccurl.NewStorageCommitter(store)
 	committer.Import(ts)
 	committer.Sort()
-	committer.Commit([]uint32{committercommon.SYSTEM})
+	committer.Precommit([]uint32{committercommon.SYSTEM})
+	committer.Commit()
 
 	committer.Init(store)
 	writeCache.Clear()
@@ -197,7 +201,8 @@ func TestAddThenDeletePath2(t *testing.T) {
 	committer.Import((&univalue.Univalues{}).Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues))
 
 	committer.Sort()
-	committer.Commit([]uint32{1})
+	committer.Precommit([]uint32{1})
+	committer.Commit()
 	writeCache.Clear()
 
 	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
@@ -213,7 +218,8 @@ func TestAddThenDeletePath2(t *testing.T) {
 	trans = univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	committer.Import((&univalue.Univalues{}).Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 	committer.Sort()
-	committer.Commit([]uint32{1})
+	committer.Precommit([]uint32{1})
+	committer.Commit()
 	committer.Init(store)
 
 	writeCache.Clear()
@@ -235,7 +241,8 @@ func TestBasic(t *testing.T) {
 	acctTrans := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	committer.Sort()
-	committer.Commit([]uint32{committercommon.SYSTEM})
+	committer.Precommit([]uint32{committercommon.SYSTEM})
+	committer.Commit()
 	// univalue.Univalues(acctTrans).Print()
 
 	committer.Init(store)
@@ -328,7 +335,8 @@ func TestBasic(t *testing.T) {
 	committer.Import(univalue.Univalues{}.Decode(buffer).(univalue.Univalues))
 	// committer.Import(committer.Decode(univalue.Univalues(transitions).Encode()))
 	committer.Sort()
-	committer.Commit([]uint32{1})
+	committer.Precommit([]uint32{1})
+	committer.Commit()
 
 	/* =========== The second cycle ==============*/
 	//try reading an element written in the previous cycle
@@ -356,7 +364,8 @@ func TestPathAddThenDelete(t *testing.T) {
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	committer.Sort()
-	committer.Commit([]uint32{committercommon.SYSTEM})
+	committer.Precommit([]uint32{committercommon.SYSTEM})
+	committer.Commit()
 
 	// committer.Init(store)
 	// create a path
@@ -442,7 +451,8 @@ func TestUrl1(t *testing.T) {
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	committer.Sort()
-	committer.Commit([]uint32{committercommon.SYSTEM})
+	committer.Precommit([]uint32{committercommon.SYSTEM})
+	committer.Commit()
 
 	writeCache.Clear()
 	// committer.Init(store)
@@ -529,7 +539,8 @@ func TestUrl2(t *testing.T) {
 	acctTrans := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	committer.Sort()
-	committer.Commit([]uint32{committercommon.SYSTEM})
+	committer.Precommit([]uint32{committercommon.SYSTEM})
+	committer.Commit()
 
 	committer.Init(store)
 	// Create a new container
@@ -786,7 +797,8 @@ func TestCustomCodec(t *testing.T) {
 	committer.Import(acctTrans)
 
 	committer.Sort()
-	committer.Commit([]uint32{committercommon.SYSTEM})
+	committer.Precommit([]uint32{committercommon.SYSTEM})
+	committer.Commit()
 
 	committer.Init(store)
 	writeCache.Clear()

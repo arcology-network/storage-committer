@@ -117,7 +117,8 @@ func TestEthWorldTrieProof(t *testing.T) {
 	committer := ccurl.NewStorageCommitter(store)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	committer.Sort()
-	committer.Commit([]uint32{committercommon.SYSTEM})
+	committer.Precommit([]uint32{committercommon.SYSTEM})
+	committer.Commit()
 	committer.Init(store)
 
 	writeCache.Clear()
@@ -131,7 +132,8 @@ func TestEthWorldTrieProof(t *testing.T) {
 	acctTrans = univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	committer.Sort()
-	committer.Commit([]uint32{1})
+	committer.Precommit([]uint32{1})
+	committer.Commit()
 
 	committer.Init(store)
 
@@ -171,7 +173,8 @@ func TestEthWorldTrieProof(t *testing.T) {
 	acctTrans = univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	committer.Sort()
-	committer.Commit([]uint32{1})
+	committer.Precommit([]uint32{1})
+	committer.Commit()
 	committer.Init(store)
 
 	/* Account Proofs */
@@ -223,7 +226,10 @@ func TestGetProofAPI(t *testing.T) {
 	committer := ccurl.NewStorageCommitter(store)
 	committer.Import(ts)
 	committer.Sort()
-	committer.Commit([]uint32{committercommon.SYSTEM})
+	committer.Precommit([]uint32{committercommon.SYSTEM})
+	committer.Precommit([]uint32{committercommon.SYSTEM})
+	committer.Commit()
+	// committer.SaveToDB()
 
 	writeCache.Clear()
 	/* Alice updates */
@@ -260,7 +266,9 @@ func TestGetProofAPI(t *testing.T) {
 	ts = univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues)
 	committer.Import(ts)
 	committer.Sort()
-	committer.Commit([]uint32{1})
+	committer.Precommit([]uint32{1})
+	committer.Precommit([]uint32{1})
+	committer.Commit()
 
 	// store := committer.Importer().Store().(*storage.EthDataStore)
 	writeCache.Clear()
@@ -311,7 +319,8 @@ func TestGetProofAPI(t *testing.T) {
 	ts = univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues)
 	committer.Import(ts)
 	committer.Sort()
-	committer.Commit([]uint32{1})
+	committer.Precommit([]uint32{1})
+	committer.Commit()
 
 	roothash2 := store.Root()
 

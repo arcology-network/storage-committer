@@ -30,7 +30,8 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	committer := ccurl.NewStorageCommitter(store)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 	committer.Sort()
-	committer.Commit([]uint32{committercommon.SYSTEM})
+	committer.Precommit([]uint32{committercommon.SYSTEM})
+	committer.Commit()
 	writeCache.Clear()
 
 	alice := AliceAccount()
@@ -75,7 +76,8 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	committer := ccurl.NewStorageCommitter(store)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 	committer.Sort()
-	committer.Commit([]uint32{committercommon.SYSTEM})
+	committer.Precommit([]uint32{committercommon.SYSTEM})
+	committer.Commit()
 
 	committer.Init(store)
 	alice := AliceAccount()
@@ -140,7 +142,8 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	committer := ccurl.NewStorageCommitter(store)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	committer.Sort()
-	committer.Commit([]uint32{committercommon.SYSTEM})
+	committer.Precommit([]uint32{committercommon.SYSTEM})
+	committer.Commit()
 	committer.Init(store)
 
 	// committer.NewAccount(1, alice)
@@ -188,15 +191,16 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
 	committer.Import(out)
 	committer.Sort()
-	committer.Commit(toCommit)
+	committer.Precommit(toCommit)
+	committer.Commit()
 	writeCache.Clear()
 
-	// url3 := ccurl.NewStorageCommitter(store)
-	if _, err := writeCache.Write(3, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("url3-1-by-tx-3")); err != nil {
+	// committer := ccurl.NewStorageCommitter(store)
+	if _, err := writeCache.Write(3, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("committer-1-by-tx-3")); err != nil {
 		t.Error(err)
 	}
 
-	// accesses3, transitions3 := url3.Export(importer.Sorter)
+	// accesses3, transitions3 := committer.Export(importer.Sorter)
 	accesses3 := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITAccess{})
 	transitions3 := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 
@@ -227,18 +231,19 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 
 	// committer.Import(committer.Decode(univalue.Univalues(append(transitions3, transitions4...)).Encode()))
 	committer.Sort()
-	committer.Commit(toCommit)
+	committer.Precommit(toCommit)
+	committer.Commit()
 	committer.Init(store)
 
 	writeCache.Clear()
 	v, _, _ := writeCache.Read(3, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", new(noncommutative.String))
-	if v == nil || v.(string) != "url3-1-by-tx-3" {
-		t.Error("Error: Wrong value, expecting:", "url3-1-by-tx-3 ", "actual:", v)
+	if v == nil || v.(string) != "committer-1-by-tx-3" {
+		t.Error("Error: Wrong value, expecting:", "committer-1-by-tx-3 ", "actual:", v)
 	}
 
 	// have to mark balance and nonce persistent first !!!!!
 
-	// v, _ = url3.Read(3, "blcc://eth1.0/account/"+alice+"/nonce", new(commutative.Uint64))
+	// v, _ = committer.Read(3, "blcc://eth1.0/account/"+alice+"/nonce", new(commutative.Uint64))
 	// if v == nil || v.(uint64) != 2 {
 	// 	t.Error("Error: Wrong value, expecting:", "2", "actual:", v)
 	// }

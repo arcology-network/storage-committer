@@ -27,48 +27,48 @@ import (
 	interfaces "github.com/arcology-network/concurrenturl/interfaces"
 )
 
-// StorageCommitter represents a storage committer.
-type StorageCommitter struct {
+// StateCommitter represents a storage committer.
+type StateCommitter struct {
 	importer    *importer.Importer
 	imuImporter *importer.Importer // transitions that will take effect anyway regardless of execution failures or conflicts
 	Platform    *committercommon.Platform
 }
 
-// NewStorageCommitter creates a new StorageCommitter instance.
-func NewStorageCommitter(store interfaces.Datastore) *StorageCommitter {
+// NewStorageCommitter creates a new StateCommitter instance.
+func NewStorageCommitter(store interfaces.Datastore) *StateCommitter {
 	platform := committercommon.NewPlatform()
-	return &StorageCommitter{
+	return &StateCommitter{
 		importer:    importer.NewImporter(store, platform),
 		imuImporter: importer.NewImporter(store, platform),
 		Platform:    platform, //[]committercommon.FilteredTransitionsInterface{&importer.NonceFilter{}, &importer.BalanceFilter{}},
 	}
 }
 
-// New creates a new StorageCommitter instance.
-func (this *StorageCommitter) New(args ...interface{}) *StorageCommitter {
-	return &StorageCommitter{
+// New creates a new StateCommitter instance.
+func (this *StateCommitter) New(args ...interface{}) *StateCommitter {
+	return &StateCommitter{
 		Platform: committercommon.NewPlatform(),
 	}
 }
 
-// Importer returns the importer of the StorageCommitter.
-func (this *StorageCommitter) Importer() *importer.Importer { return this.importer }
+// Importer returns the importer of the StateCommitter.
+func (this *StateCommitter) Importer() *importer.Importer { return this.importer }
 
-// Init initializes the StorageCommitter with the given datastore.
-func (this *StorageCommitter) Init(store interfaces.Datastore) {
+// Init initializes the StateCommitter with the given datastore.
+func (this *StateCommitter) Init(store interfaces.Datastore) {
 	this.importer.Init(store)
 	this.imuImporter.Init(store)
 }
 
-// Clear clears the StorageCommitter.
-func (this *StorageCommitter) Clear() {
+// Clear clears the StateCommitter.
+func (this *StateCommitter) Clear() {
 	this.importer.Store().Clear()
 	this.importer.Clear()
 	this.imuImporter.Clear()
 }
 
-// Import imports the given transitions into the StorageCommitter.
-func (this *StorageCommitter) Import(transitions []*univalue.Univalue, args ...interface{}) *StorageCommitter {
+// Import imports the given transitions into the StateCommitter.
+func (this *StateCommitter) Import(transitions []*univalue.Univalue, args ...interface{}) *StateCommitter {
 	invTransitions := make([]*univalue.Univalue, 0, len(transitions))
 
 	for i := 0; i < len(transitions); i++ {
@@ -85,17 +85,16 @@ func (this *StorageCommitter) Import(transitions []*univalue.Univalue, args ...i
 	return this
 }
 
-// Sort sorts the transitions in the StorageCommitter.
-func (this *StorageCommitter) Sort() *StorageCommitter {
+// Sort sorts the transitions in the StateCommitter.
+func (this *StateCommitter) Sort() *StateCommitter {
 	common.ParallelExecute(
 		func() { this.imuImporter.SortDeltaSequences() },
 		func() { this.importer.SortDeltaSequences() })
-
 	return this
 }
 
-// Finalize finalizes the transitions in the StorageCommitter.
-func (this *StorageCommitter) Finalize(txs []uint32) *StorageCommitter {
+// Finalize finalizes the transitions in the StateCommitter.
+func (this *StateCommitter) Finalize(txs []uint32) *StateCommitter {
 	if txs != nil && len(txs) == 0 { // Commit all the transactions when txs == nil
 		return this
 	}
@@ -111,7 +110,7 @@ func (this *StorageCommitter) Finalize(txs []uint32) *StorageCommitter {
 }
 
 // CopyToDbBuffer copies the transitions to the DB buffer.
-func (this *StorageCommitter) CopyToDbBuffer() [32]byte {
+func (this *StateCommitter) CopyToDbBuffer() [32]byte {
 	keys, values := this.importer.KVs()
 	invKeys, invVals := this.imuImporter.KVs()
 
@@ -120,20 +119,27 @@ func (this *StorageCommitter) CopyToDbBuffer() [32]byte {
 }
 
 // SaveToDB saves the transitions to the database.
-func (this *StorageCommitter) SaveToDB() {
+// func (this *StateCommitter) SaveToDB() {
+// 	store := this.importer.Store()
+// 	store.Commit(0) // Commit to the state store
+// 	this.Clear()
+// }
+
+// Commit commits the transitions in the StateCommitter.
+func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
+	if txs != nil && len(txs) == 0 {
+		this.Clear()
+		// panic("No transactions to commit")
+		return [32]byte{}
+	}
+	this.Finalize(txs)
+	return this.CopyToDbBuffer() // Export transitions and save them to the DB buffer.
+}
+
+// Commit commits the transitions in the StateCommitter.
+func (this *StateCommitter) Commit() *StateCommitter {
 	store := this.importer.Store()
 	store.Commit(0) // Commit to the state store
 	this.Clear()
-}
-
-// Commit commits the transitions in the StorageCommitter.
-func (this *StorageCommitter) Commit(txs []uint32) *StorageCommitter {
-	if txs != nil && len(txs) == 0 {
-		this.Clear()
-		return this
-	}
-	this.Finalize(txs)
-	this.CopyToDbBuffer() // Export transitions and save them to the DB buffer.
-	this.SaveToDB()
 	return this
 }

@@ -85,7 +85,8 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 	committer := ccurl.NewStorageCommitter(store)
 	committer.Import(transitions)
 	committer.Sort()
-	committer.Commit([]uint32{0})
+	committer.Precommit([]uint32{0})
+	committer.Commit()
 	fmt.Println("Account Commit single Total time= :", time.Since(t0))
 }
 
@@ -148,7 +149,8 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 
 	t0 = time.Now()
 
-	committer.Commit([]uint32{0})
+	committer.Precommit([]uint32{0})
+	committer.Commit()
 	fmt.Println("Commit:", time.Since(t0))
 
 	t0 = time.Now()
@@ -168,7 +170,8 @@ func BenchmarkUrlAddThenDelete(b *testing.B) {
 	committer := ccurl.NewStorageCommitter(store)
 	committer.Import(trans)
 	committer.Sort()
-	committer.Commit([]uint32{committercommon.SYSTEM})
+	committer.Precommit([]uint32{committercommon.SYSTEM})
+	committer.Commit()
 
 	alice := AliceAccount()
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
@@ -209,7 +212,8 @@ func BenchmarkUrlAddThenPop(b *testing.B) {
 	committer := ccurl.NewStorageCommitter(store)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 	committer.Sort()
-	committer.Commit([]uint32{committercommon.SYSTEM})
+	committer.Precommit([]uint32{committercommon.SYSTEM})
+	committer.Commit()
 
 	alice := AliceAccount()
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
@@ -334,7 +338,8 @@ func BenchmarkEncodeTransitions(b *testing.B) {
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	committer.Sort()
-	committer.Commit([]uint32{committercommon.SYSTEM})
+	committer.Precommit([]uint32{committercommon.SYSTEM})
+	committer.Commit()
 
 	path := commutative.NewPath()
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
@@ -407,7 +412,8 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	committer := ccurl.NewStorageCommitter(store)
 	committer.Import(acctTrans)
 	committer.Sort()
-	committer.Commit([]uint32{committercommon.SYSTEM})
+	committer.Precommit([]uint32{committercommon.SYSTEM})
+	committer.Commit()
 	// errs := committer.AllInOneCommit(acctTrans, []uint32{0})
 
 	// if len(errs) > 0 {

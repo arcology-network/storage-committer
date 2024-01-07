@@ -129,13 +129,14 @@ func (this *Importer) SortDeltaSequences() {
 
 // Merge and finalize state deltas
 func (this *Importer) MergeStateDelta() {
-	this.valBuffer = this.valBuffer[:0]
-	this.valBuffer = append(this.valBuffer, make([]interface{}, len(this.keyBuffer))...)
+	this.valBuffer = common.Resize(this.valBuffer, len(this.keyBuffer))
 
 	common.ParallelForeach(this.keyBuffer, this.numThreads, func(i int, _ *string) {
 		deltaSeq, _ := this.deltaDict.Get(this.keyBuffer[i])
-		if this.valBuffer[i] = deltaSeq.(*DeltaSequence).Finalize(); this.valBuffer[i] == nil {
-			this.keyBuffer[i] = "" // Mark the key-value pair as deleted
+		this.valBuffer[i] = deltaSeq.(*DeltaSequence).Finalize()
+
+		if this.valBuffer[i] == nil || this.valBuffer[i].(*univalue.Univalue) == nil { // Some sequences may have been deleted with transactions they belong to
+			this.keyBuffer[i] = ""
 		}
 	})
 
