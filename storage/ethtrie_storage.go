@@ -10,6 +10,7 @@ import (
 	"github.com/arcology-network/concurrenturl/interfaces"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	ethdb "github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -98,15 +99,17 @@ func (this *EthDataStore) GetAccountProof(addr []byte) ([][]byte, error) {
 
 func (this *EthDataStore) IsProvable(addr string) ([]byte, error) {
 	proofs := memorydb.New()
-	if trie, _ := this.worldStateTrie.Get([]byte(addr)); len(trie) > 0 {
-		if err := this.worldStateTrie.Prove([]byte(addr), proofs); err != nil {
+	keyHash := crypto.Keccak256([]byte(addr))
+
+	if trie, _ := this.worldStateTrie.Get(keyHash); len(trie) > 0 {
+		if err := this.worldStateTrie.Prove(keyHash, proofs); err != nil {
 			return nil, err
 		}
 	} else {
 		return nil, errors.New("Failed to find the proof")
 	}
 
-	v, err := ethmpt.VerifyProof(this.Root(), []byte(addr), proofs)
+	v, err := ethmpt.VerifyProof(this.Root(), keyHash, proofs)
 	if err != nil || len(v) == 0 {
 		return v, errors.New("Failed to find the proof")
 	}
@@ -192,7 +195,8 @@ func (this *EthDataStore) GetAccount(accountKey string, accesses *ethmpt.AccessL
 
 func (this *EthDataStore) GetAccountFromTrie(accountKey string, accesses *ethmpt.AccessListCache) (*Account, error) {
 	if len(accountKey) > 0 {
-		buffer, err := this.worldStateTrie.Get([]byte(accountKey))
+		keyHash := crypto.Keccak256([]byte(accountKey)) // Hash the key string
+		buffer, err := this.worldStateTrie.Get(keyHash)
 		if err == nil && len(buffer) > 0 { // Not found
 			var acctState types.StateAccount
 			rlp.DecodeBytes(buffer, &acctState)
@@ -261,13 +265,9 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 		}
 	})
 
-	// Update the account storage tries
+	// Update the accounts
 	common.ParallelForeach(this.DirtyAccounts, 16, func(acct **Account, idx int) {
 		(*acct).Precommit(common.FromPairs(stateGroups[idx]))
-	})
-
-	encoded := common.Append(this.DirtyAccounts, func(_ int, acct *Account) []byte {
-		return acct.Encode()
 	})
 
 	// Move dirty accounts to cache
@@ -275,8 +275,18 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 		this.AccountCache.Set((**acct).addr, *acct)
 	})
 
+	// Encode the accounts
+	encoded := common.Append(this.DirtyAccounts, func(_ int, acct *Account) []byte {
+		return acct.Encode()
+	})
+
+	// Move dirty accounts to cache
+	keyBytes := common.Append(this.DirtyAccounts, func(_ int, acct *Account) []byte {
+		return crypto.Keccak256([]byte(acct.addr)) // Account keys
+	})
+
 	// Update dirty accounts to the trie.
-	errs := this.worldStateTrie.ParallelUpdate(common.Append(this.DirtyAccounts, func(_ int, acct *Account) []byte { return ([]byte(acct.addr)) }), encoded)
+	errs := this.worldStateTrie.ParallelUpdate(keyBytes, encoded) // Encoded accounts
 
 	// Return the first error if any.
 	if _, err := common.FindFirstIf(errs, func(err error) bool { return err != nil }); err != nil {

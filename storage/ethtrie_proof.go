@@ -124,7 +124,7 @@ func (this *MerkleProof) GetProof(acctStr string, storageKeys []string) (*Accoun
 	}
 
 	// create the accountProof
-	accountProof, proofErr := this.DataStore.GetAccountProof([]byte(acctAddr)) // Get the account proof
+	accountProof, proofErr := this.DataStore.GetAccountProof(crypto.Keccak256([]byte(acctAddr))) // Get the account proof
 	if proofErr != nil {
 		return nil, proofErr
 	}
