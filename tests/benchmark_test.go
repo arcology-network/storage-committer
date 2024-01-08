@@ -481,22 +481,21 @@ func BenchmarkStringSort(b *testing.B) {
 	}
 
 	t0 := time.Now()
-	sorter := func(start, end, index int, args ...interface{}) {
-		for i := start; i < end; i++ {
-			sort.SliceStable(paths[i], func(i, j int) bool {
-				if paths[i][j].GetTx() == committercommon.SYSTEM {
-					return true
-				}
 
-				if paths[i][j].GetTx() == committercommon.SYSTEM {
-					return false
-				}
+	common.ParallelForeach(paths, 6, func(i int, _ *[]*univalue.Univalue) {
+		sort.SliceStable(paths[i], func(i, j int) bool {
+			if paths[i][j].GetTx() == committercommon.SYSTEM {
+				return true
+			}
 
-				return paths[i][j].GetTx() < paths[i][j].GetTx()
-			})
-		}
-	}
-	common.ParallelWorker(len(paths), 6, sorter)
+			if paths[i][j].GetTx() == committercommon.SYSTEM {
+				return false
+			}
+
+			return paths[i][j].GetTx() < paths[i][j].GetTx()
+		})
+	})
+
 	fmt.Println("Path Sort "+fmt.Sprint(100000*9), time.Since(t0))
 }
 

@@ -338,6 +338,11 @@ func TestGetProofAPI(t *testing.T) {
 		t.Error(err)
 	}
 
+	dstore := committer.Importer().Store().(*storage.EthDataStore)
+	if _, err := dstore.IsProvable(bob); err != nil {
+		t.Error(err)
+	}
+
 	if accountResult.StorageProof[0].Value.ToInt().Cmp(big.NewInt(0)) == 0 {
 		t.Error(err)
 	}

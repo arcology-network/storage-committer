@@ -82,7 +82,7 @@ func (this *AccountMerkle) Build(keys []string, encodedVals [][]byte) []*string 
 	offset := committercommon.ETH10_ACCOUNT_PREFIX_LENGTH
 	ranges, ParseAccountAddrs := this.markAccountRange(keys)
 	builder := func(start, end, index int, args ...interface{}) {
-		mempool := this.nodePool.GetTlsMempool(index)
+		mempool := this.nodePool.GetPool(index)
 		for i := start; i < end; i++ {
 			path := keys[ranges[i]]
 			if len(path) == 0 {
