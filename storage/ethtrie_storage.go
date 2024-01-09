@@ -8,6 +8,7 @@ import (
 	ccmap "github.com/arcology-network/common-lib/container/map"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
+	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -21,8 +22,8 @@ import (
 type EthDataStore struct {
 	worldStateTrie *ethmpt.Trie
 
-	AccountCache  *ccmap.ConcurrentMap
-	DirtyAccounts []*Account
+	AccountCache  *ccmap.ConcurrentMap // Account cache holds the accounts that are being accessed in the current cycle.
+	DirtyAccounts []*Account           // Dirty accounts are the accounts that have been updated in the current cycle.
 
 	ethdb   *ethmpt.Database
 	diskdbs [16]ethdb.Database
@@ -93,18 +94,21 @@ func (this *EthDataStore) Hash(key string) []byte {
 }
 
 func (this *EthDataStore) GetAccountProof(addr []byte) ([][]byte, error) {
+	addHash := crypto.Keccak256(addr)
+
 	var proof proofList
-	if trie, _ := this.worldStateTrie.Get(addr); len(trie) > 0 {
-		err := this.worldStateTrie.Prove(addr, &proof)
+	if trie, _ := this.worldStateTrie.Get(addHash); len(trie) > 0 {
+		err := this.worldStateTrie.Prove(addHash, &proof)
 		return proof, err
 	}
 	return [][]byte{}, nil
 }
 
 func (this *EthDataStore) IsProvable(addr string) ([]byte, error) {
-	proofs := memorydb.New()
-	keyHash := crypto.Keccak256([]byte(addr))
+	addrBytes, _ := hexutil.Decode(addr)
+	keyHash := crypto.Keccak256(addrBytes)
 
+	proofs := memorydb.New()
 	if trie, _ := this.worldStateTrie.Get(keyHash); len(trie) > 0 {
 		if err := this.worldStateTrie.Prove(keyHash, proofs); err != nil {
 			return nil, err
@@ -120,7 +124,6 @@ func (this *EthDataStore) IsProvable(addr string) ([]byte, error) {
 	return v, nil
 }
 
-// Problem is here, need to load the storage trie first? and use storageKey as well
 func (this *EthDataStore) IfExists(key string) bool {
 	accesses := ethmpt.AccessListCache{}
 
@@ -187,6 +190,7 @@ func (this *EthDataStore) BatchInject(keys []string, values []interface{}) error
 	return nil
 }
 
+// Get the account from the cache first, if not found, get it from the trie.
 func (this *EthDataStore) GetAccount(accountKey string, accesses *ethmpt.AccessListCache) (*Account, error) {
 	if len(accountKey) > 0 {
 		if v, _ := this.AccountCache.Get(accountKey); v != nil { // Lookup in the cache first
@@ -197,9 +201,12 @@ func (this *EthDataStore) GetAccount(accountKey string, accesses *ethmpt.AccessL
 	return nil, errors.New("Invalid account: " + accountKey)
 }
 
+// Get the account from the trie
 func (this *EthDataStore) GetAccountFromTrie(accountKey string, accesses *ethmpt.AccessListCache) (*Account, error) {
 	if len(accountKey) > 0 {
-		keyHash := crypto.Keccak256([]byte(accountKey)) // Hash the key string
+		acctAddr, _ := hexutil.Decode(accountKey) // Remove the 0x prefix
+
+		keyHash := crypto.Keccak256(acctAddr) // Hash the key string
 		buffer, err := this.worldStateTrie.Get(keyHash)
 		if err == nil && len(buffer) > 0 { // Not found
 			var acctState types.StateAccount
@@ -215,8 +222,6 @@ func (this *EthDataStore) GetAccountFromTrie(accountKey string, accesses *ethmpt
 					this.ethdb,
 					this.diskdbs,
 					nil,
-					[]string{},
-					[][]byte{},
 				}, nil
 			}
 		}
@@ -243,11 +248,13 @@ func (this *EthDataStore) BatchRetrive(keys []string, T []any) []interface{} {
 	return values
 }
 
+// Update the account trie
 func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte {
 	if len(keys) == 0 {
 		return this.worldStateTrie.Hash()
 	}
 
+	// Group the keys and transactions by their account addresses.
 	accountKeys, stateGroups := common.GroupBy(common.ToPairs(keys, values.([]interface{})),
 		func(v struct {
 			First  string
@@ -257,39 +264,44 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 			return &key
 		})
 
-	this.DirtyAccounts = make([]*Account, len(accountKeys))
+	this.DirtyAccounts = common.Resize(this.DirtyAccounts, len(accountKeys)) // Reset the dirty accounts
 
-	numThd := common.IfThen(len(accountKeys) <= 1024, 8, 16)
+	// Load the accounts from the cache or the trie in parallel, ready for update.
+	numThd := common.IfThen(len(accountKeys) <= 1024, 8, 16) // 8 threads for small batch fewer than 1024 accounts, 16 threads for larger batches
 	common.ParallelForeach(accountKeys, numThd, func(i int, key *string) {
-		accesses := ethmpt.AccessListCache{}
+		accesses := ethmpt.AccessListCache{} // This doesn't serve any purpose for now. It is only a place holder, because the parallelized trie update requires it.
 		if this.DirtyAccounts[i], _ = this.GetAccount(*key, &accesses); this.DirtyAccounts[i] == nil {
-			this.DirtyAccounts[i] = NewAccount(
+			this.DirtyAccounts[i] = NewAccount( // Create a new account if not found
 				*key,
 				this.diskdbs,
-				EmptyAccountState()) // empty account
+				EmptyAccountState()) // empty account state
 		}
 	})
 
-	// Update the accounts
+	// Precommit the changes to the accounts and update the account trie.
 	common.ParallelForeach(this.DirtyAccounts, 16, func(idx int, acct **Account) {
 		(*acct).Precommit(common.FromPairs(stateGroups[idx]))
 	})
 
-	// Move dirty accounts to cache
+	// Move dirty accounts to cache, the difference between the cache and dirty accounts is that the
+	// cache is for accounts that are being accessed in the current cycle including the newly created, which isn't available in the cache yet
+	// The dirty accounts are the accounts that have been updated in the current cycle.
 	common.Foreach(this.DirtyAccounts, func(acct **Account, _ int) {
 		this.AccountCache.Set((**acct).addr, *acct)
 	})
 
-	// Encode the accounts
+	// Encode the account keys.
+	keyBytes := common.Append(this.DirtyAccounts, func(_ int, acct *Account) []byte {
+		addr, _ := hexutil.Decode(acct.addr) // Remove the 0x prefix
+		return crypto.Keccak256(addr)        // Account keys
+	})
+
+	// Encode the account content.
 	encoded := common.Append(this.DirtyAccounts, func(_ int, acct *Account) []byte {
 		return acct.Encode()
 	})
 
-	keyBytes := common.Append(this.DirtyAccounts, func(_ int, acct *Account) []byte {
-		return crypto.Keccak256([]byte(acct.addr)) // Account keys
-	})
-
-	// Update dirty accounts to the trie.
+	// Write the account trie to the DB.
 	errs := this.worldStateTrie.ParallelUpdate(keyBytes, encoded) // Encoded accounts
 
 	// Return the first error if any.

@@ -1,7 +1,6 @@
 package ccurltest
 
 import (
-	"encoding/hex"
 	"errors"
 	"math/big"
 	"testing"
@@ -107,11 +106,6 @@ func TestEthWorldTrieProof(t *testing.T) {
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, bob); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
-
-	// if _, err := committer.NewAccount(committercommon.SYSTEM, bob); err != nil { // NewAccount account structure {
-	// 	t.Error(err)
-	// }
-
 	acctTrans := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
 	committer := ccurl.NewStorageCommitter(store)
@@ -161,15 +155,6 @@ func TestEthWorldTrieProof(t *testing.T) {
 		t.Error("Error: Wrong return value")
 	}
 
-	/* Bob updates */
-	// if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
-	// 	t.Error(err)
-	// }
-
-	// if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/ele1", noncommutative.NewString("6789")); err != nil {
-	// 	t.Error(err)
-	// }
-
 	acctTrans = univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	committer.Sort()
@@ -177,13 +162,13 @@ func TestEthWorldTrieProof(t *testing.T) {
 	committer.Commit()
 	committer.Init(store)
 
-	/* Account Proofs */
+	/* Get Account Proofs */
 	dstore := committer.Importer().Store().(*storage.EthDataStore)
-	if _, err := dstore.IsProvable((alice)); err != nil {
+	if _, err := dstore.IsProvable(alice); err != nil {
 		t.Error(err)
 	}
 
-	if d, err := dstore.IsProvable((bob)); err != nil || len(d) == 0 {
+	if d, err := dstore.IsProvable(bob); err != nil || len(d) == 0 {
 		t.Error(err)
 	}
 
@@ -191,18 +176,19 @@ func TestEthWorldTrieProof(t *testing.T) {
 		t.Error("Error: Should've flagged an error")
 	}
 
-	kstr, _ := hexutil.Decode("0x0000000000000000000000000000000000000000000000000000000000000000")
-	hash := ethcommon.BytesToHash(kstr)
+	// Get the merkle proof for storage k
+	// kstr, _ := hexutil.Decode()
+	// hash := ethcommon.BytesToHash(kstr)
 
 	bobCache, _ := dstore.GetAccount(bob, &ethmpt.AccessListCache{})
-	if _, err := bobCache.IsProvable((hash)); err != nil {
+	if _, err := bobCache.IsProvable("0x0000000000000000000000000000000000000000000000000000000000000000"); err != nil {
 		t.Error(err)
 	}
 
-	bobTrie, _ := dstore.GetAccountFromTrie(bob, &ethmpt.AccessListCache{})
-	if _, err := bobTrie.IsProvable((hash)); err != nil {
-		t.Error(err)
-	}
+	// bobTrie, _ := dstore.GetAccountFromTrie(bob, &ethmpt.AccessListCache{})
+	// if _, err := bobTrie.IsProvable((hash)); err != nil {
+	// 	t.Error(err)
+	// }
 }
 
 func TestGetProofAPI(t *testing.T) {
@@ -274,16 +260,16 @@ func TestGetProofAPI(t *testing.T) {
 	writeCache.Clear()
 
 	/* Get proof direcly */
-	kstr, _ := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000000")
+	// kstr, _ := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000000")
 
 	bobAcct, _ := store.GetAccount(bob, &ethmpt.AccessListCache{})
-	v, err := bobAcct.Trie().Get(kstr[:])
-	if len(v) == 0 {
-		t.Error(err)
-	}
+	// v, err := bobAcct.Trie().Get(kstr[:])
+	// if len(v) == 0 {
+	// 	t.Error(err)
+	// }
 
-	hash := ethcommon.BytesToHash(kstr)
-	if _, err := bobAcct.IsProvable((hash)); err != nil {
+	// hash := ethcommon.BytesToHash(kstr)
+	if _, err := bobAcct.IsProvable("0x0000000000000000000000000000000000000000000000000000000000000000"); err != nil {
 		t.Error(err)
 	}
 

@@ -23,6 +23,8 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/arcology-network/common-lib/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	rlp "github.com/ethereum/go-ethereum/rlp"
 )
 
@@ -37,33 +39,21 @@ func RandomAccount() string {
 }
 
 func AliceAccount() string {
-	var letters = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
-	// rand.Seed(1)
-	b := make([]rune, 40)
-	for i := range b {
-		b[i] = letters[1]
-	}
-	return string(b)
+	b := make([]byte, 20)
+	common.Fill(b, 10)
+	return hexutil.Encode(b)
 }
 
 func BobAccount() string {
-	var letters = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
-	// rand.Seed(2)
-	b := make([]rune, 40)
-	for i := range b {
-		b[i] = letters[2]
-	}
-	return string(b)
+	b := make([]byte, 20)
+	common.Fill(b, 11)
+	return hexutil.Encode(b)
 }
 
 func CarolAccount() string {
-	var letters = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
-	// rand.Seed(2)
-	b := make([]rune, 40)
-	for i := range b {
-		b[i] = letters[3]
-	}
-	return string(b)
+	b := make([]byte, 20)
+	common.Fill(b, 12)
+	return hexutil.Encode(b)
 }
 
 func rlpEncoder(args ...interface{}) []byte {

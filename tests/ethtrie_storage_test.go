@@ -55,8 +55,9 @@ func TestTrieUpdates(t *testing.T) {
 		t.Error(err)
 	}
 
+	trans := writeCache.Export(importer.Sorter)
 	committer := ccurl.NewStorageCommitter(store)
-	committer.Import(univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
+	committer.Import(univalue.Univalues(common.Clone(trans)).To(importer.IPTransition{}))
 	committer.Sort()
 	committer.Finalize([]uint32{committercommon.SYSTEM})
 	committer.CopyToDbBuffer() // Export transitions and save them to the DB buffer.
