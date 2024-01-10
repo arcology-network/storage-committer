@@ -105,7 +105,7 @@ func (this *EthDataStore) GetAccountProof(addr []byte) ([][]byte, error) {
 }
 
 func (this *EthDataStore) IsProvable(addr string) ([]byte, error) {
-	addrBytes, _ := hexutil.Decode(addr)
+	addrBytes, _ := hexutil.Decode(addr) // Decode to remove the 0x prefix
 	keyHash := crypto.Keccak256(addrBytes)
 
 	proofs := memorydb.New()

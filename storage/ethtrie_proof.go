@@ -90,10 +90,10 @@ func NewMerkleProof(ethdb *ethmpt.Database, root [32]byte) (*MerkleProof, error)
 }
 
 // GetProof returns a merkle proof for the given account and storage keys.
-func (this *MerkleProof) GetProof(acctStr string, storageKeys []string) (*AccountResult, error) {
+func (this *MerkleProof) GetProof(acctAddr string, storageKeys []string) (*AccountResult, error) {
 	this.visits++
 
-	acctAddr := string(acctStr)
+	// Get the account either from the cache or from the database.
 	account, err := this.DataStore.GetAccount(acctAddr, new(ethmpt.AccessListCache))
 	if err != nil {
 		return nil, err
@@ -101,22 +101,23 @@ func (this *MerkleProof) GetProof(acctStr string, storageKeys []string) (*Accoun
 
 	storageHash := types.EmptyRootHash
 	codeHash := account.GetCodeHash()
-	storageProof := make([]StorageResult, len(storageKeys))
 
-	storageTrie := account.storageTrie
-	if storageTrie != nil {
-		storageHash = storageTrie.Hash()
+	if account.storageTrie != nil {
+		storageHash = account.storageTrie.Hash()
 	} else {
 		// no storageTrie means the account does not exist, so the codeHash is the hash of an empty bytearray.
 		codeHash = crypto.Keccak256Hash(nil)
 	}
 
+	// Create the storage proof for each storage key.
+	storageProof := make([]StorageResult, len(storageKeys))
 	for i, hexKey := range storageKeys {
 		key, err := decodeHash(hexKey)
 		if err != nil {
 			return nil, err
 		}
-		if storageTrie != nil {
+
+		if account.storageTrie != nil {
 			proof, storageError := account.Prove(key) // Get the storage proof
 			if storageError != nil {
 				return nil, storageError
@@ -129,8 +130,9 @@ func (this *MerkleProof) GetProof(acctStr string, storageKeys []string) (*Accoun
 		}
 	}
 
-	// create the accountProof
-	accountProof, proofErr := this.DataStore.GetAccountProof([]byte(acctAddr)) // Get the account proof
+	// create the account Proof
+	acctBytes, _ := hexutil.Decode(acctAddr)
+	accountProof, proofErr := this.DataStore.GetAccountProof(acctBytes) // Get the account proof
 	if proofErr != nil {
 		return nil, proofErr
 	}

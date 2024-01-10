@@ -10,9 +10,9 @@ import (
 	// ethapi "github.com/ethereum/go-ethereum/internal/ethapi"
 )
 
-// Types copied from ETH
+// ------------------------Types copied from ETH------------------------
 type AccountResult struct {
-	Address      ethcommon.Address `json:"address"`
+	Address      ethcommon.Address `json:"address"` // Address of the account
 	AccountProof []string          `json:"accountProof"`
 	Balance      *hexutil.Big      `json:"balance"`
 	CodeHash     ethcommon.Hash    `json:"codeHash"`
@@ -63,3 +63,5 @@ func decodeHash(s string) (ethcommon.Hash, error) {
 	}
 	return ethcommon.BytesToHash(b), nil
 }
+
+// ------------------------End of types copied from ETH------------------------

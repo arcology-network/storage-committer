@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"math/big"
@@ -78,12 +79,23 @@ func (this *Account) GetCodeHash() [32]byte {
 }
 
 func (this *Account) Prove(key [32]byte) ([][]byte, error) {
-	var proof proofList
+	var proofs proofList
 	data, err := this.storageTrie.Get([]byte(key[:]))
 	if len(data) > 0 {
-		this.storageTrie.Prove([]byte(key[:]), &proof)
+		this.storageTrie.Prove(key[:], &proofs)
 	}
-	return proof, err
+
+	// Reverise the proof
+	proofDB, err := ProofArrayToDB(proofs)
+	if err != nil {
+		return nil, err
+	}
+
+	v, err := ethmpt.VerifyProof(this.StateAccount.Root, key[:], proofDB)
+	if err != nil || len(v) == 0 || !bytes.Equal(data, v) {
+		return nil, errors.New("Failed to find the proof")
+	}
+	return proofs, err
 }
 
 // The function is used to prove the storage of an account. It only works with
@@ -91,10 +103,10 @@ func (this *Account) Prove(key [32]byte) ([][]byte, error) {
 func (this *Account) IsProvable(key string) ([]byte, error) {
 	proofs := memorydb.New()
 
-	keyBytes, _ := hexutil.Decode(key) // Remove the prefix to get the key.
-	data, err := this.storageTrie.Get(keyBytes)
+	keyBytes, _ := hexutil.Decode(key)          // Remove the prefix to get the key.
+	data, err := this.storageTrie.Get(keyBytes) // Get the storage value
 	if len(data) > 0 && err == nil {
-		if err := this.storageTrie.Prove(keyBytes, proofs); err != nil {
+		if err := this.storageTrie.Prove(keyBytes, proofs); err != nil { // Get the storage proof and save it to the proof DB
 			return nil, err
 		}
 	} else {

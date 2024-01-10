@@ -1,7 +1,10 @@
 package storage
 
 import (
+	"github.com/arcology-network/common-lib/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	ethmpt "github.com/ethereum/go-ethereum/trie"
 	"github.com/ethereum/go-ethereum/trie/trienode"
 )
@@ -24,4 +27,15 @@ func commitToDB(trie *ethmpt.Trie, ethdb *ethmpt.Database, block uint64) (*ethmp
 		}
 	}
 	return ethmpt.NewParallel(ethmpt.TrieID(root), ethdb)
+}
+
+func ProofArrayToDB(proofs [][]byte) (*memorydb.Database, error) {
+	proofDB := memorydb.New()
+	for i := 0; i < len(proofs); i++ {
+		keyBytes := common.IfThen(len(proofs[i]) >= 32, crypto.Keccak256([]byte(proofs[i])), []byte(proofs[i]))
+		if err := proofDB.Put(keyBytes, []byte(proofs[i])); err != nil {
+			return nil, err
+		}
+	}
+	return proofDB, nil
 }

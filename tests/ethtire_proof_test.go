@@ -8,7 +8,6 @@ import (
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	ccurl "github.com/arcology-network/concurrenturl"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	importer "github.com/arcology-network/concurrenturl/importer"
@@ -24,8 +23,7 @@ import (
 
 func TestConcurrentDB(t *testing.T) {
 	store := chooseDataStore()
-	// store := storage.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
-	// committer := ccurl.NewStorageCommitter(store)
+
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 
 	alice := AliceAccount()
@@ -106,16 +104,8 @@ func TestEthWorldTrieProof(t *testing.T) {
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, bob); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
-	acctTrans := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	writeCache.FlushToDataSource(store)
 
-	committer := ccurl.NewStorageCommitter(store)
-	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
-	committer.Sort()
-	committer.Precommit([]uint32{committercommon.SYSTEM})
-	committer.Commit()
-	committer.Init(store)
-
-	writeCache.Clear()
 	path := commutative.NewPath()
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
 
@@ -123,15 +113,11 @@ func TestEthWorldTrieProof(t *testing.T) {
 		t.Error(err)
 	}
 
-	acctTrans = univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
-	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
-	committer.Sort()
-	committer.Precommit([]uint32{1})
-	committer.Commit()
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000009", noncommutative.NewString("435")); err != nil {
+		t.Error(err)
+	}
+	writeCache.FlushToDataSource(store)
 
-	committer.Init(store)
-
-	writeCache.Clear()
 	// Delete an non-existing entry, should NOT appear in the transitions
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/4", nil); err == nil {
 		t.Error("Deleting an non-existing entry should've flaged an error", err)
@@ -155,15 +141,10 @@ func TestEthWorldTrieProof(t *testing.T) {
 		t.Error("Error: Wrong return value")
 	}
 
-	acctTrans = univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
-	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
-	committer.Sort()
-	committer.Precommit([]uint32{1})
-	committer.Commit()
-	committer.Init(store)
+	writeCache.FlushToDataSource(store)
 
 	/* Get Account Proofs */
-	dstore := committer.Importer().Store().(*storage.EthDataStore)
+	dstore := store.(*storage.EthDataStore)
 	if _, err := dstore.IsProvable(alice); err != nil {
 		t.Error(err)
 	}
@@ -176,99 +157,43 @@ func TestEthWorldTrieProof(t *testing.T) {
 		t.Error("Error: Should've flagged an error")
 	}
 
-	// Get the merkle proof for storage k
-	// kstr, _ := hexutil.Decode()
-	// hash := ethcommon.BytesToHash(kstr)
-
 	bobCache, _ := dstore.GetAccount(bob, &ethmpt.AccessListCache{})
 	if _, err := bobCache.IsProvable("0x0000000000000000000000000000000000000000000000000000000000000000"); err != nil {
 		t.Error(err)
 	}
 
-	// bobTrie, _ := dstore.GetAccountFromTrie(bob, &ethmpt.AccessListCache{})
-	// if _, err := bobTrie.IsProvable((hash)); err != nil {
-	// 	t.Error(err)
-	// }
+	aliceCache, _ := dstore.GetAccount(alice, &ethmpt.AccessListCache{})
+	if _, err := aliceCache.IsProvable("0x0000000000000000000000000000000000000000000000000000000000000009"); err != nil {
+		t.Error(err)
+	}
 }
 
 func TestGetProofAPI(t *testing.T) {
 	store := ccurlstorage.NewParallelEthMemDataStore()
-	// committer := ccurl.NewStorageCommitter(ccurlstorage.NewParallelEthMemDataStore())
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
-		t.Error(err)
-	}
+	writeCache.CreateNewAccount(committercommon.SYSTEM, alice)
 
 	bob := BobAccount()
-	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, bob); err != nil { // NewAccount account structure {
-		t.Error(err)
-	}
+	writeCache.CreateNewAccount(committercommon.SYSTEM, bob)
 
-	acctTrans := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
-	ts := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues)
+	writeCache.FlushToDataSource(store)
 
-	committer := ccurl.NewStorageCommitter(store)
-	committer.Import(ts)
-	committer.Sort()
-	committer.Precommit([]uint32{committercommon.SYSTEM})
-	committer.Precommit([]uint32{committercommon.SYSTEM})
-	committer.Commit()
-	// committer.SaveToDB()
-
-	writeCache.Clear()
 	/* Alice updates */
-	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
-		t.Error(err)
-	}
-
-	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ele0", noncommutative.NewString("124")); err != nil {
-		t.Error(err)
-	}
-
-	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000009", noncommutative.NewInt64(1111)); err != nil {
-		t.Error(err)
-	}
-
-	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000000", noncommutative.NewString("124")); err != nil {
-		t.Error(err)
-	}
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath())
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ele0", noncommutative.NewString("124"))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000009", noncommutative.NewInt64(1111))
 
 	/* Bob updates */
-	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000001", noncommutative.NewInt64(9999)); err != nil {
-		t.Error(err)
-	}
-
-	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
-		t.Error(err)
-	}
-
-	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/ele1", noncommutative.NewString("6789")); err != nil {
-		t.Error(err)
-	}
-
-	acctTrans = univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
-	ts = univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues)
-	committer.Import(ts)
-	committer.Sort()
-	committer.Precommit([]uint32{1})
-	committer.Precommit([]uint32{1})
-	committer.Commit()
-
-	// store := committer.Importer().Store().(*storage.EthDataStore)
-	writeCache.Clear()
-
-	/* Get proof direcly */
-	// kstr, _ := hex.DecodeString("0000000000000000000000000000000000000000000000000000000000000000")
+	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000000", noncommutative.NewString("124"))
+	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000001", noncommutative.NewInt64(9999))
+	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/", commutative.NewPath())
+	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/ele1", noncommutative.NewString("6789"))
+	writeCache.FlushToDataSource(store)
 
 	bobAcct, _ := store.GetAccount(bob, &ethmpt.AccessListCache{})
-	// v, err := bobAcct.Trie().Get(kstr[:])
-	// if len(v) == 0 {
-	// 	t.Error(err)
-	// }
 
-	// hash := ethcommon.BytesToHash(kstr)
 	if _, err := bobAcct.IsProvable("0x0000000000000000000000000000000000000000000000000000000000000000"); err != nil {
 		t.Error(err)
 	}
@@ -277,7 +202,6 @@ func TestGetProofAPI(t *testing.T) {
 		t.Error("Error: Wrong return value")
 	}
 
-	/* Through API interface */
 	roothash := store.Root()
 
 	proof, err := storage.NewMerkleProof(store.EthDB(), roothash)
@@ -291,45 +215,57 @@ func TestGetProofAPI(t *testing.T) {
 	}
 
 	manager := storage.NewMerkleProofManager(10, store.EthDB())
-
 	accountResult, err = manager.GetProof(roothash, bob, []string{string("0x0000000000000000000000000000000000000000000000000000000000000000")})
 	if accountResult.StorageProof[0].Value.ToInt().Cmp(big.NewInt(0)) == 0 {
 		t.Error(err)
 	}
 
-	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/ele1", noncommutative.NewString("8976")); err != nil {
-		t.Error(err)
-	}
+	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/ele1", noncommutative.NewString("8976"))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000009", noncommutative.NewInt64(1111))
 
-	acctTrans = univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
-	ts = univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues)
-	committer.Import(ts)
-	committer.Sort()
-	committer.Precommit([]uint32{1})
-	committer.Commit()
+	writeCache.FlushToDataSource(store)
 
 	roothash2 := store.Root()
-
 	if roothash == roothash2 {
 		t.Error(errors.New("Error: Root hash should've changed"))
 	}
 
-	// Get the merkle proof again
-	proof, err = storage.NewMerkleProof(store.EthDB(), roothash2)
-	if err != nil {
+	// dstore := committer.Importer().Store().(*storage.EthDataStore)
+	if _, err := store.IsProvable(bob); err != nil {
 		t.Error(err)
 	}
-	accountResult, err = proof.GetProof(bob, []string{string("0x0000000000000000000000000000000000000000000000000000000000000000")})
+
+	// Initiate a new proof provider
+	proofProvider, err := storage.NewMerkleProof(store.EthDB(), roothash2)
 	if err != nil {
 		t.Error(err)
 	}
 
-	dstore := committer.Importer().Store().(*storage.EthDataStore)
-	if _, err := dstore.IsProvable(bob); err != nil {
+	// Get the merkle proof for a storage k in Bob's account
+	accountResult, err = proofProvider.GetProof(bob, []string{string("0x0000000000000000000000000000000000000000000000000000000000000000")})
+	if err != nil {
 		t.Error(err)
 	}
 
 	if accountResult.StorageProof[0].Value.ToInt().Cmp(big.NewInt(0)) == 0 {
 		t.Error(err)
 	}
+
+	// Get the merkle proof for a storage k in Bob's account
+	accountResult, err = proofProvider.GetProof(alice, []string{string("0x0000000000000000000000000000000000000000000000000000000000000009")})
+	if err != nil {
+		t.Error(err)
+	}
+
+	if err := accountResult.Verify(roothash2); err != nil {
+		t.Error(err)
+	}
+
+	// accountResult.OpVerify(roothash2)
+
+	// if accountResult.StorageProof[0].Value.ToInt().Cmp(big.NewInt(0)) == 0 {
+	// 	t.Error(err)
+	// }
+
+	// t.Error(accountResult.OpVerify(roothash2))
 }
