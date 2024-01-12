@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	datacompression "github.com/arcology-network/common-lib/addrcompressor"
 	common "github.com/arcology-network/common-lib/common"
 	ccurl "github.com/arcology-network/concurrenturl"
 	arbitrator "github.com/arcology-network/concurrenturl/arbitrator"
@@ -46,7 +45,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
 	writeCache.Clear()
-	bob := datacompression.RandomAccount()
+	bob := BobAccount()
 	if _, err := writeCache.CreateNewAccount(2, bob); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}

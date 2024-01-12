@@ -2,7 +2,6 @@ package ccurltest
 
 import (
 	"errors"
-	"math/big"
 	"testing"
 	"time"
 
@@ -145,25 +144,28 @@ func TestEthWorldTrieProof(t *testing.T) {
 
 	/* Get Account Proofs */
 	dstore := store.(*storage.EthDataStore)
-	if _, err := dstore.IsProvable(alice); err != nil {
+	if _, err := dstore.IsAccountProvable(alice); err != nil {
 		t.Error(err)
 	}
 
-	if d, err := dstore.IsProvable(bob); err != nil || len(d) == 0 {
+	if d, err := dstore.IsAccountProvable(bob); err != nil || len(d) == 0 {
 		t.Error(err)
 	}
 
-	if _, err := dstore.IsProvable(CarolAccount()); err == nil {
+	if _, err := dstore.IsAccountProvable(CarolAccount()); err == nil {
 		t.Error("Error: Should've flagged an error")
 	}
 
-	bobCache, _ := dstore.GetAccount(bob, &ethmpt.AccessListCache{})
-	if _, err := bobCache.IsProvable("0x0000000000000000000000000000000000000000000000000000000000000000"); err != nil {
+	// bobStr := []byte(hexutil.MustDecode(bob))
+	bobAddr := ethcommon.BytesToAddress(hexutil.MustDecode(bob))
+	bobCache, _ := dstore.GetAccount(bobAddr, &ethmpt.AccessListCache{})
+	if _, _, err := bobCache.IsStorageProvable("0x0000000000000000000000000000000000000000000000000000000000000000"); err != nil {
 		t.Error(err)
 	}
 
-	aliceCache, _ := dstore.GetAccount(alice, &ethmpt.AccessListCache{})
-	if _, err := aliceCache.IsProvable("0x0000000000000000000000000000000000000000000000000000000000000009"); err != nil {
+	aliceAddr := ethcommon.BytesToAddress(hexutil.MustDecode(alice))
+	aliceCache, _ := dstore.GetAccount(aliceAddr, &ethmpt.AccessListCache{})
+	if _, _, err := aliceCache.IsStorageProvable("0x0000000000000000000000000000000000000000000000000000000000000009"); err != nil {
 		t.Error(err)
 	}
 }
@@ -192,11 +194,9 @@ func TestGetProofAPI(t *testing.T) {
 	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/ele1", noncommutative.NewString("6789"))
 	writeCache.FlushToDataSource(store)
 
-	bobAcct, _ := store.GetAccount(bob, &ethmpt.AccessListCache{})
-
-	if _, err := bobAcct.IsProvable("0x0000000000000000000000000000000000000000000000000000000000000000"); err != nil {
-		t.Error(err)
-	}
+	// if _, err := bobAcct.IsStorageProvable("0x0000000000000000000000000000000000000000000000000000000000000000"); err != nil {
+	// 	t.Error(err)
+	// }
 
 	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000000", new(noncommutative.String)); v != "124" {
 		t.Error("Error: Wrong return value")
@@ -204,25 +204,8 @@ func TestGetProofAPI(t *testing.T) {
 
 	roothash := store.Root()
 
-	proof, err := storage.NewMerkleProof(store.EthDB(), roothash)
-	if err != nil {
-		t.Error(err)
-	}
-
-	accountResult, err := proof.GetProof(bob, []string{string("0x0000000000000000000000000000000000000000000000000000000000000000")})
-	if accountResult.StorageProof[0].Value.ToInt().Cmp(big.NewInt(0)) == 0 {
-		t.Error(err)
-	}
-
-	manager := storage.NewMerkleProofManager(10, store.EthDB())
-	accountResult, err = manager.GetProof(roothash, bob, []string{string("0x0000000000000000000000000000000000000000000000000000000000000000")})
-	if accountResult.StorageProof[0].Value.ToInt().Cmp(big.NewInt(0)) == 0 {
-		t.Error(err)
-	}
-
 	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/ele1", noncommutative.NewString("8976"))
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000009", noncommutative.NewInt64(1111))
-
 	writeCache.FlushToDataSource(store)
 
 	roothash2 := store.Root()
@@ -230,42 +213,25 @@ func TestGetProofAPI(t *testing.T) {
 		t.Error(errors.New("Error: Root hash should've changed"))
 	}
 
-	// dstore := committer.Importer().Store().(*storage.EthDataStore)
-	if _, err := store.IsProvable(bob); err != nil {
+	bobAddr := ethcommon.BytesToAddress([]byte(hexutil.MustDecode(bob)))
+	bobAcct, _ := store.GetAccount(bobAddr, &ethmpt.AccessListCache{})
+
+	if _, err := store.IsAccountProvable(bob); err != nil {
 		t.Error(err)
 	}
 
-	// Initiate a new proof provider
-	proofProvider, err := storage.NewMerkleProof(store.EthDB(), roothash2)
+	if _, _, err := bobAcct.IsStorageProvable("0x0000000000000000000000000000000000000000000000000000000000000000"); err != nil {
+		t.Error(err)
+	}
+
+	proof, err := storage.NewProofProvider(store.EthDB(), roothash2)
 	if err != nil {
 		t.Error(err)
 	}
 
-	// Get the merkle proof for a storage k in Bob's account
-	accountResult, err = proofProvider.GetProof(bob, []string{string("0x0000000000000000000000000000000000000000000000000000000000000000")})
-	if err != nil {
+	accountResult, err := proof.GetProof(bobAddr, []string{string("0x0000000000000000000000000000000000000000000000000000000000000000")})
+	if err := accountResult.Validate(roothash2); err != nil {
 		t.Error(err)
 	}
 
-	if accountResult.StorageProof[0].Value.ToInt().Cmp(big.NewInt(0)) == 0 {
-		t.Error(err)
-	}
-
-	// Get the merkle proof for a storage k in Bob's account
-	accountResult, err = proofProvider.GetProof(alice, []string{string("0x0000000000000000000000000000000000000000000000000000000000000009")})
-	if err != nil {
-		t.Error(err)
-	}
-
-	if err := accountResult.Verify(roothash2); err != nil {
-		t.Error(err)
-	}
-
-	// accountResult.OpVerify(roothash2)
-
-	// if accountResult.StorageProof[0].Value.ToInt().Cmp(big.NewInt(0)) == 0 {
-	// 	t.Error(err)
-	// }
-
-	// t.Error(accountResult.OpVerify(roothash2))
 }

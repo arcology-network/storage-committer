@@ -29,13 +29,15 @@ import (
 )
 
 func RandomAccount() string {
-	var letters = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
+	var letters = []byte("abcdef0123456789")
 	rand.Seed(time.Now().UnixNano())
-	b := make([]rune, 40)
+	b := make([]byte, 20)
 	for i := range b {
 		b[i] = letters[rand.Intn(len(letters))]
 	}
-	return string(b)
+
+	addr := hexutil.Encode(b)
+	return addr
 }
 
 func AliceAccount() string {

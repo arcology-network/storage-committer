@@ -23,6 +23,7 @@ import (
 	storage "github.com/arcology-network/concurrenturl/storage"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 	cache "github.com/arcology-network/eu/cache"
+	ethcommon "github.com/ethereum/go-ethereum/common"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -67,8 +68,8 @@ func TestTrieUpdates(t *testing.T) {
 		t.Error("Error: DirtyAccounts should be 3 actual", len(ds.DirtyAccounts))
 	}
 
-	if (ds.AccountCache.Size()) != 3 {
-		t.Error("Error: AccountCache should be 3", ds.AccountCache.Size())
+	if (len(ds.AccountCache)) != 3 {
+		t.Error("Error: AccountCache should be 3", len(ds.AccountCache))
 	}
 	committer.Commit()
 
@@ -87,15 +88,16 @@ func TestTrieUpdates(t *testing.T) {
 		t.Error("Error: DirtyAccounts should be 0, actual", len(ds.DirtyAccounts))
 	}
 
-	if (ds.AccountCache.Size()) != 3 {
-		t.Error("Error: AccountCache should be 3, actual", ds.AccountCache.Size())
+	if (len(ds.AccountCache)) != 3 {
+		t.Error("Error: AccountCache should be 3, actual", len(ds.AccountCache))
 	}
 
 	committer.Import(univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
 	committer.Sort()
 	committer.Precommit([]uint32{committercommon.SYSTEM})
 
-	if len(ds.DirtyAccounts) != 1 || ds.DirtyAccounts[0].Address() != alice || !ds.DirtyAccounts[0].StorageDirty {
+	aliceAddr := ethcommon.BytesToAddress(hexutil.MustDecode(alice))
+	if len(ds.DirtyAccounts) != 1 || ds.DirtyAccounts[0].Address() != aliceAddr || !ds.DirtyAccounts[0].StorageDirty {
 		t.Error("Error: DirtyAccounts should be 1, actual", len(ds.DirtyAccounts))
 	}
 	committer.Commit()
@@ -120,23 +122,22 @@ func TestTrieUpdates(t *testing.T) {
 	committer.Finalize([]uint32{committercommon.SYSTEM})
 	committer.CopyToDbBuffer() // Export transitions and save them to the DB buffer.
 
-	if len(ds.DirtyAccounts) != 1 || ds.DirtyAccounts[0].Address() != alice || ds.DirtyAccounts[0].StorageDirty {
+	if len(ds.DirtyAccounts) != 1 || ds.DirtyAccounts[0].Address() != aliceAddr || ds.DirtyAccounts[0].StorageDirty {
 		t.Error("Error: DirtyAccounts should be 1, actual", len(ds.DirtyAccounts))
 	}
 
-	if (ds.AccountCache.Size()) != 3 {
-		t.Error("Error: AccountCache should be 3, actual", ds.AccountCache.Size())
+	if (len(ds.AccountCache)) != 3 {
+		t.Error("Error: AccountCache should be 3, actual", len(ds.AccountCache))
 	}
-
 }
 
 func TestEthTrieBasic(t *testing.T) {
 	store := storage.NewParallelEthMemDataStore()
+	alice := AliceAccount()
 	keys := []string{
-		"blcc://eth1.0/account/abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbc/storage/container/ctrn-0/",
-
-		"blcc://eth1.0/account/abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbc/storage/container/" + hexutil.Encode((codec.Bytes32([32]byte{1}).Encode())),
-		"blcc://eth1.0/account/abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbc/storage/native/" + hexutil.Encode((codec.Bytes32([32]byte{2}).Encode())),
+		"blcc://eth1.0/account/" + alice + "/storage/container/ctrn-0/",
+		"blcc://eth1.0/account/" + alice + "/storage/container/" + hexutil.Encode((codec.Bytes32([32]byte{1}).Encode())),
+		"blcc://eth1.0/account/" + alice + "/storage/native/" + hexutil.Encode((codec.Bytes32([32]byte{2}).Encode())),
 	}
 
 	vals := []interface{}{

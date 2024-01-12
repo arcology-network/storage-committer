@@ -28,7 +28,7 @@ func TestAccountCode(t *testing.T) {
 	}
 
 	acct := &Account{
-		addr:         "3456",
+		addr:         ethcommon.BytesToAddress([]byte("3456")),
 		StateAccount: *state,
 		code:         []byte{1, 2, 3, 4},
 	}

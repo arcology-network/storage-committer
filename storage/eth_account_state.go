@@ -14,12 +14,12 @@ import (
 	"github.com/arcology-network/concurrenturl/interfaces"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	"github.com/arcology-network/concurrenturl/univalue"
+	ethcommon "github.com/ethereum/go-ethereum/common"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/ethereum/go-ethereum/rlp"
 	ethmpt "github.com/ethereum/go-ethereum/trie"
 	"github.com/holiman/uint256"
@@ -27,7 +27,7 @@ import (
 )
 
 type Account struct {
-	addr string
+	addr ethcommon.Address
 
 	ethtypes.StateAccount
 	code []byte
@@ -41,7 +41,7 @@ type Account struct {
 }
 
 // The diskdbs need to able to handle concurrent accesses themselve
-func NewAccount(addr string, diskdbs [16]ethdb.Database, state types.StateAccount) *Account {
+func NewAccount(addr ethcommon.Address, diskdbs [16]ethdb.Database, state types.StateAccount) *Account {
 	ethdb := ethmpt.NewParallelDatabase(diskdbs, nil)
 
 	trie, err := ethmpt.NewParallel(ethmpt.TrieID(state.Root), ethdb)
@@ -65,59 +65,58 @@ func EmptyAccountState() types.StateAccount {
 	}
 }
 
-func (this *Account) Address() string { return this.addr }
-
 func (this *Account) GetState(key [32]byte) []byte {
 	data, _ := this.storageTrie.Get(key[:])
 	return data
 }
 
-func (this *Account) Trie() *ethmpt.Trie { return this.storageTrie }
+func (this *Account) Address() ethcommon.Address { return this.addr }
+func (this *Account) Trie() *ethmpt.Trie         { return this.storageTrie }
 
-func (this *Account) GetCodeHash() [32]byte {
-	return codec.Bytes32{}.Decode(this.CodeHash).(codec.Bytes32)
+func (this *Account) GetStorageRoot() [32]byte {
+	if this.storageTrie == nil {
+		return types.EmptyRootHash
+	}
+	return this.storageTrie.Hash()
 }
 
-func (this *Account) Prove(key [32]byte) ([][]byte, error) {
-	var proofs proofList
-	data, err := this.storageTrie.Get([]byte(key[:]))
-	if len(data) > 0 {
-		this.storageTrie.Prove(key[:], &proofs)
+func (this *Account) GetCodeHash() [32]byte {
+	if this.storageTrie == nil {
+		return crypto.Keccak256Hash(nil) // so the codeHash is the hash of an empty bytearray.
 	}
-
-	// Reverise the proof
-	proofDB, err := ProofArrayToDB(proofs)
-	if err != nil {
-		return nil, err
-	}
-
-	v, err := ethmpt.VerifyProof(this.StateAccount.Root, key[:], proofDB)
-	if err != nil || len(v) == 0 || !bytes.Equal(data, v) {
-		return nil, errors.New("Failed to find the proof")
-	}
-	return proofs, err
+	return codec.Bytes32{}.Decode(this.CodeHash).(codec.Bytes32)
 }
 
 // The function is used to prove the storage of an account. It only works with
 // NATIVE storage for now.
-func (this *Account) IsProvable(key string) ([]byte, error) {
-	proofs := memorydb.New()
+func (this *Account) IsStorageProvable(key string) ([]byte, []string, error) {
 
-	keyBytes, _ := hexutil.Decode(key)          // Remove the prefix to get the key.
+	// keyBytes := hexutil.MustDecode(key) // Remove the prefix to get the key.
+	// keyBytes = this.Hash(keyBytes[:])
+
+	decoded, _, _ := decodeHash(key)
+	keyBytes := crypto.Keccak256(decoded[:])
 	data, err := this.storageTrie.Get(keyBytes) // Get the storage value
+
+	var proofs proofList
 	if len(data) > 0 && err == nil {
-		if err := this.storageTrie.Prove(keyBytes, proofs); err != nil { // Get the storage proof and save it to the proof DB
-			return nil, err
+		if err := this.storageTrie.Prove(keyBytes, &proofs); err != nil { // Get the storage proof and save it to the proof DB
+			return nil, proofs, err
 		}
 	} else {
-		return nil, errors.New("Failed to find the proof")
+		return nil, proofs, errors.New("Failed to find the proof")
 	}
 
-	v, err := ethmpt.VerifyProof(this.StateAccount.Root, keyBytes, proofs)
-	if err != nil || len(v) == 0 {
-		return nil, errors.New("Failed to find the proof")
+	proofdb, err := ProofArrayToDB(proofs)
+	if err != nil {
+		return nil, proofs, err
 	}
-	return data, nil
+
+	v, err := ethmpt.VerifyProof(this.StateAccount.Root, keyBytes, proofdb)
+	if err != nil || !bytes.Equal(v, data) {
+		return nil, proofs, errors.New("Failed to find the proof for storage key: " + key)
+	}
+	return data, proofs, nil
 }
 
 func (this *Account) DB(key string) ethdb.Database {
@@ -127,12 +126,16 @@ func (this *Account) DB(key string) ethdb.Database {
 	return this.diskdbShards[key[0]>>4]
 }
 
-func (this *Account) ParseStorageKey(key string) string {
+// The function parses the key in a forward slash separated format into a hex
+// string that can be accepted by the storage trie.
+func (this *Account) ToStorageKey(key string) string {
 	if k := committercommon.GetPathUnder(key, "/storage/native/"); len(k) > 0 {
 		kstr, err := hexutil.Decode(k) // For native storage, the key is hex encoded.
 		if err != nil {
 			panic(err)
 		}
+
+		kstr = this.Hash(kstr) // For native storage, the key is the hash of the key with prefix.
 		return string(kstr)
 	}
 	return string(this.Hash([]byte(key))) // For non-native storage, the key is the hash of the key with prefix.
@@ -147,7 +150,7 @@ func (this *Account) Has(key string) bool {
 		return len(this.code) > 0
 	}
 
-	buffer, _ := this.storageTrie.Get([]byte(this.ParseStorageKey(key)))
+	buffer, _ := this.storageTrie.Get([]byte(this.ToStorageKey(key)))
 	return len(buffer) > 0
 }
 
@@ -175,7 +178,7 @@ func (this *Account) Retrive(key string, T any) (interface{}, error) {
 		return noncommutative.NewBytes(this.code), nil
 	}
 
-	k := this.ParseStorageKey(key)
+	k := this.ToStorageKey(key)
 	buffer, err := this.storageTrie.Get([]byte(k))
 	if len(buffer) == 0 {
 		return nil, nil
@@ -215,19 +218,22 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Typ
 		common.RemoveAt(&keys, pos)
 		common.RemoveAt(&typedVals, pos)
 	}
+	this.StorageDirty = len(keys) > 0
 
 	numThd := common.IfThen(len(keys) < 1024, 4, 8)
 
-	k := common.ParallelAppend(keys, numThd, func(i int, _ string) []byte {
-		return []byte(this.ParseStorageKey(keys[i])) // Remove the prefix to get the keys.
+	// Encode the keys
+	encodedKeys := common.ParallelAppend(keys, numThd, func(i int, _ string) []byte {
+		return []byte(this.ToStorageKey(keys[i])) // Remove the prefix to get the keys.
 	})
 
-	v := common.ParallelAppend(typedVals, numThd, func(i int, _ interfaces.Type) []byte {
+	// Encode the values
+	encodedVals := common.ParallelAppend(typedVals, numThd, func(i int, _ interfaces.Type) []byte {
 		return common.IfThenDo1st(typedVals[i] != nil, func() []byte { return typedVals[i].StorageEncode() }, []byte{})
 	})
-	this.StorageDirty = len(k) > 0
 
-	errs := this.storageTrie.ParallelUpdate(k, v)
+	// Update the storage trie with the encoded keys and values.
+	errs := this.storageTrie.ParallelUpdate(encodedKeys, encodedVals)
 	if _, err := common.FindFirstIf(errs, func(v error) bool { return v != nil }); err != nil {
 		return *err
 	}

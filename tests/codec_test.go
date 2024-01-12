@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	datacompression "github.com/arcology-network/common-lib/addrcompressor"
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	storage "github.com/arcology-network/common-lib/storage/datastore"
@@ -94,7 +93,7 @@ func TestUnivaluesCodec(t *testing.T) {
 	store := storage.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
 	transitions := []*univalue.Univalue{}
 	for i := 0; i < 10; i++ {
-		acct := datacompression.RandomAccount()
+		acct := RandomAccount()
 		// committer := ccurl.NewStorageCommitter(store)
 		writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 		// committer.NewAccount(committercommon.SYSTEM, acct)

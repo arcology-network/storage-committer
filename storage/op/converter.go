@@ -15,73 +15,83 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package storage
+package opadapter
 
 import (
 	"bytes"
 	"fmt"
 
-	ethcommon "github.com/ethereum/go-ethereum/common"
-	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/trie"
-	ethmpt "github.com/ethereum/go-ethereum/trie"
+
+	commonlibcommon "github.com/arcology-network/common-lib/common"
+	storage "github.com/arcology-network/concurrenturl/storage"
+	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 
-// copied from OP
+// Both of the structs below are copied from optimism repo, they are different
+// from the original Ethereum structs in proof format. They have been renamed
+// to avoid confusion.
+type OptimismStorageProof struct { // StorageProofEntry in optimism
+	Key   common.Hash     `json:"key"`
+	Value hexutil.Big     `json:"value"`
+	Proof []hexutil.Bytes `json:"proof"`
+}
 
-// type StorageProofEntry struct {
-// 	Key   common.Hash     `json:"key"`
-// 	Value hexutil.Big     `json:"value"`
-// 	Proof []hexutil.Bytes `json:"proof"`
-// }
+type OptimismAccountResult struct { // AccountResult in optimism
+	AccountProof []hexutil.Bytes `json:"accountProof"`
 
-// type AccountResult struct {
-// 	AccountProof []hexutil.Bytes `json:"accountProof"`
+	Address     common.Address `json:"address"`
+	Balance     *hexutil.Big   `json:"balance"`
+	CodeHash    common.Hash    `json:"codeHash"`
+	Nonce       hexutil.Uint64 `json:"nonce"`
+	StorageHash common.Hash    `json:"storageHash"`
 
-// 	Address     common.Address `json:"address"`
-// 	Balance     *hexutil.Big   `json:"balance"`
-// 	CodeHash    common.Hash    `json:"codeHash"`
-// 	Nonce       hexutil.Uint64 `json:"nonce"`
-// 	StorageHash common.Hash    `json:"storageHash"`
+	// Optional
+	StorageProof []OptimismStorageProof `json:"storageProof,omitempty"`
+}
 
-// 	// Optional
-// 	StorageProof []StorageProofEntry `json:"storageProof,omitempty"`
-// }
-
-func (this *AccountResult) Verify(stateRoot ethcommon.Hash) error {
-	for _, entry := range this.StorageProof {
-		db := memorydb.New()
-		for _, proof := range entry.Proof {
-			proofBytes := hexutil.MustDecode(proof)
-
-			if len(proofBytes) >= 32 { // small MPT nodes are not hashed
-				key := crypto.Keccak256([]byte(proofBytes))
-				db.Put(key, []byte(proofBytes))
-			} else {
-				db.Put(crypto.Keccak256([]byte(proofBytes)), []byte(proofBytes))
-			}
+// Convert from Ethereum storage proof to Optimism proof format.
+// The main difference is that the Ethereum storage proof is a list of hex STRINGS with the 0x prefix, but
+// the Optimism storage proof is a list of hex BYTES without the 0x prefix.
+func (this *OptimismAccountResult) ToStorageProof(res []storage.StorageResult) []OptimismStorageProof {
+	return commonlibcommon.Append(res, func(i int, storageResult storage.StorageResult) OptimismStorageProof {
+		return OptimismStorageProof{
+			Key:   ethcommon.BytesToHash(hexutil.MustDecode(storageResult.Key)),
+			Value: hexutil.Big(*storageResult.Value),
+			Proof: commonlibcommon.Append(storageResult.Proof, func(i int, hexStr string) hexutil.Bytes {
+				return hexutil.MustDecode(hexStr) // strip 0x prefix and decode hex string to bytes
+			}),
 		}
+	})
+}
 
-		keyBytes := hexutil.MustDecode(entry.Key)
-		v, err := ethmpt.VerifyProof(this.StorageHash, keyBytes[:], db)
-		if err != nil || len(v) == 0 {
-			panic(err)
-		}
+// Convert from Ethereum account proof to Optimism proof format.
+func (this *OptimismAccountResult) New(acct *storage.AccountResult) OptimismAccountResult {
+	return OptimismAccountResult{
+		AccountProof: commonlibcommon.Append(acct.AccountProof, func(i int, hexStr string) hexutil.Bytes {
+			return hexutil.MustDecode(hexStr) // strip 0x prefix and decode hex string to bytes
+		}),
+		Address:      acct.Address,
+		Balance:      acct.Balance,
+		CodeHash:     acct.CodeHash,
+		Nonce:        acct.Nonce,
+		StorageHash:  acct.StorageHash,
+		StorageProof: this.ToStorageProof(acct.StorageProof),
 	}
-	return nil
 }
 
 // Verify an account (and optionally storage) proof from the getProof RPC. See https://eips.ethereum.org/EIPS/eip-1186
-func (res *AccountResult) OpVerify(stateRoot ethcommon.Hash) error {
+func (res *OptimismAccountResult) Verify(stateRoot common.Hash) error {
 	// verify storage proof values, if any, against the storage trie root hash of the account
 	for i, entry := range res.StorageProof {
 		// load all MPT nodes into a DB
 		db := memorydb.New()
-		for j, n := range entry.Proof {
-			encodedNode := []byte(n)
+		for j, encodedNode := range entry.Proof {
 			nodeKey := encodedNode
 			if len(encodedNode) >= 32 { // small MPT nodes are not hashed
 				nodeKey = crypto.Keccak256(encodedNode)
@@ -90,12 +100,12 @@ func (res *AccountResult) OpVerify(stateRoot ethcommon.Hash) error {
 				return fmt.Errorf("failed to load storage proof node %d of storage value %d into mem db: %w", j, i, err)
 			}
 		}
-		path := crypto.Keccak256([]byte(entry.Key[:]))
+		path := crypto.Keccak256(entry.Key[:])
 		val, err := trie.VerifyProof(res.StorageHash, path, db)
 		if err != nil {
 			return fmt.Errorf("failed to verify storage value %d with key %s (path %x) in storage trie %s: %w", i, entry.Key, path, res.StorageHash, err)
 		}
-		if val == nil && entry.Value.ToInt().Cmp(ethcommon.Big0) == 0 { // empty storage is zero by default
+		if val == nil && entry.Value.ToInt().Cmp(common.Big0) == 0 { // empty storage is zero by default
 			continue
 		}
 		comparison, err := rlp.EncodeToBytes(entry.Value.ToInt().Bytes())
@@ -115,8 +125,7 @@ func (res *AccountResult) OpVerify(stateRoot ethcommon.Hash) error {
 
 	// create a db with all account trie nodes
 	db := memorydb.New()
-	for i, n := range res.AccountProof {
-		encodedNode := []byte(n)
+	for i, encodedNode := range res.AccountProof {
 		nodeKey := encodedNode
 		if len(encodedNode) >= 32 { // small MPT nodes are not hashed
 			nodeKey = crypto.Keccak256(encodedNode)

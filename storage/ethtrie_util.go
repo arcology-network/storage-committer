@@ -2,6 +2,8 @@ package storage
 
 import (
 	"github.com/arcology-network/common-lib/common"
+	ethcommon "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethdb/memorydb"
@@ -29,13 +31,23 @@ func commitToDB(trie *ethmpt.Trie, ethdb *ethmpt.Database, block uint64) (*ethmp
 	return ethmpt.NewParallel(ethmpt.TrieID(root), ethdb)
 }
 
-func ProofArrayToDB(proofs [][]byte) (*memorydb.Database, error) {
+func ProofArrayToDB(proofs []string) (*memorydb.Database, error) {
 	proofDB := memorydb.New()
 	for i := 0; i < len(proofs); i++ {
-		keyBytes := common.IfThen(len(proofs[i]) >= 32, crypto.Keccak256([]byte(proofs[i])), []byte(proofs[i]))
-		if err := proofDB.Put(keyBytes, []byte(proofs[i])); err != nil {
+		proofBytes := hexutil.MustDecode(proofs[i])
+
+		keyBytes := common.IfThen(len(proofBytes) >= 32, crypto.Keccak256([]byte(proofBytes)), proofBytes)
+		if err := proofDB.Put(keyBytes, proofBytes); err != nil {
 			return nil, err
 		}
 	}
 	return proofDB, nil
+}
+
+func VerifyProof(rootHash ethcommon.Hash, proof []string, addr []byte) {
+	proofDB, _ := ProofArrayToDB(proof)
+	data, err := ethmpt.VerifyProof(rootHash, crypto.Keccak256(addr), proofDB)
+	if err != nil || len(data) == 0 {
+		panic(err)
+	}
 }
