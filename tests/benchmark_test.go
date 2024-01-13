@@ -9,7 +9,6 @@ import (
 
 	datacompression "github.com/arcology-network/common-lib/addrcompressor"
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/common-lib/merkle"
 	datastore "github.com/arcology-network/common-lib/storage/datastore"
 	ccurl "github.com/arcology-network/concurrenturl"
 	committercommon "github.com/arcology-network/concurrenturl/common"
@@ -630,13 +629,13 @@ func BenchmarkTransitionImport(b *testing.B) {
 
 	fmt.Println("Export "+fmt.Sprint(150000*9), time.Since(t0))
 
-	accountMerkle := importer.NewAccountMerkle(committercommon.NewPlatform(), rlpEncoder, merkle.Keccak256{}.Hash)
+	// accountMerkle := importer.NewAccountMerkle(committercommon.NewPlatform(), rlpEncoder, merkle.Keccak256{}.Hash)
 
 	fmt.Println("-------------")
 	t0 = time.Now()
 	committer := ccurl.NewStorageCommitter(store)
 	committer.Import(acctTrans)
-	accountMerkle.Import(acctTrans)
+	// accountMerkle.Import(acctTrans)
 	fmt.Println("committer + accountMerkle Import "+fmt.Sprint(150000*9), time.Since(t0))
 }
 

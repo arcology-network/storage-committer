@@ -6,6 +6,7 @@ import (
 
 	common "github.com/arcology-network/common-lib/common"
 	committercommon "github.com/arcology-network/concurrenturl/common"
+	"github.com/arcology-network/concurrenturl/interfaces"
 	intf "github.com/arcology-network/concurrenturl/interfaces"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 )
@@ -17,11 +18,11 @@ type DeltaSequence struct {
 	rawBytes    interface{}
 }
 
-func NewDeltaSequence(key string, importer *Importer) *DeltaSequence {
+func NewDeltaSequence(key string, store interfaces.Datastore) *DeltaSequence {
 	return &DeltaSequence{
 		key:         key,
 		transitions: make([]*univalue.Univalue, 0, 16),
-		rawBytes:    common.FilterFirst(importer.store.Retrive(key, nil)),
+		rawBytes:    common.FilterFirst(store.Retrive(key, nil)),
 		// initial: (&univalue.Univalue{}).Init(committercommon.SYSTEM, key, 0, 0, 0, encoded, importer.Store()),
 	}
 }
