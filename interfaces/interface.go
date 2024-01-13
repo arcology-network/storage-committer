@@ -79,7 +79,7 @@ type Datastore interface {
 	Decoder() func([]byte, any) interface{}
 
 	// Buffers() ([]string, []interface{}, [][]byte)
-	Dump() ([]string, []interface{})
+	// KVs() ([]string, []interface{})
 	Clear()
 	Print()
 	CheckSum() [32]byte

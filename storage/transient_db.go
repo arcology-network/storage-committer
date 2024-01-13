@@ -94,12 +94,11 @@ func (this *TransientDB) CheckSum() [32]byte {
 	return sha256.Sum256(datas)
 }
 
-func (this *TransientDB) Dump() ([]string, []interface{}) {
-	pkeys, pvals := this.readonlyParent.Dump()
-	keys, vals := this.DataStore.Dump()
-
-	return append(pkeys, keys...), append(pvals, vals...)
-}
+// func (this *TransientDB) Dump() ([]string, []interface{}) {
+// 	pkeys, pvals := this.readonlyParent.(*datastore.DataStore).KVs()
+// 	keys, vals := this.DataStore.KVs()
+// 	return append(pkeys, keys...), append(pvals, vals...)
+// }
 
 func (this *TransientDB) UpdateCacheStats(vals []interface{}) {
 	this.DataStore.UpdateCacheStats(vals)
