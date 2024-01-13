@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"testing"
 
-	common "github.com/arcology-network/common-lib/common"
 	orderedset "github.com/arcology-network/common-lib/container/set"
+	"github.com/arcology-network/common-lib/exp/array"
 )
 
 func TestMeta(t *testing.T) {
@@ -37,15 +37,15 @@ func TestMeta(t *testing.T) {
 
 	metaout, _, _ := inPath.Get()
 
-	if !common.EqualArray(inPath.Value().(*orderedset.OrderedSet).Keys(), []string{"e-01", "e-001", "e-002", "e-002"}) {
+	if !array.Equal(inPath.Value().(*orderedset.OrderedSet).Keys(), []string{"e-01", "e-001", "e-002", "e-002"}) {
 		t.Error("Error: Don't match!!")
 	}
 
-	if !common.EqualArray(inPath.Delta().(*PathDelta).Added(), []string{"+01", "+001", "+002", "+002"}) {
+	if !array.Equal(inPath.Delta().(*PathDelta).Added(), []string{"+01", "+001", "+002", "+002"}) {
 		t.Error("Error: Don't match!!")
 	}
 
-	if !common.EqualArray(inPath.Delta().(*PathDelta).Removed(), []string{"-091", "-0092", "-092", "-092", "-097"}) {
+	if !array.Equal(inPath.Delta().(*PathDelta).Removed(), []string{"-091", "-0092", "-092", "-092", "-097"}) {
 		t.Error("Error: Don't match!!")
 	}
 
@@ -62,30 +62,30 @@ func TestCodecPathMeta(t *testing.T) {
 	buffer := in.Encode()
 	out := (&Path{}).Decode(buffer).(*Path)
 
-	if !common.EqualArray(out.Value().(*orderedset.OrderedSet).Keys(), []string{"e-01", "e-001", "e-002", "e-002"}) {
+	if !array.Equal(out.Value().(*orderedset.OrderedSet).Keys(), []string{"e-01", "e-001", "e-002", "e-002"}) {
 		t.Error("Error: Don't match!!")
 	}
 
-	if !common.EqualArray(out.Delta().(*PathDelta).Added(), []string{"+01", "+001", "+002", "+002"}) {
+	if !array.Equal(out.Delta().(*PathDelta).Added(), []string{"+01", "+001", "+002", "+002"}) {
 		t.Error("Error: Don't match!!", out.Delta().(*PathDelta).Added())
 	}
 
-	if !common.EqualArray(out.Delta().(*PathDelta).Removed(), []string{"-091", "-0092", "-092", "-092", "-097"}) {
+	if !array.Equal(out.Delta().(*PathDelta).Removed(), []string{"-091", "-0092", "-092", "-092", "-097"}) {
 		t.Error("Error: Don't match!!", out.Delta().(*PathDelta).Removed())
 	}
 
 	buffer = in.Encode()
 	out = (&Path{}).Decode(buffer).(*Path)
 
-	if !common.EqualArray(out.Value().(*orderedset.OrderedSet).Keys(), []string{"e-01", "e-001", "e-002", "e-002"}) {
+	if !array.Equal(out.Value().(*orderedset.OrderedSet).Keys(), []string{"e-01", "e-001", "e-002", "e-002"}) {
 		t.Error("Error: Don't match!! Error: Should have gone!")
 	}
 
-	if !common.EqualArray(out.Delta().(*PathDelta).Added(), []string{"+01", "+001", "+002", "+002"}) {
+	if !array.Equal(out.Delta().(*PathDelta).Added(), []string{"+01", "+001", "+002", "+002"}) {
 		t.Error("Error: Don't match!!", out.Delta().(*PathDelta).Added())
 	}
 
-	if !common.EqualArray(out.Delta().(*PathDelta).Removed(), []string{"-091", "-0092", "-092", "-092", "-097"}) {
+	if !array.Equal(out.Delta().(*PathDelta).Removed(), []string{"-091", "-0092", "-092", "-092", "-097"}) {
 		t.Error("Error: Don't match!!", out.Delta().(*PathDelta).Removed())
 	}
 
@@ -93,15 +93,15 @@ func TestCodecPathMeta(t *testing.T) {
 	buffer = in.Encode()
 	out = (&Path{}).Decode(buffer).(*Path)
 
-	if !common.EqualArray(out.Value().(*orderedset.OrderedSet).Keys(), []string{"e-01", "e-001", "e-002", "e-002"}) {
+	if !array.Equal(out.Value().(*orderedset.OrderedSet).Keys(), []string{"e-01", "e-001", "e-002", "e-002"}) {
 		t.Error("Error: Don't match!! Error: Should have gone!")
 	}
 
-	if !common.EqualArray(out.Delta().(*PathDelta).Added(), []string{}) {
+	if !array.Equal(out.Delta().(*PathDelta).Added(), []string{}) {
 		t.Error("Error: Don't match!!", out.Delta().(*PathDelta).Added())
 	}
 
-	if !common.EqualArray(out.Delta().(*PathDelta).Removed(), []string{}) {
+	if !array.Equal(out.Delta().(*PathDelta).Removed(), []string{}) {
 		t.Error("Error: Don't match!!", out.Delta().(*PathDelta).Removed())
 	}
 }

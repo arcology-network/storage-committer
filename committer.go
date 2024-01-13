@@ -20,6 +20,7 @@ package storagecommitter
 
 import (
 	"github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/common-lib/exp/array"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/univalue"
 
@@ -77,7 +78,7 @@ func (this *StateCommitter) Import(transitions []*univalue.Univalue, args ...int
 			transitions[i] = nil                                    // mark the peristent transitions
 		}
 	}
-	common.Remove(&transitions, nil) // Remove the Peristent transitions from the transition lists
+	array.Remove(&transitions, nil) // Remove the Peristent transitions from the transition lists
 
 	common.ParallelExecute(
 		func() { this.imuImporter.Import(invTransitions, args...) },

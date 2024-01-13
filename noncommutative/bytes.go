@@ -5,6 +5,7 @@ import (
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/common-lib/exp/array"
 	intf "github.com/arcology-network/concurrenturl/interfaces"
 	"github.com/ethereum/go-ethereum/rlp"
 )
@@ -41,7 +42,7 @@ func (this *Bytes) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
 func (this *Bytes) Clone() interface{} {
 	return &Bytes{
 		placeholder: true,
-		value:       common.Clone(this.value),
+		value:       array.Clone(this.value),
 	}
 }
 
@@ -59,7 +60,7 @@ func (this *Bytes) DeltaSign() bool    { return true } // delta sign
 func (this *Bytes) Min() interface{}   { return nil }
 func (this *Bytes) Max() interface{}   { return nil }
 
-func (this *Bytes) CloneDelta() interface{} { return codec.Bytes(common.Clone(this.value)) }
+func (this *Bytes) CloneDelta() interface{} { return codec.Bytes(array.Clone(this.value)) }
 func (this *Bytes) SetValue(v interface{})  { this.SetDelta(v) }
 
 func (this *Bytes) IsDeltaApplied() bool       { return true }

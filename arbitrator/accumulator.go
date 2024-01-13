@@ -21,7 +21,7 @@ import (
 	"errors"
 	"sort"
 
-	common "github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/common-lib/exp/array"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	intf "github.com/arcology-network/concurrenturl/interfaces"
 	"github.com/arcology-network/concurrenturl/univalue"
@@ -40,7 +40,7 @@ func (this *Accumulator) CheckMinMax(transitions []*univalue.Univalue) []*Confli
 		return nil
 	}
 
-	common.RemoveIf(&transitions, func(v *univalue.Univalue) bool {
+	array.RemoveIf(&transitions, func(v *univalue.Univalue) bool {
 		return v.IsReadOnly()
 	})
 
@@ -85,7 +85,7 @@ func (this *Accumulator) CheckMinMax(transitions []*univalue.Univalue) []*Confli
 
 // categorize transitions into two groups, one is negative, the other is positive.
 func (*Accumulator) Categorize(transitions []*univalue.Univalue) ([]*univalue.Univalue, []*univalue.Univalue) {
-	offset := common.LocateFirstIf(transitions, func(v *univalue.Univalue) bool { return v.Value().(intf.Type).DeltaSign() })
+	offset, _ := array.FindFirstIf(transitions, func(v *univalue.Univalue) bool { return v.Value().(intf.Type).DeltaSign() })
 
 	if offset < 0 {
 		offset = len(transitions)
@@ -101,7 +101,7 @@ func (this *Accumulator) isOutOfLimits(k string, transitions []*univalue.Univalu
 
 	initialv := transitions[0].Value().(intf.Type).Clone().(intf.Type)
 
-	typedVals := common.Append(transitions, func(_ int, v *univalue.Univalue) intf.Type {
+	typedVals := array.Append(transitions, func(_ int, v *univalue.Univalue) intf.Type {
 		return v.Value().(intf.Type)
 	})
 
@@ -111,7 +111,7 @@ func (this *Accumulator) isOutOfLimits(k string, transitions []*univalue.Univalu
 	}
 
 	txIDs := []uint32{}
-	common.Foreach(transitions[length+1:], func(_ int, v **univalue.Univalue) { txIDs = append(txIDs, (*v).GetTx()) })
+	array.Foreach(transitions[length+1:], func(_ int, v **univalue.Univalue) { txIDs = append(txIDs, (*v).GetTx()) })
 
 	return &Conflict{
 		key:   k,

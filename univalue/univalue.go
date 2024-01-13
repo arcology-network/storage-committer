@@ -7,6 +7,7 @@ import (
 	"reflect"
 
 	"github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/common-lib/exp/array"
 	intf "github.com/arcology-network/concurrenturl/interfaces"
 )
 
@@ -166,7 +167,7 @@ func (this *Univalue) ApplyDelta(vec []*Univalue) error {
 	}
 
 	// Apply transitions
-	typedVals := common.Append(vec, func(_ int, v *Univalue) intf.Type {
+	typedVals := array.Append(vec, func(_ int, v *Univalue) intf.Type {
 		if v.Value() != nil {
 			return v.Value().(intf.Type)
 		}
@@ -215,7 +216,7 @@ func (this *Univalue) Clone() interface{} {
 	v := &Univalue{
 		this.Property.Clone(),
 		common.IfThenDo1st(this.value != nil, func() interface{} { return this.value.(intf.Type).Clone() }, this.value),
-		common.Clone(this.cache),
+		array.Clone(this.cache),
 	}
 	return v
 }

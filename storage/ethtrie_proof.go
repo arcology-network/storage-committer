@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/common-lib/exp/array"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -53,10 +54,10 @@ func (this *MerkleProofManager) GetProof(rootHash [32]byte, acctStr ethcommon.Ad
 			keys, merkles := common.MapKVs(this.merkleDict)
 
 			// The visit ratio is the number of times a merkle tree has been accessed divided by the total number of times all the merkle trees have been accessed.
-			ratios := common.Append(merkles, func(_ int, v *ProofProvider) float64 { return float64(v.visits) / float64(v.totalVisits) })
+			ratios := array.Append(merkles, func(_ int, v *ProofProvider) float64 { return float64(v.visits) / float64(v.totalVisits) })
 
 			// The entry has the lowest ratio of visits/totalVisits will be removed.
-			idx, _ := common.MinElement(ratios, func(v0, v1 float64) bool { return v0 < v1 })
+			idx, _ := array.Min(ratios, func(v0, v1 float64) bool { return v0 < v1 })
 			delete(this.merkleDict, keys[idx])
 		}
 	}

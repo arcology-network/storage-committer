@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/arcology-network/common-lib/codec"
-	"github.com/arcology-network/common-lib/common"
 	orderedset "github.com/arcology-network/common-lib/container/set"
+	"github.com/arcology-network/common-lib/exp/array"
 	"github.com/arcology-network/common-lib/merkle"
 	datastore "github.com/arcology-network/common-lib/storage/datastore"
 	ccurl "github.com/arcology-network/concurrenturl"
@@ -58,7 +58,7 @@ func TestTrieUpdates(t *testing.T) {
 
 	trans := writeCache.Export(importer.Sorter)
 	committer := ccurl.NewStorageCommitter(store)
-	committer.Import(univalue.Univalues(common.Clone(trans)).To(importer.IPTransition{}))
+	committer.Import(univalue.Univalues(array.Clone(trans)).To(importer.IPTransition{}))
 	committer.Sort()
 	committer.Finalize([]uint32{committercommon.SYSTEM})
 	committer.CopyToDbBuffer() // Export transitions and save them to the DB buffer.
@@ -92,7 +92,7 @@ func TestTrieUpdates(t *testing.T) {
 		t.Error("Error: AccountCache should be 3, actual", len(ds.AccountCache))
 	}
 
-	committer.Import(univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
+	committer.Import(univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
 	committer.Sort()
 	committer.Precommit([]uint32{committercommon.SYSTEM})
 
@@ -117,7 +117,7 @@ func TestTrieUpdates(t *testing.T) {
 		t.Error(err)
 	}
 
-	committer.Import(univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
+	committer.Import(univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
 	committer.Sort()
 	committer.Finalize([]uint32{committercommon.SYSTEM})
 	committer.CopyToDbBuffer() // Export transitions and save them to the DB buffer.
@@ -198,7 +198,7 @@ func TestEthStorageConnection(t *testing.T) {
 		t.Error(err)
 	}
 
-	trans := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
+	trans := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	committer.Import(trans)
 	committer.Sort()
 	committer.Precommit([]uint32{committercommon.SYSTEM})
@@ -296,7 +296,7 @@ func TestEthDataStoreAddDeleteRead(t *testing.T) {
 		fmt.Println(err)
 	}
 
-	acctTrans := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
+	acctTrans := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 
 	committer := ccurl.NewStorageCommitter(store)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
@@ -389,7 +389,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 	}
 
 	// _, trans := writeCache.Export(importer.Sorter)
-	trans := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
+	trans := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	acctTrans := (&univalue.Univalues{}).Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues)
 
 	//values := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).([]*univalue.Univalue)
@@ -409,7 +409,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 		t.Error(err)
 	}
 
-	transitions := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
+	transitions := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	committer.Import((&univalue.Univalues{}).Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues))
 
 	committer.Sort()
@@ -427,7 +427,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 		t.Error(err)
 	}
 
-	trans = univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
+	trans = univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	committer.Import((&univalue.Univalues{}).Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 	committer.Sort()
 	committer.Precommit([]uint32{1})
@@ -487,7 +487,7 @@ func TestLevelDBBasic(t *testing.T) {
 	}
 
 	diskdbs := [16]ethdb.Database{}
-	common.Fill(diskdbs[:], leveldb)
+	array.Fill(diskdbs[:], leveldb)
 	db := ethmpt.NewParallelDatabase(diskdbs, nil)
 
 	// db := trie.NewDatabase(leveldb)
@@ -526,7 +526,7 @@ func BenchmarkLevelDBPerformance1M(t *testing.B) {
 	}
 
 	diskdbs := [16]ethdb.Database{}
-	common.Fill(diskdbs[:], leveldb)
+	array.Fill(diskdbs[:], leveldb)
 	db := ethmpt.NewParallelDatabase(diskdbs, nil)
 
 	trie := trie.NewEmptyParallel(db)
@@ -554,7 +554,7 @@ func BenchmarkLevelDBPerformance1M(t *testing.B) {
 	}
 
 	t0 = time.Now()
-	common.ParallelForeach(keys, 8, func(i int, _ *[]byte) { trie.Get(keys[i]) })
+	array.ParallelForeach(keys, 8, func(i int, _ *[]byte) { trie.Get(keys[i]) })
 	fmt.Println("Parallel Get ", len(keys), " entries in ", time.Since(t0))
 
 	t0 = time.Now()

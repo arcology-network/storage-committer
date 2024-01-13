@@ -2,6 +2,7 @@ package importer
 
 import (
 	common "github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/common-lib/exp/array"
 	ccmap "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/mempool"
 	committercommon "github.com/arcology-network/concurrenturl/common"
@@ -69,17 +70,17 @@ func (this *Importer) IfExists(key string) bool {
 func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) {
 	commitIfAbsent := common.IfThenDo1st(len(args) > 0 && args[0] != nil, func() bool { return args[0].(bool) }, true) //Write if absent from local
 
-	common.RemoveIf(&txTrans, func(univ *univalue.Univalue) bool {
+	array.RemoveIf(&txTrans, func(univ *univalue.Univalue) bool {
 		return univ.Preexist() && this.store.IfExists(*univ.GetPath()) && !commitIfAbsent //preexists but not available locally, happen with a partial cache
 	})
 
-	common.Foreach(txTrans, func(_ int, univ **univalue.Univalue) { // Create new sequences all at once
+	array.Foreach(txTrans, func(_ int, univ **univalue.Univalue) { // Create new sequences all at once
 		if v, _ := this.deltaDict.Get(*(*univ).GetPath()); v == nil {
 			this.deltaDict.Set(*(*univ).GetPath(), NewDeltaSequence(*(*univ).GetPath(), this.store))
 		}
 	})
 
-	common.ParallelForeach(txTrans, this.numThreads, func(i int, _ **univalue.Univalue) {
+	array.ParallelForeach(txTrans, this.numThreads, func(i int, _ **univalue.Univalue) {
 		seq, _ := this.deltaDict.Get(*txTrans[i].GetPath())
 		this.deltaDict.Set(*txTrans[i].GetPath(), seq.Add(txTrans[i])) // Add to the sequence
 	})
@@ -120,7 +121,7 @@ func (this *Importer) WhilteList(whitelist []uint32) []error {
 func (this *Importer) SortDeltaSequences() {
 	this.keyBuffer = this.deltaDict.Keys()
 
-	common.ParallelForeach(this.keyBuffer, this.numThreads, func(i int, _ *string) {
+	array.ParallelForeach(this.keyBuffer, this.numThreads, func(i int, _ *string) {
 		deltaSeq, _ := this.deltaDict.Get(this.keyBuffer[i])
 		deltaSeq.Sort() // Sort the transitions in the sequence
 	})
@@ -128,9 +129,9 @@ func (this *Importer) SortDeltaSequences() {
 
 // Merge and finalize state deltas
 func (this *Importer) MergeStateDelta() {
-	this.valBuffer = common.Resize(this.valBuffer, len(this.keyBuffer))
+	this.valBuffer = array.Resize(this.valBuffer, len(this.keyBuffer))
 
-	common.ParallelForeach(this.keyBuffer, this.numThreads, func(i int, _ *string) {
+	array.ParallelForeach(this.keyBuffer, this.numThreads, func(i int, _ *string) {
 		deltaSeq, _ := this.deltaDict.Get(this.keyBuffer[i])
 		this.valBuffer[i] = deltaSeq.Finalize()
 
@@ -139,13 +140,13 @@ func (this *Importer) MergeStateDelta() {
 		}
 	})
 
-	common.Remove(&this.keyBuffer, "")
-	common.RemoveIf(&this.valBuffer, func(v interface{}) bool { return v.(*univalue.Univalue) == nil })
+	array.Remove(&this.keyBuffer, "")
+	array.RemoveIf(&this.valBuffer, func(v interface{}) bool { return v.(*univalue.Univalue) == nil })
 }
 
 func (this *Importer) KVs() ([]string, []interface{}) {
-	common.Remove(&this.keyBuffer, "")
-	common.RemoveIf(&this.valBuffer, func(v interface{}) bool { return v.(*univalue.Univalue) == nil })
+	array.Remove(&this.keyBuffer, "")
+	array.RemoveIf(&this.valBuffer, func(v interface{}) bool { return v.(*univalue.Univalue) == nil })
 	return this.keyBuffer, this.valBuffer
 }
 

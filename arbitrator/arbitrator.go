@@ -21,6 +21,7 @@ import (
 	"errors"
 
 	common "github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/common-lib/exp/array"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/univalue"
 )
@@ -44,7 +45,7 @@ func (this *Arbitrator) Detect(groupIDs []uint32, newTrans []*univalue.Univalue)
 	// t0 := time.Now()
 	univalue.Univalues(newTrans).Sort(groupIDs)
 
-	ranges := common.FindAllIndics(newTrans, func(lhv, rhv *univalue.Univalue) bool {
+	ranges := array.FindAllIndics(newTrans, func(lhv, rhv *univalue.Univalue) bool {
 		return *lhv.GetPath() == *rhv.GetPath()
 	})
 
@@ -57,12 +58,12 @@ func (this *Arbitrator) Detect(groupIDs []uint32, newTrans []*univalue.Univalue)
 		offset := int(1)
 		if newTrans[ranges[i]].Writes() == 0 {
 			if newTrans[ranges[i]].IsConcurrentWritable() { // Delta write only
-				offset = common.LocateFirstIf(newTrans[ranges[i]+1:ranges[i+1]],
+				offset, _ = array.FindFirstIf(newTrans[ranges[i]+1:ranges[i+1]],
 					func(v *univalue.Univalue) bool {
 						return !v.IsConcurrentWritable()
 					})
 			} else { // Read only
-				offset = common.LocateFirstIf(newTrans[ranges[i]+1:ranges[i+1]],
+				offset, _ = array.FindFirstIf(newTrans[ranges[i]+1:ranges[i+1]],
 					func(v *univalue.Univalue) bool {
 						return v.Writes() > 0 || v.DeltaWrites() > 0
 					})
@@ -75,7 +76,7 @@ func (this *Arbitrator) Detect(groupIDs []uint32, newTrans []*univalue.Univalue)
 		}
 
 		conflictTxs := []uint32{}
-		common.Foreach(newTrans[ranges[i]+offset:ranges[i+1]], func(_ int, v **univalue.Univalue) {
+		array.Foreach(newTrans[ranges[i]+offset:ranges[i+1]], func(_ int, v **univalue.Univalue) {
 			conflictTxs = append(conflictTxs, (*v).GetTx())
 		})
 
@@ -92,12 +93,12 @@ func (this *Arbitrator) Detect(groupIDs []uint32, newTrans []*univalue.Univalue)
 		if len(conflicts) > 0 {
 			if newTrans[ranges[i]].Writes() == 0 {
 				if newTrans[ranges[i]].IsConcurrentWritable() { // Delta write only
-					offset = common.LocateFirstIf(newTrans[ranges[i]+1:ranges[i+1]],
+					offset, _ = array.FindFirstIf(newTrans[ranges[i]+1:ranges[i+1]],
 						func(v *univalue.Univalue) bool {
 							return !v.IsConcurrentWritable()
 						})
 				} else { // Read only
-					offset = common.LocateFirstIf(newTrans[ranges[i]+1:ranges[i+1]],
+					offset, _ = array.FindFirstIf(newTrans[ranges[i]+1:ranges[i+1]],
 						func(v *univalue.Univalue) bool {
 							return v.Writes() > 0 || v.DeltaWrites() > 0
 						})
@@ -107,7 +108,7 @@ func (this *Arbitrator) Detect(groupIDs []uint32, newTrans []*univalue.Univalue)
 		}
 
 		dict := common.MapFromArray(conflictTxs, true) //Conflict dict
-		trans := common.CopyIf(newTrans[ranges[i]+offset:ranges[i+1]], func(v *univalue.Univalue) bool { return (*dict)[v.GetTx()] })
+		trans := array.CopyIf(newTrans[ranges[i]+offset:ranges[i+1]], func(v *univalue.Univalue) bool { return (*dict)[v.GetTx()] })
 
 		if outOfLimits := (&Accumulator{}).CheckMinMax(trans); outOfLimits != nil {
 			conflicts = append(conflicts, outOfLimits...)

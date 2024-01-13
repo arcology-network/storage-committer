@@ -23,7 +23,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/common-lib/exp/array"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	rlp "github.com/ethereum/go-ethereum/rlp"
 )
@@ -42,19 +42,19 @@ func RandomAccount() string {
 
 func AliceAccount() string {
 	b := make([]byte, 20)
-	common.Fill(b, 10)
+	array.Fill(b, 10)
 	return hexutil.Encode(b)
 }
 
 func BobAccount() string {
 	b := make([]byte, 20)
-	common.Fill(b, 11)
+	array.Fill(b, 11)
 	return hexutil.Encode(b)
 }
 
 func CarolAccount() string {
 	b := make([]byte, 20)
-	common.Fill(b, 12)
+	array.Fill(b, 12)
 	return hexutil.Encode(b)
 }
 

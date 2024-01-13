@@ -23,7 +23,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/rlp"
 
-	commonlibcommon "github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/common-lib/exp/array"
 	storage "github.com/arcology-network/concurrenturl/storage"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 )
@@ -34,14 +34,14 @@ type Convertible storage.AccountResult
 // The main difference is that the Ethereum storage proof is a list of hex STRINGS with the 0x prefix, but
 // the Optimism storage proof is a list of hex BYTES without the 0x prefix.
 func (Convertible) ToStorageProof(res []storage.StorageResult) []OptimismStorageProof {
-	opProof := commonlibcommon.Append(res, func(i int, storageResult storage.StorageResult) OptimismStorageProof {
+	opProof := array.Append(res, func(i int, storageResult storage.StorageResult) OptimismStorageProof {
 		var bytes []byte
 		rlp.DecodeBytes(storageResult.Value.ToInt().Bytes(), &bytes)
 
 		return OptimismStorageProof{
 			Key:   ethcommon.BytesToHash(hexutil.MustDecode(storageResult.Key)),
 			Value: hexutil.Big(*new(big.Int).SetBytes(bytes)),
-			Proof: commonlibcommon.Append(storageResult.Proof, func(i int, hexStr string) hexutil.Bytes {
+			Proof: array.Append(storageResult.Proof, func(i int, hexStr string) hexutil.Bytes {
 				return hexutil.MustDecode(hexStr) // strip 0x prefix and decode hex string to bytes
 			}),
 		}
@@ -52,7 +52,7 @@ func (Convertible) ToStorageProof(res []storage.StorageResult) []OptimismStorage
 // Convert from Ethereum account proof to Optimism proof format.
 func (this Convertible) New() OptimismAccountResult {
 	return OptimismAccountResult{
-		AccountProof: commonlibcommon.Append(this.AccountProof, func(i int, hexStr string) hexutil.Bytes {
+		AccountProof: array.Append(this.AccountProof, func(i int, hexStr string) hexutil.Bytes {
 			return hexutil.MustDecode(hexStr) // strip 0x prefix and decode hex string to bytes
 		}),
 		Address:      this.Address,

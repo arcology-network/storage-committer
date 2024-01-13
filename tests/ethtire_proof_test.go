@@ -7,6 +7,7 @@ import (
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/common-lib/exp/array"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	importer "github.com/arcology-network/concurrenturl/importer"
@@ -122,7 +123,7 @@ func TestEthWorldTrieProof(t *testing.T) {
 		t.Error("Deleting an non-existing entry should've flaged an error", err)
 	}
 
-	raw := univalue.Univalues(common.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	raw := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 	if acctTrans := raw; len(acctTrans) != 0 {
 		t.Error("Error: Wrong number of transitions")
 	}

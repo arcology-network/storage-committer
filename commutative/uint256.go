@@ -24,6 +24,7 @@ import (
 
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/common-lib/exp/array"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	intf "github.com/arcology-network/concurrenturl/interfaces"
 	uint256 "github.com/holiman/uint256"
@@ -139,7 +140,7 @@ func (this *U256) IsSelf(key interface{}) bool                                { 
 func (this *U256) TypeID() uint8                                              { return UINT256 }
 func (this *U256) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }
 
-func (this *U256) Reset()                                 { common.Fill(this.delta[:], 0) } // reset delta}
+func (this *U256) Reset()                                 { array.Fill(this.delta[:], 0) } // reset delta}
 func (this *U256) Hash(hasher func([]byte) []byte) []byte { return hasher(this.Encode()) }
 
 func (this *U256) Clone() interface{} {

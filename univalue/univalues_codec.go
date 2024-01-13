@@ -5,6 +5,7 @@ import (
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/common-lib/exp/array"
 )
 
 func (this Univalues) Size() int {
@@ -26,7 +27,7 @@ func (this Univalues) Sizes() []int {
 func (this Univalues) Encode(selector ...interface{}) []byte {
 	lengths := make([]uint32, len(this))
 
-	common.ParallelForeach(this, 6, func(i int, _ **Univalue) {
+	array.ParallelForeach(this, 6, func(i int, _ **Univalue) {
 		if this[i] != nil {
 			lengths[i] = this[i].Size()
 		}
@@ -41,7 +42,7 @@ func (this Univalues) Encode(selector ...interface{}) []byte {
 	buffer := make([]byte, headerLen+offsets[len(offsets)-1])
 	codec.Uint32(len(this)).EncodeToBuffer(buffer)
 
-	common.ParallelForeach(this, 6, func(i int, _ **Univalue) {
+	array.ParallelForeach(this, 6, func(i int, _ **Univalue) {
 		codec.Uint32(offsets[i]).EncodeToBuffer(buffer[(i+1)*codec.UINT32_LEN:])
 		this[i].EncodeToBuffer(buffer[headerLen+offsets[i]:])
 	})
@@ -56,7 +57,7 @@ func (Univalues) Decode(bytes []byte) interface{} {
 	buffers := [][]byte(codec.Byteset{}.Decode(bytes).(codec.Byteset))
 	univalues := make([]*Univalue, len(buffers))
 
-	common.ParallelForeach(buffers, 6, func(i int, _ *[]byte) {
+	array.ParallelForeach(buffers, 6, func(i int, _ *[]byte) {
 		v := (&Univalue{}).Decode(buffers[i])
 		univalues[i] = v.(*Univalue)
 	})

@@ -5,7 +5,7 @@ import (
 	"crypto/sha256"
 	"sort"
 
-	"github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/common-lib/exp/array"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 )
 
@@ -17,7 +17,7 @@ func (this Univalues) To(filter interface{}) Univalues {
 			From(*Univalue) *Univalue
 		}).From(v)
 	}
-	common.Remove((*[]*Univalue)(&this), nil)
+	array.Remove((*[]*Univalue)(&this), nil)
 	return this
 }
 
@@ -54,7 +54,7 @@ func (this Univalues) Equal(other Univalues) bool {
 }
 
 func (this Univalues) Clone() Univalues {
-	return common.Clone(this)
+	return array.Clone(this)
 }
 
 func (this Univalues) UniqueTXs() []uint32 {
@@ -64,7 +64,7 @@ func (this Univalues) UniqueTXs() []uint32 {
 			ids = append(ids, this[i].GetTx())
 		}
 	}
-	return common.UniqueInts(ids)
+	return array.UniqueInts(ids)
 }
 
 func (this Univalues) Sort(groupIDs []uint32) Univalues {

@@ -23,6 +23,7 @@ import (
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	orderedset "github.com/arcology-network/common-lib/container/set"
+	"github.com/arcology-network/common-lib/exp/array"
 	intf "github.com/arcology-network/concurrenturl/interfaces"
 )
 
@@ -130,7 +131,7 @@ func (this *Path) ApplyDelta(typedVals []intf.Type) (intf.Type, int, error) {
 			dict[v] = true
 		}
 
-		common.RemoveIf(&keys, func(v string) bool {
+		array.RemoveIf(&keys, func(v string) bool {
 			_, ok := dict[v]
 			return ok
 		})

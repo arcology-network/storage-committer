@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	datacompressor "github.com/arcology-network/common-lib/addrcompressor"
-	"github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/common-lib/exp/array"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	"github.com/arcology-network/concurrenturl/interfaces"
 
@@ -96,7 +96,7 @@ func TestUnivaluesCodeMeta(t *testing.T) {
 	out := (&Univalue{}).Decode(bytes).(*Univalue)
 	outKeys, _, _ := out.Value().(interfaces.Type).Get()
 
-	if !common.EqualArray(inKeys.([]string), outKeys.([]string)) {
+	if !array.Equal(inKeys.([]string), outKeys.([]string)) {
 		t.Error("Error")
 	}
 }
