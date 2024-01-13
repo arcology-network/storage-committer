@@ -375,12 +375,6 @@ func (this *EthDataStore) Commit(block uint64) error {
 		}
 	})
 
-	// this.AccountCache.ParallelForeachDo(func(_, accountTrie interface{}) { // Save the account tries to DB
-	// 	if err := accountTrie.(*Account).Commit(block); err != nil {
-	// 		panic(err)
-	// 	}
-	// })
-
 	common.ParallelForeach(this.DirtyAccounts, 16, func(_ int, acct **Account) {
 		if err := (**acct).Commit(block); err != nil {
 			panic(err)
@@ -417,7 +411,6 @@ func (this *EthDataStore) Decoder() func([]byte, any) interface{}    { return th
 func (this *EthDataStore) EthDB() *ethmpt.Database                   { return this.ethdb }
 func (this *EthDataStore) Trie() *ethmpt.Trie                        { return this.worldStateTrie }
 func (this *EthDataStore) UpdateCacheStats([]interface{})            {}
-func (this *EthDataStore) Dump() ([]string, []interface{})           { return nil, nil }
 func (this *EthDataStore) GetRootHash() [32]byte                     { return this.worldStateTrie.Hash() }
 func (this *EthDataStore) Print()                                    {}
 func (this *EthDataStore) CheckSum() [32]byte                        { return [32]byte{} }
