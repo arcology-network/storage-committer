@@ -206,7 +206,7 @@ func (this *EthDataStore) BatchInject(keys []string, values []interface{}) error
 	}
 
 	acctKeys, accounts := common.MapKVs(acctDict)
-	common.Foreach(accounts, func(acct **Account, i int) {
+	common.Foreach(accounts, func(i int, acct **Account) {
 		this.worldStateTrie.Update([]byte(acctKeys[i]), (**acct).Encode())
 	})
 
@@ -332,7 +332,7 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 	// Move dirty accounts to cache, the difference between the cache and dirty accounts is that the
 	// cache is for accounts that are being accessed in the current cycle including the newly created, which isn't available in the cache yet
 	// The dirty accounts are the accounts that have been updated in the current cycle.
-	common.Foreach(this.DirtyAccounts, func(acct **Account, _ int) {
+	common.Foreach(this.DirtyAccounts, func(_ int, acct **Account) {
 		this.AccountCache[(**acct).addr] = *acct
 	})
 

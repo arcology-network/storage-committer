@@ -111,7 +111,7 @@ func (this *Accumulator) isOutOfLimits(k string, transitions []*univalue.Univalu
 	}
 
 	txIDs := []uint32{}
-	common.Foreach(transitions[length+1:], func(v **univalue.Univalue, _ int) { txIDs = append(txIDs, (*v).GetTx()) })
+	common.Foreach(transitions[length+1:], func(_ int, v **univalue.Univalue) { txIDs = append(txIDs, (*v).GetTx()) })
 
 	return &Conflict{
 		key:   k,

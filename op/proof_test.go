@@ -64,7 +64,7 @@ func TestGetProofAPI(t *testing.T) {
 		t.Error(err)
 	}
 
-	res := new(OptimismAccountResult).New(accountResult)
+	res := Convertible(*accountResult).New()
 	if err := res.Verify(roothash); err != nil {
 		t.Error(err)
 	}

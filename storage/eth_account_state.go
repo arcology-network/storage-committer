@@ -90,10 +90,6 @@ func (this *Account) GetCodeHash() [32]byte {
 // The function is used to prove the storage of an account. It only works with
 // NATIVE storage for now.
 func (this *Account) IsStorageProvable(key string) ([]byte, []string, error) {
-
-	// keyBytes := hexutil.MustDecode(key) // Remove the prefix to get the key.
-	// keyBytes = this.Hash(keyBytes[:])
-
 	decoded, _, _ := decodeHash(key)
 	keyBytes := crypto.Keccak256(decoded[:])
 	data, err := this.storageTrie.Get(keyBytes) // Get the storage value
@@ -229,7 +225,9 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Typ
 
 	// Encode the values
 	encodedVals := common.ParallelAppend(typedVals, numThd, func(i int, _ interfaces.Type) []byte {
-		return common.IfThenDo1st(typedVals[i] != nil, func() []byte { return typedVals[i].StorageEncode() }, []byte{})
+		return common.IfThenDo1st(typedVals[i] != nil, func() []byte {
+			return typedVals[i].StorageEncode()
+		}, []byte{})
 	})
 
 	// Update the storage trie with the encoded keys and values.

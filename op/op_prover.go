@@ -27,10 +27,6 @@ import (
 	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/trie"
-
-	commonlibcommon "github.com/arcology-network/common-lib/common"
-	storage "github.com/arcology-network/concurrenturl/storage"
-	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 
 // Both of the structs below are copied from optimism repo, they are different
@@ -53,36 +49,6 @@ type OptimismAccountResult struct { // AccountResult in optimism
 
 	// Optional
 	StorageProof []OptimismStorageProof `json:"storageProof,omitempty"`
-}
-
-// Convert from Ethereum storage proof to Optimism proof format.
-// The main difference is that the Ethereum storage proof is a list of hex STRINGS with the 0x prefix, but
-// the Optimism storage proof is a list of hex BYTES without the 0x prefix.
-func (this *OptimismAccountResult) ToStorageProof(res []storage.StorageResult) []OptimismStorageProof {
-	return commonlibcommon.Append(res, func(i int, storageResult storage.StorageResult) OptimismStorageProof {
-		return OptimismStorageProof{
-			Key:   ethcommon.BytesToHash(hexutil.MustDecode(storageResult.Key)),
-			Value: hexutil.Big(*storageResult.Value),
-			Proof: commonlibcommon.Append(storageResult.Proof, func(i int, hexStr string) hexutil.Bytes {
-				return hexutil.MustDecode(hexStr) // strip 0x prefix and decode hex string to bytes
-			}),
-		}
-	})
-}
-
-// Convert from Ethereum account proof to Optimism proof format.
-func (this *OptimismAccountResult) New(acct *storage.AccountResult) OptimismAccountResult {
-	return OptimismAccountResult{
-		AccountProof: commonlibcommon.Append(acct.AccountProof, func(i int, hexStr string) hexutil.Bytes {
-			return hexutil.MustDecode(hexStr) // strip 0x prefix and decode hex string to bytes
-		}),
-		Address:      acct.Address,
-		Balance:      acct.Balance,
-		CodeHash:     acct.CodeHash,
-		Nonce:        acct.Nonce,
-		StorageHash:  acct.StorageHash,
-		StorageProof: this.ToStorageProof(acct.StorageProof),
-	}
 }
 
 // Verify an account (and optionally storage) proof from the getProof RPC. See https://eips.ethereum.org/EIPS/eip-1186

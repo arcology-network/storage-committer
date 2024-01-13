@@ -75,7 +75,7 @@ func (this *Arbitrator) Detect(groupIDs []uint32, newTrans []*univalue.Univalue)
 		}
 
 		conflictTxs := []uint32{}
-		common.Foreach(newTrans[ranges[i]+offset:ranges[i+1]], func(v **univalue.Univalue, _ int) {
+		common.Foreach(newTrans[ranges[i]+offset:ranges[i+1]], func(_ int, v **univalue.Univalue) {
 			conflictTxs = append(conflictTxs, (*v).GetTx())
 		})
 
