@@ -20,17 +20,22 @@ type DeltaSequence struct {
 }
 
 func NewDeltaSequence(key string, store interfaces.Datastore) *DeltaSequence {
-	return &DeltaSequence{
+	seq := &DeltaSequence{
 		key:         key,
 		transitions: make([]*univalue.Univalue, 0, 16),
-		rawBytes:    common.FilterFirst(store.Retrive(key, nil)),
-		// initial: (&univalue.Univalue{}).Init(committercommon.SYSTEM, key, 0, 0, 0, encoded, importer.Store()),
+		rawBytes:    nil,
 	}
+
+	if store != nil {
+		seq.rawBytes = common.FilterFirst(store.Retrive(key, nil))
+	}
+	return seq
 }
 
-func (this *DeltaSequence) Reset(key string) *DeltaSequence {
+func (this *DeltaSequence) Init(key string, store interfaces.Datastore) *DeltaSequence {
 	this.key = key
 	this.transitions = this.transitions[:0]
+	this.rawBytes = common.FilterFirst(store.Retrive(key, nil))
 	return this
 }
 

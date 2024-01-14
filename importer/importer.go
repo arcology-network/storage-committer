@@ -22,7 +22,6 @@ type Importer struct {
 	valBuffer []interface{} // Value updated in the cycle
 
 	seqPool *mempool.Mempool[*DeltaSequence]
-	uniPool *mempool.Mempool[*univalue.Univalue]
 }
 
 func NewImporter(store interfaces.Datastore, platform interfaces.Platform, args ...interface{}) *Importer {
@@ -37,11 +36,7 @@ func NewImporter(store interfaces.Datastore, platform interfaces.Platform, args 
 	})
 
 	importer.seqPool = mempool.NewMempool[*DeltaSequence](4096, 64, func() *DeltaSequence {
-		return NewDeltaSequence("", store)
-	})
-
-	importer.uniPool = mempool.NewMempool[*univalue.Univalue](4096, 64, func() *univalue.Univalue {
-		return new(univalue.Univalue)
+		return NewDeltaSequence("", nil) // Init an empty sequence.
 	})
 	return &importer
 }
@@ -55,11 +50,6 @@ func (this *Importer) SetStore(store interfaces.Datastore) { this.store = store 
 func (this *Importer) Store() interfaces.Datastore         { return this.store }
 func (this *Importer) ByPath() interface{}                 { return this.deltaDict }
 
-func (this *Importer) NewUnivalue() *univalue.Univalue {
-	v := this.uniPool.Get()
-	return v
-}
-
 func (this *Importer) IfExists(key string) bool {
 	if _, ok := this.deltaDict.Get(key); !ok {
 		return this.store.IfExists(key)
@@ -67,17 +57,35 @@ func (this *Importer) IfExists(key string) bool {
 	return false
 }
 
+func (this *Importer) NewSequenceFromPool(k string, store interfaces.Datastore) *DeltaSequence {
+	return this.seqPool.New().Init(k, store)
+}
+
 func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) {
 	commitIfAbsent := common.IfThenDo1st(len(args) > 0 && args[0] != nil, func() bool { return args[0].(bool) }, true) //Write if absent from local
 
+	//Remove entries that preexist but not available locally, it happens with a partial cache
 	array.RemoveIf(&txTrans, func(univ *univalue.Univalue) bool {
-		return univ.Preexist() && this.store.IfExists(*univ.GetPath()) && !commitIfAbsent //preexists but not available locally, happen with a partial cache
+		return univ.Preexist() && this.store.IfExists(*univ.GetPath()) && !commitIfAbsent
 	})
 
-	array.Foreach(txTrans, func(_ int, univ **univalue.Univalue) { // Create new sequences all at once
-		if v, _ := this.deltaDict.Get(*(*univ).GetPath()); v == nil {
-			this.deltaDict.Set(*(*univ).GetPath(), NewDeltaSequence(*(*univ).GetPath(), this.store))
+	// Scan for paths that aren't in the delta dictionary yet.
+	paths := array.ParallelAppend(make([]string, len(txTrans)), this.numThreads, func(i int, _ string) string {
+		path := *txTrans[i].GetPath()
+		if v, _ := this.deltaDict.Get(path); v == nil {
+			return path // Path not in the delta dictionary yet.
 		}
+		return ""
+	})
+	paths = array.RemoveIf(&paths, func(v string) bool { return v == "" }) // Remove paths for existing entries.
+
+	// Create new sequences for them in parallel.
+	sequences := array.ParallelAppend(paths, this.numThreads, func(i int, k string) *DeltaSequence {
+		return this.NewSequenceFromPool(k, this.store)
+	})
+
+	array.Foreach(sequences, func(i int, seq **DeltaSequence) { // Create new sequences all at once
+		this.deltaDict.Set(paths[i], *seq)
 	})
 
 	array.ParallelForeach(txTrans, this.numThreads, func(i int, _ **univalue.Univalue) {
@@ -164,7 +172,6 @@ func (this *Importer) Clear() {
 	this.valBuffer = this.valBuffer[:0]
 
 	this.seqPool.Reclaim()
-	this.uniPool.Reclaim()
 
 	// this.seqPool.ForEachAllocated(func(obj *DeltaSequence) {
 	// 	obj.Reclaim()
@@ -175,6 +182,5 @@ func (this *Importer) Clear() {
 	// })
 
 	this.seqPool.ReclaimRecursive()
-	this.uniPool.ReclaimRecursive()
 	this.store.Clear()
 }

@@ -64,12 +64,12 @@ func TestTrieUpdates(t *testing.T) {
 	committer.CopyToDbBuffer() // Export transitions and save them to the DB buffer.
 
 	ds := committer.Importer().Store().(*storage.EthDataStore)
-	if len(ds.DirtyAccounts) != 3 {
-		t.Error("Error: DirtyAccounts should be 3 actual", len(ds.DirtyAccounts))
+	if len(ds.Dirties()) != 3 {
+		t.Error("Error: Dirties() should be 3 actual", len(ds.Dirties()))
 	}
 
-	if (len(ds.AccountCache)) != 3 {
-		t.Error("Error: AccountCache should be 3", len(ds.AccountCache))
+	if (len(ds.Cache())) != 3 {
+		t.Error("Error: Cache() should be 3", len(ds.Cache()))
 	}
 	committer.Commit()
 
@@ -84,12 +84,12 @@ func TestTrieUpdates(t *testing.T) {
 		t.Error(err)
 	}
 
-	if len(ds.DirtyAccounts) != 0 {
-		t.Error("Error: DirtyAccounts should be 0, actual", len(ds.DirtyAccounts))
+	if len(ds.Dirties()) != 0 {
+		t.Error("Error: Dirties() should be 0, actual", len(ds.Dirties()))
 	}
 
-	if (len(ds.AccountCache)) != 3 {
-		t.Error("Error: AccountCache should be 3, actual", len(ds.AccountCache))
+	if (len(ds.Cache())) != 3 {
+		t.Error("Error: Cache() should be 3, actual", len(ds.Cache()))
 	}
 
 	committer.Import(univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
@@ -97,8 +97,8 @@ func TestTrieUpdates(t *testing.T) {
 	committer.Precommit([]uint32{committercommon.SYSTEM})
 
 	aliceAddr := ethcommon.BytesToAddress(hexutil.MustDecode(alice))
-	if len(ds.DirtyAccounts) != 1 || ds.DirtyAccounts[0].Address() != aliceAddr || !ds.DirtyAccounts[0].StorageDirty {
-		t.Error("Error: DirtyAccounts should be 1, actual", len(ds.DirtyAccounts))
+	if len(ds.Dirties()) != 1 || ds.Dirties()[0].Address() != aliceAddr || !ds.Dirties()[0].StorageDirty {
+		t.Error("Error: Dirties() should be 1, actual", len(ds.Dirties()))
 	}
 	committer.Commit()
 
@@ -122,12 +122,12 @@ func TestTrieUpdates(t *testing.T) {
 	committer.Finalize([]uint32{committercommon.SYSTEM})
 	committer.CopyToDbBuffer() // Export transitions and save them to the DB buffer.
 
-	if len(ds.DirtyAccounts) != 1 || ds.DirtyAccounts[0].Address() != aliceAddr || ds.DirtyAccounts[0].StorageDirty {
-		t.Error("Error: DirtyAccounts should be 1, actual", len(ds.DirtyAccounts))
+	if len(ds.Dirties()) != 1 || ds.Dirties()[0].Address() != aliceAddr || ds.Dirties()[0].StorageDirty {
+		t.Error("Error: Dirties() should be 1, actual", len(ds.Dirties()))
 	}
 
-	if (len(ds.AccountCache)) != 3 {
-		t.Error("Error: AccountCache should be 3, actual", len(ds.AccountCache))
+	if (len(ds.Cache())) != 3 {
+		t.Error("Error: Cache() should be 3, actual", len(ds.Cache()))
 	}
 }
 
