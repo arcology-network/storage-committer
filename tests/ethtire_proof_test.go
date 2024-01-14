@@ -12,6 +12,7 @@ import (
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	importer "github.com/arcology-network/concurrenturl/importer"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
+	opadapter "github.com/arcology-network/concurrenturl/op"
 	ccurlstorage "github.com/arcology-network/concurrenturl/storage"
 	storage "github.com/arcology-network/concurrenturl/storage"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
@@ -225,14 +226,63 @@ func TestGetProofAPI(t *testing.T) {
 		t.Error(err)
 	}
 
-	proof, err := storage.NewProofProvider(store.EthDB(), roothash2)
+	provider, err := storage.NewProofProvider(store.EthDB(), roothash2)
 	if err != nil {
 		t.Error(err)
 	}
 
-	accountResult, err := proof.GetProof(bobAddr, []string{string("0x0000000000000000000000000000000000000000000000000000000000000000")})
+	accountResult, err := provider.GetProof(bobAddr, []string{string("0x0000000000000000000000000000000000000000000000000000000000000000")})
 	if err := accountResult.Validate(roothash2); err != nil {
 		t.Error(err)
 	}
 
+}
+
+func TestProofCache(t *testing.T) {
+	store := ccurlstorage.NewParallelEthMemDataStore()
+	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+
+	alice := AliceAccount()
+	writeCache.CreateNewAccount(committercommon.SYSTEM, alice)
+
+	bob := BobAccount()
+	writeCache.CreateNewAccount(committercommon.SYSTEM, bob)
+
+	writeCache.FlushToDataSource(store)
+
+	/* Alice updates */
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath())
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ele0", noncommutative.NewString("124"))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000009", noncommutative.NewInt64(1111))
+
+	/* Bob updates */
+	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000000", noncommutative.NewString("124"))
+	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000001", noncommutative.NewInt64(9999))
+	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/", commutative.NewPath())
+	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/ele1", noncommutative.NewString("6789"))
+	writeCache.FlushToDataSource(store)
+
+	roothash := store.Root()
+
+	// Initiate the proof cache, max size = 16
+	cache := ccurlstorage.NewMerkleProofCache(16, store.EthDB())
+
+	// Get the proof provider by a root hash.
+	provider, err := cache.GetProofProvider(roothash)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Verify Bob's storage.
+	bobAddr := ethcommon.BytesToAddress([]byte(hexutil.MustDecode(bob)))
+	accountResult, err := provider.GetProof(bobAddr, []string{string("0x0000000000000000000000000000000000000000000000000000000000000000")})
+	if err := accountResult.Validate(roothash); err != nil {
+		t.Error(err)
+	}
+
+	// Convert to OP format and verify.
+	opProof := opadapter.Convertible(*accountResult).New() // To OP format
+	if err := opProof.Verify(roothash); err != nil {
+		t.Error(err)
+	}
 }
