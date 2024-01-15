@@ -64,6 +64,22 @@ func (Univalues) Decode(bytes []byte) interface{} {
 	return Univalues(univalues)
 }
 
+func (Univalues) DecodeWithMempool(bytes []byte, get func() *Univalue, put func(interface{})) interface{} {
+	if len(bytes) == 0 {
+		return nil
+	}
+
+	buffers := [][]byte(codec.Byteset{}.Decode(bytes).(codec.Byteset))
+	univalues := make([]*Univalue, len(buffers))
+
+	array.ParallelForeach(buffers, 6, func(i int, _ *[]byte) {
+		v := get()
+		v.reclaimFunc = put
+		univalues[i] = v.Decode(buffers[i]).(*Univalue)
+	})
+	return Univalues(univalues)
+}
+
 // func (Univalues) DecodeV2(bytesset [][]byte, get func() interface{}, put func(interface{})) Univalues {
 // 	univalues := make([]*Univalue, len(bytesset))
 // 	for i := range bytesset {
