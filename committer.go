@@ -111,12 +111,12 @@ func (this *StateCommitter) Finalize(txs []uint32) *StateCommitter {
 }
 
 // CopyToDbBuffer copies the transitions to the DB buffer.
-func (this *StateCommitter) CopyToDbBuffer() [32]byte {
+func (this *StateCommitter) CopyToDbBuffer() ([32]byte, []string, []interface{}) {
 	keys, values := this.importer.KVs()
 	invKeys, invVals := this.imuImporter.KVs()
 
 	keys, values = append(keys, invKeys...), append(values, invVals...)
-	return this.importer.Store().Precommit(keys, values) // save the transitions to the DB buffer
+	return this.importer.Store().Precommit(keys, values), keys, values // save the transitions to the DB buffer
 }
 
 // SaveToDB saves the transitions to the database.
@@ -134,7 +134,8 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 		return [32]byte{}
 	}
 	this.Finalize(txs)
-	return this.CopyToDbBuffer() // Export transitions and save them to the DB buffer.
+	hash, _, _ := this.CopyToDbBuffer()
+	return hash // Export transitions and save them to the DB buffer.
 }
 
 // Commit commits the transitions in the StateCommitter.
