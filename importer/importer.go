@@ -4,6 +4,7 @@ import (
 	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/array"
 	ccmap "github.com/arcology-network/common-lib/exp/map"
+	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/mempool"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
@@ -32,7 +33,7 @@ func NewImporter(store interfaces.Datastore, platform interfaces.Platform, args 
 	importer.byTx = make(map[uint32][]*univalue.Univalue)
 	importer.platform = platform
 	importer.deltaDict = ccmap.NewConcurrentMap(8, func(v *DeltaSequence) bool { return v == nil }, func(k string) uint8 {
-		return common.Sum[uint8, uint8]([]byte(k))
+		return array.Sum[uint8, uint8]([]byte(k))
 	})
 
 	importer.seqPool = mempool.NewMempool[*DeltaSequence](4096, 64, func() *DeltaSequence {
@@ -65,28 +66,25 @@ func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) 
 	commitIfAbsent := common.IfThenDo1st(len(args) > 0 && args[0] != nil, func() bool { return args[0].(bool) }, true) //Write if absent from local
 
 	//Remove entries that preexist but not available locally, it happens with a partial cache
-	array.RemoveIf(&txTrans, func(univ *univalue.Univalue) bool {
+	array.RemoveIf(&txTrans, func(_ int, univ *univalue.Univalue) bool {
 		return univ.Preexist() && this.store.IfExists(*univ.GetPath()) && !commitIfAbsent
 	})
 
 	// Scan for paths that aren't in the delta dictionary yet.
 	paths := array.ParallelAppend(make([]string, len(txTrans)), this.numThreads, func(i int, _ string) string {
 		path := *txTrans[i].GetPath()
-		if v, _ := this.deltaDict.Get(path); v == nil {
-			return path // Path not in the delta dictionary yet.
-		}
-		return ""
+		v, _ := this.deltaDict.Get(path)
+		return common.IfThen(v == nil, path, "") // Return empty strings for the existing entries.
 	})
-	paths = array.RemoveIf(&paths, func(v string) bool { return v == "" }) // Remove paths for existing entries.
+	paths = array.RemoveIf(&paths, func(_ int, v string) bool { return v == "" }) // Remove paths for existing entries by filtering out empty strings.
 
-	// Create new sequences for them in parallel.
+	// Create new sequences for the non-existing paths all at once.
 	sequences := array.ParallelAppend(paths, this.numThreads, func(i int, k string) *DeltaSequence {
 		return this.NewSequenceFromPool(k, this.store)
 	})
 
-	array.Foreach(sequences, func(i int, seq **DeltaSequence) { // Create new sequences all at once
-		this.deltaDict.Set(paths[i], *seq)
-	})
+	// Add the new sequences to the delta dictionary in parallel.
+	this.deltaDict.BatchSet(paths, sequences)
 
 	array.ParallelForeach(txTrans, this.numThreads, func(i int, _ **univalue.Univalue) {
 		seq, _ := this.deltaDict.Get(*txTrans[i].GetPath())
@@ -107,10 +105,7 @@ func (this *Importer) WhilteList(whitelist []uint32) []error {
 		return []error{}
 	}
 
-	whitelisted := make(map[uint32]bool)
-	for _, txID := range whitelist {
-		whitelisted[txID] = true
-	}
+	whitelisted := mapi.FromArray(whitelist, func(_ uint32) bool { return true })
 
 	for txid, vec := range this.byTx {
 		if txid == committercommon.SYSTEM {
@@ -119,7 +114,7 @@ func (this *Importer) WhilteList(whitelist []uint32) []error {
 
 		if _, ok := whitelisted[txid]; !ok {
 			for _, v := range vec {
-				v.SetPath(nil) // Mark its status
+				v.SetPath(nil) // Mark the transition status, so that it can be removed later.
 			}
 		}
 	}
@@ -149,12 +144,12 @@ func (this *Importer) MergeStateDelta() {
 	})
 
 	array.Remove(&this.keyBuffer, "")
-	array.RemoveIf(&this.valBuffer, func(v interface{}) bool { return v.(*univalue.Univalue) == nil })
+	array.RemoveIf(&this.valBuffer, func(_ int, v interface{}) bool { return v.(*univalue.Univalue) == nil })
 }
 
 func (this *Importer) KVs() ([]string, []interface{}) {
 	array.Remove(&this.keyBuffer, "")
-	array.RemoveIf(&this.valBuffer, func(v interface{}) bool { return v.(*univalue.Univalue) == nil })
+	array.RemoveIf(&this.valBuffer, func(_ int, v interface{}) bool { return v.(*univalue.Univalue) == nil })
 	return this.keyBuffer, this.valBuffer
 }
 
@@ -165,7 +160,7 @@ func (this *Importer) Clear() {
 	}
 
 	this.deltaDict = ccmap.NewConcurrentMap(8, func(v *DeltaSequence) bool { return v == nil }, func(k string) uint8 {
-		return common.Sum[uint8, uint8]([]byte(k))
+		return array.Sum[uint8, uint8]([]byte(k))
 	})
 
 	this.keyBuffer = this.keyBuffer[:0]

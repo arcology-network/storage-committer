@@ -22,6 +22,7 @@ import (
 
 	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/array"
+	mapi "github.com/arcology-network/common-lib/exp/map"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 )
@@ -85,7 +86,7 @@ func (this *Platform) IsSysPath(path string) bool {
 }
 
 func (this *Platform) GetSysPaths() []string {
-	return common.MapKeys(this.syspaths)
+	return mapi.Keys(this.syspaths)
 }
 
 func (this *Platform) Builtins(acct string, idx int) string {

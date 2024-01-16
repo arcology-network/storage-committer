@@ -40,7 +40,7 @@ func (this *Accumulator) CheckMinMax(transitions []*univalue.Univalue) []*Confli
 		return nil
 	}
 
-	array.RemoveIf(&transitions, func(v *univalue.Univalue) bool {
+	array.RemoveIf(&transitions, func(_ int, v *univalue.Univalue) bool {
 		return v.IsReadOnly()
 	})
 

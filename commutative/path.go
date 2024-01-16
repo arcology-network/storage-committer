@@ -131,7 +131,7 @@ func (this *Path) ApplyDelta(typedVals []intf.Type) (intf.Type, int, error) {
 			dict[v] = true
 		}
 
-		array.RemoveIf(&keys, func(v string) bool {
+		array.RemoveIf(&keys, func(_ int, v string) bool {
 			_, ok := dict[v]
 			return ok
 		})

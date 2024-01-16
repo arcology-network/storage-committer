@@ -65,7 +65,7 @@ func (this *DeltaSequence) Sort() {
 }
 
 func (this *DeltaSequence) Finalize() *univalue.Univalue {
-	array.RemoveIf(&this.transitions, func(v *univalue.Univalue) bool {
+	array.RemoveIf(&this.transitions, func(_ int, v *univalue.Univalue) bool {
 		return v.GetPath() == nil
 	})
 

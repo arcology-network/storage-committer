@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	datacompression "github.com/arcology-network/common-lib/addrcompressor"
+	"github.com/arcology-network/common-lib/addrcompressor"
 	orderedset "github.com/arcology-network/common-lib/container/set"
 	"github.com/arcology-network/common-lib/exp/array"
 	committercommon "github.com/arcology-network/concurrenturl/common"
@@ -20,8 +20,8 @@ import (
 func TestTransitionFilters(t *testing.T) {
 	store := chooseDataStore()
 
-	alice := datacompression.RandomAccount()
-	bob := datacompression.RandomAccount()
+	alice := addrcompressor.RandomAccount()
+	bob := addrcompressor.RandomAccount()
 
 	// committer := ccurl.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
@@ -112,8 +112,8 @@ func TestTransitionFilters(t *testing.T) {
 func TestAccessFilters(t *testing.T) {
 	store := chooseDataStore()
 
-	alice := datacompression.RandomAccount()
-	bob := datacompression.RandomAccount()
+	alice := addrcompressor.RandomAccount()
+	bob := addrcompressor.RandomAccount()
 
 	// committer := ccurl.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
@@ -162,5 +162,4 @@ func TestAccessFilters(t *testing.T) {
 	if idx != -1 {
 		t.Error("Error: Nonce non-path commutative variables may keep their initial values", v)
 	}
-
 }

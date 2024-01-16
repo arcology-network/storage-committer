@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/array"
+	mapi "github.com/arcology-network/common-lib/exp/map"
 	ccurl "github.com/arcology-network/concurrenturl"
 	arbitrator "github.com/arcology-network/concurrenturl/arbitrator"
 	committercommon "github.com/arcology-network/concurrenturl/common"
@@ -60,7 +60,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	ids := arib.Detect(IDVec, append(accesses1, accesses2...))
 
 	conflictdict, _, _ := arbitrator.Conflicts(ids).ToDict()
-	if len(*conflictdict) != 0 {
+	if len(conflictdict) != 0 {
 		t.Error("Error: There should be NO conflict")
 	}
 }
@@ -121,7 +121,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	ids := (&arbitrator.Arbitrator{}).Detect(IDVec, append(accesses1, accesses2...))
 	conflictdict, _, _ := arbitrator.Conflicts(ids).ToDict()
 
-	if len(*conflictdict) != 1 {
+	if len(conflictdict) != 1 {
 		t.Error("Error: There shouldn 1 conflict")
 	}
 }
@@ -181,11 +181,11 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 
 	// pairs := arbitrator.Conflicts(ids).ToPairs()
 
-	if len(*conflictDict) != 1 || len(pairs) != 1 {
+	if len(conflictDict) != 1 || len(pairs) != 1 {
 		t.Error("Error: There should be 1 conflict")
 	}
 
-	toCommit := array.Exclude([]uint32{1, 2}, common.MapKeys(*conflictDict))
+	toCommit := array.Exclude([]uint32{1, 2}, mapi.Keys(conflictDict))
 
 	in := univalue.Univalues(append(transitions1, transitions2...)).Encode()
 	out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
@@ -217,11 +217,17 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	ids = (&arbitrator.Arbitrator{}).Detect(IDVec, append(accesses3, accesses4...))
 	conflictDict, _, _ = arbitrator.Conflicts(ids).ToDict()
 
-	conflictTx := common.MapKeys(*conflictDict)
-	if len(*conflictDict) != 1 || conflictTx[0] != 4 {
+	conflictTx := mapi.Keys(conflictDict)
+	if len(conflictDict) != 1 || conflictTx[0] != 4 {
 		t.Error("Error: There should be only 1 conflict")
 	}
-	toCommit = array.Exclude([]uint32{3, 4}, conflictTx)
+
+	toCommit = array.RemoveIf(&[]uint32{3, 4}, func(_ int, tx uint32) bool {
+		// conflictTx := mapi.Keys(*conflictDict)
+
+		_, ok := conflictDict[tx]
+		return ok
+	})
 
 	in = univalue.Univalues(append(transitions3, transitions4...)).Encode()
 	out = univalue.Univalues{}.Decode(in).(univalue.Univalues)

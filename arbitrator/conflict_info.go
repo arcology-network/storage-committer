@@ -20,7 +20,7 @@ package importer
 import (
 	"fmt"
 
-	"github.com/arcology-network/common-lib/common"
+	mapi "github.com/arcology-network/common-lib/exp/map"
 )
 
 type Conflict struct {
@@ -41,7 +41,7 @@ func (this Conflict) ToPairs() [][2]uint32 {
 
 type Conflicts []*Conflict
 
-func (this Conflicts) ToDict() (*map[uint32]uint64, *map[uint32]uint64, [][2]uint32) {
+func (this Conflicts) ToDict() (map[uint32]uint64, map[uint32]uint64, [][2]uint32) {
 	txDict := make(map[uint32]uint64)
 	groupIDdict := make(map[uint32]uint64)
 	for _, v := range this {
@@ -51,7 +51,7 @@ func (this Conflicts) ToDict() (*map[uint32]uint64, *map[uint32]uint64, [][2]uin
 		}
 	}
 
-	return &txDict, &groupIDdict, this.ToPairs()
+	return txDict, groupIDdict, this.ToPairs()
 }
 
 func (this Conflicts) Keys() []string {
@@ -70,7 +70,7 @@ func (this Conflicts) ToPairs() [][2]uint32 {
 			dict[pair]++
 		}
 	}
-	return common.MapKeys(dict)
+	return mapi.Keys(dict)
 }
 
 func (this Conflicts) Print() {

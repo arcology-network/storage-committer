@@ -332,7 +332,7 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 		}
 	})
 
-	array.RemoveIf(&this.dirties, func(acct *Account) bool { return acct == nil }) // Remove the nil accounts
+	array.RemoveIf(&this.dirties, func(_ int, acct *Account) bool { return acct == nil }) // Remove the nil accounts
 
 	// Precommit the changes to the accounts and update the account storage trie.
 	array.ParallelForeach(this.dirties, 16, func(idx int, acct **Account) {
