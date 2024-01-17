@@ -9,6 +9,7 @@ import (
 )
 
 type ProofProvider struct {
+	root        [32]byte
 	totalVisits uint64 // Total number of times all the merkle trees have been accessed since this Merkle tree is created.
 	visits      int    // Number of times this merkle Merkle has been accessed.
 	DataStore   *EthDataStore
@@ -22,12 +23,15 @@ func NewProofProvider(ethdb *ethmpt.Database, root [32]byte) (*ProofProvider, er
 	}
 
 	return &ProofProvider{
+		root,
 		1,
 		1,
 		store,
 		ethdb,
 	}, nil
 }
+
+func (this *ProofProvider) Root() ethcommon.Hash { this.visits++; return this.root }
 
 // GetProof returns a merkle proof for the given account and storage keys.
 // Storage keys have to be in hex format with 0x prefix.

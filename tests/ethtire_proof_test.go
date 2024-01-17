@@ -2,6 +2,7 @@ package ccurltest
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -235,7 +236,6 @@ func TestGetProofAPI(t *testing.T) {
 	if err := accountResult.Validate(roothash2); err != nil {
 		t.Error(err)
 	}
-
 }
 
 func TestProofCache(t *testing.T) {
@@ -264,8 +264,8 @@ func TestProofCache(t *testing.T) {
 
 	roothash := store.Root()
 
-	// Initiate the proof cache, max size = 16
-	cache := ccurlstorage.NewMerkleProofCache(16, store.EthDB())
+	// Initiate the proof cache, maximum 2 blocks
+	cache := ccurlstorage.NewMerkleProofCache(2, store.EthDB())
 
 	// Get the proof provider by a root hash.
 	provider, err := cache.GetProofProvider(roothash)
@@ -273,16 +273,74 @@ func TestProofCache(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Verify Bob's storage.
 	bobAddr := ethcommon.BytesToAddress([]byte(hexutil.MustDecode(bob)))
-	accountResult, err := provider.GetProof(bobAddr, []string{string("0x0000000000000000000000000000000000000000000000000000000000000000")})
-	if err := accountResult.Validate(roothash); err != nil {
+	accountResult, err := provider.GetProof(bobAddr, []string{})
+	if err := accountResult.Validate(provider.Root()); err != nil {
+		t.Error(err)
+	}
+
+	// Verify Bob's storage.
+	bobAddr = ethcommon.BytesToAddress([]byte(hexutil.MustDecode(bob)))
+	accountResult, err = provider.GetProof(bobAddr, []string{string("0x0000000000000000000000000000000000000000000000000000000000000000")})
+	if err := accountResult.Validate(provider.Root()); err != nil {
 		t.Error(err)
 	}
 
 	// Convert to OP format and verify.
 	opProof := opadapter.Convertible(*accountResult).New() // To OP format
-	if err := opProof.Verify(roothash); err != nil {
+	if err := opProof.Verify(provider.Root()); err != nil {
 		t.Error(err)
+	}
+
+	// Verify Bob's storage.
+	bobAddr = ethcommon.BytesToAddress([]byte(hexutil.MustDecode(bob)))
+	accountResult, err = provider.GetProof(bobAddr, []string{string("0x0000000000000000000000000000000000000000000000000000000000000001")})
+	if err := accountResult.Validate(provider.Root()); err != nil {
+		t.Error(err)
+	}
+
+	// Convert Bob's proof to OP format and verify.
+	opProof = opadapter.Convertible(*accountResult).New() // To OP format
+	if err := opProof.Verify(provider.Root()); err != nil {
+		t.Error(err)
+	}
+
+	// Verify Alice's storage.
+	aliceAddr := ethcommon.BytesToAddress([]byte(hexutil.MustDecode(alice)))
+	accountResult, err = provider.GetProof(aliceAddr, []string{string("0x0000000000000000000000000000000000000000000000000000000000000009")})
+	if err := accountResult.Validate(provider.Root()); err != nil {
+		t.Error(err)
+	}
+
+	// Convert Alice's proof to OP format and verify.
+	opProof = opadapter.Convertible(*accountResult).New() // To OP format
+	if err := opProof.Verify(provider.Root()); err != nil {
+		t.Error(err)
+	}
+
+	// Simulate 5 consecutive blocks, record the root hashes and the keys.
+	historyRoots := []ethcommon.Hash{}
+	keys := []string{}
+	for i := 5; i < 10; i++ {
+		k := "0x000000000000000000000000000000000000000000000000000000000000000" + fmt.Sprint(i)
+
+		writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+k, noncommutative.NewInt64(int64(i)))
+		writeCache.FlushToDataSource(store)
+
+		keys = append(keys, k)
+		historyRoots = append(historyRoots, store.Root())
+	}
+
+	// Get the proof provider by a root hash from the history.
+	for i := 0; i < len(historyRoots); i++ {
+		provider, err := cache.GetProofProvider(historyRoots[i])
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		accountResult, err := provider.GetProof(aliceAddr, []string{keys[i]})
+		if err := accountResult.Validate(provider.Root()); err != nil {
+			t.Error(err)
+		}
 	}
 }

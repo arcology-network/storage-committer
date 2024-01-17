@@ -59,7 +59,7 @@ func (this *MerkleProofCache) GetProofProvider(rootHash [32]byte) (*ProofProvide
 		}
 
 		// Create a new merkle tree and add it to the cache.
-		merkle = &ProofProvider{totalVisits: 1, visits: 1, DataStore: datastore, Ethdb: this.db}
+		merkle = &ProofProvider{root: rootHash, totalVisits: 1, visits: 1, DataStore: datastore, Ethdb: this.db}
 		this.merkleDict[rootHash] = merkle
 
 		// Check if the cache is full. Clean up the cache if it is full.
