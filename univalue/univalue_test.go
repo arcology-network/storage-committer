@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/arcology-network/common-lib/addrcompressor"
+	set "github.com/arcology-network/common-lib/container/set"
 	"github.com/arcology-network/common-lib/exp/array"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	intf "github.com/arcology-network/concurrenturl/interfaces"
@@ -35,9 +36,9 @@ func TestUnivalueCodecUint64(t *testing.T) {
 	bytes := in.Encode()
 	v := (&Univalue{}).Decode(bytes).(*Univalue)
 
-	unimeta := v.GetUnimeta().(*Property)
-	inUnimeta := in.GetUnimeta().(*Property)
-	if !(*inUnimeta).Equal(unimeta) {
+	property := v.Property
+	inProperty := in.Property
+	if !(inProperty).Equal(&property) {
 		t.Error("Error")
 	}
 
@@ -104,18 +105,18 @@ func TestUnivalueCodeMeta(t *testing.T) {
 	out := (&Univalue{}).Decode(bytes).(*Univalue)
 	outKeys, _, _ := out.Value().(intf.Type).Get()
 
-	if !array.Equal(inKeys.([]string), outKeys.([]string)) {
+	if !array.Equal(inKeys.(*set.OrderedSet).Keys(), outKeys.(*set.OrderedSet).Keys()) {
 		t.Error("Error")
 	}
 }
 
-func TestUnimetaCodecUint64(t *testing.T) {
+func TestPropertyCodecUint64(t *testing.T) {
 	/* Commutative Int64 Test */
 	alice := addrcompressor.AliceAccount()
 
 	// meta:= commutative.NewPath()
 	u256 := commutative.NewBoundedUint64(0, 100).(*commutative.Uint64)
-	in := NewUnimeta(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, u256.TypeID(), true, false)
+	in := NewProperty(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, u256.TypeID(), true, false)
 	in.reads = 1
 	in.writes = 2
 	in.deltaWrites = 3

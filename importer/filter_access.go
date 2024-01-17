@@ -39,7 +39,7 @@ func (this IPAccess) From(v *univalue.Univalue) *univalue.Univalue {
 
 	value := v.Value().(interfaces.Type)
 	return v.New(
-		v.GetUnimeta(),
+		&v.Property,
 		common.IfThen(value.IsCommutative() && value.IsNumeric(), value, nil), // commutative but not meta, for the accumulator
 		[]byte{},
 	)
@@ -72,7 +72,7 @@ func (this ITAccess) From(v *univalue.Univalue) *univalue.Univalue {
 	}
 
 	return value.New(
-		value.GetUnimeta(),
+		&value.Property,
 		typed,
 		[]byte{},
 	)

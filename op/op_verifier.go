@@ -29,9 +29,13 @@ import (
 	"github.com/ethereum/go-ethereum/trie"
 )
 
-// Both of the structs below are copied from optimism repo, they are different
+// Both of the structs below are copied from Optimism's repo, they are different
 // from the original Ethereum structs in proof format. They have been renamed
 // to avoid confusion.
+
+// The purpose of copying these structs is to verify the proof returned by the
+// proof generator locally, without introducing dependency on Optimism's repo.
+// This is mainly for testing and debugging purposes.
 type OptimismStorageProof struct { // StorageProofEntry in optimism
 	Key   common.Hash     `json:"key"`
 	Value hexutil.Big     `json:"value"`

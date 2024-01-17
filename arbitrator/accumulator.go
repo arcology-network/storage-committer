@@ -27,11 +27,14 @@ import (
 	"github.com/arcology-network/concurrenturl/univalue"
 )
 
+// Accumualator is dedicatd to cumulative numeric variables. It check if the value is out of limits defined by
+// the type. It sorts the transitions by the delta sign and type so the negative deltas are in the front of the
+// delta sequence to make sure it has sufficient initial value for the negative deltas. The underflow is always
+// checked first before the overflow.
+
 type Accumulator struct{}
 
-// check if the value is out of limits. It sorts the transitions by the delta sign and type.
-// The neative delta is in the front of the array to make sure it has sufficient balance for the positive deltas.
-// The underflow is always checked first before the overflow.
+// check if the value is either underflowed or overflowed. It returns the conflict if it is out of bounds.
 func (this *Accumulator) CheckMinMax(transitions []*univalue.Univalue) []*Conflict {
 	if len(transitions) <= 1 ||
 		(transitions)[0].Value() == nil ||
@@ -93,7 +96,8 @@ func (*Accumulator) Categorize(transitions []*univalue.Univalue) ([]*univalue.Un
 	return transitions[:offset], transitions[offset:]
 }
 
-// check if the value is out of limits
+// check if the value is out of limits defined by the user. It can be different from the type bounds.
+// It returns the conflict if it is out of bounds.
 func (this *Accumulator) isOutOfLimits(k string, transitions []*univalue.Univalue) *Conflict {
 	if len(transitions) <= 1 {
 		return nil

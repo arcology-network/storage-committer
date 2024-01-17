@@ -41,7 +41,7 @@ func (this IPTransition) From(v *univalue.Univalue) *univalue.Univalue {
 	).(interfaces.Type)
 
 	return v.New(
-		v.GetUnimeta(),
+		&v.Property,
 		typed,
 		[]byte{},
 	)

@@ -11,13 +11,12 @@ import (
 	intf "github.com/arcology-network/concurrenturl/interfaces"
 )
 
+// THe univalue is a combination of a value and a property field that contains the access information about the value.
 type Univalue struct {
 	Property
 	value interface{}
 	cache []byte
 }
-
-// func NewUnivalue
 
 func NewUnivalue(tx uint32, key string, reads, writes uint32, deltaWrites uint32, v interface{}, source interface{}) *Univalue {
 	return &Univalue{
@@ -57,8 +56,7 @@ func (this *Univalue) SetValue(newValue interface{}) *Univalue {
 	return this
 }
 
-func (this *Univalue) GetUnimeta() interface{} { return &this.Property }
-func (this *Univalue) GetCache() interface{}   { return this.cache }
+func (this *Univalue) GetCache() interface{} { return this.cache }
 
 func (this *Univalue) Init(tx uint32, key string, reads, writes, deltaWrites uint32, v interface{}, args ...interface{}) *Univalue {
 	this.vType = common.IfThenDo1st(v != nil, func() uint8 { return v.(intf.Type).TypeID() }, uint8(reflect.Invalid))

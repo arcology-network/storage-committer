@@ -54,12 +54,11 @@ func (this *Univalue) EncodeToBuffer(buffer []byte) int {
 
 func (this *Univalue) Decode(buffer []byte) interface{} {
 	fields := codec.Byteset{}.Decode(buffer).(codec.Byteset)
-	unimeta := (&Property{}).Decode(fields[0]).(*Property)
-	// v := (&committercommon.Codec{unimeta.vType}).Decode(fields[1])
+	property := (&Property{}).Decode(fields[0]).(*Property)
 
 	return &Univalue{
-		*unimeta,
-		(&committercommon.Codec{unimeta.vType}).Decode(fields[1], this.value),
+		*property,
+		(&committercommon.Codec{property.vType}).Decode(fields[1], this.value),
 		fields[1], // Keep copy, should expire as soon as the value is updated
 	}
 }

@@ -12,7 +12,7 @@ type Property struct {
 	reclaimFunc func(interface{})
 }
 
-func NewUnimeta(tx uint32, key string, reads, writes uint32, deltaWrites uint32, vType uint8, persistent, preexists bool) *Property {
+func NewProperty(tx uint32, key string, reads, writes uint32, deltaWrites uint32, vType uint8, persistent, preexists bool) *Property {
 	return &Property{
 		vType:       vType,
 		persistent:  persistent, // Won't be affected by conflict status

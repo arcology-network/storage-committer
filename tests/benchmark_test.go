@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	datacompression "github.com/arcology-network/common-lib/addrcompressor"
+	addrcompressor "github.com/arcology-network/common-lib/addrcompressor"
 	"github.com/arcology-network/common-lib/exp/array"
 	datastore "github.com/arcology-network/common-lib/storage/datastore"
 	ccurl "github.com/arcology-network/concurrenturl"
@@ -24,7 +24,7 @@ import (
 )
 
 func BenchmarkAccountMerkleImportPerf(b *testing.B) {
-	// lut := datacompression.NewCompressionLut()
+	// lut := addrcompressor.NewCompressionLut()
 	// store := datastore.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
 	// fileDB, err := datastore.NewFileDB(ROOT_PATH, 8, 2)
 	// if err != nil {
@@ -379,7 +379,7 @@ func BenchmarkEncodeTransitions(b *testing.B) {
 }
 
 func BenchmarkAccountCreationWithMerkle(b *testing.B) {
-	// lut := datacompression.NewCompressionLut()
+	// lut := addrcompressor.NewCompressionLut()
 	// fileDB, err := datastore.NewFileDB(ROOT_PATH, 8, 2)
 	// if err != nil {
 	// 	b.Error(err)
@@ -393,7 +393,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 	for i := 0; i < 10; i++ {
-		acct := datacompression.RandomAccount()
+		acct := addrcompressor.RandomAccount()
 		if _, err := writeCache.CreateNewAccount(0, acct); err != nil { // Preload account structure {
 			b.Error(err)
 		}
@@ -449,7 +449,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 // func TestPathRepeats(t *testing.T) {
 // 	paths := make([]string, 0, 2)
 // 	for i := 0; i < 1; i++ {
-// 		acct := datacompression.RandomAccount()
+// 		acct := addrcompressor.RandomAccount()
 // 		for j := 0; j < 10; j++ {
 // 			paths = append(paths, (&ccurl.Platform{}).Eth10Account()+acct+"/"+fmt.Sprint(rand.Float64()))
 // 		}
@@ -472,7 +472,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 func BenchmarkStringSort(b *testing.B) {
 	paths := make([][]*univalue.Univalue, 100000)
 	for i := 0; i < 100000; i++ {
-		acct := datacompression.RandomAccount()
+		acct := addrcompressor.RandomAccount()
 		for j := 9; j >= 1; j-- {
 
 			paths[i] = append(paths[i], univalue.NewUnivalue(uint32(j), acct, 0, 0, 0, noncommutative.NewString(fmt.Sprint(rand.Float64())), nil))
@@ -584,7 +584,7 @@ func (s String) Less(b btree.Item) bool {
 
 // 	records := make([]string, 10000)
 // 	for i := 0; i < len(records); i++ {
-// 		records[i] = (&ccurl.Platform{}).Eth10() + datacompression.RandomAccount()
+// 		records[i] = (&ccurl.Platform{}).Eth10() + addrcompressor.RandomAccount()
 // 	}
 
 // 	t0 := time.Now()
@@ -617,7 +617,7 @@ func BenchmarkTransitionImport(b *testing.B) {
 
 	// writeCache := committer.WriteCache()
 	for i := 0; i < 150000; i++ {
-		acct := datacompression.RandomAccount()
+		acct := addrcompressor.RandomAccount()
 		if _, err := writeCache.CreateNewAccount(0, acct); err != nil { // Preload account structure {
 			b.Error(err)
 		}
@@ -648,7 +648,7 @@ func BenchmarkTransitionImport(b *testing.B) {
 // 		committer := ccurl.NewStorageCommitter(store)
 // writeCache := committer.WriteCache()
 // 	for i := 0; i < 90000; i++ {
-// 		acct := datacompression.RandomAccount()
+// 		acct := addrcompressor.RandomAccount()
 // 		if _, err := writeCache.CreateNewAccount(0, acct);err != nil { // Preload account structure {
 // 			b.Error(err)
 // 		}
@@ -679,7 +679,7 @@ func BenchmarkRandomAccountSort(t *testing.B) {
 	// committer := ccurl.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 	for i := 0; i < 100000; i++ {
-		acct := datacompression.RandomAccount()
+		acct := addrcompressor.RandomAccount()
 		if _, err := writeCache.CreateNewAccount(0, acct); err != nil { // Preload account structure {
 			// b.Error(err)
 		}

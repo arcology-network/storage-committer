@@ -26,6 +26,9 @@ func (this Univalues) Sizes() []int {
 
 func (this Univalues) Encode(selector ...interface{}) []byte {
 	lengths := make([]uint32, len(this))
+	if len(lengths) == 0 {
+		return []byte{}
+	}
 
 	array.ParallelForeach(this, 6, func(i int, _ **Univalue) {
 		if this[i] != nil {
@@ -51,7 +54,7 @@ func (this Univalues) Encode(selector ...interface{}) []byte {
 
 func (Univalues) Decode(bytes []byte) interface{} {
 	if len(bytes) == 0 {
-		return nil
+		return Univalues{}
 	}
 
 	buffers := [][]byte(codec.Byteset{}.Decode(bytes).(codec.Byteset))

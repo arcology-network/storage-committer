@@ -3,7 +3,8 @@ package univalue
 import (
 	"testing"
 
-	datacompressor "github.com/arcology-network/common-lib/addrcompressor"
+	addrcompressor "github.com/arcology-network/common-lib/addrcompressor"
+	set "github.com/arcology-network/common-lib/container/set"
 	"github.com/arcology-network/common-lib/exp/array"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	"github.com/arcology-network/concurrenturl/interfaces"
@@ -13,7 +14,7 @@ import (
 
 /* Commutative Int64 Test */
 func TestUnivaluesCodecPathMeta(t *testing.T) {
-	alice := datacompressor.RandomAccount()
+	alice := addrcompressor.RandomAccount()
 
 	u64 := commutative.NewBoundedUint64(0, 100)
 	in0 := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/u64-000", 3, 4, 0, u64, nil)
@@ -54,7 +55,7 @@ func TestUnivaluesCodecPathMeta(t *testing.T) {
 }
 
 func TestUnivaluesCodecU256(t *testing.T) {
-	alice := datacompressor.RandomAccount() /* Commutative Int64 Test */
+	alice := addrcompressor.RandomAccount() /* Commutative Int64 Test */
 
 	// meta:= commutative.NewPath()
 	u256 := commutative.NewBoundedU256(uint256.NewInt(0), uint256.NewInt(100))
@@ -78,14 +79,14 @@ func TestUnivaluesCodecU256(t *testing.T) {
 
 func TestUnivaluesCodeMeta(t *testing.T) {
 	/* Commutative Int64 Test */
-	alice := datacompressor.RandomAccount()
+	alice := addrcompressor.RandomAccount()
 
-	meta := commutative.NewPath()
-	meta.(*commutative.Path).SetSubs([]string{"e-01", "e-001", "e-002", "e-002"})
-	meta.(*commutative.Path).SetAdded([]string{"+01", "+001", "+002", "+002"})
-	meta.(*commutative.Path).SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
+	path := commutative.NewPath()
+	path.(*commutative.Path).SetSubs([]string{"e-01", "e-001", "e-002", "e-002"})
+	path.(*commutative.Path).SetAdded([]string{"+01", "+001", "+002", "+002"})
+	path.(*commutative.Path).SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
 
-	in := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 11, meta, nil)
+	in := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 11, path, nil)
 	// in.reads = 1
 	// in.writes = 2
 	// in.deltaWrites = 3
@@ -94,9 +95,15 @@ func TestUnivaluesCodeMeta(t *testing.T) {
 
 	bytes := in.Encode()
 	out := (&Univalue{}).Decode(bytes).(*Univalue)
-	outKeys, _, _ := out.Value().(interfaces.Type).Get()
+	outSet, _, _ := out.Value().(interfaces.Type).Get()
 
-	if !array.Equal(inKeys.([]string), outKeys.([]string)) {
+	if !array.Equal(inKeys.(*set.OrderedSet).Keys(), outSet.(*set.OrderedSet).Keys()) {
+		t.Error("Error")
+	}
+
+	inv := []*Univalue{}
+	buffer := Univalues(inv).Encode()
+	if v := new(Univalues).Decode(buffer).(Univalues); len(v) != 0 {
 		t.Error("Error")
 	}
 }

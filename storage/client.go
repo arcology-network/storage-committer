@@ -6,18 +6,18 @@ import (
 	"net/http"
 	"net/url"
 
-	datacompression "github.com/arcology-network/common-lib/addrcompressor"
+	addrcompressor "github.com/arcology-network/common-lib/addrcompressor"
 	datastore "github.com/arcology-network/common-lib/storage/datastore"
 )
 
 type ReadonlyClient struct {
 	addr         string
 	path         string
-	uncompressor *datacompression.CompressionLut
+	uncompressor *addrcompressor.CompressionLut
 	localStore   *datastore.DataStore
 }
 
-func NewReadonlyClient(addr string, path string, lut *datacompression.CompressionLut, args ...interface{}) *ReadonlyClient {
+func NewReadonlyClient(addr string, path string, lut *addrcompressor.CompressionLut, args ...interface{}) *ReadonlyClient {
 	readonlyClient := &ReadonlyClient{
 		addr:         addr,
 		path:         path,
