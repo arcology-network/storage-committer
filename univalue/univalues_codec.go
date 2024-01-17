@@ -51,7 +51,7 @@ func (this Univalues) Encode(selector ...interface{}) []byte {
 
 func (Univalues) Decode(bytes []byte) interface{} {
 	if len(bytes) == 0 {
-		return nil
+		return Univalues{}
 	}
 
 	buffers := [][]byte(codec.Byteset{}.Decode(bytes).(codec.Byteset))
@@ -66,7 +66,7 @@ func (Univalues) Decode(bytes []byte) interface{} {
 
 func (Univalues) DecodeWithMempool(bytes []byte, get func() *Univalue, put func(interface{})) interface{} {
 	if len(bytes) == 0 {
-		return nil
+		return Univalues{}
 	}
 
 	buffers := [][]byte(codec.Byteset{}.Decode(bytes).(codec.Byteset))
