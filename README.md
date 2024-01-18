@@ -19,21 +19,16 @@ The module is responsible for the following tasks.
 
 
 <!-- <br /> -->
-![](./img/committer.png)
+![](./img/types.png)
 <br />
 
 >> To support parallel updates in batch mode, similar to the EVM, the original Ethereum Trie implementation has already been parallelized through some special extensions. The `Batch Writer` in the diagram above is one of them.
+
 
 <h2> More Info  <img align="center" height="32" src="./img/info.svg">  </h2>
 
 For further details and integration guidelines with Arcology, please refer to [our design documents.](https://doc.arcology.network/arcology-concurrency-control/evm-integration)
 
-
-<h2> Workflow <img align="center" height="32" src="./img/routing.svg">  </h2>
-
-<!-- <br /> -->
-![](./img/types.png)
-<br />
 
 <h2> License  <img align="center" height="32" src="./img/copyright.svg">  </h2>
 
