@@ -1,7 +1,6 @@
 package ccurltest
 
 import (
-	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -177,63 +176,83 @@ func TestGetProofAPI(t *testing.T) {
 	store := ccurlstorage.NewParallelEthMemDataStore()
 	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
 
+	bob := BobAccount()
+	writeCache.CreateNewAccount(committercommon.SYSTEM, bob)
+	writeCache.FlushToDataSource(store)
+
+	/* Bob updates */
+	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000001", noncommutative.NewBigint(1999))
+	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000002", noncommutative.NewBigint(1))
+	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000003", noncommutative.NewBytes(ethcommon.BytesToAddress([]byte{1}).Bytes()))
+	writeCache.FlushToDataSource(store)
+
+	roothash := store.Root()                                                                       // Get the proof provider by a root hash.
+	provider, err := ccurlstorage.NewMerkleProofCache(2, store.EthDB()).GetProofProvider(roothash) // Initiate the proof cache, maximum 2 blocks
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Verify Bob's storage for a big int value.
+	bobAddr := ethcommon.BytesToAddress([]byte(hexutil.MustDecode(bob)))
+	accountResult, err := provider.GetProof(bobAddr, []string{string("0x0000000000000000000000000000000000000000000000000000000000000001")})
+	if err := accountResult.Validate(provider.Root()); err != nil {
+		t.Error(err)
+	}
+
+	opProof := opadapter.Convertible(*accountResult).New() // Convert Bob's proof to OP format and verify.
+	if err := opProof.Verify(provider.Root()); err != nil {
+		t.Error(err)
+	}
+
+	bobAddr = ethcommon.BytesToAddress([]byte(hexutil.MustDecode(bob)))
+	accountResult, err = provider.GetProof(bobAddr, []string{string("0x0000000000000000000000000000000000000000000000000000000000000002")})
+	if err := accountResult.Validate(provider.Root()); err != nil {
+		t.Error(err)
+	}
+
+	opProof = opadapter.Convertible(*accountResult).New() // Convert Bob's proof to OP format and verify.
+	if err := opProof.Verify(provider.Root()); err != nil {
+		t.Error(err)
+	}
+
+	accountResult, err = provider.GetProof(bobAddr, []string{string("0x0000000000000000000000000000000000000000000000000000000000000003")})
+	if err := accountResult.Validate(provider.Root()); err != nil {
+		t.Error(err)
+	}
+
+	opProof = opadapter.Convertible(*accountResult).New() // Convert Bob's proof to OP format and verify.
+	if err := opProof.Verify(provider.Root()); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestProofCacheBigInt(t *testing.T) {
+	store := ccurlstorage.NewParallelEthMemDataStore()
+	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+
 	alice := AliceAccount()
 	writeCache.CreateNewAccount(committercommon.SYSTEM, alice)
 
-	bob := BobAccount()
-	writeCache.CreateNewAccount(committercommon.SYSTEM, bob)
-
-	writeCache.FlushToDataSource(store)
-
 	/* Alice updates */
-	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath())
-	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ele0", noncommutative.NewString("124"))
-	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000009", noncommutative.NewInt64(1111))
-
-	/* Bob updates */
-	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000000", noncommutative.NewString("124"))
-	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000001", noncommutative.NewInt64(9999))
-	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/", commutative.NewPath())
-	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/ele1", noncommutative.NewString("6789"))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000001", noncommutative.NewBigint(2))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000002", noncommutative.NewBigint(19999))
 	writeCache.FlushToDataSource(store)
-
-	// if _, err := bobAcct.IsStorageProvable("0x0000000000000000000000000000000000000000000000000000000000000000"); err != nil {
-	// 	t.Error(err)
-	// }
-
-	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000000", new(noncommutative.String)); v != "124" {
-		t.Error("Error: Wrong return value")
-	}
 
 	roothash := store.Root()
-
-	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/ele1", noncommutative.NewString("8976"))
-	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000009", noncommutative.NewInt64(1111))
-	writeCache.FlushToDataSource(store)
-
-	roothash2 := store.Root()
-	if roothash == roothash2 {
-		t.Error(errors.New("Error: Root hash should've changed"))
-	}
-
-	bobAddr := ethcommon.BytesToAddress([]byte(hexutil.MustDecode(bob)))
-	bobAcct, _ := store.GetAccount(bobAddr, &ethmpt.AccessListCache{})
-
-	if _, err := store.IsAccountProvable(bob); err != nil {
-		t.Error(err)
-	}
-
-	if _, _, err := bobAcct.IsStorageProvable("0x0000000000000000000000000000000000000000000000000000000000000000"); err != nil {
-		t.Error(err)
-	}
-
-	provider, err := storage.NewProofProvider(store.EthDB(), roothash2)
+	provider, err := ccurlstorage.NewMerkleProofCache(2, store.EthDB()).GetProofProvider(roothash)
 	if err != nil {
+		t.Fatal(err)
+	}
+
+	aliceAddr := ethcommon.BytesToAddress([]byte(hexutil.MustDecode(alice)))
+	accountResult, err := provider.GetProof(aliceAddr, []string{string("0x0000000000000000000000000000000000000000000000000000000000000002")}) // String
+	if err := accountResult.Validate(provider.Root()); err != nil {
 		t.Error(err)
 	}
 
-	accountResult, err := provider.GetProof(bobAddr, []string{string("0x0000000000000000000000000000000000000000000000000000000000000000")})
-	if err := accountResult.Validate(roothash2); err != nil {
+	// Convert to OP format and verify.
+	opProof := opadapter.Convertible(*accountResult).New() // To OP format
+	if err := opProof.Verify(provider.Root()); err != nil {
 		t.Error(err)
 	}
 }
@@ -253,22 +272,22 @@ func TestProofCache(t *testing.T) {
 	/* Alice updates */
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath())
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ele0", noncommutative.NewString("124"))
-	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000009", noncommutative.NewInt64(1111))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000007", noncommutative.NewBigint(2))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000009", noncommutative.NewInt64(19999))
 
 	/* Bob updates */
 	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000000", noncommutative.NewString("124"))
-	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000001", noncommutative.NewInt64(9999))
+	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000001", noncommutative.NewInt64(1))
+	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000002", noncommutative.NewBigint(1))
 	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/", commutative.NewPath())
 	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/ele1", noncommutative.NewString("6789"))
 	writeCache.FlushToDataSource(store)
 
-	roothash := store.Root()
-
 	// Initiate the proof cache, maximum 2 blocks
 	cache := ccurlstorage.NewMerkleProofCache(2, store.EthDB())
 
-	// Get the proof provider by a root hash.
-	provider, err := cache.GetProofProvider(roothash)
+	roothash := store.Root()
+	provider, err := ccurlstorage.NewMerkleProofCache(2, store.EthDB()).GetProofProvider(roothash) // Get the proof provider by a root hash.
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -279,9 +298,9 @@ func TestProofCache(t *testing.T) {
 		t.Error(err)
 	}
 
-	// Verify Bob's storage.
+	// Verify Bob's storage for a string value.
 	bobAddr = ethcommon.BytesToAddress([]byte(hexutil.MustDecode(bob)))
-	accountResult, err = provider.GetProof(bobAddr, []string{string("0x0000000000000000000000000000000000000000000000000000000000000000")})
+	accountResult, err = provider.GetProof(bobAddr, []string{string("0x0000000000000000000000000000000000000000000000000000000000000000")}) // String
 	if err := accountResult.Validate(provider.Root()); err != nil {
 		t.Error(err)
 	}
@@ -292,15 +311,26 @@ func TestProofCache(t *testing.T) {
 		t.Error(err)
 	}
 
-	// Verify Bob's storage.
+	// Verify Bob's storage for an int64 value.
 	bobAddr = ethcommon.BytesToAddress([]byte(hexutil.MustDecode(bob)))
 	accountResult, err = provider.GetProof(bobAddr, []string{string("0x0000000000000000000000000000000000000000000000000000000000000001")})
 	if err := accountResult.Validate(provider.Root()); err != nil {
 		t.Error(err)
 	}
 
-	// Convert Bob's proof to OP format and verify.
-	opProof = opadapter.Convertible(*accountResult).New() // To OP format
+	opProof = opadapter.Convertible(*accountResult).New() // Convert Bob's proof to OP format and verify.
+	if err := opProof.Verify(provider.Root()); err != nil {
+		t.Error(err)
+	}
+
+	// Verify Bob's storage for a big int value.
+	bobAddr = ethcommon.BytesToAddress([]byte(hexutil.MustDecode(bob)))
+	accountResult, err = provider.GetProof(bobAddr, []string{string("0x0000000000000000000000000000000000000000000000000000000000000002")})
+	if err := accountResult.Validate(provider.Root()); err != nil {
+		t.Error(err)
+	}
+
+	opProof = opadapter.Convertible(*accountResult).New() // Convert Bob's proof to OP format and verify.
 	if err := opProof.Verify(provider.Root()); err != nil {
 		t.Error(err)
 	}

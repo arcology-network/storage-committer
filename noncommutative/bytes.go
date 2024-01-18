@@ -2,6 +2,7 @@ package noncommutative
 
 import (
 	"bytes"
+	"math/big"
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
@@ -116,7 +117,7 @@ func (this *Bytes) ApplyDelta(typedVals []intf.Type) (intf.Type, int, error) {
 }
 
 func (this *Bytes) StorageEncode() []byte {
-	buffer, err := rlp.EncodeToBytes(this.value)
+	buffer, err := rlp.EncodeToBytes(big.NewInt(0).SetBytes(this.value))
 	if err != nil {
 		panic("Failed to encode bytes")
 	}

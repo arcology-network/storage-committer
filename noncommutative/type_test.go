@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"testing"
 
+	ethcommon "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/rlp"
 	// "github.com/HPISTechnologies/concurrenturl/type/noncommutative"
 )
@@ -81,6 +83,26 @@ func TestStringRlpCodec(t *testing.T) {
 	output := new(String).StorageDecode(buffer)
 
 	if *(v.(*String)) != *(output.(*String)) {
+		fmt.Println("Error: Missmatched")
+	}
+}
+
+func TestBytesRlpCodec(t *testing.T) {
+	_1 := *big.NewInt(1)
+	v := hexutil.Big(_1)
+	fmt.Println(v)
+
+	bs := v.ToInt().Bytes()
+	fmt.Println(bs)
+
+	bs = ethcommon.BigToHash(&_1).Bytes()
+	bs, _ = rlp.EncodeToBytes(bs[:])
+	fmt.Println(bs)
+	v2 := NewBytes(bs).(*Bytes)
+	buffer := v2.StorageEncode()
+	output := new(Bytes).StorageDecode(buffer).(*Bytes)
+
+	if !v2.Equal(output) {
 		fmt.Println("Error: Missmatched")
 	}
 }
