@@ -29,12 +29,12 @@ func (this *String) Decode(buffer []byte) interface{} {
 	return this
 }
 
-func (this *String) StorageEncode(_ bool) []byte {
+func (this *String) StorageEncode(_ string) []byte {
 	buffer, _ := rlp.EncodeToBytes(*this)
 	return buffer
 }
 
-func (this *String) StorageDecode(_ bool, buffer []byte) interface{} {
+func (this *String) StorageDecode(_ string, buffer []byte) interface{} {
 	var v String
 	rlp.DecodeBytes(buffer, &v)
 	return &v

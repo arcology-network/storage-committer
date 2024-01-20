@@ -52,8 +52,8 @@ func TestBigintCodecs(t *testing.T) {
 
 func TestBigintRlpCodecs(t *testing.T) {
 	in := NewInt64(111)
-	buffer := in.StorageEncode(false)
-	out := new(Int64).StorageDecode(false, buffer)
+	buffer := in.StorageEncode("")
+	out := new(Int64).StorageDecode("", buffer)
 
 	if *out.(*Int64) != 111 {
 		t.Error("Mismatch expecting ", 100)
@@ -62,8 +62,8 @@ func TestBigintRlpCodecs(t *testing.T) {
 
 func TestU256RlpCodec(t *testing.T) {
 	v := NewBytes([]byte{1, 2, 3, 4})
-	buffer := v.StorageEncode(false)
-	output := (&Bytes{}).StorageDecode(false, buffer)
+	buffer := v.StorageEncode("")
+	output := (&Bytes{}).StorageDecode("", buffer)
 
 	if v.(*Bytes).placeholder != output.(*Bytes).placeholder || !reflect.DeepEqual(v.(*Bytes).value, output.(*Bytes).value) {
 		fmt.Println("Error: Missmatched")
@@ -72,8 +72,8 @@ func TestU256RlpCodec(t *testing.T) {
 
 func TestInt64RlpCodec(t *testing.T) {
 	v := NewInt64(12345)
-	buffer := v.StorageEncode(false)
-	output := new(Int64).StorageDecode(false, buffer)
+	buffer := v.StorageEncode("")
+	output := new(Int64).StorageDecode("", buffer)
 
 	if *v != *output.(*Int64) {
 		fmt.Println("Error: Missmatched")
@@ -82,8 +82,8 @@ func TestInt64RlpCodec(t *testing.T) {
 
 func TestStringRlpCodec(t *testing.T) {
 	v := NewString("12345")
-	buffer := v.StorageEncode(false)
-	output := new(String).StorageDecode(false, buffer)
+	buffer := v.StorageEncode("")
+	output := new(String).StorageDecode("", buffer)
 
 	if *(v.(*String)) != *(output.(*String)) {
 		fmt.Println("Error: Missmatched")
@@ -108,8 +108,8 @@ func TestBytesRlpCodec(t *testing.T) {
 	v2 := array.New[byte](33, 0)
 	v2[32] = 1
 	v := NewBytes(v2).(*Bytes)
-	buffer := v.StorageEncode(false)
-	output := new(Bytes).StorageDecode(false, buffer).(*Bytes)
+	buffer := v.StorageEncode("")
+	output := new(Bytes).StorageDecode("", buffer).(*Bytes)
 
 	outv := output.Value().(codec.Bytes)
 	if !bytes.Equal(v.Value().(codec.Bytes), outv) {
@@ -118,8 +118,8 @@ func TestBytesRlpCodec(t *testing.T) {
 
 	v2 = array.New[byte](32, 11)
 	v = NewBytes(v2).(*Bytes)
-	buffer = v.StorageEncode(false)
-	output = new(Bytes).StorageDecode(false, buffer).(*Bytes)
+	buffer = v.StorageEncode("")
+	output = new(Bytes).StorageDecode("", buffer).(*Bytes)
 
 	outv = output.Value().(codec.Bytes)
 	if !bytes.Equal(v.Value().(codec.Bytes), outv) {
@@ -129,8 +129,8 @@ func TestBytesRlpCodec(t *testing.T) {
 	v2 = array.New[byte](25, 0)
 	v2[24] = 1
 	v = NewBytes(v2).(*Bytes)
-	buffer = v.StorageEncode(false)
-	output = new(Bytes).StorageDecode(false, buffer).(*Bytes)
+	buffer = v.StorageEncode("")
+	output = new(Bytes).StorageDecode("", buffer).(*Bytes)
 
 	outv = output.Value().(codec.Bytes)
 	if !bytes.Equal(v.Value().(codec.Bytes), outv) {
@@ -140,8 +140,8 @@ func TestBytesRlpCodec(t *testing.T) {
 	v2 = array.New[byte](40, 0)
 	v2[0] = 1
 	v = NewBytes(v2).(*Bytes)
-	buffer = v.StorageEncode(false)
-	output = new(Bytes).StorageDecode(false, buffer).(*Bytes)
+	buffer = v.StorageEncode("")
+	output = new(Bytes).StorageDecode("", buffer).(*Bytes)
 
 	outv = output.Value().(codec.Bytes)
 	if !bytes.Equal(v.Value().(codec.Bytes), outv) {
@@ -151,8 +151,8 @@ func TestBytesRlpCodec(t *testing.T) {
 	v2 = array.New[byte](40, 0)
 	v2[39] = 1
 	v = NewBytes(v2).(*Bytes)
-	buffer = v.StorageEncode(false)
-	output = new(Bytes).StorageDecode(false, buffer).(*Bytes)
+	buffer = v.StorageEncode("")
+	output = new(Bytes).StorageDecode("", buffer).(*Bytes)
 
 	outv = output.Value().(codec.Bytes)
 	if !bytes.Equal(v.Value().(codec.Bytes), outv) {

@@ -14,6 +14,7 @@ import (
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	importer "github.com/arcology-network/concurrenturl/importer"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
+	platform "github.com/arcology-network/concurrenturl/platform"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 	cache "github.com/arcology-network/eu/cache"
 )
@@ -21,7 +22,7 @@ import (
 func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	store := chooseDataStore()
 
-	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 
 	meta := commutative.NewPath()
 	writeCache.Write(committercommon.SYSTEM, committercommon.ETH10_ACCOUNT_PREFIX, meta)
@@ -68,7 +69,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	store := chooseDataStore()
 
-	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 	meta := commutative.NewPath()
 	writeCache.Write(committercommon.SYSTEM, committercommon.ETH10_ACCOUNT_PREFIX, meta)
 	trans := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
@@ -131,7 +132,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 
 	alice := AliceAccount()
 
-	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}

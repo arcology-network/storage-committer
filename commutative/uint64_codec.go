@@ -79,7 +79,7 @@ func (this *Uint64) Print() {
 	fmt.Println(" Value: ", this.value, "Delta: ", this.delta)
 }
 
-func (this *Uint64) StorageEncode(_ bool) []byte {
+func (this *Uint64) StorageEncode(_ string) []byte {
 	var buffer []byte
 	if this.IsBounded() {
 		v := []*big.Int{new(big.Int).SetUint64(this.value), new(big.Int).SetUint64(this.min), new(big.Int).SetUint64(this.max)}
@@ -90,7 +90,7 @@ func (this *Uint64) StorageEncode(_ bool) []byte {
 	return buffer
 }
 
-func (*Uint64) StorageDecode(_ bool, buffer []byte) interface{} {
+func (*Uint64) StorageDecode(_ string, buffer []byte) interface{} {
 	this := NewUnboundedUint64().(*Uint64)
 
 	arr := make([]*big.Int, 3)

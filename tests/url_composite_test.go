@@ -12,6 +12,7 @@ import (
 	importer "github.com/arcology-network/concurrenturl/importer"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
+	platform "github.com/arcology-network/concurrenturl/platform"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 	cache "github.com/arcology-network/eu/cache"
 )
@@ -19,7 +20,7 @@ import (
 func TestAuxTrans(t *testing.T) {
 	store := chooseDataStore()
 	committer := ccurl.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 
 	alice := AliceAccount()
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
@@ -113,7 +114,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	store := chooseDataStore()
 
 	committer := ccurl.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 	alice := AliceAccount()
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)

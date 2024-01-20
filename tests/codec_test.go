@@ -14,6 +14,7 @@ import (
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	importer "github.com/arcology-network/concurrenturl/importer"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
+	platform "github.com/arcology-network/concurrenturl/platform"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 	cache "github.com/arcology-network/eu/cache"
 	rlp "github.com/ethereum/go-ethereum/rlp"
@@ -66,11 +67,11 @@ func TestNoncommutativeCodec(t *testing.T) {
 }
 
 func TestUnivalueCodec(t *testing.T) {
-	store := storage.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
+	store := storage.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
 	transitions := []*univalue.Univalue{}
 
 	// committer := ccurl.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 	// committer.NewAccount(committercommon.SYSTEM, fmt.Sprint("rand.Int()"))
 	writeCache.CreateNewAccount(committercommon.SYSTEM, fmt.Sprint("rand.Int()"))
 
@@ -90,12 +91,12 @@ func TestUnivalueCodec(t *testing.T) {
 }
 
 func TestUnivaluesCodec(t *testing.T) {
-	store := storage.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
+	store := storage.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
 	transitions := []*univalue.Univalue{}
 	for i := 0; i < 10; i++ {
 		acct := RandomAccount()
 		// committer := ccurl.NewStorageCommitter(store)
-		writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+		writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 		// committer.NewAccount(committercommon.SYSTEM, acct)
 
 		writeCache.CreateNewAccount(committercommon.SYSTEM, acct)

@@ -10,6 +10,7 @@ import (
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	importer "github.com/arcology-network/concurrenturl/importer"
+	platform "github.com/arcology-network/concurrenturl/platform"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 	cache "github.com/arcology-network/eu/cache"
 )
@@ -20,7 +21,7 @@ func TestMultiAccountCreation(t *testing.T) {
 
 	store.Inject((committercommon.ETH10_ACCOUNT_PREFIX), commutative.NewPath())
 
-	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 
 	accounts := make([]string, 10)
 	for i := 0; i < len(accounts); i++ {
@@ -32,7 +33,7 @@ func TestMultiAccountCreation(t *testing.T) {
 	raw := writeCache.Export(importer.Sorter)
 	acctTrans := univalue.Univalues(array.Clone(raw)).To(importer.ITTransition{})
 
-	paths := committercommon.NewPlatform().GetSysPaths()
+	paths := platform.NewPlatform().GetSysPaths()
 	if len(acctTrans) != len(paths)*len(accounts) {
 		t.Error("Error: Transition counts don't match up")
 	}

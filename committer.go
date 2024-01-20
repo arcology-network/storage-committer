@@ -21,7 +21,7 @@ package storagecommitter
 import (
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/array"
-	committercommon "github.com/arcology-network/concurrenturl/common"
+	platform "github.com/arcology-network/concurrenturl/platform"
 	"github.com/arcology-network/concurrenturl/univalue"
 
 	importer "github.com/arcology-network/concurrenturl/importer"
@@ -32,12 +32,12 @@ import (
 type StateCommitter struct {
 	importer    *importer.Importer
 	imuImporter *importer.Importer // transitions that will take effect anyway regardless of execution failures or conflicts
-	Platform    *committercommon.Platform
+	Platform    *platform.Platform
 }
 
 // NewStorageCommitter creates a new StateCommitter instance.
 func NewStorageCommitter(store interfaces.Datastore) *StateCommitter {
-	platform := committercommon.NewPlatform()
+	platform := platform.NewPlatform()
 	return &StateCommitter{
 		importer:    importer.NewImporter(store, platform),
 		imuImporter: importer.NewImporter(store, platform),
@@ -48,7 +48,7 @@ func NewStorageCommitter(store interfaces.Datastore) *StateCommitter {
 // New creates a new StateCommitter instance.
 func (this *StateCommitter) New(args ...interface{}) *StateCommitter {
 	return &StateCommitter{
-		Platform: committercommon.NewPlatform(),
+		Platform: platform.NewPlatform(),
 	}
 }
 

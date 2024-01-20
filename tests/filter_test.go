@@ -11,6 +11,7 @@ import (
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/commutative"
 	importer "github.com/arcology-network/concurrenturl/importer"
+	platform "github.com/arcology-network/concurrenturl/platform"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 	cache "github.com/arcology-network/eu/cache"
 	"github.com/holiman/uint256"
@@ -24,9 +25,9 @@ func TestTransitionFilters(t *testing.T) {
 	bob := addrcompressor.RandomAccount()
 
 	// committer := ccurl.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 
-	// writeCache = cache.NewWriteCache(store, committercommon.NewPlatform())
+	// writeCache = cache.NewWriteCache(store, platform.NewPlatform())
 
 	writeCache.CreateNewAccount(committercommon.SYSTEM, alice)
 	// committer.NewAccount(committercommon.SYSTEM, bob)
@@ -116,7 +117,7 @@ func TestAccessFilters(t *testing.T) {
 	bob := addrcompressor.RandomAccount()
 
 	// committer := ccurl.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 	writeCache.CreateNewAccount(committercommon.SYSTEM, alice)
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, bob); err != nil { // NewAccount account structure {
 		t.Error(err)

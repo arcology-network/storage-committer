@@ -10,6 +10,7 @@ import (
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	importer "github.com/arcology-network/concurrenturl/importer"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
+	platform "github.com/arcology-network/concurrenturl/platform"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 	cache "github.com/arcology-network/eu/cache"
 	"github.com/holiman/uint256"
@@ -19,7 +20,7 @@ func TestSimpleBalance(t *testing.T) {
 	store := chooseDataStore()
 
 	committer := ccurl.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 
 	alice := AliceAccount()
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
@@ -86,7 +87,7 @@ func TestSimpleBalance(t *testing.T) {
 func TestBalance(t *testing.T) {
 	store := chooseDataStore()
 
-	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 	alice := AliceAccount()
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
@@ -175,7 +176,7 @@ func TestNonce(t *testing.T) {
 
 	alice := AliceAccount()
 
-	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -218,7 +219,7 @@ func TestNonce(t *testing.T) {
 
 func TestMultipleNonces(t *testing.T) {
 	store := chooseDataStore()
-	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 
 	alice := AliceAccount()
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {

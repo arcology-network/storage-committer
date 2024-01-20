@@ -75,12 +75,12 @@ func (this *Path) Print() {
 	fmt.Println()
 }
 
-func (this *Path) StorageEncode(_ bool) []byte {
+func (this *Path) StorageEncode(_ string) []byte {
 	buffer, _ := rlp.EncodeToBytes(this.Encode())
 	return buffer
 }
 
-func (this *Path) StorageDecode(_ bool, buffer []byte) interface{} {
+func (this *Path) StorageDecode(_ string, buffer []byte) interface{} {
 	var decoded []byte
 	rlp.DecodeBytes(buffer, &decoded)
 	return this.Decode(decoded)

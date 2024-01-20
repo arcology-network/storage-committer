@@ -8,6 +8,7 @@ import (
 	"github.com/arcology-network/common-lib/exp/array"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
+	platform "github.com/arcology-network/concurrenturl/platform"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/rawdb"
@@ -33,7 +34,7 @@ type EthDataStore struct {
 	diskdbs [16]ethdb.Database
 
 	encoder func(string, interface{}) []byte
-	decoder func(bool, []byte, any) interface{}
+	decoder func(string, []byte, any) interface{}
 
 	lock  sync.RWMutex
 	dbErr error
@@ -138,7 +139,7 @@ func (this *EthDataStore) IsAccountProvable(addr string) ([]byte, error) {
 // Get the account from the cache first, if not found, get it from the trie.
 func (this *EthDataStore) IfExists(key string) bool {
 	accesses := ethmpt.AccessListCache{}
-	_, acctKey, suffix := committercommon.ParseAccountAddr(key)
+	_, acctKey, suffix := platform.ParseAccountAddr(key)
 	if len(suffix) == 0 {
 		return false
 	}
@@ -185,7 +186,7 @@ func (this *EthDataStore) BatchInject(keys []string, values []interface{}) error
 	acctDict := make(map[string]*Account)
 
 	for i := 0; i < len(keys); i++ {
-		_, acctKey, _ := committercommon.ParseAccountAddr(keys[i])
+		_, acctKey, _ := platform.ParseAccountAddr(keys[i])
 		if len(acctKey) == 0 {
 			continue
 		}
@@ -263,7 +264,7 @@ func (this *EthDataStore) GetAccountFromTrie(address ethcommon.Address, accesses
 
 func (this *EthDataStore) Retrive(key string, T any) (interface{}, error) {
 	accesses := ethmpt.AccessListCache{}
-	_, acctKey, _ := committercommon.ParseAccountAddr(key) // Get the address
+	_, acctKey, _ := platform.ParseAccountAddr(key) // Get the address
 	if len(acctKey) == 0 {
 		return nil, errors.New("Invalid account: " + acctKey)
 	}
@@ -302,7 +303,7 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 			First  string
 			Second interface{}
 		}) *string {
-			_, key, _ := committercommon.ParseAccountAddr(v.First)
+			_, key, _ := platform.ParseAccountAddr(v.First)
 			return &key
 		})
 
@@ -415,15 +416,15 @@ func (this *EthDataStore) DiskDBs() [16]ethdb.Database {
 }
 
 // Place holders
-func (this *EthDataStore) Root() [32]byte                               { return this.worldStateTrie.Hash() }
-func (this *EthDataStore) Encoder() func(string, interface{}) []byte    { return this.encoder }
-func (this *EthDataStore) Decoder() func(bool, []byte, any) interface{} { return this.decoder }
-func (this *EthDataStore) EthDB() *ethmpt.Database                      { return this.ethdb }
-func (this *EthDataStore) Trie() *ethmpt.Trie                           { return this.worldStateTrie }
-func (this *EthDataStore) UpdateCacheStats([]interface{})               {}
-func (this *EthDataStore) GetRootHash() [32]byte                        { return this.worldStateTrie.Hash() }
-func (this *EthDataStore) Print()                                       {}
-func (this *EthDataStore) CheckSum() [32]byte                           { return [32]byte{} }
+func (this *EthDataStore) Root() [32]byte                                 { return this.worldStateTrie.Hash() }
+func (this *EthDataStore) Encoder() func(string, interface{}) []byte      { return this.encoder }
+func (this *EthDataStore) Decoder() func(string, []byte, any) interface{} { return this.decoder }
+func (this *EthDataStore) EthDB() *ethmpt.Database                        { return this.ethdb }
+func (this *EthDataStore) Trie() *ethmpt.Trie                             { return this.worldStateTrie }
+func (this *EthDataStore) UpdateCacheStats([]interface{})                 {}
+func (this *EthDataStore) GetRootHash() [32]byte                          { return this.worldStateTrie.Hash() }
+func (this *EthDataStore) Print()                                         {}
+func (this *EthDataStore) CheckSum() [32]byte                             { return [32]byte{} }
 func (this *EthDataStore) Query(string, func(string, string) bool) ([]string, [][]byte, error) {
 	return nil, nil, nil
 }

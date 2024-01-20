@@ -15,7 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package common
+package storagecommitter
 
 import (
 	"strings"
@@ -23,6 +23,7 @@ import (
 	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/array"
 	mapi "github.com/arcology-network/common-lib/exp/map"
+	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 )
@@ -69,18 +70,18 @@ func (this *Platform) GetBuiltins(acct string) ([]string, []uint8) {
 	array.SortBy1st(paths, typeIds, func(lhv, rhv string) bool { return lhv < rhv })
 
 	for i, path := range paths {
-		paths[i] = ETH10_ACCOUNT_PREFIX + acct + path
+		paths[i] = committercommon.ETH10_ACCOUNT_PREFIX + acct + path
 	}
 	return paths, typeIds
 }
 
 // These paths won't keep the sub elements
 func (this *Platform) IsSysPath(path string) bool {
-	if len(path) <= ETH10_ACCOUNT_FULL_LENGTH {
-		return path == ETH10 || path == ETH10_ACCOUNT_PREFIX
+	if len(path) <= committercommon.ETH10_ACCOUNT_FULL_LENGTH {
+		return path == committercommon.ETH10 || path == committercommon.ETH10_ACCOUNT_PREFIX
 	}
 
-	subPath := path[ETH10_ACCOUNT_FULL_LENGTH:] // Removed the shared part
+	subPath := path[committercommon.ETH10_ACCOUNT_FULL_LENGTH:] // Removed the shared part
 	_, ok := this.syspaths[subPath]
 	return ok
 }
@@ -91,32 +92,24 @@ func (this *Platform) GetSysPaths() []string {
 
 func (this *Platform) Builtins(acct string, idx int) string {
 	paths, _ := common.MapKVs(this.syspaths)
-	return ETH10_ACCOUNT_PREFIX + acct + paths[idx]
+	return committercommon.ETH10_ACCOUNT_PREFIX + acct + paths[idx]
 }
 
 func ParseAccountAddr(acct string) (string, string, string) {
-	if len(acct) < ETH10_ACCOUNT_PREFIX_LENGTH+ETH10_ACCOUNT_LENGTH {
+	if len(acct) < committercommon.ETH10_ACCOUNT_PREFIX_LENGTH+committercommon.ETH10_ACCOUNT_LENGTH {
 		return acct, "", ""
 	}
-	return acct[:ETH10_ACCOUNT_PREFIX_LENGTH],
-		acct[ETH10_ACCOUNT_PREFIX_LENGTH : ETH10_ACCOUNT_PREFIX_LENGTH+ETH10_ACCOUNT_LENGTH],
-		acct[ETH10_ACCOUNT_PREFIX_LENGTH+ETH10_ACCOUNT_LENGTH:]
+	return acct[:committercommon.ETH10_ACCOUNT_PREFIX_LENGTH],
+		acct[committercommon.ETH10_ACCOUNT_PREFIX_LENGTH : committercommon.ETH10_ACCOUNT_PREFIX_LENGTH+committercommon.ETH10_ACCOUNT_LENGTH],
+		acct[committercommon.ETH10_ACCOUNT_PREFIX_LENGTH+committercommon.ETH10_ACCOUNT_LENGTH:]
 }
 
 func GetPathUnder(key, prefix string) string {
-	if len(key) > ETH10_ACCOUNT_PREFIX_LENGTH+ETH10_ACCOUNT_LENGTH {
-		subKey := key[ETH10_ACCOUNT_PREFIX_LENGTH+ETH10_ACCOUNT_LENGTH:]
+	if len(key) > committercommon.ETH10_ACCOUNT_PREFIX_LENGTH+committercommon.ETH10_ACCOUNT_LENGTH {
+		subKey := key[committercommon.ETH10_ACCOUNT_PREFIX_LENGTH+committercommon.ETH10_ACCOUNT_LENGTH:]
 		if subKey != prefix && strings.HasPrefix(subKey, prefix) {
 			return subKey[len(prefix):]
 		}
 	}
 	return ""
-}
-
-// Get the path type ID based on the path content.
-func GetPathType(key string) uint8 {
-	if strings.Contains(key, "/native/") {
-		return ETH_PATH
-	}
-	return ACL_PATH
 }

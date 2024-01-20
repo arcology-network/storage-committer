@@ -200,11 +200,11 @@ func TestUint64RlpCodec(t *testing.T) {
 	in := &Uint64{2, 10, 111, 999}
 
 	t0 := time.Now()
-	buffer := in.StorageEncode(false)
+	buffer := in.StorageEncode("")
 	fmt.Println("Encode: ", time.Since(t0))
 
 	t0 = time.Now()
-	out := (&Uint64{}).StorageDecode(false, buffer).(*Uint64)
+	out := (&Uint64{}).StorageDecode("", buffer).(*Uint64)
 	fmt.Println("Decode:", time.Since(t0))
 
 	if in.value != out.value || in.min != out.min || in.max != out.max {

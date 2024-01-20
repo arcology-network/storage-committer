@@ -14,6 +14,7 @@ import (
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
+	platform "github.com/arcology-network/concurrenturl/platform"
 	"github.com/arcology-network/concurrenturl/univalue"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
@@ -126,7 +127,7 @@ func (this *Account) DB(key string) ethdb.Database {
 // The function parses the key in a forward slash separated format into a hex
 // string that can be accepted by the storage trie.
 func (this *Account) ToStorageKey(key string) string {
-	if k := committercommon.GetPathUnder(key, "/storage/native/"); len(k) > 0 {
+	if k := platform.GetPathUnder(key, "/storage/native/"); len(k) > 0 {
 		kstr, err := hexutil.Decode(k) // For native storage, the key is hex encoded.
 		if err != nil {
 			panic(err)
@@ -184,8 +185,7 @@ func (this *Account) Retrive(key string, T any) (interface{}, error) {
 	if T == nil { // A deletion
 		return T, nil
 	}
-	flag := strings.Contains(key, "/native/")
-	return T.(interfaces.Type).StorageDecode(flag, buffer), err
+	return T.(interfaces.Type).StorageDecode(key, buffer), err
 }
 
 func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Type) error {
@@ -227,9 +227,8 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Typ
 
 	// Encode the values
 	encodedVals := array.ParallelAppend(typedVals, numThd, func(i int, _ interfaces.Type) []byte {
-		flag := strings.Contains(keys[i], "/native/") // Is a native ETH path
 		return common.IfThenDo1st(typedVals[i] != nil, func() []byte {
-			return typedVals[i].StorageEncode(flag)
+			return typedVals[i].StorageEncode(keys[i])
 		}, []byte{})
 	})
 

@@ -36,12 +36,12 @@ func (this *Int64) Print() {
 	fmt.Println()
 }
 
-func (this *Int64) StorageEncode(_ bool) []byte {
+func (this *Int64) StorageEncode(_ string) []byte {
 	buffer, _ := rlp.EncodeToBytes(new(big.Int).SetInt64(int64(*this.Value().(*Int64))))
 	return buffer
 }
 
-func (this *Int64) StorageDecode(_ bool, buffer []byte) interface{} {
+func (this *Int64) StorageDecode(_ string, buffer []byte) interface{} {
 	var v big.Int
 	rlp.DecodeBytes(buffer, &v)
 	return common.New(Int64(v.Uint64()))

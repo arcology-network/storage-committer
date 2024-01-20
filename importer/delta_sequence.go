@@ -2,7 +2,6 @@ package importer
 
 import (
 	"sort"
-	"strings"
 	"sync"
 
 	common "github.com/arcology-network/common-lib/common"
@@ -78,8 +77,7 @@ func (this *DeltaSequence) Finalize() *univalue.Univalue {
 
 	if (this.rawBytes != nil) && (finalized.Value() != nil) { // Value update not an assignment or deletion
 		if encoded, ok := this.rawBytes.([]byte); ok {
-			flag := strings.Contains(*finalized.GetPath(), "/native/")
-			v := finalized.Value().(intf.Type).StorageDecode(flag, encoded).(intf.Type).Value()
+			v := finalized.Value().(intf.Type).StorageDecode(*finalized.GetPath(), encoded).(intf.Type).Value()
 			finalized.Value().(intf.Type).SetValue(v)
 		}
 	}

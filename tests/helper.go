@@ -6,18 +6,18 @@ import (
 
 	orderedset "github.com/arcology-network/common-lib/container/set"
 	"github.com/arcology-network/common-lib/exp/array"
-	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	importer "github.com/arcology-network/concurrenturl/importer"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
+	platform "github.com/arcology-network/concurrenturl/platform"
 	"github.com/arcology-network/concurrenturl/univalue"
 	cache "github.com/arcology-network/eu/cache"
 )
 
 func Create_Ctrn_0(account string, store interfaces.Datastore) ([]byte, []*univalue.Univalue, error) {
 	// committer := ccurl.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 
 	path := commutative.NewPath() // create a path
 	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", path); err != nil {
@@ -39,7 +39,7 @@ func Create_Ctrn_0(account string, store interfaces.Datastore) ([]byte, []*univa
 
 func ParallelInsert_Ctrn_0(account string, store interfaces.Datastore) ([]byte, error) {
 	// committer := ccurl.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 	path := commutative.NewPath() // create a path
 	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", path); err != nil {
 		return []byte{}, err
@@ -59,7 +59,7 @@ func ParallelInsert_Ctrn_0(account string, store interfaces.Datastore) ([]byte, 
 
 func Create_Ctrn_1(account string, store interfaces.Datastore) ([]byte, error) {
 	// committer := ccurl.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 	path := commutative.NewPath() // create a path
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/", path); err != nil {
 		return []byte{}, err

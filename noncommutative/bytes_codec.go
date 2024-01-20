@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"math/big"
+	"strings"
 
 	codec "github.com/arcology-network/common-lib/codec"
 	ethcommon "github.com/ethereum/go-ethereum/common"
@@ -54,13 +55,21 @@ func (this *Bytes) Print() {
 	fmt.Println()
 }
 
-func (this *Bytes) StorageEncode(isNative bool) []byte {
+// Get the path type ID based on the path content.
+func GetPathType(key string) uint8 {
+	if strings.Contains(key, "/native/") {
+		return 1
+	}
+	return 2
+}
+
+func (this *Bytes) StorageEncode(key string) []byte {
 	// big int can take on arbitrary length, but will remove the leading zeros.
 	// This isn't a problem in the original Ethereum implementation because
 	// it has a fixed word size of 32 bytes. The leading zeros can be restored by copying the bytes
 	// back to a 32 byte array.
 	// However, we don't have a fixed word size, so we need to encode the length of the byte array.
-	if isNative {
+	if GetPathType(key) == 1 {
 		buffer, err := rlp.EncodeToBytes(new(big.Int).SetBytes(this.value))
 		if err != nil {
 			panic("Failed to encode bytes")
@@ -75,13 +84,13 @@ func (this *Bytes) StorageEncode(isNative bool) []byte {
 	return buffer
 }
 
-func (this *Bytes) StorageDecode(isNative bool, buffer []byte) interface{} {
+func (this *Bytes) StorageDecode(key string, buffer []byte) interface{} {
 	var buf []byte
 	if err := rlp.DecodeBytes(buffer, &buf); err != nil {
 		panic(err)
 	}
 
-	if isNative {
+	if GetPathType(key) == 1 {
 		buf = ethcommon.BytesToHash(buf).Bytes()
 	}
 

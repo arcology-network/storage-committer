@@ -93,7 +93,7 @@ func (this *U256) Decode(buffer []byte) interface{} {
 	return this
 }
 
-func (this *U256) StorageEncode(_ bool) []byte {
+func (this *U256) StorageEncode(_ string) []byte {
 	var buffer []byte
 	if this.IsBounded() {
 		buffer, _ = rlp.EncodeToBytes([]interface{}{this.value, this.min, this.max})
@@ -103,7 +103,7 @@ func (this *U256) StorageEncode(_ bool) []byte {
 	return buffer
 }
 
-func (*U256) StorageDecode(_ bool, buffer []byte) interface{} {
+func (*U256) StorageDecode(_ string, buffer []byte) interface{} {
 	this := NewUnboundedU256().(*U256)
 
 	var arr []interface{}

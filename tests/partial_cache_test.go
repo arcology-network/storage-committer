@@ -16,7 +16,7 @@ package ccurltest
 // func TestPartialCache(t *testing.T) {
 // 	memDB := storage.NewMemoryDB()
 // 	policy := storage.NewCachePolicy(10000000, 1.0)
-// 	store := storage.NewDataStore(nil, policy, memDB, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
+// 	store := storage.NewDataStore(nil, policy, memDB, platform.Codec{}.Encode, platform.Codec{}.Decode)
 // 		committer := ccurl.NewStorageCommitter(store)
 // writeCache := committer.WriteCache()
 // 	alice := AliceAccount()
@@ -79,7 +79,7 @@ package ccurltest
 // 		return name == "*storage.MemDB"
 // 	}
 
-// 	store := storage.NewDataStore(nil, policy, memDB, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode, excludeMemDB)
+// 	store := storage.NewDataStore(nil, policy, memDB, platform.Codec{}.Encode, platform.Codec{}.Decode, excludeMemDB)
 // 		committer := ccurl.NewStorageCommitter(store)
 // writeCache := committer.WriteCache()
 // 	alice := AliceAccount()

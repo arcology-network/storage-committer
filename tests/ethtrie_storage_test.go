@@ -21,6 +21,7 @@ import (
 	importer "github.com/arcology-network/concurrenturl/importer"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
+	platform "github.com/arcology-network/concurrenturl/platform"
 	storage "github.com/arcology-network/concurrenturl/storage"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 	cache "github.com/arcology-network/eu/cache"
@@ -37,7 +38,7 @@ import (
 func TestConcurrentDB(t *testing.T) {
 	store := chooseDataStore()
 
-	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 
 	alice := AliceAccount()
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
@@ -108,7 +109,7 @@ func TestConcurrentDB(t *testing.T) {
 func TestTrieUpdates(t *testing.T) {
 	store := chooseDataStore()
 	// committer := ccurl.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 
 	alice := AliceAccount()
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
@@ -258,7 +259,7 @@ func TestEthStorageConnection(t *testing.T) {
 	alice := AliceAccount()
 	committer := ccurl.NewStorageCommitter(store)
 	// writeCache := committer.WriteCache()
-	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -286,7 +287,7 @@ func TestBasicAddRead(t *testing.T) {
 	alice := AliceAccount()
 	// committer := ccurl.NewStorageCommitter(store)
 	// writeCache := committer.WriteCache()
-	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
@@ -359,7 +360,7 @@ func TestEthDataStoreAddDeleteRead(t *testing.T) {
 	// store := chooseDataStore()
 
 	// writeCache := committer.WriteCache()
-	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 	alice := AliceAccount()
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
@@ -452,7 +453,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 
 	alice := AliceAccount()
 
-	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -510,10 +511,10 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 
 func BenchmarkMultipleAccountCommitDataStore(b *testing.B) {
 	// store := chooseDataStore() // Eth data store
-	store := datastore.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode) // Native data store
+	store := datastore.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode) // Native data store
 
 	// committer := ccurl.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 
 	alice := AliceAccount()
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {

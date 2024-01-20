@@ -1,5 +1,5 @@
 /*
- *   Copyright (c) 2023 Arcology Network
+ *   Copyright (c) 2024 Arcology Network
 
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -15,35 +15,14 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package commutative
+package common
 
-import (
-	"fmt"
-	"reflect"
-	"testing"
+import "strings"
 
-	"github.com/holiman/uint256"
-)
-
-func TestCommutativeCodec(t *testing.T) {
-	/* Noncommutative Path Test*/
-	v := NewBoundedU256(uint256.NewInt(1), uint256.NewInt(400))
-	v.SetValue(*uint256.NewInt(37))
-
-	buffer := v.StorageEncode("")
-	output := (&U256{}).StorageDecode("", buffer)
-
-	if !reflect.DeepEqual(v, output) {
-		fmt.Println("Error: Missmatched")
+// Get the path type ID based on the path content.
+func GetPathType(key string) uint8 {
+	if strings.Contains(key, "/native/") {
+		return 1
 	}
-
-	v = NewBoundedUint64(uint64(1), uint64(400))
-	v.SetValue(uint64(37))
-
-	buffer = v.StorageEncode("")
-	output = (&Uint64{}).StorageDecode("", buffer)
-
-	if !reflect.DeepEqual(v, output) {
-		fmt.Println("Error: Missmatched")
-	}
+	return 2
 }

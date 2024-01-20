@@ -11,6 +11,7 @@ import (
 	importer "github.com/arcology-network/concurrenturl/importer"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	opadapter "github.com/arcology-network/concurrenturl/op"
+	platform "github.com/arcology-network/concurrenturl/platform"
 	ccurlstorage "github.com/arcology-network/concurrenturl/storage"
 	storage "github.com/arcology-network/concurrenturl/storage"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
@@ -22,9 +23,9 @@ import (
 
 func TestEthWorldTrieProof(t *testing.T) {
 	store := chooseDataStore()
-	// store := storage.NewDataStore(nil, nil, nil, committercommon.Codec{}.Encode, committercommon.Codec{}.Decode)
+	// store := storage.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
 
-	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 
 	alice := AliceAccount()
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
@@ -104,7 +105,7 @@ func TestEthWorldTrieProof(t *testing.T) {
 
 func TestGetProofAPI(t *testing.T) {
 	store := ccurlstorage.NewParallelEthMemDataStore()
-	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 
 	bob := BobAccount()
 	writeCache.CreateNewAccount(committercommon.SYSTEM, bob)
@@ -158,7 +159,7 @@ func TestGetProofAPI(t *testing.T) {
 
 func TestProofCacheBigInt(t *testing.T) {
 	store := ccurlstorage.NewParallelEthMemDataStore()
-	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 
 	alice := AliceAccount()
 	writeCache.CreateNewAccount(committercommon.SYSTEM, alice)
@@ -209,7 +210,7 @@ func TestProofCacheBigInt(t *testing.T) {
 
 func TestProofCacheNonNaitve(t *testing.T) {
 	store := ccurlstorage.NewParallelEthMemDataStore()
-	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 
 	alice := AliceAccount()
 	writeCache.CreateNewAccount(committercommon.SYSTEM, alice)
@@ -265,7 +266,7 @@ func TestProofCacheNonNaitve(t *testing.T) {
 
 func TestProofCache(t *testing.T) {
 	store := ccurlstorage.NewParallelEthMemDataStore()
-	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
 
 	alice := AliceAccount()
 	writeCache.CreateNewAccount(committercommon.SYSTEM, alice)
