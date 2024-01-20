@@ -81,7 +81,7 @@ func (this *Int64) Print() {
 	fmt.Println()
 }
 
-func (this *Int64) StorageEncode() []byte {
+func (this *Int64) StorageEncode(_ bool) []byte {
 	var buffer []byte
 	if this.IsBounded() {
 		buffer, _ = rlp.EncodeToBytes([]interface{}{this.value, this.min, this.max})
@@ -91,7 +91,7 @@ func (this *Int64) StorageEncode() []byte {
 	return buffer
 }
 
-func (*Int64) StorageDecode(buffer []byte) interface{} {
+func (*Int64) StorageDecode(_ bool, buffer []byte) interface{} {
 	var this *Int64
 	var arr []interface{}
 	err := rlp.DecodeBytes(buffer, &arr)

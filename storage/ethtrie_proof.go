@@ -4,6 +4,7 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/rlp"
 	ethmpt "github.com/ethereum/go-ethereum/trie"
 	// ethapi "github.com/ethereum/go-ethereum/internal/ethapi"
 )
@@ -84,9 +85,18 @@ func (this *ProofProvider) GetProof(acctAddr ethcommon.Address, storageKeys []st
 		}
 		// VerifyProof(account.storageTrie.Hash(), proof, key[:]) // Debugging only. Will panic if the proof is invalid.
 
-		// Get the value from the storage trie.
+		/* ETH code:
+		value := (*hexutil.Big)(statedb.GetState(address, key).Big())
+		storageProof[i] = StorageResult{outputKey, value, proof}
+		*/
+
 		v, _ := account.storageTrie.Get(storageKey)
-		storageProof[i] = StorageResult{outputKey, (*hexutil.Big)(ethcommon.BytesToHash(v).Big()), proof}
+
+		decoded := []byte{}
+		if err := rlp.DecodeBytes(v, &decoded); err != nil {
+			panic(err)
+		}
+		storageProof[i] = StorageResult{outputKey, (*hexutil.Big)(ethcommon.BytesToHash(decoded).Big()), proof}
 	}
 
 	// create the account Proof

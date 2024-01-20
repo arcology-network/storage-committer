@@ -2,13 +2,11 @@ package noncommutative
 
 import (
 	"bytes"
-	"math/big"
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/array"
 	intf "github.com/arcology-network/concurrenturl/interfaces"
-	"github.com/ethereum/go-ethereum/rlp"
 )
 
 //type Bytes []byte
@@ -114,22 +112,4 @@ func (this *Bytes) ApplyDelta(typedVals []intf.Type) (intf.Type, int, error) {
 		return nil, 0, nil
 	}
 	return this, len(typedVals), nil
-}
-
-func (this *Bytes) StorageEncode() []byte {
-	buffer, err := rlp.EncodeToBytes(big.NewInt(0).SetBytes(this.value))
-	if err != nil {
-		panic("Failed to encode bytes")
-	}
-	return buffer
-}
-
-func (this *Bytes) StorageDecode(buffer []byte) interface{} {
-	v := &Bytes{
-		placeholder: true,
-		value:       []byte{},
-	}
-
-	rlp.DecodeBytes(buffer, &v.value)
-	return v
 }

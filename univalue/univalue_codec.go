@@ -1,6 +1,8 @@
 package univalue
 
 import (
+	"strings"
+
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	committercommon "github.com/arcology-network/concurrenturl/common"
@@ -55,10 +57,10 @@ func (this *Univalue) EncodeToBuffer(buffer []byte) int {
 func (this *Univalue) Decode(buffer []byte) interface{} {
 	fields := codec.Byteset{}.Decode(buffer).(codec.Byteset)
 	property := (&Property{}).Decode(fields[0]).(*Property)
-
+	flag := strings.Contains(*property.path, "/native/")
 	return &Univalue{
 		*property,
-		(&committercommon.Codec{property.vType}).Decode(fields[1], this.value),
+		(&committercommon.Codec{property.vType}).Decode(flag, fields[1], this.value),
 		fields[1], // Keep copy, should expire as soon as the value is updated
 	}
 }

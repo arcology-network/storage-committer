@@ -39,12 +39,12 @@ func (this *Bigint) Decode(buffer []byte) interface{} {
 // 	return this.Decode(bytes)
 // }
 
-func (this *Bigint) StorageEncode() []byte {
+func (this *Bigint) StorageEncode(_ bool) []byte {
 	buffer, _ := rlp.EncodeToBytes((*big.Int)(this))
 	return buffer
 }
 
-func (this *Bigint) StorageDecode(buffer []byte) interface{} {
+func (this *Bigint) StorageDecode(_ bool, buffer []byte) interface{} {
 	rlp.DecodeBytes(buffer, this)
 	return this
 }

@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"strings"
+
 	"github.com/arcology-network/concurrenturl/interfaces"
 )
 
@@ -10,9 +12,11 @@ func (Rlp) Encode(key string, v interface{}) []byte {
 	if v == nil {
 		return []byte{} // Deletion
 	}
-	return v.(interfaces.Type).StorageEncode()
+
+	flag := strings.Contains(key, "/native/")
+	return v.(interfaces.Type).StorageEncode(flag)
 }
 
-func (Rlp) Decode(buffer []byte, T any) interface{} {
-	return T.(interfaces.Type).StorageDecode(buffer)
+func (Rlp) Decode(isNative bool, buffer []byte, T any) interface{} {
+	return T.(interfaces.Type).StorageDecode(isNative, buffer)
 }

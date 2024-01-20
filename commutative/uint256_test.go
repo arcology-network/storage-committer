@@ -59,7 +59,8 @@ func TestU256(t *testing.T) {
 	}
 
 	finalized, _, _ := v.(*U256).Get()
-	if finalized.(*uint256.Int).ToBig().Uint64() != 5 {
+	fv := finalized.(uint256.Int)
+	if fv.ToBig().Uint64() != 5 {
 		t.Error("Error: Should have failed")
 	}
 }
@@ -128,7 +129,8 @@ func TestU256DeltaOutRange(t *testing.T) {
 
 	// v.(*U256).Get().(*uint256.Int).ToBig().Uint64()
 	finalized, _, _ := v.(*U256).Get()
-	if finalized.(*uint256.Int).ToBig().Uint64() != 60 {
+	fv := finalized.(uint256.Int)
+	if fv.ToBig().Uint64() != 60 {
 		t.Error("Error: Should be", 60)
 	}
 
@@ -138,7 +140,8 @@ func TestU256DeltaOutRange(t *testing.T) {
 	}
 
 	finalized, _, _ = v.(*U256).Get()
-	if finalized.(*uint256.Int).ToBig().Uint64() != 60 {
+	fv = finalized.(uint256.Int)
+	if fv.ToBig().Uint64() != 60 {
 		t.Error("Error: Should be", 60)
 	}
 }

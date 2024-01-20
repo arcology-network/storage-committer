@@ -30,8 +30,8 @@ func TestCommutativeCodec(t *testing.T) {
 	v := NewBoundedU256(uint256.NewInt(1), uint256.NewInt(400))
 	v.SetValue(*uint256.NewInt(37))
 
-	buffer := v.StorageEncode()
-	output := (&U256{}).StorageDecode(buffer)
+	buffer := v.StorageEncode(false)
+	output := (&U256{}).StorageDecode(false, buffer)
 
 	if !reflect.DeepEqual(v, output) {
 		fmt.Println("Error: Missmatched")
@@ -40,8 +40,8 @@ func TestCommutativeCodec(t *testing.T) {
 	v = NewBoundedUint64(uint64(1), uint64(400))
 	v.SetValue(uint64(37))
 
-	buffer = v.StorageEncode()
-	output = (&Uint64{}).StorageDecode(buffer)
+	buffer = v.StorageEncode(false)
+	output = (&Uint64{}).StorageDecode(false, buffer)
 
 	if !reflect.DeepEqual(v, output) {
 		fmt.Println("Error: Missmatched")

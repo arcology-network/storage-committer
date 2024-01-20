@@ -41,6 +41,11 @@ func TestSize(t *testing.T) {
 		t.Error(err)
 	}
 
+	buffer := array.New[byte](320, 11)
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/ele1", noncommutative.NewBytes(buffer)); err != nil {
+		t.Error(err)
+	}
+
 	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path)); v == nil {
 		t.Error("Error: The path should exists")
 	}
@@ -53,8 +58,20 @@ func TestSize(t *testing.T) {
 	raw := writeCache.Export(importer.Sorter)
 	acctTrans := univalue.Univalues(array.Clone(raw)).To(importer.IPTransition{})
 
-	univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode())
 	committer.Import(acctTrans)
+	committer.Sort()
+	committer.Precommit([]uint32{1})
+	committer.Commit()
+
+	committer.Init(store)
+	writeCache.Clear()
+
+	outV, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/ele1", new(noncommutative.Bytes))
+
+	fmt.Println(outV)
+	// v != array.New[byte](320, 11) {
+	// 	t.Error(err)
+
 }
 
 func TestReadWriteAt(t *testing.T) {
@@ -254,8 +271,13 @@ func TestBasic(t *testing.T) {
 	}
 
 	// Try to rewrite a path, should fail !
-
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", noncommutative.NewString("path")); err == nil {
+		t.Error(err)
+	}
+
+	// Write a long string
+	str := string(array.New[byte](320, 11))
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", noncommutative.NewString(str)); err == nil {
 		t.Error(err)
 	}
 

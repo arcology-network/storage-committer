@@ -52,8 +52,8 @@ type Type interface { // value type
 	EncodeToBuffer([]byte) int
 	Decode([]byte) interface{}
 
-	StorageEncode() []byte
-	StorageDecode([]byte) interface{}
+	StorageEncode(bool) []byte
+	StorageDecode(bool, []byte) interface{}
 
 	Hash(func([]byte) []byte) []byte
 	Reset()
@@ -76,7 +76,7 @@ type Datastore interface {
 	UpdateCacheStats([]interface{})
 
 	Encoder() func(string, interface{}) []byte
-	Decoder() func([]byte, any) interface{}
+	Decoder() func(bool, []byte, any) interface{}
 
 	// Buffers() ([]string, []interface{}, [][]byte)
 	// KVs() ([]string, []interface{})

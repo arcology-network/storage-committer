@@ -32,6 +32,12 @@ const (
 	ETH10_ACCOUNT_FULL_LENGTH   = ETH10_ACCOUNT_PREFIX_LENGTH + ETH10_ACCOUNT_LENGTH
 )
 
+const (
+	UNKNOWN  uint8 = iota
+	ETH_PATH       // 1
+	ACL_PATH       // 2
+)
+
 var WARN_OUT_OF_LOWER_LIMIT string = "Warning: Out of the lower limit!"
 var WARN_OUT_OF_UPPER_LIMIT string = "Warning: Out of the upper limit!"
 var WARN_ACCESS_CONFLICT = "Warning: State access conflict detected!"

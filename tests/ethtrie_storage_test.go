@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/arcology-network/common-lib/codec"
+	"github.com/arcology-network/common-lib/common"
 	orderedset "github.com/arcology-network/common-lib/container/set"
 	"github.com/arcology-network/common-lib/exp/array"
 	"github.com/arcology-network/common-lib/merkle"
@@ -32,6 +33,74 @@ import (
 	ethmpt "github.com/ethereum/go-ethereum/trie"
 	"github.com/holiman/uint256"
 )
+
+func TestConcurrentDB(t *testing.T) {
+	store := chooseDataStore()
+
+	writeCache := cache.NewWriteCache(store, committercommon.NewPlatform())
+
+	alice := AliceAccount()
+	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+		t.Error(err)
+	}
+
+	bob := BobAccount()
+
+	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, bob); err != nil { // NewAccount account structure {
+		t.Error(err)
+	}
+
+	// if _, err := committer.NewAccount(committercommon.SYSTEM, bob); err != nil { // NewAccount account structure {
+	// 	t.Error(err)
+	// }
+
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
+		t.Error(err)
+	}
+
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
+		t.Error(err)
+	}
+
+	for i := 0; i < 1000; i++ {
+		hash := ethcommon.BytesToHash(codec.Uint64(uint64(i)).Encode())
+		if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/"+hexutil.Encode(hash[:]), noncommutative.NewString(string(codec.Uint64(i).Encode()))); err != nil {
+			t.Error(err)
+		}
+
+		if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/"+hexutil.Encode(hash[:]), noncommutative.NewString(string(codec.Uint64(i).Encode()))); err != nil {
+			t.Error(err)
+		}
+	}
+
+	common.ParallelExecute(
+		func() {
+			for i := 1000; i < 2000; i++ {
+				hash := ethcommon.BytesToHash(codec.Uint64(uint64(i)).Encode())
+				if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/"+hexutil.Encode(hash[:]), noncommutative.NewString("124")); err != nil {
+					t.Error(err)
+				}
+
+				if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/"+hexutil.Encode(hash[:]), noncommutative.NewString("124")); err != nil {
+					t.Error(err)
+				}
+				time.Sleep(5 * time.Millisecond)
+			}
+			// },
+			// func() {
+			for i := 0; i < 1000; i++ {
+				hash := ethcommon.BytesToHash(codec.Uint64(uint64(i)).Encode())
+				if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/"+hexutil.Encode(hash[:]), new(noncommutative.String)); v != string(codec.Uint64(i).Encode()) {
+					t.Error("Mismatch")
+				}
+
+				if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/"+hexutil.Encode(hash[:]), new(noncommutative.String)); v != string(codec.Uint64(i).Encode()) {
+					t.Error("Mismatch")
+				}
+			}
+
+		})
+}
 
 // TestTrieUpdates tests the updates to the trie data structure.
 // It creates multiple accounts and performs write operations on their storage.

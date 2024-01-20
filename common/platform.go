@@ -112,3 +112,11 @@ func GetPathUnder(key, prefix string) string {
 	}
 	return ""
 }
+
+// Get the path type ID based on the path content.
+func GetPathType(key string) uint8 {
+	if strings.Contains(key, "/native/") {
+		return ETH_PATH
+	}
+	return ACL_PATH
+}

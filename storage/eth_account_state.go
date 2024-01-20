@@ -184,7 +184,8 @@ func (this *Account) Retrive(key string, T any) (interface{}, error) {
 	if T == nil { // A deletion
 		return T, nil
 	}
-	return T.(interfaces.Type).StorageDecode(buffer), err
+	flag := strings.Contains(key, "/native/")
+	return T.(interfaces.Type).StorageDecode(flag, buffer), err
 }
 
 func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Type) error {
@@ -226,8 +227,9 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Typ
 
 	// Encode the values
 	encodedVals := array.ParallelAppend(typedVals, numThd, func(i int, _ interfaces.Type) []byte {
+		flag := strings.Contains(keys[i], "/native/") // Is a native ETH path
 		return common.IfThenDo1st(typedVals[i] != nil, func() []byte {
-			return typedVals[i].StorageEncode()
+			return typedVals[i].StorageEncode(flag)
 		}, []byte{})
 	})
 

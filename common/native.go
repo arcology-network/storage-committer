@@ -37,7 +37,7 @@ func (Codec) Encode(_ string, value interface{}) []byte {
 	return encoded
 }
 
-func (this Codec) Decode(buffer []byte, _ any) interface{} {
+func (this Codec) Decode(_ bool, buffer []byte, _ any) interface{} {
 	if len(buffer) == 0 {
 		return nil
 	}
