@@ -81,6 +81,10 @@ func TestInt64RlpCodec(t *testing.T) {
 }
 
 func TestStringRlpCodec(t *testing.T) {
+	bytes := []byte{0, 0, 0, 1}
+	encoded, _ := rlp.EncodeToBytes(bytes)
+	fmt.Println(encoded)
+
 	v := NewString("12345")
 	buffer := v.StorageEncode("")
 	output := new(String).StorageDecode("", buffer)

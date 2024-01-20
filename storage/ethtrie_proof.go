@@ -93,9 +93,7 @@ func (this *ProofProvider) GetProof(acctAddr ethcommon.Address, storageKeys []st
 		v, _ := account.storageTrie.Get(storageKey)
 
 		decoded := []byte{}
-		if err := rlp.DecodeBytes(v, &decoded); err != nil {
-			panic(err)
-		}
+		rlp.DecodeBytes(v, &decoded)
 		storageProof[i] = StorageResult{outputKey, (*hexutil.Big)(ethcommon.BytesToHash(decoded).Big()), proof}
 	}
 

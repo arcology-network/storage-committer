@@ -32,14 +32,9 @@ type Convertible storage.AccountResult
 // the Optimism storage proof is a list of hex BYTES without the 0x prefix.
 func (Convertible) ToStorageProof(res []storage.StorageResult) []OptimismStorageProof {
 	opProof := array.Append(res, func(i int, storageResult storage.StorageResult) OptimismStorageProof {
-		// decoded := []byte{}
-		// if err := rlp.DecodeBytes(storageResult.Value.ToInt().Bytes(), &decoded); err != nil {
-		// 	decoded = storageResult.Value.ToInt().Bytes()
-		// }
-
 		return OptimismStorageProof{
 			Key:   ethcommon.BytesToHash(hexutil.MustDecode(storageResult.Key)),
-			Value: *storageResult.Value, // hexutil.Big(*new(big.Int).SetBytes()),
+			Value: *storageResult.Value,
 			Proof: array.Append(storageResult.Proof, func(i int, hexStr string) hexutil.Bytes {
 				return hexutil.MustDecode(hexStr) // strip 0x prefix and decode hex string to bytes
 			}),

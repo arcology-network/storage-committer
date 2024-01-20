@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/arcology-network/common-lib/exp/array"
 	committercommon "github.com/arcology-network/concurrenturl/common"
@@ -20,6 +21,26 @@ import (
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 	ethmpt "github.com/ethereum/go-ethereum/trie"
 )
+
+func TestGetPathType(t *testing.T) {
+	alice := AliceAccount()
+	arr := array.New(1000000, "")
+	for i := 0; i < len(arr); i++ {
+		arr[i] = "blcc://eth1.0/account/" + alice + "/storage/native/" + fmt.Sprint(i)
+	}
+
+	tic := time.Now()
+	for i := 0; i < len(arr); i++ {
+		committercommon.GetPathType(arr[i])
+	}
+	fmt.Println("GetPathType Time taken", time.Since(tic))
+
+	tic = time.Now()
+	for i := 0; i < len(arr); i++ {
+		committercommon.GetPathType(arr[i])
+	}
+	fmt.Println("GetPathTypeEx Time taken", time.Since(tic))
+}
 
 func TestEthWorldTrieProof(t *testing.T) {
 	store := chooseDataStore()
@@ -234,21 +255,25 @@ func TestProofCacheNonNaitve(t *testing.T) {
 	writeCache.FlushToDataSource(store)
 
 	// Reads
-	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000000", new(noncommutative.Bytes)); v.([]byte)[31] != 1 {
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000000",
+		new(noncommutative.Bytes)); v.([]byte)[0] != 1 {
 		t.Error("Mismatch", v)
 	}
 
-	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000001", new(noncommutative.Bytes)); v.([]byte)[31] != 1 {
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000001",
+		new(noncommutative.Bytes)); v.([]byte)[31] != 1 { // Native encoder will remove the prefix zeros, so the result is 1 bytes.
 		t.Error("Mismatch", v)
 	}
 
 	// Big int encoder will trim the leading zeros, only keep the last 1, so when decoding, it will be 32 bytes with 31 zeros and 1
-	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000002", new(noncommutative.Bytes)); v.([]byte)[31] != 1 {
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000002",
+		new(noncommutative.Bytes)); v.([]byte)[0] != 1 { // Native encoder will remove the prefix zeros, so the result is 1 bytes.
 		t.Error("Mismatch", v)
 	}
 
 	// Big int encoder will trim the leading zeros, only keep the last 1, so when decoding, it will be 32 bytes with 31 zeros and 1
-	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000003", new(noncommutative.Bytes)); v.([]byte)[31] != 1 {
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000003",
+		new(noncommutative.Bytes)); v.([]byte)[31] != 1 {
 		t.Error("Mismatch", v)
 	}
 
@@ -291,6 +316,7 @@ func TestProofCache(t *testing.T) {
 	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000002", noncommutative.NewBigint(1))
 
 	buf := array.New[byte](32, 0)
+	buf[30] = 1
 	buf[31] = 1
 	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000003",
 		noncommutative.NewBytes(buf))
@@ -307,7 +333,10 @@ func TestProofCache(t *testing.T) {
 		t.Fatal("String mismatch")
 	}
 
-	if str, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000003", new(noncommutative.Bytes)); !bytes.Equal(str.([]byte), buf) {
+	if str, _, _ := writeCache.Read(
+		1,
+		"blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000003",
+		new(noncommutative.Bytes)); !bytes.Equal(str.([]byte), []byte{1, 1}) { // Native encoder will remove the prefix zeros, so the result is 2 bytes.
 		t.Fatal("String mismatch")
 	}
 
@@ -387,6 +416,13 @@ func TestProofCache(t *testing.T) {
 	opProof = opadapter.Convertible(*accountResult).New() // To OP format
 	if err := opProof.Verify(provider.Root()); err != nil {
 		t.Error(err)
+	}
+
+	// Verify Alice's storage on an non-existing account
+	aliceAddr = ethcommon.BytesToAddress([]byte(hexutil.MustDecode(alice)))
+	accountResult, err = provider.GetProof(aliceAddr, []string{string("0x0000000000000000000000000000000000000000000000000000000000000019")})
+	if err := accountResult.Validate(provider.Root()); err == nil {
+		t.Error("This should fail")
 	}
 
 	// Simulate 5 consecutive blocks, record the root hashes and the keys.

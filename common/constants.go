@@ -25,17 +25,20 @@ const (
 	MAX_DEPTH uint8 = 12
 	SYSTEM          = math.MaxInt32
 
-	ETH10                       = "blcc://eth1.0/"
-	ETH10_ACCOUNT_PREFIX        = ETH10 + "account/"
-	ETH10_ACCOUNT_PREFIX_LENGTH = len(ETH10_ACCOUNT_PREFIX)
-	ETH10_ACCOUNT_LENGTH        = 42 // 40 hex digits + 0x
-	ETH10_ACCOUNT_FULL_LENGTH   = ETH10_ACCOUNT_PREFIX_LENGTH + ETH10_ACCOUNT_LENGTH
+	ETH10                              = "blcc://eth1.0/"
+	ETH10_ACCOUNT_PREFIX               = ETH10 + "account/"
+	ETH10_ACCOUNT_PREFIX_LENGTH        = len(ETH10_ACCOUNT_PREFIX)
+	ETH10_ACCOUNT_LENGTH               = 42 // 40 hex digits + 0x
+	ETH10_ACCOUNT_FULL_LENGTH          = ETH10_ACCOUNT_PREFIX_LENGTH + ETH10_ACCOUNT_LENGTH
+	ETH10_STORAGE_PREFIX               = ETH10_ACCOUNT_PREFIX + "storage/"
+	ETH10_STORAGE_PREFIX_LENGTH        = len(ETH10_STORAGE_PREFIX) + ETH10_ACCOUNT_LENGTH
+	ETH10_STORAGE_NATIVE_PREFIX_LENGTH = ETH10_STORAGE_PREFIX_LENGTH + len("/native/")
 )
 
 const (
-	UNKNOWN  uint8 = iota
-	ETH_PATH       // 1
-	ACL_PATH       // 2
+	UNKNOWN       uint8 = iota
+	ETH_PATH_TYPE       // 1
+	ACL_PATH_TYPE       // 2
 )
 
 var WARN_OUT_OF_LOWER_LIMIT string = "Warning: Out of the lower limit!"
