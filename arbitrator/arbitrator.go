@@ -15,7 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package importer
+package arbitrator
 
 import (
 	"errors"
@@ -56,19 +56,19 @@ func (this *Arbitrator) Detect(groupIDs []uint32, newTrans []*univalue.Univalue)
 		}
 
 		offset := int(1)
-		if newTrans[ranges[i]].Writes() == 0 {
-			if newTrans[ranges[i]].IsConcurrentWritable() { // Delta write only
-				offset, _ = array.FindFirstIf(newTrans[ranges[i]+1:ranges[i+1]],
-					func(v *univalue.Univalue) bool {
-						return !v.IsConcurrentWritable()
-					})
-			} else { // Read only
-				offset, _ = array.FindFirstIf(newTrans[ranges[i]+1:ranges[i+1]],
-					func(v *univalue.Univalue) bool {
-						return v.Writes() > 0 || v.DeltaWrites() > 0
-					})
+		if newTrans[ranges[i]].Writes() == 0 { // Whyen write == 0, there are only two possibilities: 1. delta write only; 2. read only
+			subTrans := newTrans[ranges[i]+1 : ranges[i+1]]
+
+			if newTrans[ranges[i]].IsReadOnly() || newTrans[ranges[i]].IsDeltaWriteOnly() { // Read delta write
+				if newTrans[ranges[i]].IsReadOnly() { // Read only
+					offset, _ = array.FindFirstIf(subTrans, func(v *univalue.Univalue) bool { return !v.IsReadOnly() })
+				}
+
+				if newTrans[ranges[i]].IsDeltaWriteOnly() { // Delta write only
+					offset, _ = array.FindFirstIf(subTrans, func(v *univalue.Univalue) bool { return !v.IsDeltaWriteOnly() })
+				}
+				offset = common.IfThen(offset < 0, ranges[i+1]-ranges[i], offset+1) // offset == -1 means no conflict found
 			}
-			offset = common.IfThen(offset < 0, ranges[i+1]-ranges[i], offset+1) // offset == -1 means no conflict found
 		}
 
 		if ranges[i]+offset == ranges[i+1] {
@@ -92,10 +92,10 @@ func (this *Arbitrator) Detect(groupIDs []uint32, newTrans []*univalue.Univalue)
 
 		if len(conflicts) > 0 {
 			if newTrans[ranges[i]].Writes() == 0 {
-				if newTrans[ranges[i]].IsConcurrentWritable() { // Delta write only
+				if newTrans[ranges[i]].IsDeltaWriteOnly() { // Delta write only
 					offset, _ = array.FindFirstIf(newTrans[ranges[i]+1:ranges[i+1]],
 						func(v *univalue.Univalue) bool {
-							return !v.IsConcurrentWritable()
+							return !v.IsDeltaWriteOnly()
 						})
 				} else { // Read only
 					offset, _ = array.FindFirstIf(newTrans[ranges[i]+1:ranges[i+1]],

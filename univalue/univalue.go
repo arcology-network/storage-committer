@@ -181,9 +181,8 @@ func (this *Univalue) ApplyDelta(vec []*Univalue) error {
 	return nil
 }
 
-func (this *Univalue) IsConcurrentWritable() bool { // Call this before setting the value attribute to nil
-	return (this.Writes() == 0 && this.Reads() == 0)
-}
+func (this *Univalue) IsReadOnly() bool       { return (this.writes == 0 && this.deltaWrites == 0) }
+func (this *Univalue) IsDeltaWriteOnly() bool { return (this.reads == 0 && this.writes == 0) }
 
 func (this *Univalue) PrecheckAttributes(other *Univalue) {
 	if other.reads == 0 && other.writes == 0 && other.deltaWrites == 0 {
@@ -194,18 +193,18 @@ func (this *Univalue) PrecheckAttributes(other *Univalue) {
 		panic("Error: Value type mismatched!") // Read only variable should never be here.
 	}
 
-	if this.preexists && this.Value().(intf.Type).IsCommutative() && this.Reads() > 0 && this.IsConcurrentWritable() == other.IsConcurrentWritable() {
+	if this.preexists && this.Value().(intf.Type).IsCommutative() && this.Reads() > 0 && this.IsDeltaWriteOnly() == other.IsDeltaWriteOnly() {
 		this.Print()
 		fmt.Println("================================================================")
 		other.Print()
 		panic("Error: The composite attribute must match in different transitions")
 	}
 
-	if this.Value() == nil && this.IsConcurrentWritable() {
+	if this.Value() == nil && this.IsDeltaWriteOnly() {
 		// panic("Error: A deleted value cann't be composite")
 	}
 
-	if !this.preexists && this.IsConcurrentWritable() {
+	if !this.preexists && this.IsDeltaWriteOnly() {
 		panic("Error: A new value cann't be composite")
 	}
 }
@@ -257,6 +256,7 @@ func (this *Univalue) Print() {
 
 	fmt.Print(spaces+"path: ", *this.path, "      ")
 	common.IfThenDo(this.value != nil, func() { this.value.(intf.Type).Print() }, func() { fmt.Print("nil") })
+	fmt.Println()
 }
 
 func (this *Univalue) Equal(other *Univalue) bool {
