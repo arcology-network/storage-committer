@@ -36,7 +36,7 @@ type Uint64 struct {
 	max   uint64
 }
 
-func NewUnboundedUint64() interfaces.Type         { return &Uint64{min: 0, max: math.MaxInt64} }
+func NewUnboundedUint64() interfaces.Type         { return &Uint64{min: 0, max: math.MaxUint64} }
 func NewUint64Delta(delta uint64) interfaces.Type { return &Uint64{delta: delta} }
 
 func NewBoundedUint64(min, max uint64) interfaces.Type {

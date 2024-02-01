@@ -52,6 +52,7 @@ func (this *Univalue) SetValue(newValue interface{}) *Univalue {
 	if this.value != nil && reflect.TypeOf(this.value) != reflect.TypeOf(newValue) && newValue != nil {
 		panic("Wrong type")
 	}
+
 	this.value = newValue
 	return this
 }
@@ -117,14 +118,14 @@ func (this *Univalue) CopyTo(writable interface{}) {
 	univ.(*Univalue).IncrementDeltaWrites(deltaWriteDiff)
 }
 
-func (this *Univalue) Set(tx uint32, path string, typedV interface{}, importer interface{}) error { // update the value
+func (this *Univalue) Set(tx uint32, path string, typedV interface{}, inCache bool, importer interface{}) error { // update the value
 	this.tx = tx
-	if this.Value() == nil && typedV == nil {
+	if this.value == nil && typedV == nil {
 		this.writes++ // Delete an non-existing value
 		return errors.New("Error: The value doesn't exists")
 	}
 
-	if this.Value() == nil { // Added a new value or try to delete an non-existent value
+	if this.value == nil { // Added a new value or try to delete an non-existent value
 		this.vType = typedV.(intf.Type).TypeID()
 		v, r, w, dw := typedV.(intf.Type).CopyTo(typedV)
 		this.value = v
@@ -134,9 +135,11 @@ func (this *Univalue) Set(tx uint32, path string, typedV interface{}, importer i
 		return nil
 	}
 
-	if this.writes == 0 && this.value != nil && typedV != nil { // Make a deep copy if haven't done so
-		this.value = this.value.(intf.Type).Clone()
-	}
+	// Clone the current value, this is necessary to keep isolation between different inter-thread transactions.
+	// In such a scenario, a cascade of write caches are in place, and values are passed down from the parent thread
+	// to the child thread, without making a copy of the value, the child thread will modify the value in the parent thread.
+	// It may be an overkill to clone the value eveytime, except for the first time in the local cache, but it keeps the code simple.
+	this.value = this.value.(intf.Type).Clone()
 
 	v, r, w, dw, err := this.value.(intf.Type).Set(typedV, []interface{}{path, *this.path, tx, importer}) // Update one the current value
 	this.value = v
