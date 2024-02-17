@@ -299,10 +299,7 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 
 	// Group the keys and transactions by their account addresses.
 	accountKeys, stateGroups := array.GroupBy(array.ToPairs(keys, values.([]interface{})),
-		func(v struct {
-			First  string
-			Second interface{}
-		}) *string {
+		func(v *common.Pair[string, interface{}]) *string {
 			_, key, _ := platform.ParseAccountAddr(v.First)
 			return &key
 		})
