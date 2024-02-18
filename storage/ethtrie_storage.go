@@ -6,6 +6,7 @@ import (
 
 	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/array"
+	"github.com/arcology-network/common-lib/exp/product"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	platform "github.com/arcology-network/concurrenturl/platform"
@@ -298,8 +299,8 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 	}
 
 	// Group the keys and transactions by their account addresses.
-	accountKeys, stateGroups := array.GroupBy(array.ToPairs(keys, values.([]interface{})),
-		func(v *common.Pair[string, interface{}]) *string {
+	accountKeys, stateGroups := array.GroupBy(*new(product.Pairs[string, interface{}]).From(keys, values.([]interface{})).Array(),
+		func(v *product.Pair[string, interface{}]) *string {
 			_, key, _ := platform.ParseAccountAddr(v.First)
 			return &key
 		})
@@ -334,7 +335,8 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 
 	// Precommit the changes to the accounts and update the account storage trie.
 	array.ParallelForeach(this.dirties, 16, func(idx int, acct **Account) {
-		(*acct).Precommit(array.FromPairs(stateGroups[idx]))
+		pairs := product.Pairs[string, interface{}](stateGroups[idx])
+		(*acct).Precommit(pairs.FirstsAndSeconds())
 	})
 
 	// Move dirties accounts to cache, the difference between the cache and dirties accounts is that the

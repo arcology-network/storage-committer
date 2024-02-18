@@ -69,8 +69,6 @@ func TestSize(t *testing.T) {
 	writeCache.Clear()
 
 	outV, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/ele1", new(noncommutative.Bytes))
-
-	fmt.Println(outV)
 	if !bytes.Equal(outV.([]byte), array.New[byte](320, 11)) {
 		t.Error("Error: The path should exists")
 	}
