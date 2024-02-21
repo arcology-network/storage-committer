@@ -43,7 +43,7 @@ func TestMultiAccountCreation(t *testing.T) {
 	committer.Sort()
 	committer.Precommit([]uint32{0})
 	committer.Commit()
-	writeCache.Reset()
+	writeCache.Reset(writeCache)
 	// acctTrans = univalue.Univalues(array.Clone(raw)).To(importer.ITTransition{})
 	// encoded := univalue.Univalues(acctTrans).Encode()
 

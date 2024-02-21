@@ -19,6 +19,9 @@
 package storagecommitter
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/array"
 	platform "github.com/arcology-network/concurrenturl/platform"
@@ -71,18 +74,25 @@ func (this *StateCommitter) Clear() {
 // Import imports the given transitions into the StateCommitter.
 func (this *StateCommitter) Import(transitions []*univalue.Univalue, args ...interface{}) *StateCommitter {
 	invTransitions := make([]*univalue.Univalue, 0, len(transitions))
-
+	t0 := time.Now()
 	for i := 0; i < len(transitions); i++ {
 		if transitions[i].Persistent() { // Peristent transitions are immune to conflict detection
 			invTransitions = append(invTransitions, transitions[i]) //
 			transitions[i] = nil                                    // mark the peristent transitions
 		}
 	}
-	array.Remove(&transitions, nil) // Remove the Peristent transitions from the transition lists
+	fmt.Println("Import: ", len(transitions), " in: ", time.Since(t0))
 
+	t0 = time.Now()
+	array.Remove(&transitions, nil) // Remove the Peristent transitions from the transition lists
+	fmt.Println("Remove: ", len(transitions), " in: ", time.Since(t0))
+
+	t0 = time.Now()
 	common.ParallelExecute(
 		func() { this.imuImporter.Import(invTransitions, args...) },
 		func() { this.importer.Import(transitions, args...) })
+
+	fmt.Println("ParallelExecute: ", len(transitions), " in: ", time.Since(t0))
 	return this
 }
 

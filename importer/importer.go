@@ -1,6 +1,9 @@
 package importer
 
 import (
+	"fmt"
+	"time"
+
 	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/array"
 	ccmap "github.com/arcology-network/common-lib/exp/map"
@@ -14,7 +17,7 @@ import (
 type Importer struct {
 	numThreads int
 	store      interfaces.Datastore
-	byTx       map[uint32][]*univalue.Univalue
+	byTx       map[uint32]*[]*univalue.Univalue
 	deltaDict  *ccmap.ConcurrentMap[string, *DeltaSequence]
 
 	platform interfaces.Platform
@@ -30,7 +33,7 @@ func NewImporter(store interfaces.Datastore, platform interfaces.Platform, args 
 	importer.numThreads = 8
 	importer.store = store
 
-	importer.byTx = make(map[uint32][]*univalue.Univalue)
+	importer.byTx = make(map[uint32]*[]*univalue.Univalue)
 	importer.platform = platform
 	importer.deltaDict = ccmap.NewConcurrentMap(8, func(v *DeltaSequence) bool { return v == nil }, func(k string) uint8 {
 		return array.Sum[uint8, uint8]([]byte(k))
@@ -65,11 +68,14 @@ func (this *Importer) NewSequenceFromPool(k string, store interfaces.Datastore) 
 func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) {
 	commitIfAbsent := common.IfThenDo1st(len(args) > 0 && args[0] != nil, func() bool { return args[0].(bool) }, true) //Write if absent from local
 
+	t0 := time.Now()
 	//Remove entries that preexist but not available locally, it happens with a partial cache
 	array.RemoveIf(&txTrans, func(_ int, univ *univalue.Univalue) bool {
 		return univ.Preexist() && this.store.IfExists(*univ.GetPath()) && !commitIfAbsent
 	})
+	fmt.Println("RemoveIf: ", len(txTrans), " in: ", time.Since(t0))
 
+	t0 = time.Now()
 	// Scan for paths that aren't in the delta dictionary yet.
 	paths := array.ParallelAppend(make([]string, len(txTrans)), this.numThreads, func(i int, _ string) string {
 		path := *txTrans[i].GetPath()
@@ -77,12 +83,16 @@ func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) 
 		return common.IfThen(v == nil, path, "") // Return empty strings for the existing entries.
 	})
 	paths = array.RemoveIf(&paths, func(_ int, v string) bool { return v == "" }) // Remove paths for existing entries by filtering out empty strings.
+	fmt.Println("ParallelAppend + RemoveIf : ", len(txTrans), " in: ", time.Since(t0))
 
+	t0 = time.Now()
 	// Create new sequences for the non-existing paths all at once.
 	sequences := array.ParallelAppend(paths, this.numThreads, func(i int, k string) *DeltaSequence {
 		return this.NewSequenceFromPool(k, this.store)
 	})
+	fmt.Println("NewSequenceFromPool: ", len(txTrans), " in: ", time.Since(t0))
 
+	t0 = time.Now()
 	// Add the new sequences to the delta dictionary in parallel.
 	this.deltaDict.BatchSet(paths, sequences)
 
@@ -90,13 +100,21 @@ func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) 
 		seq, _ := this.deltaDict.Get(*txTrans[i].GetPath())
 		this.deltaDict.Set(*txTrans[i].GetPath(), seq.Add(txTrans[i])) // Add to the sequence
 	})
+	fmt.Println("deltaDict.BatchSet: ", len(txTrans), " in: ", time.Since(t0))
 
-	for i := 0; i < len(txTrans); i++ { // Update the transaction ID index
-		if v := txTrans[i]; v != nil {
-			tran := this.byTx[v.GetTx()]
-			this.byTx[v.GetTx()] = append(common.IfThen(tran == nil, make([]*univalue.Univalue, 0, 32), tran), v)
-		}
-	}
+	t0 = time.Now()
+	txIDs := array.Append(txTrans, func(_ int, v *univalue.Univalue) uint32 { return v.GetTx() })
+	mapi.IfNotFoundDo(this.byTx, txIDs, func(k uint32) *[]*univalue.Univalue {
+		v := (make([]*univalue.Univalue, 0, 16))
+		return &v
+	})
+
+	array.ParallelForeach(txIDs, 4, func(i int, _ *uint32) {
+		v := txTrans[i]
+		tran := this.byTx[v.GetTx()]
+		*tran = append(*tran, v)
+	})
+	fmt.Println("this.byTx[v.GetTx()] = append ", len(txTrans), " in: ", time.Since(t0))
 }
 
 // Only keep transation within the whitelist
@@ -113,7 +131,7 @@ func (this *Importer) WhilteList(whitelist []uint32) []error {
 		}
 
 		if _, ok := whitelisted[txid]; !ok {
-			for _, v := range vec {
+			for _, v := range *vec {
 				v.SetPath(nil) // Mark the transition status, so that it can be removed later.
 			}
 		}
@@ -156,7 +174,8 @@ func (this *Importer) KVs() ([]string, []interface{}) {
 // Clear all
 func (this *Importer) Clear() {
 	for k, v := range this.byTx {
-		this.byTx[k] = v[:0]
+		*v = (*v)[:0]
+		this.byTx[k] = v
 	}
 
 	this.deltaDict = ccmap.NewConcurrentMap(8, func(v *DeltaSequence) bool { return v == nil }, func(k string) uint8 {

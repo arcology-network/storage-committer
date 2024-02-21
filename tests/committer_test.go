@@ -66,7 +66,7 @@ func TestSize(t *testing.T) {
 	committer.Commit()
 
 	committer.Init(store)
-	writeCache.Reset()
+	writeCache.Reset(writeCache)
 
 	outV, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/ele1", new(noncommutative.Bytes))
 	if !bytes.Equal(outV.([]byte), array.New[byte](320, 11)) {
@@ -206,7 +206,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 	committer.Commit()
 
 	committer.Init(store)
-	writeCache.Reset()
+	writeCache.Reset(writeCache)
 
 	// create a path
 	path := commutative.NewPath()
@@ -220,7 +220,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 	committer.Sort()
 	committer.Precommit([]uint32{1})
 	committer.Commit()
-	writeCache.Reset()
+	writeCache.Reset(writeCache)
 
 	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
 	if v == nil {
@@ -239,7 +239,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 	committer.Commit()
 	committer.Init(store)
 
-	writeCache.Reset()
+	writeCache.Reset(writeCache)
 	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path)); v != nil {
 		t.Error("Error: The path should have been deleted")
 	}
@@ -263,7 +263,7 @@ func TestBasic(t *testing.T) {
 	// univalue.Univalues(acctTrans).Print()
 
 	committer.Init(store)
-	writeCache.Reset()
+	writeCache.Reset(writeCache)
 	// create a path
 	path := commutative.NewPath()
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
@@ -476,7 +476,7 @@ func TestCommitter(t *testing.T) {
 	committer.Precommit([]uint32{committercommon.SYSTEM})
 	committer.Commit()
 
-	writeCache.Reset()
+	writeCache.Reset(writeCache)
 	// committer.Init(store)
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.NewPath()); err != nil {
 		t.Error(err)
@@ -567,7 +567,7 @@ func TestCommitter2(t *testing.T) {
 	committer.Init(store)
 	// Create a new container
 	path := commutative.NewPath()
-	writeCache.Reset()
+	writeCache.Reset(writeCache)
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		t.Error(err, "Error:  Failed to MakePath: "+"/ctrn-0/")
 	}
@@ -752,7 +752,7 @@ func TestError(t *testing.T) {
 	committer.Init(store)
 	// Create a new container
 	path := commutative.NewPath()
-	writeCache.Reset()
+	writeCache.Reset(writeCache)
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		t.Error(err, "Error:  Failed to MakePath: "+"/ctrn-0/")
 	}
@@ -845,7 +845,7 @@ func TestCustomCodec(t *testing.T) {
 	committer.Commit()
 
 	committer.Init(store)
-	writeCache.Reset()
+	writeCache.Reset(writeCache)
 	// commutative.NewU256Delta(100)
 	// writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/balance", &commutative.U256{value: 100})
 

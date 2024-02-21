@@ -33,7 +33,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	committer.Sort()
 	committer.Precommit([]uint32{committercommon.SYSTEM})
 	committer.Commit()
-	writeCache.Reset()
+	writeCache.Reset(writeCache)
 
 	alice := AliceAccount()
 	// committer.Init(store)
@@ -46,7 +46,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	accesses1 := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITAccess{})
 	univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
-	writeCache.Reset()
+	writeCache.Reset(writeCache)
 	bob := BobAccount()
 	if _, err := writeCache.CreateNewAccount(2, bob); err != nil { // NewAccount account structure {
 		t.Error(err)
@@ -84,7 +84,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	alice := AliceAccount()
 	// committer.NewAccount(1, alice) // NewAccount account structure {
 
-	writeCache.Reset()                                               // = committer.WriteCache()
+	writeCache.Reset(writeCache)                                     // = committer.WriteCache()
 	if _, err := writeCache.CreateNewAccount(1, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -98,7 +98,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	accesses1 := univalue.Univalues(array.Clone(raw)).To(importer.IPTransition{})
 
 	// committer := ccurl.NewStorageCommitter(store)
-	writeCache.Reset()                                               // = committer.WriteCache()
+	writeCache.Reset(writeCache)                                     // = committer.WriteCache()
 	if _, err := writeCache.CreateNewAccount(2, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	} // NewAccount account structure {
@@ -148,7 +148,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	committer.Init(store)
 
 	// committer.NewAccount(1, alice)
-	writeCache.Reset()
+	writeCache.Reset(writeCache)
 	if _, err := writeCache.CreateNewAccount(1, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -162,7 +162,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 
 	// committer := ccurl.NewStorageCommitter(store)
 	// writeCache = committer.WriteCache()
-	writeCache.Reset()
+	writeCache.Reset(writeCache)
 	if _, err := writeCache.CreateNewAccount(2, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	} // NewAccount account structure {
@@ -194,7 +194,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	committer.Sort()
 	committer.Precommit(toCommit)
 	committer.Commit()
-	writeCache.Reset()
+	writeCache.Reset(writeCache)
 
 	// committer := ccurl.NewStorageCommitter(store)
 	if _, err := writeCache.Write(3, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("committer-1-by-tx-3")); err != nil {
@@ -205,7 +205,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	accesses3 := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITAccess{})
 	transitions3 := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 
-	writeCache.Reset()
+	writeCache.Reset(writeCache)
 	// url4 := ccurl.NewStorageCommitter(store)
 	if _, err := writeCache.Write(4, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("url4-1-by-tx-3")); err != nil {
 		t.Error(err)
@@ -242,7 +242,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	committer.Commit()
 	committer.Init(store)
 
-	writeCache.Reset()
+	writeCache.Reset(writeCache)
 	v, _, _ := writeCache.Read(3, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", new(noncommutative.String))
 	if v == nil || v.(string) != "committer-1-by-tx-3" {
 		t.Error("Error: Wrong value, expecting:", "committer-1-by-tx-3 ", "actual:", v)

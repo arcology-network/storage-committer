@@ -57,7 +57,7 @@ func TestSimpleBalance(t *testing.T) {
 	committer.Precommit([]uint32{0, 1})
 	committer.Commit()
 	// Read alice's balance again
-	writeCache.Reset()
+	writeCache.Reset(writeCache)
 
 	balance, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/balance", new(commutative.U256))
 	balanceAddr := balance.(uint256.Int)

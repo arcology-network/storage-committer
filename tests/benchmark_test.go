@@ -73,7 +73,7 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 
 	//t0 = time.Now()
 	// _, transitions := writeCache.Export(nil)
-	transitions := univalue.Univalues(array.Clone(writeCache.Export())).To(importer.ITAccess{})
+	transitions := univalue.Univalues(array.Clone(writeCache.Export())).To(importer.ITTransition{})
 
 	// in := univalue.Univalues(transitions).Encode()
 	//out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
@@ -135,8 +135,12 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	fmt.Println("Write 2500 accounts in :", time.Since(t0))
 
 	t0 = time.Now()
-	trans := univalue.Univalues(array.Clone(writeCache.Export())).To(importer.ITTransition{})
-	fmt.Println("Export:", time.Since(t0))
+	trans := array.Clone(writeCache.Export())
+	fmt.Println("Clone:", len(trans), "in ", time.Since(t0))
+
+	t0 = time.Now()
+	trans = univalue.Univalues(trans).To(importer.ITTransition{})
+	fmt.Println("To(importer.ITTransition{}):", len(trans), "in ", time.Since(t0))
 
 	committer := ccurl.NewStorageCommitter(store)
 	t0 = time.Now()
@@ -148,8 +152,10 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	fmt.Println("Sort: ", len(trans), " in: ", time.Since(t0))
 
 	t0 = time.Now()
-
 	committer.Precommit([]uint32{0})
+	fmt.Println("Precommit:", time.Since(t0))
+
+	t0 = time.Now()
 	committer.Commit()
 	fmt.Println("Commit:", time.Since(t0))
 
