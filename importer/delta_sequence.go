@@ -43,6 +43,11 @@ func (this *DeltaSequence) Init(key string, store interfaces.Datastore) *DeltaSe
 	return this
 }
 
+func (this *DeltaSequence) UnsafeAdd(v *univalue.Univalue) *DeltaSequence {
+	this.transitions = append(this.transitions, v)
+	return this
+}
+
 func (this *DeltaSequence) Add(v *univalue.Univalue) *DeltaSequence {
 	this.lock.Lock()
 	defer this.lock.Unlock()

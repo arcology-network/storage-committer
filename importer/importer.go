@@ -76,31 +76,35 @@ func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) 
 	fmt.Println("RemoveIf: ", len(txTrans), " in: ", time.Since(t0))
 
 	t0 = time.Now()
-	// Scan for paths that aren't in the delta dictionary yet.
-	paths := array.ParallelAppend(make([]string, len(txTrans)), this.numThreads, func(i int, _ string) string {
-		path := *txTrans[i].GetPath()
-		v, _ := this.deltaDict.Get(path)
-		return common.IfThen(v == nil, path, "") // Return empty strings for the existing entries.
-	})
-	paths = array.RemoveIf(&paths, func(_ int, v string) bool { return v == "" }) // Remove paths for existing entries by filtering out empty strings.
-	fmt.Println("ParallelAppend + RemoveIf : ", len(txTrans), " in: ", time.Since(t0))
-
-	t0 = time.Now()
 	// Create new sequences for the non-existing paths all at once.
-	sequences := array.ParallelAppend(paths, this.numThreads, func(i int, k string) *DeltaSequence {
-		return this.NewSequenceFromPool(k, this.store)
+	missingKeys := array.ParallelAppend(txTrans, this.numThreads, func(i int, _ *univalue.Univalue) string {
+		if _, ok := this.deltaDict.Get(*txTrans[i].GetPath()); !ok {
+			return *txTrans[i].GetPath()
+		}
+		return ""
 	})
-	fmt.Println("NewSequenceFromPool: ", len(txTrans), " in: ", time.Since(t0))
+	fmt.Println("Find missingKeys ", len(txTrans), " in: ", time.Since(t0))
 
 	t0 = time.Now()
-	// Add the new sequences to the delta dictionary in parallel.
-	this.deltaDict.BatchSet(paths, sequences)
+	array.Remove(&missingKeys, "")
+	fmt.Println("array.Remove ", len(txTrans), " in: ", time.Since(t0))
 
-	array.ParallelForeach(txTrans, this.numThreads, func(i int, _ **univalue.Univalue) {
-		seq, _ := this.deltaDict.Get(*txTrans[i].GetPath())
-		this.deltaDict.Set(*txTrans[i].GetPath(), seq.Add(txTrans[i])) // Add to the sequence
-	})
-	fmt.Println("deltaDict.BatchSet: ", len(txTrans), " in: ", time.Since(t0))
+	t0 = time.Now()
+	missingKeys = mapi.Keys(mapi.FromArray(missingKeys, func(k string) bool { return true })) // Get the unique keys only
+	fmt.Println("UniqueKeys", len(txTrans), " in: ", time.Since(t0))
+
+	t0 = time.Now()
+	this.deltaDict.BatchSetWith(missingKeys, func(k *string) *DeltaSequence { return NewDeltaSequence(*k, this.store) })
+	fmt.Println("BatchSetWith ", len(txTrans), " in: ", time.Since(t0))
+
+	t0 = time.Now()
+	// Update the delta dictionary with the new sequences in parallel.
+	this.deltaDict.ParallelFor(0, len(txTrans),
+		func(i int) string { return *txTrans[i].GetPath() },
+		func(i int, k string, seq *DeltaSequence, _ bool) (*DeltaSequence, bool) {
+			return seq.Add(txTrans[i]), false
+		})
+	fmt.Println("seq.Add(txTrans[i])", len(txTrans), " in: ", time.Since(t0))
 
 	t0 = time.Now()
 	txIDs := array.Append(txTrans, func(_ int, v *univalue.Univalue) uint32 { return v.GetTx() })
