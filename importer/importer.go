@@ -1,9 +1,6 @@
 package importer
 
 import (
-	"fmt"
-	"time"
-
 	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/array"
 	ccmap "github.com/arcology-network/common-lib/exp/map"
@@ -68,14 +65,11 @@ func (this *Importer) NewSequenceFromPool(k string, store interfaces.Datastore) 
 func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) {
 	commitIfAbsent := common.IfThenDo1st(len(args) > 0 && args[0] != nil, func() bool { return args[0].(bool) }, true) //Write if absent from local
 
-	t0 := time.Now()
 	//Remove entries that preexist but not available locally, it happens with a partial cache
 	array.RemoveIf(&txTrans, func(_ int, univ *univalue.Univalue) bool {
 		return univ.Preexist() && this.store.IfExists(*univ.GetPath()) && !commitIfAbsent
 	})
-	fmt.Println("RemoveIf: ", len(txTrans), " in: ", time.Since(t0))
 
-	t0 = time.Now()
 	// Create new sequences for the non-existing paths all at once.
 	missingKeys := array.ParallelAppend(txTrans, this.numThreads, func(i int, _ *univalue.Univalue) string {
 		if _, ok := this.deltaDict.Get(*txTrans[i].GetPath()); !ok {
@@ -83,30 +77,18 @@ func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) 
 		}
 		return ""
 	})
-	fmt.Println("Find missingKeys ", len(txTrans), " in: ", time.Since(t0))
 
-	t0 = time.Now()
 	array.Remove(&missingKeys, "")
-	fmt.Println("array.Remove ", len(txTrans), " in: ", time.Since(t0))
-
-	t0 = time.Now()
 	missingKeys = mapi.Keys(mapi.FromArray(missingKeys, func(k string) bool { return true })) // Get the unique keys only
-	fmt.Println("UniqueKeys", len(txTrans), " in: ", time.Since(t0))
-
-	t0 = time.Now()
 	this.deltaDict.BatchSetWith(missingKeys, func(k *string) *DeltaSequence { return NewDeltaSequence(*k, this.store) })
-	fmt.Println("BatchSetWith ", len(txTrans), " in: ", time.Since(t0))
 
-	t0 = time.Now()
 	// Update the delta dictionary with the new sequences in parallel.
 	this.deltaDict.ParallelFor(0, len(txTrans),
 		func(i int) string { return *txTrans[i].GetPath() },
 		func(i int, k string, seq *DeltaSequence, _ bool) (*DeltaSequence, bool) {
 			return seq.Add(txTrans[i]), false
 		})
-	fmt.Println("seq.Add(txTrans[i])", len(txTrans), " in: ", time.Since(t0))
 
-	t0 = time.Now()
 	txIDs := array.Append(txTrans, func(_ int, v *univalue.Univalue) uint32 { return v.GetTx() })
 	mapi.IfNotFoundDo(this.byTx, txIDs, func(k uint32) *[]*univalue.Univalue {
 		v := (make([]*univalue.Univalue, 0, 16))
@@ -118,7 +100,6 @@ func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) 
 		tran := this.byTx[v.GetTx()]
 		*tran = append(*tran, v)
 	})
-	fmt.Println("this.byTx[v.GetTx()] = append ", len(txTrans), " in: ", time.Since(t0))
 }
 
 // Only keep transation within the whitelist

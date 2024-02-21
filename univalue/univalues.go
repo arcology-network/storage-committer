@@ -67,6 +67,13 @@ func (this Univalues) UniqueTXs() []uint32 {
 	return array.UniqueInts(ids)
 }
 
+func (this Univalues) SortByKey() Univalues {
+	sort.Slice(this, func(i, j int) bool {
+		return (*this[i].GetPath()) < (*this[j].GetPath())
+	})
+	return this
+}
+
 func (this Univalues) Sort(groupIDs []uint32) Univalues {
 	sortees := make([]struct {
 		groupID uint32
