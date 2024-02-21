@@ -38,7 +38,7 @@ func NewImporter(store interfaces.Datastore, platform interfaces.Platform, args 
 
 	importer.seqPool = mempool.NewMempool[*DeltaSequence](4096, 64, func() *DeltaSequence {
 		return NewDeltaSequence("", nil) // Init an empty sequence.
-	})
+	}, func(_ *DeltaSequence) {})
 	return &importer
 }
 
@@ -166,7 +166,7 @@ func (this *Importer) Clear() {
 	this.keyBuffer = this.keyBuffer[:0]
 	this.valBuffer = this.valBuffer[:0]
 
-	this.seqPool.Reclaim()
+	this.seqPool.Reset()
 
 	// this.seqPool.ForEachAllocated(func(obj *DeltaSequence) {
 	// 	obj.Reclaim()

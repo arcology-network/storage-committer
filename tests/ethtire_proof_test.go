@@ -46,7 +46,7 @@ func TestEthWorldTrieProof(t *testing.T) {
 	store := chooseDataStore()
 	// store := storage.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
 
-	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
+	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	alice := AliceAccount()
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
@@ -126,7 +126,7 @@ func TestEthWorldTrieProof(t *testing.T) {
 
 func TestGetProofAPI(t *testing.T) {
 	store := ccurlstorage.NewParallelEthMemDataStore()
-	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
+	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	bob := BobAccount()
 	writeCache.CreateNewAccount(committercommon.SYSTEM, bob)
@@ -180,7 +180,7 @@ func TestGetProofAPI(t *testing.T) {
 
 func TestProofCacheBigInt(t *testing.T) {
 	store := ccurlstorage.NewParallelEthMemDataStore()
-	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
+	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	alice := AliceAccount()
 	writeCache.CreateNewAccount(committercommon.SYSTEM, alice)
@@ -231,7 +231,7 @@ func TestProofCacheBigInt(t *testing.T) {
 
 func TestProofCacheNonNaitve(t *testing.T) {
 	store := ccurlstorage.NewParallelEthMemDataStore()
-	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
+	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	alice := AliceAccount()
 	writeCache.CreateNewAccount(committercommon.SYSTEM, alice)
@@ -291,7 +291,7 @@ func TestProofCacheNonNaitve(t *testing.T) {
 
 func TestProofCache(t *testing.T) {
 	store := ccurlstorage.NewParallelEthMemDataStore()
-	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
+	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	alice := AliceAccount()
 	writeCache.CreateNewAccount(committercommon.SYSTEM, alice)

@@ -25,9 +25,9 @@ func TestTransitionFilters(t *testing.T) {
 	bob := addrcompressor.RandomAccount()
 
 	// committer := ccurl.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
+	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
-	// writeCache = cache.NewWriteCache(store, platform.NewPlatform())
+	// writeCache = cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	writeCache.CreateNewAccount(committercommon.SYSTEM, alice)
 	// committer.NewAccount(committercommon.SYSTEM, bob)
@@ -117,7 +117,7 @@ func TestAccessFilters(t *testing.T) {
 	bob := addrcompressor.RandomAccount()
 
 	// committer := ccurl.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
+	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	writeCache.CreateNewAccount(committercommon.SYSTEM, alice)
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, bob); err != nil { // NewAccount account structure {
 		t.Error(err)

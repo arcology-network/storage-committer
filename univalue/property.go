@@ -24,6 +24,17 @@ func NewProperty(tx uint32, key string, reads, writes uint32, deltaWrites uint32
 	}
 }
 
+func (this *Property) Reset() {
+	this.vType = 0
+	this.persistent = false // Won't be affected by conflict status
+	this.tx = 0
+	this.path = nil
+	this.reads = 0
+	this.writes = 0
+	this.deltaWrites = 0
+	this.reclaimFunc = nil
+}
+
 func (this *Property) Merge(other *Property) {
 	this.reads += other.reads
 	this.writes += other.writes

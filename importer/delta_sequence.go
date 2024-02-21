@@ -35,7 +35,11 @@ func NewDeltaSequence(key string, store interfaces.Datastore) *DeltaSequence {
 func (this *DeltaSequence) Init(key string, store interfaces.Datastore) *DeltaSequence {
 	this.key = key
 	this.transitions = this.transitions[:0]
-	this.rawBytes = common.FilterFirst(store.Retrive(key, nil))
+	this.rawBytes = nil
+
+	if len(key) > 0 {
+		this.rawBytes = common.FilterFirst(store.Retrive(key, nil))
+	}
 	return this
 }
 
@@ -86,10 +90,4 @@ func (this *DeltaSequence) Finalize() *univalue.Univalue {
 		panic(err)
 	}
 	return finalized
-}
-
-func (this *DeltaSequence) Reclaim() {
-	for i := range this.transitions {
-		this.transitions[i] = nil
-	}
 }

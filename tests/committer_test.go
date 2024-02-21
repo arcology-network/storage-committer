@@ -30,7 +30,7 @@ func TestSize(t *testing.T) {
 
 	alice := AliceAccount()
 	committer := ccurl.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
+	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -66,7 +66,7 @@ func TestSize(t *testing.T) {
 	committer.Commit()
 
 	committer.Init(store)
-	writeCache.Clear()
+	writeCache.Reset()
 
 	outV, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/ele1", new(noncommutative.Bytes))
 	if !bytes.Equal(outV.([]byte), array.New[byte](320, 11)) {
@@ -79,7 +79,7 @@ func TestReadWriteAt(t *testing.T) {
 
 	alice := AliceAccount()
 	// committer := ccurl.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
+	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -126,7 +126,7 @@ func TestAddThenDeletePath(t *testing.T) {
 	alice := AliceAccount()
 
 	committer := ccurl.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
+	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
@@ -188,7 +188,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 
 	alice := AliceAccount()
 
-	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
+	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -206,7 +206,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 	committer.Commit()
 
 	committer.Init(store)
-	writeCache.Clear()
+	writeCache.Reset()
 
 	// create a path
 	path := commutative.NewPath()
@@ -220,7 +220,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 	committer.Sort()
 	committer.Precommit([]uint32{1})
 	committer.Commit()
-	writeCache.Clear()
+	writeCache.Reset()
 
 	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
 	if v == nil {
@@ -239,7 +239,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 	committer.Commit()
 	committer.Init(store)
 
-	writeCache.Clear()
+	writeCache.Reset()
 	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path)); v != nil {
 		t.Error("Error: The path should have been deleted")
 	}
@@ -250,7 +250,7 @@ func TestBasic(t *testing.T) {
 
 	alice := AliceAccount()
 	committer := ccurl.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
+	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -263,7 +263,7 @@ func TestBasic(t *testing.T) {
 	// univalue.Univalues(acctTrans).Print()
 
 	committer.Init(store)
-	writeCache.Clear()
+	writeCache.Reset()
 	// create a path
 	path := commutative.NewPath()
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
@@ -376,7 +376,7 @@ func TestBasic(t *testing.T) {
 func TestPathAddThenDelete(t *testing.T) {
 	store := chooseDataStore()
 	committer := ccurl.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
+	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	alice := AliceAccount()
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
@@ -460,7 +460,7 @@ func TestCommitter(t *testing.T) {
 	store := chooseDataStore()
 	// store := chooseDataStore()
 	committer := ccurl.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
+	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	alice := AliceAccount()
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
@@ -476,7 +476,7 @@ func TestCommitter(t *testing.T) {
 	committer.Precommit([]uint32{committercommon.SYSTEM})
 	committer.Commit()
 
-	writeCache.Clear()
+	writeCache.Reset()
 	// committer.Init(store)
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.NewPath()); err != nil {
 		t.Error(err)
@@ -552,7 +552,7 @@ func TestCommitter2(t *testing.T) {
 	store := chooseDataStore()
 	// store := datastore.NewDataStore(nil, nil, nil, encoder, decoder)
 	committer := ccurl.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
+	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	alice := AliceAccount()
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
@@ -567,7 +567,7 @@ func TestCommitter2(t *testing.T) {
 	committer.Init(store)
 	// Create a new container
 	path := commutative.NewPath()
-	writeCache.Clear()
+	writeCache.Reset()
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		t.Error(err, "Error:  Failed to MakePath: "+"/ctrn-0/")
 	}
@@ -737,7 +737,7 @@ func TestError(t *testing.T) {
 	store := chooseDataStore()
 	// store := datastore.NewDataStore(nil, nil, nil, encoder, decoder)
 	committer := ccurl.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
+	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	alice := AliceAccount()
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
@@ -752,7 +752,7 @@ func TestError(t *testing.T) {
 	committer.Init(store)
 	// Create a new container
 	path := commutative.NewPath()
-	writeCache.Clear()
+	writeCache.Reset()
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		t.Error(err, "Error:  Failed to MakePath: "+"/ctrn-0/")
 	}
@@ -798,7 +798,7 @@ func TestTransientDBv2(t *testing.T) {
 
 	alice := AliceAccount()
 	committer := ccurl.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
+	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -828,7 +828,7 @@ func TestCustomCodec(t *testing.T) {
 	store := datastore.NewDataStore(nil, policy, memdb.NewMemoryDB(), storage.Rlp{}.Encode, storage.Rlp{}.Decode)
 	alice := AliceAccount()
 	committer := ccurl.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
+	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -845,7 +845,7 @@ func TestCustomCodec(t *testing.T) {
 	committer.Commit()
 
 	committer.Init(store)
-	writeCache.Clear()
+	writeCache.Reset()
 	// commutative.NewU256Delta(100)
 	// writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/balance", &commutative.U256{value: 100})
 

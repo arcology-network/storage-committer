@@ -20,7 +20,7 @@ func TestAccumulatorUpperLimit(t *testing.T) {
 
 	alice := AliceAccount()
 	// committer := ccurl.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
+	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
@@ -64,7 +64,7 @@ func TestAccumulatorLowerLimit(t *testing.T) {
 
 	alice := AliceAccount()
 	// url := ccurl.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
+	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}

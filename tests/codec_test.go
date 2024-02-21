@@ -71,7 +71,7 @@ func TestUnivalueCodec(t *testing.T) {
 	transitions := []*univalue.Univalue{}
 
 	// committer := ccurl.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
+	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	// committer.NewAccount(committercommon.SYSTEM, fmt.Sprint("rand.Int()"))
 	writeCache.CreateNewAccount(committercommon.SYSTEM, fmt.Sprint("rand.Int()"))
 
@@ -96,7 +96,7 @@ func TestUnivaluesCodec(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		acct := RandomAccount()
 		// committer := ccurl.NewStorageCommitter(store)
-		writeCache := cache.NewWriteCache(store, platform.NewPlatform())
+		writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 		// committer.NewAccount(committercommon.SYSTEM, acct)
 
 		writeCache.CreateNewAccount(committercommon.SYSTEM, acct)

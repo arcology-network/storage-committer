@@ -20,7 +20,7 @@ import (
 func TestAuxTrans(t *testing.T) {
 	store := chooseDataStore()
 	committer := ccurl.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
+	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	alice := AliceAccount()
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
@@ -38,7 +38,7 @@ func TestAuxTrans(t *testing.T) {
 
 	committer.Init(store)
 	// create a path
-	writeCache.Clear()
+	writeCache.Reset()
 
 	path := commutative.NewPath()
 
@@ -114,7 +114,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	store := chooseDataStore()
 
 	committer := ccurl.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
+	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	alice := AliceAccount()
 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
@@ -145,7 +145,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	committer.Commit() // Commit
 
 	committer.Init(store)
-	writeCache.Clear()
+	writeCache.Reset()
 
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewInt64(1111)); err != nil {
 		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/1") // create a path

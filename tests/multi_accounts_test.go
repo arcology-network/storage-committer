@@ -21,7 +21,7 @@ func TestMultiAccountCreation(t *testing.T) {
 
 	store.Inject((committercommon.ETH10_ACCOUNT_PREFIX), commutative.NewPath())
 
-	writeCache := cache.NewWriteCache(store, platform.NewPlatform())
+	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	accounts := make([]string, 10)
 	for i := 0; i < len(accounts); i++ {
@@ -43,7 +43,7 @@ func TestMultiAccountCreation(t *testing.T) {
 	committer.Sort()
 	committer.Precommit([]uint32{0})
 	committer.Commit()
-	writeCache.Clear()
+	writeCache.Reset()
 	// acctTrans = univalue.Univalues(array.Clone(raw)).To(importer.ITTransition{})
 	// encoded := univalue.Univalues(acctTrans).Encode()
 

@@ -42,6 +42,12 @@ func (*Univalue) New(meta, value, cache interface{}) *Univalue {
 	}
 }
 
+func (*Univalue) Reset(this *Univalue) {
+	this.Property.Reset()
+	this.ClearCache()
+	this.value = nil
+}
+
 func (this *Univalue) From(v *Univalue) interface{} { return v }
 
 // func (this *Univalue) IsHotLoaded() bool             { return this.reads > 1 }
