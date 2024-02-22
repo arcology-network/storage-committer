@@ -57,16 +57,6 @@ func (this Univalues) Clone() Univalues {
 	return array.Clone(this)
 }
 
-func (this Univalues) UniqueTXs() []uint32 {
-	var ids []uint32
-	for i := 0; i < len(this); i++ {
-		if this[i] != nil {
-			ids = append(ids, this[i].GetTx())
-		}
-	}
-	return array.UniqueInts(ids)
-}
-
 func (this Univalues) SortByKey() Univalues {
 	sort.Slice(this, func(i, j int) bool {
 		return (*this[i].GetPath()) < (*this[j].GetPath())

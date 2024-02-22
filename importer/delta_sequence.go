@@ -83,7 +83,6 @@ func (this *DeltaSequence) Finalize() *univalue.Univalue {
 	}
 
 	finalized := this.transitions[0]
-
 	if (this.rawBytes != nil) && (finalized.Value() != nil) { // Value update not an assignment or deletion
 		if encoded, ok := this.rawBytes.([]byte); ok {
 			v := finalized.Value().(intf.Type).StorageDecode(*finalized.GetPath(), encoded).(intf.Type).Value()

@@ -14,7 +14,7 @@ import (
 type Importer struct {
 	numThreads int
 	store      interfaces.Datastore
-	byTx       map[uint32]*[]*univalue.Univalue
+	byTx       map[int]*[]*univalue.Univalue
 	deltaDict  *ccmap.ConcurrentMap[string, *DeltaSequence]
 
 	platform interfaces.Platform
@@ -30,7 +30,7 @@ func NewImporter(store interfaces.Datastore, platform interfaces.Platform, args 
 	importer.numThreads = 8
 	importer.store = store
 
-	importer.byTx = make(map[uint32]*[]*univalue.Univalue)
+	importer.byTx = make(map[int]*[]*univalue.Univalue)
 	importer.platform = platform
 	importer.deltaDict = ccmap.NewConcurrentMap(8, func(v *DeltaSequence) bool { return v == nil }, func(k string) uint8 {
 		return array.Sum[uint8, uint8]([]byte(k))
@@ -77,8 +77,8 @@ func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) 
 		}
 		return ""
 	})
+	array.Remove(&missingKeys, "") // Remove the keys that already exist.
 
-	array.Remove(&missingKeys, "")
 	missingKeys = mapi.Keys(mapi.FromArray(missingKeys, func(k string) bool { return true })) // Get the unique keys only
 	this.deltaDict.BatchSetWith(missingKeys, func(k *string) *DeltaSequence { return NewDeltaSequence(*k, this.store) })
 
@@ -89,22 +89,22 @@ func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) 
 			return seq.Add(txTrans[i]), false
 		})
 
-	txIDs := array.Append(txTrans, func(_ int, v *univalue.Univalue) uint32 { return v.GetTx() })
-	mapi.IfNotFoundDo(this.byTx, txIDs, func(k uint32) *[]*univalue.Univalue {
-		v := (make([]*univalue.Univalue, 0, 16))
+	txIDs := array.Append(txTrans, func(_ int, v *univalue.Univalue) int { return int(v.GetTx()) })
+	mapi.IfNotFoundDo(this.byTx, array.UniqueInts(txIDs), func(k int) *[]*univalue.Univalue {
+		v := (make([]*univalue.Univalue, 0, 16)) // For unique ones only
 		return &v
 	})
 
-	array.ParallelForeach(txIDs, 4, func(i int, _ *uint32) {
+	array.ParallelForeach(txIDs, 4, func(i int, _ *int) {
 		v := txTrans[i]
-		tran := this.byTx[v.GetTx()]
+		tran := this.byTx[int(v.GetTx())]
 		*tran = append(*tran, v)
 	})
 }
 
 // Only keep transation within the whitelist
-func (this *Importer) WhilteList(whitelist []uint32) []error {
-	if whitelist == nil { // Whiltelist all
+func (this *Importer) WhiteList(whitelist []uint32) []error {
+	if whitelist == nil { // WhiteList all
 		return []error{}
 	}
 
@@ -115,7 +115,7 @@ func (this *Importer) WhilteList(whitelist []uint32) []error {
 			continue
 		}
 
-		if _, ok := whitelisted[txid]; !ok {
+		if _, ok := whitelisted[uint32(txid)]; !ok {
 			for _, v := range *vec {
 				v.SetPath(nil) // Mark the transition status, so that it can be removed later.
 			}
@@ -140,14 +140,11 @@ func (this *Importer) MergeStateDelta() {
 	array.ParallelForeach(this.keyBuffer, this.numThreads, func(i int, _ *string) {
 		deltaSeq, _ := this.deltaDict.Get(this.keyBuffer[i])
 		this.valBuffer[i] = deltaSeq.Finalize()
-
-		if this.valBuffer[i] == nil || this.valBuffer[i].(*univalue.Univalue) == nil { // Some sequences may have been deleted with transactions they belong to
-			this.keyBuffer[i] = ""
-		}
 	})
 
-	array.Remove(&this.keyBuffer, "")
-	array.RemoveIf(&this.valBuffer, func(_ int, v interface{}) bool { return v.(*univalue.Univalue) == nil })
+	array.RemoveBothIf(&this.keyBuffer, &this.valBuffer, func(i int, _ string, v interface{}) bool {
+		return this.valBuffer[i] == nil || this.valBuffer[i].(*univalue.Univalue) == nil
+	})
 }
 
 func (this *Importer) KVs() ([]string, []interface{}) {
@@ -163,22 +160,11 @@ func (this *Importer) Clear() {
 		this.byTx[k] = v
 	}
 
-	this.deltaDict = ccmap.NewConcurrentMap(8, func(v *DeltaSequence) bool { return v == nil }, func(k string) uint8 {
-		return array.Sum[uint8, uint8]([]byte(k))
-	})
-
+	this.deltaDict.Clear()
 	this.keyBuffer = this.keyBuffer[:0]
 	this.valBuffer = this.valBuffer[:0]
 
 	this.seqPool.Reset()
-
-	// this.seqPool.ForEachAllocated(func(obj *DeltaSequence) {
-	// 	obj.Reclaim()
-	// })
-
-	// this.uniPool.ForEachAllocated(func(obj *univalue.Univalue) {
-	// 	obj.Reclaim()
-	// })
 
 	this.seqPool.ReclaimRecursive()
 	this.store.Clear()

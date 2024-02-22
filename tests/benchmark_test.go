@@ -127,7 +127,8 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 		}
 
 		for j := 0; j < 4; j++ {
-			if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+acct+"/storage/ctrn-0/elem-0"+fmt.Sprint(j), noncommutative.NewString("fmt.Sprint(i)")); err != nil { /* The first Element */
+			_2k := array.New[byte](2000, 128)
+			if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+acct+"/storage/ctrn-0/elem-0"+fmt.Sprint(j), noncommutative.NewString(string(_2k))); err != nil { /* The first Element */
 				b.Error(err)
 			}
 		}
