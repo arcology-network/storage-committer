@@ -20,8 +20,8 @@ var (
 )
 
 func chooseDataStore() interfaces.Datastore {
-	// return storage.NewParallelEthMemDataStore() // Eth trie datastore
-	return storage.NewLevelDBDataStore("/tmp")
+	return storage.NewParallelEthMemDataStore() // Eth trie datastore
+	// return storage.NewLevelDBDataStore("/tmp")
 	// return storage.NewDataStore(nil, storage.NewCachePolicy(1000000, 1), storage.NewMemoryDB(), encoder, decoder)
 	// return storage.NewDataStore(nil, storage.NewCachePolicy(0, 1), storage.NewMemoryDB(), encoder, decoder)
 }

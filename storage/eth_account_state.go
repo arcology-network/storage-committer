@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/VictoriaMetrics/fastcache"
 	"github.com/arcology-network/common-lib/codec"
 	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/array"
@@ -23,7 +24,9 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ethereum/go-ethereum/trie"
 	ethmpt "github.com/ethereum/go-ethereum/trie"
+	"github.com/ethereum/go-ethereum/trie/triedb/hashdb"
 	"github.com/holiman/uint256"
 	"golang.org/x/crypto/sha3"
 )
@@ -44,9 +47,21 @@ type Account struct {
 
 // The diskdbs need to able to handle concurrent accesses themselve
 func NewAccount(addr ethcommon.Address, diskdbs [16]ethdb.Database, state types.StateAccount) *Account {
-	ethdb := ethmpt.NewParallelDatabase(diskdbs, nil)
+	ethdb, trie, err := LoadTrie(diskdbs, state.Root)
+	return &Account{
+		addr:         addr,
+		storageTrie:  trie,
+		StorageDirty: false,
+		ethdb:        ethdb,
+		diskdbShards: diskdbs,
+		StateAccount: state,
+		err:          err,
+	}
+}
 
-	trie, err := ethmpt.NewParallel(ethmpt.TrieID(state.Root), ethdb)
+// The diskdbs need to able to handle concurrent accesses themselve
+func NewAccountWithSharedCache(addr ethcommon.Address, diskdbs [16]ethdb.Database, state types.StateAccount, dbConfig *hashdb.Config, sharedCache *fastcache.Cache) *Account {
+	ethdb, trie, err := LoadTrieWithSharedCache(diskdbs, state.Root, dbConfig, sharedCache)
 	return &Account{
 		addr:         addr,
 		storageTrie:  trie,
@@ -65,6 +80,18 @@ func EmptyAccountState() types.StateAccount {
 		Root:     types.EmptyRootHash,
 		CodeHash: codec.Bytes32(crypto.Keccak256Hash(nil)).Encode(),
 	}
+}
+
+func LoadTrie(diskdbs [16]ethdb.Database, root ethcommon.Hash) (*ethmpt.Database, *trie.Trie, error) {
+	ethdb := ethmpt.NewParallelDatabase(diskdbs, nil)
+	trie, err := ethmpt.NewParallel(ethmpt.TrieID(root), ethdb)
+	return ethdb, trie, err
+}
+
+func LoadTrieWithSharedCache(diskdbs [16]ethdb.Database, root ethcommon.Hash, dbConfig interface{}, sharedCache *fastcache.Cache) (*ethmpt.Database, *trie.Trie, error) {
+	ethdb := ethmpt.NewParallelDatabaseWithSharedCache(diskdbs, sharedCache, nil)
+	trie, err := ethmpt.NewParallel(ethmpt.TrieID(root), ethdb)
+	return ethdb, trie, err
 }
 
 func (this *Account) GetState(key [32]byte) []byte {

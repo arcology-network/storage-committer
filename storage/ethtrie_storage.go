@@ -2,8 +2,11 @@ package storage
 
 import (
 	"errors"
+	"fmt"
 	"sync"
+	"time"
 
+	"github.com/VictoriaMetrics/fastcache"
 	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/array"
 	"github.com/arcology-network/common-lib/exp/product"
@@ -19,6 +22,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/ethereum/go-ethereum/rlp"
 	ethmpt "github.com/ethereum/go-ethereum/trie"
+	"github.com/ethereum/go-ethereum/trie/triedb/hashdb"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -39,6 +43,9 @@ type EthDataStore struct {
 
 	lock  sync.RWMutex
 	dbErr error
+
+	trieDbConfig *hashdb.Config   // The config for the hash db underlying the trie.
+	sharedCache  *fastcache.Cache // A shared cache to be used by different instances of the Eth Database
 }
 
 // LoadEthDataStore loads the trie from the database with the root provided.
@@ -57,12 +64,14 @@ func LoadEthDataStore(triedb *ethmpt.Database, root [32]byte) (*EthDataStore, er
 }
 
 func NewEthDataStore(trie *ethmpt.Trie, triedb *ethmpt.Database, diskdb [16]ethdb.Database) *EthDataStore {
+	trieDbConfig := &hashdb.Config{CleanCacheSize: 1024 * 1024 * 100} // 100MB
 	return &EthDataStore{
-		ethdb:   triedb,
-		diskdbs: diskdb,
-
-		accounts: map[ethcommon.Address]*Account{},
-		dirties:  []*Account{},
+		ethdb:        triedb,
+		diskdbs:      diskdb,
+		trieDbConfig: trieDbConfig,
+		sharedCache:  fastcache.New(trieDbConfig.CleanCacheSize),
+		accounts:     map[ethcommon.Address]*Account{},
+		dirties:      []*Account{},
 
 		worldStateTrie: trie,
 		encoder:        Rlp{}.Encode,
@@ -75,6 +84,15 @@ func NewParallelEthMemDataStore() *EthDataStore {
 	diskdbs := [16]ethdb.Database{}
 	array.Fill(diskdbs[:], rawdb.NewMemoryDatabase())
 	db := ethmpt.NewParallelDatabase(diskdbs, nil)
+
+	return NewEthDataStore(ethmpt.NewEmptyParallel(db), db, diskdbs)
+}
+
+// NewParallelEthMemDataStore creates a new EthDataStore with a memory database.
+func NewParallelEthMemDataStoreWithSharedCache(trieDbConfig *hashdb.Config, cleanCache *fastcache.Cache) *EthDataStore {
+	diskdbs := [16]ethdb.Database{}
+	array.Fill(diskdbs[:], rawdb.NewMemoryDatabase())
+	db := ethmpt.NewParallelDatabaseWithSharedCache(diskdbs, cleanCache, nil)
 
 	return NewEthDataStore(ethmpt.NewEmptyParallel(db), db, diskdbs)
 }
@@ -299,14 +317,15 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 	}
 
 	// Group the keys and transactions by their account addresses.
-	accountKeys, stateGroups := array.GroupBy(*new(product.Pairs[string, interface{}]).From(keys, values.([]interface{})).Array(),
-		func(v *product.Pair[string, interface{}]) *string {
-			_, key, _ := platform.ParseAccountAddr(v.First)
+	t0 := time.Now()
+	kv := *new(product.Pairs[string, interface{}]).FromArray(keys, values.([]interface{})).Array()
+	accountKeys, stateGroups := array.GroupBy(kv,
+		func(_ int, v *product.Pair[string, interface{}]) *string {
+			key := platform.GetAccountAddr(v.First)
 			return &key
 		})
-
-	this.dirties = array.Resize(this.dirties, len(accountKeys)) // Reset the dirties accounts
-
+	this.dirties = array.Resize(&this.dirties, len(accountKeys)) // Reset the dirties accounts
+	fmt.Println("**NewAccountWithSharedCache: ", time.Since(t0))
 	// Load the accounts from the cache or the trie in parallel, ready for update.
 	numThd := common.IfThen(len(accountKeys) <= 1024, 8, 16) // 8 threads for small batch fewer than 1024 accounts, 16 threads for larger batches
 	array.ParallelForeach(accountKeys, numThd, func(i int, key *string) {
@@ -324,10 +343,16 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 
 		// address := ethcommon.BytesToAddress(hexutil.MustDecode(*key))
 		if this.dirties[i], _ = this.GetAccount(address, &accesses); this.dirties[i] == nil {
-			this.dirties[i] = NewAccount( // Create a new account if not found
+			// this.dirties[i] = NewAccount( // Create a new account if not found
+			// 	address,
+			// 	this.diskdbs,
+			// 	EmptyAccountState()) // empty account state
+			this.dirties[i] = NewAccountWithSharedCache(
 				address,
 				this.diskdbs,
-				EmptyAccountState()) // empty account state
+				EmptyAccountState(),
+				this.trieDbConfig,
+				this.sharedCache) // empty account state
 		}
 	})
 
@@ -347,15 +372,19 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 	})
 
 	// Encode the account addresses.
-	acctBytes := array.Append(this.dirties, func(_ int, acct *Account) []byte {
-		// addr, _ := hexutil.Decode(acct.addr) // Remove the 0x prefix
-		return crypto.Keccak256(acct.addr[:]) // Account keys
-	})
-
-	// Encode the account content.
-	encoded := array.Append(this.dirties, func(_ int, acct *Account) []byte {
-		return acct.Encode()
-	})
+	var acctBytes [][]byte
+	var encoded [][]byte
+	common.ParallelExecute(func() {
+		acctBytes = array.Append(this.dirties, func(_ int, acct *Account) []byte {
+			return crypto.Keccak256(acct.addr[:]) // Account keys
+		})
+	},
+		func() {
+			encoded = array.Append(this.dirties, func(_ int, acct *Account) []byte {
+				return acct.Encode() // Encode the account content.
+			})
+		},
+	)
 
 	// Write the account trie to the DB.
 	errs := this.worldStateTrie.ParallelUpdate(acctBytes, encoded) // Encoded accounts
@@ -378,19 +407,22 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 }
 
 // Write the DB
-func (this *EthDataStore) Commit(block uint64) error {
-	common.MapForeach(this.accounts, func(_ ethcommon.Address, acct **Account) {
-		if err := (**acct).Commit(block); err != nil {
-			panic(err)
-		}
-	})
+func (this *EthDataStore) Commit(blockNum uint64) error {
+	t0 := time.Now()
+	// common.MapForeach(this.accounts, func(_ ethcommon.Address, acct **Account) {
+	// 	if err := (**acct).Commit(block); err != nil {
+	// 		panic(err)
+	// 	}
+	// })
+	// fmt.Println("**dirties to DB: ", time.Since(t0))
+	t0 = time.Now()
 
 	array.ParallelForeach(this.dirties, 16, func(_ int, acct **Account) {
-		if err := (**acct).Commit(block); err != nil {
+		if err := (**acct).Commit(blockNum); err != nil {
 			panic(err)
 		}
 	})
-
+	fmt.Println("**acct to DB: ", time.Since(t0))
 	// Debugging only
 	// keys, _ := this.dirties
 	// for _, k := range keys {
@@ -399,14 +431,13 @@ func (this *EthDataStore) Commit(block uint64) error {
 	// 		panic(err)
 	// 	}
 	// }
-
 	if len(this.dirties) == 0 {
 		return nil
 	}
 
 	var err error
-	this.worldStateTrie, err = commitToDB(this.worldStateTrie, this.ethdb, block) // Reload the trie for the next block
-	this.dirties = this.dirties[:0]
+	this.worldStateTrie, err = commitToDB(this.worldStateTrie, this.ethdb, blockNum) // Reload the trie for the next block
+	this.dirties = this.dirties[:0]                                                  // Reset the dirties buffer
 	return err
 }
 

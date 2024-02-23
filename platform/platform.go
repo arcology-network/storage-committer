@@ -104,6 +104,13 @@ func ParseAccountAddr(acct string) (string, string, string) {
 		acct[committercommon.ETH10_ACCOUNT_PREFIX_LENGTH+committercommon.ETH10_ACCOUNT_LENGTH:]
 }
 
+func GetAccountAddr(acct string) string {
+	if len(acct) < committercommon.ETH10_ACCOUNT_PREFIX_LENGTH+committercommon.ETH10_ACCOUNT_LENGTH {
+		return acct
+	}
+	return acct[committercommon.ETH10_ACCOUNT_PREFIX_LENGTH : committercommon.ETH10_ACCOUNT_PREFIX_LENGTH+committercommon.ETH10_ACCOUNT_LENGTH]
+}
+
 func GetPathUnder(key, prefix string) string {
 	if len(key) > committercommon.ETH10_ACCOUNT_PREFIX_LENGTH+committercommon.ETH10_ACCOUNT_LENGTH {
 		subKey := key[committercommon.ETH10_ACCOUNT_PREFIX_LENGTH+committercommon.ETH10_ACCOUNT_LENGTH:]

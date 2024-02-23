@@ -19,7 +19,9 @@ import (
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 	cache "github.com/arcology-network/eu/cache"
 	orderedmap "github.com/elliotchance/orderedmap"
+	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/google/btree"
+	"golang.org/x/crypto/sha3"
 	// "github.com/google/btree"
 	// ehtrlp "github.com/elliotchance/orderedmap"
 )
@@ -110,11 +112,9 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	}
 
 	t0 := time.Now()
-	for i := 0; i < 100000; i++ {
-		acct := fmt.Sprint(rand.Int())
-		// if _, err := committer.NewAccount(committercommon.SYSTEM, acct); err != nil { // NewAccount account structure {
-		// 	fmt.Println(err)
-		// }
+	for i := 0; i < 25000; i++ {
+		buf := sha3.Sum256([]byte(fmt.Sprint(rand.Int())))
+		acct := hexutil.Encode(buf[:20])
 
 		// writeCache := committer.WriteCache()
 		if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, acct); err != nil { // NewAccount account structure {
@@ -127,20 +127,19 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 		}
 
 		for j := 0; j < 4; j++ {
-			_2k := array.New[byte](2000, 128)
-			if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+acct+"/storage/ctrn-0/elem-0"+fmt.Sprint(j), noncommutative.NewString(string(_2k))); err != nil { /* The first Element */
+			if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0"+fmt.Sprint(j), noncommutative.NewString(string(acct))); err != nil { /* The first Element */
 				b.Error(err)
 			}
 		}
 	}
-	fmt.Println("Write 2500 accounts in :", time.Since(t0))
+	fmt.Println("Write accounts in :", time.Since(t0))
 
 	t0 = time.Now()
 	trans := array.Clone(writeCache.Export())
 	fmt.Println("Clone:", len(trans), "in ", time.Since(t0))
 
 	t0 = time.Now()
-	trans = univalue.Univalues(trans).To(importer.ITTransition{})
+	trans = univalue.Univalues(trans).To(importer.IPTransition{})
 	fmt.Println("To(importer.ITTransition{}):", len(trans), "in ", time.Since(t0))
 
 	committer := ccurl.NewStorageCommitter(store)

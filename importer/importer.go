@@ -5,24 +5,23 @@ import (
 	"github.com/arcology-network/common-lib/exp/array"
 	ccmap "github.com/arcology-network/common-lib/exp/map"
 	mapi "github.com/arcology-network/common-lib/exp/map"
-	"github.com/arcology-network/common-lib/exp/mempool"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
+	"github.com/cespare/xxhash/v2"
 )
 
 type Importer struct {
 	numThreads int
 	store      interfaces.Datastore
-	byTx       map[int]*[]*univalue.Univalue
+	platform   interfaces.Platform
+	byTx       map[int]*[]*univalue.Univalue    // Index by transaction id
+	byAcct     map[string]*[]*univalue.Univalue // Index by account address
 	deltaDict  *ccmap.ConcurrentMap[string, *DeltaSequence]
+	keyBuffer  []string      // Keys updated in the cycle
+	valBuffer  []interface{} // Value updated in the cycle
 
-	platform interfaces.Platform
-
-	keyBuffer []string      // Keys updated in the cycle
-	valBuffer []interface{} // Value updated in the cycle
-
-	seqPool *mempool.Mempool[*DeltaSequence]
+	// seqPool *mempool.Mempool[*DeltaSequence] // Pool of sequences but very slow
 }
 
 func NewImporter(store interfaces.Datastore, platform interfaces.Platform, args ...interface{}) *Importer {
@@ -31,14 +30,17 @@ func NewImporter(store interfaces.Datastore, platform interfaces.Platform, args 
 	importer.store = store
 
 	importer.byTx = make(map[int]*[]*univalue.Univalue)
+	importer.byAcct = make(map[string]*[]*univalue.Univalue)
+
 	importer.platform = platform
-	importer.deltaDict = ccmap.NewConcurrentMap(8, func(v *DeltaSequence) bool { return v == nil }, func(k string) uint8 {
-		return array.Sum[uint8, uint8]([]byte(k))
+	importer.deltaDict = ccmap.NewConcurrentMap(8, func(v *DeltaSequence) bool { return v == nil }, func(k string) uint64 {
+		return xxhash.Sum64([]byte(k))
+		// return array.Sum[uint8, uint8]([]byte(k))
 	})
 
-	importer.seqPool = mempool.NewMempool[*DeltaSequence](4096, 64, func() *DeltaSequence {
-		return NewDeltaSequence("", nil) // Init an empty sequence.
-	}, func(_ *DeltaSequence) {})
+	// importer.seqPool = mempool.NewMempool[*DeltaSequence](4096, 64, func() *DeltaSequence {
+	// 	return NewDeltaSequence("", nil) // Init an empty sequence.
+	// }, func(_ *DeltaSequence) {})
 	return &importer
 }
 
@@ -58,9 +60,9 @@ func (this *Importer) IfExists(key string) bool {
 	return false
 }
 
-func (this *Importer) NewSequenceFromPool(k string, store interfaces.Datastore) *DeltaSequence {
-	return this.seqPool.New().Init(k, store)
-}
+// func (this *Importer) NewSequenceFromPool(k string, store interfaces.Datastore) *DeltaSequence {
+// 	return this.seqPool.New().Init(k, store)
+// }
 
 func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) {
 	commitIfAbsent := common.IfThenDo1st(len(args) > 0 && args[0] != nil, func() bool { return args[0].(bool) }, true) //Write if absent from local
@@ -135,7 +137,7 @@ func (this *Importer) SortDeltaSequences() {
 
 // Merge and finalize state deltas
 func (this *Importer) MergeStateDelta() {
-	this.valBuffer = array.Resize(this.valBuffer, len(this.keyBuffer))
+	this.valBuffer = array.Resize(&this.valBuffer, len(this.keyBuffer))
 
 	array.ParallelForeach(this.keyBuffer, this.numThreads, func(i int, _ *string) {
 		deltaSeq, _ := this.deltaDict.Get(this.keyBuffer[i])
@@ -164,8 +166,9 @@ func (this *Importer) Clear() {
 	this.keyBuffer = this.keyBuffer[:0]
 	this.valBuffer = this.valBuffer[:0]
 
-	this.seqPool.Reset()
-
-	this.seqPool.ReclaimRecursive()
+	// t0 := time.Now()
+	// this.seqPool.Reset() // Very slow
+	// this.seqPool.ReclaimRecursive()
+	// fmt.Println("Reset: ", time.Since(t0))
 	this.store.Clear()
 }

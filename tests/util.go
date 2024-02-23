@@ -19,6 +19,7 @@
 package ccurltest
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
 	"time"
@@ -26,6 +27,7 @@ import (
 	"github.com/arcology-network/common-lib/exp/array"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	rlp "github.com/ethereum/go-ethereum/rlp"
+	"golang.org/x/crypto/sha3"
 )
 
 func RandomAccount() string {
@@ -56,6 +58,15 @@ func CarolAccount() string {
 	b := make([]byte, 20)
 	array.Fill(b, 12)
 	return hexutil.Encode(b)
+}
+
+func RandomAccounts(n int) []string {
+	accounts := make([]string, n)
+	for i := range n {
+		b := sha3.Sum256([]byte(fmt.Sprintf("%v", rand.Intn(1000000))))
+		accounts[i] = hexutil.Encode(b[:20])
+	}
+	return accounts
 }
 
 func rlpEncoder(args ...interface{}) []byte {

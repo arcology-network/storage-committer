@@ -12,11 +12,13 @@ import (
 type Univalues []*Univalue
 
 func (this Univalues) To(filter interface{}) Univalues {
-	for i, v := range this {
-		this[i] = filter.(interface {
-			From(*Univalue) *Univalue
-		}).From(v)
-	}
+	fun := filter.(interface{ From(*Univalue) *Univalue })
+	array.ParallelForeach(this, 8, func(i int, _ **Univalue) {
+		this[i] = fun.From(this[i])
+	})
+	// for i, v := range this {
+	// 	this[i] = fun.From(v)
+	// }
 	array.Remove((*[]*Univalue)(&this), nil)
 	return this
 }

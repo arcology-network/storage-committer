@@ -67,32 +67,31 @@ func (this *StateCommitter) Init(store interfaces.Datastore) {
 // Clear clears the StateCommitter.
 func (this *StateCommitter) Clear() {
 	this.importer.Store().Clear()
+
+	t0 := time.Now()
 	this.importer.Clear()
+	fmt.Println("importer.Clear(): ", time.Since(t0))
+
+	t0 = time.Now()
 	this.imuImporter.Clear()
+	fmt.Println("imuImporter.Clear(): ", time.Since(t0))
 }
 
 // Import imports the given transitions into the StateCommitter.
 func (this *StateCommitter) Import(transitions []*univalue.Univalue, args ...interface{}) *StateCommitter {
 	invTransitions := make([]*univalue.Univalue, 0, len(transitions))
-	t0 := time.Now()
+
 	for i := 0; i < len(transitions); i++ {
 		if transitions[i].Persistent() { // Peristent transitions are immune to conflict detection
 			invTransitions = append(invTransitions, transitions[i]) //
 			transitions[i] = nil                                    // mark the peristent transitions
 		}
 	}
-	fmt.Println("Import: ", len(transitions), " in: ", time.Since(t0))
 
-	t0 = time.Now()
 	array.Remove(&transitions, nil) // Remove the Peristent transitions from the transition lists
-	fmt.Println("Remove: ", len(transitions), " in: ", time.Since(t0))
-
-	t0 = time.Now()
 	common.ParallelExecute(
 		func() { this.imuImporter.Import(invTransitions, args...) },
 		func() { this.importer.Import(transitions, args...) })
-
-	fmt.Println("ParallelExecute: ", len(transitions), " in: ", time.Since(t0))
 	return this
 }
 
@@ -128,13 +127,6 @@ func (this *StateCommitter) CopyToDbBuffer() ([32]byte, []string, []interface{})
 	keys, values = append(keys, invKeys...), append(values, invVals...)
 	return this.importer.Store().Precommit(keys, values), keys, values // save the transitions to the DB buffer
 }
-
-// SaveToDB saves the transitions to the database.
-// func (this *StateCommitter) SaveToDB() {
-// 	store := this.importer.Store()
-// 	store.Commit(0) // Commit to the state store
-// 	this.Clear()
-// }
 
 // Commit commits the transitions in the StateCommitter.
 func (this *StateCommitter) Precommit(txs []uint32) [32]byte {

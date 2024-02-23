@@ -36,8 +36,6 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	writeCache.Reset(writeCache)
 
 	alice := AliceAccount()
-	// committer.Init(store)
-	// committer.NewAccount(1, alice) // NewAccount account structure {
 	if _, err := writeCache.CreateNewAccount(1, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -82,7 +80,6 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 
 	committer.Init(store)
 	alice := AliceAccount()
-	// committer.NewAccount(1, alice) // NewAccount account structure {
 
 	writeCache.Reset(writeCache)                                     // = committer.WriteCache()
 	if _, err := writeCache.CreateNewAccount(1, alice); err != nil { // NewAccount account structure {
@@ -91,9 +88,6 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 
 	path1 := commutative.NewPath()                                                // create a path
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path1) // create a path
-	// writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-1"))
-	// writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-1"))
-	// accesses1, _ := writeCache.Export(importer.Sorter)
 	raw := writeCache.Export(importer.Sorter)
 	accesses1 := univalue.Univalues(array.Clone(raw)).To(importer.IPTransition{})
 
