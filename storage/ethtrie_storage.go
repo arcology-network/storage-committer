@@ -111,6 +111,17 @@ func NewLevelDBDataStore(dir string) *EthDataStore {
 	return NewEthDataStore(ethmpt.NewEmptyParallel(db), ethmpt.NewParallelDatabase(diskdbs, nil), diskdbs)
 }
 
+// Create a new account with default account state and shared cache.
+func (this *EthDataStore) NewAccount(addr []byte) *Account {
+	return NewAccountWithSharedCache(
+		ethcommon.BytesToAddress(addr),
+		this.diskdbs,
+		EmptyAccountState(),
+		this.trieDbConfig,
+		this.sharedCache)
+}
+
+// Get the account from the cache.
 func (this *EthDataStore) Cache() map[ethcommon.Address]*Account { return this.accounts }
 func (this *EthDataStore) Dirties() []*Account                   { return this.dirties }
 func (this *EthDataStore) Clear()                                {}
@@ -326,6 +337,8 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 		})
 	this.dirties = array.Resize(&this.dirties, len(accountKeys)) // Reset the dirties accounts
 	fmt.Println("**NewAccountWithSharedCache: ", time.Since(t0))
+
+	t0 = time.Now()
 	// Load the accounts from the cache or the trie in parallel, ready for update.
 	numThd := common.IfThen(len(accountKeys) <= 1024, 8, 16) // 8 threads for small batch fewer than 1024 accounts, 16 threads for larger batches
 	array.ParallelForeach(accountKeys, numThd, func(i int, key *string) {
@@ -340,8 +353,6 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 		}
 
 		address := ethcommon.BytesToAddress(acctBytes)
-
-		// address := ethcommon.BytesToAddress(hexutil.MustDecode(*key))
 		if this.dirties[i], _ = this.GetAccount(address, &accesses); this.dirties[i] == nil {
 			// this.dirties[i] = NewAccount( // Create a new account if not found
 			// 	address,
@@ -357,11 +368,11 @@ func (this *EthDataStore) Precommit(keys []string, values interface{}) [32]byte 
 	})
 
 	array.RemoveIf(&this.dirties, func(_ int, acct *Account) bool { return acct == nil }) // Remove the nil accounts
-
+	fmt.Println("**NewAccountWithSharedCache: ", time.Since(t0))
 	// Precommit the changes to the accounts and update the account storage trie.
 	array.ParallelForeach(this.dirties, 16, func(idx int, acct **Account) {
 		pairs := product.Pairs[string, interface{}](stateGroups[idx])
-		(*acct).Precommit(pairs.FirstsAndSeconds())
+		(*acct).Precommit(pairs.Split())
 	})
 
 	// Move dirties accounts to cache, the difference between the cache and dirties accounts is that the

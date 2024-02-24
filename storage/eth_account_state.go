@@ -99,8 +99,9 @@ func (this *Account) GetState(key [32]byte) []byte {
 	return data
 }
 
-func (this *Account) Address() ethcommon.Address { return this.addr }
-func (this *Account) Trie() *ethmpt.Trie         { return this.storageTrie }
+func (this *Account) SetAddress(addr ethcommon.Address) { this.addr = addr }
+func (this *Account) Address() ethcommon.Address        { return this.addr }
+func (this *Account) Trie() *ethmpt.Trie                { return this.storageTrie }
 
 func (this *Account) GetStorageRoot() [32]byte {
 	if this.storageTrie == nil {

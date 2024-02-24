@@ -5,8 +5,11 @@ import (
 	"github.com/arcology-network/common-lib/exp/array"
 	ccmap "github.com/arcology-network/common-lib/exp/map"
 	mapi "github.com/arcology-network/common-lib/exp/map"
+	structure "github.com/arcology-network/common-lib/exp/product"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
+	platform "github.com/arcology-network/concurrenturl/platform"
+	"github.com/arcology-network/concurrenturl/storage"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 	"github.com/cespare/xxhash/v2"
 )
@@ -21,16 +24,25 @@ type Importer struct {
 	keyBuffer  []string      // Keys updated in the cycle
 	valBuffer  []interface{} // Value updated in the cycle
 
+	acctBuffer     []string
+	acctTranBuffer []*[]*univalue.Univalue
+
+	acctList []*structure.Triplet[string, *storage.Account, []*univalue.Univalue]
+	acctDict map[string]*structure.Triplet[string, *storage.Account, []*univalue.Univalue]
+	// ethDataStore   *storage.EthDataStore
 	// seqPool *mempool.Mempool[*DeltaSequence] // Pool of sequences but very slow
 }
 
-func NewImporter(store interfaces.Datastore, platform interfaces.Platform, args ...interface{}) *Importer {
+func NewImporter(store interfaces.Datastore, platform interfaces.Platform) *Importer {
 	var importer Importer
 	importer.numThreads = 8
 	importer.store = store
 
 	importer.byTx = make(map[int]*[]*univalue.Univalue)
 	importer.byAcct = make(map[string]*[]*univalue.Univalue)
+
+	importer.acctBuffer = []string{}
+	importer.acctTranBuffer = []*[]*univalue.Univalue{}
 
 	importer.platform = platform
 	importer.deltaDict = ccmap.NewConcurrentMap(8, func(v *DeltaSequence) bool { return v == nil }, func(k string) uint64 {
@@ -92,7 +104,7 @@ func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) 
 		})
 
 	txIDs := array.Append(txTrans, func(_ int, v *univalue.Univalue) int { return int(v.GetTx()) })
-	mapi.IfNotFoundDo(this.byTx, array.UniqueInts(txIDs), func(k int) *[]*univalue.Univalue {
+	mapi.IfNotFoundDo(this.byTx, array.UniqueInts(txIDs), func(k int) int { return k }, func(k int) *[]*univalue.Univalue {
 		v := (make([]*univalue.Univalue, 0, 16)) // For unique ones only
 		return &v
 	})
@@ -101,6 +113,19 @@ func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) 
 		v := txTrans[i]
 		tran := this.byTx[int(v.GetTx())]
 		*tran = append(*tran, v)
+	})
+
+	// Create an array of transactions for each account.
+	mapi.IfNotFoundDo(this.byAcct, txTrans,
+		func(univ *univalue.Univalue) string { return platform.GetAccountAddr(*univ.GetPath()) },
+		func(_ string) *[]*univalue.Univalue {
+			return common.New(make([]*univalue.Univalue, 0, 8))
+		})
+
+	// Add the transaction to the account's array.
+	array.Foreach(txTrans, func(i int, v **univalue.Univalue) {
+		tran := this.byAcct[platform.GetAccountAddr(*(*v).GetPath())]
+		*tran = append(*tran, *v)
 	})
 }
 
@@ -135,6 +160,19 @@ func (this *Importer) SortDeltaSequences() {
 	})
 }
 
+// Remove the transitions that are marked for removal by the WhiteList function.
+// Remove the account if it has no transitions. The results will be used for updating the trie.
+func (this *Importer) OrganizeByAccount() {
+	mapi.KVsToBuffer(this.byAcct, &this.acctBuffer, &this.acctTranBuffer) // Write the results to the buffers
+	array.ParallelForeach(this.acctTranBuffer, this.numThreads, func(i int, trans **[]*univalue.Univalue) {
+		array.Remove(*trans, nil)
+		if len(**trans) == 0 {
+			this.acctTranBuffer[i] = nil
+		}
+	})
+	array.RemoveBothIf(&this.acctTranBuffer, &this.acctBuffer, func(_ int, tran *[]*univalue.Univalue, _ string) bool { return tran == nil })
+}
+
 // Merge and finalize state deltas
 func (this *Importer) MergeStateDelta() {
 	this.valBuffer = array.Resize(&this.valBuffer, len(this.keyBuffer))
@@ -162,10 +200,14 @@ func (this *Importer) Clear() {
 		this.byTx[k] = v
 	}
 
+	clear(this.byTx)
+	clear(this.byAcct)
 	this.deltaDict.Clear()
 	this.keyBuffer = this.keyBuffer[:0]
 	this.valBuffer = this.valBuffer[:0]
 
+	this.acctBuffer = this.acctBuffer[:0]
+	this.acctTranBuffer = this.acctTranBuffer[:0]
 	// t0 := time.Now()
 	// this.seqPool.Reset() // Very slow
 	// this.seqPool.ReclaimRecursive()
