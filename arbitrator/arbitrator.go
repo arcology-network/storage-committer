@@ -107,7 +107,7 @@ func (this *Arbitrator) Detect(groupIDs []uint32, newTrans []*univalue.Univalue)
 			}
 		}
 
-		dict := common.MapFromArray(conflictTxs, true) //Conflict dict
+		dict := common.MapFromSlice(conflictTxs, true) //Conflict dict
 		trans := array.CopyIf(newTrans[ranges[i]+offset:ranges[i+1]], func(v *univalue.Univalue) bool { return (*dict)[v.GetTx()] })
 
 		if outOfLimits := (&Accumulator{}).CheckMinMax(trans); outOfLimits != nil {

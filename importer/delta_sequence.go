@@ -13,15 +13,16 @@ import (
 )
 
 type DeltaSequence struct {
-	key         string
+	Key         string
 	transitions []*univalue.Univalue
 	lock        sync.RWMutex
 	rawBytes    interface{}
+	finalized   *univalue.Univalue
 }
 
 func NewDeltaSequence(key string, store interfaces.Datastore) *DeltaSequence {
 	seq := &DeltaSequence{
-		key:         key,
+		Key:         key,
 		transitions: make([]*univalue.Univalue, 0, 16),
 		rawBytes:    nil,
 	}
@@ -33,7 +34,7 @@ func NewDeltaSequence(key string, store interfaces.Datastore) *DeltaSequence {
 }
 
 func (this *DeltaSequence) Init(key string, store interfaces.Datastore) *DeltaSequence {
-	this.key = key
+	this.Key = key
 	this.transitions = this.transitions[:0]
 	this.rawBytes = nil
 
@@ -42,6 +43,8 @@ func (this *DeltaSequence) Init(key string, store interfaces.Datastore) *DeltaSe
 	}
 	return this
 }
+
+func (this *DeltaSequence) Finalized() *univalue.Univalue { return this.finalized }
 
 func (this *DeltaSequence) UnsafeAdd(v *univalue.Univalue) *DeltaSequence {
 	this.transitions = append(this.transitions, v)
@@ -82,16 +85,16 @@ func (this *DeltaSequence) Finalize() *univalue.Univalue {
 		return nil
 	}
 
-	finalized := this.transitions[0]
-	if (this.rawBytes != nil) && (finalized.Value() != nil) { // Value update not an assignment or deletion
+	this.finalized = this.transitions[0]
+	if (this.rawBytes != nil) && (this.finalized.Value() != nil) { // Value update not an assignment or deletion
 		if encoded, ok := this.rawBytes.([]byte); ok {
-			v := finalized.Value().(intf.Type).StorageDecode(*finalized.GetPath(), encoded).(intf.Type).Value()
-			finalized.Value().(intf.Type).SetValue(v)
+			v := this.finalized.Value().(intf.Type).StorageDecode(*this.finalized.GetPath(), encoded).(intf.Type).Value()
+			this.finalized.Value().(intf.Type).SetValue(v)
 		}
 	}
 
-	if err := finalized.ApplyDelta(this.transitions[1:]); err != nil {
+	if err := this.finalized.ApplyDelta(this.transitions[1:]); err != nil {
 		panic(err)
 	}
-	return finalized
+	return this.finalized
 }

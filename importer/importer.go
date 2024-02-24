@@ -5,11 +5,8 @@ import (
 	"github.com/arcology-network/common-lib/exp/array"
 	ccmap "github.com/arcology-network/common-lib/exp/map"
 	mapi "github.com/arcology-network/common-lib/exp/map"
-	structure "github.com/arcology-network/common-lib/exp/product"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
-	platform "github.com/arcology-network/concurrenturl/platform"
-	"github.com/arcology-network/concurrenturl/storage"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 	"github.com/cespare/xxhash/v2"
 )
@@ -18,8 +15,7 @@ type Importer struct {
 	numThreads int
 	store      interfaces.Datastore
 	platform   interfaces.Platform
-	byTx       map[int]*[]*univalue.Univalue    // Index by transaction id
-	byAcct     map[string]*[]*univalue.Univalue // Index by account address
+	byTx       map[int]*[]*univalue.Univalue // Index by transaction id
 	deltaDict  *ccmap.ConcurrentMap[string, *DeltaSequence]
 	keyBuffer  []string      // Keys updated in the cycle
 	valBuffer  []interface{} // Value updated in the cycle
@@ -27,9 +23,6 @@ type Importer struct {
 	acctBuffer     []string
 	acctTranBuffer []*[]*univalue.Univalue
 
-	acctList []*structure.Triplet[string, *storage.Account, []*univalue.Univalue]
-	acctDict map[string]*structure.Triplet[string, *storage.Account, []*univalue.Univalue]
-	// ethDataStore   *storage.EthDataStore
 	// seqPool *mempool.Mempool[*DeltaSequence] // Pool of sequences but very slow
 }
 
@@ -39,7 +32,7 @@ func NewImporter(store interfaces.Datastore, platform interfaces.Platform) *Impo
 	importer.store = store
 
 	importer.byTx = make(map[int]*[]*univalue.Univalue)
-	importer.byAcct = make(map[string]*[]*univalue.Univalue)
+	// importer.byAcct = make(map[string]*[]*univalue.Univalue)
 
 	importer.acctBuffer = []string{}
 	importer.acctTranBuffer = []*[]*univalue.Univalue{}
@@ -76,7 +69,7 @@ func (this *Importer) IfExists(key string) bool {
 // 	return this.seqPool.New().Init(k, store)
 // }
 
-func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) {
+func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) []*DeltaSequence {
 	commitIfAbsent := common.IfThenDo1st(len(args) > 0 && args[0] != nil, func() bool { return args[0].(bool) }, true) //Write if absent from local
 
 	//Remove entries that preexist but not available locally, it happens with a partial cache
@@ -93,8 +86,13 @@ func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) 
 	})
 	array.Remove(&missingKeys, "") // Remove the keys that already exist.
 
-	missingKeys = mapi.Keys(mapi.FromArray(missingKeys, func(k string) bool { return true })) // Get the unique keys only
-	this.deltaDict.BatchSetWith(missingKeys, func(k *string) *DeltaSequence { return NewDeltaSequence(*k, this.store) })
+	// Create the missing sequences as new transitions are being added.
+	missingKeys = mapi.Keys(mapi.FromSlice(missingKeys, func(k string) bool { return true })) // Get the unique keys only
+
+	newSeqs := array.ParallelAppend(missingKeys, this.numThreads, func(i int, k string) *DeltaSequence {
+		return NewDeltaSequence(k, this.store)
+	})
+	this.deltaDict.BatchSet(missingKeys, newSeqs)
 
 	// Update the delta dictionary with the new sequences in parallel.
 	this.deltaDict.ParallelFor(0, len(txTrans),
@@ -115,18 +113,20 @@ func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) 
 		*tran = append(*tran, v)
 	})
 
-	// Create an array of transactions for each account.
-	mapi.IfNotFoundDo(this.byAcct, txTrans,
-		func(univ *univalue.Univalue) string { return platform.GetAccountAddr(*univ.GetPath()) },
-		func(_ string) *[]*univalue.Univalue {
-			return common.New(make([]*univalue.Univalue, 0, 8))
-		})
+	return newSeqs
 
-	// Add the transaction to the account's array.
-	array.Foreach(txTrans, func(i int, v **univalue.Univalue) {
-		tran := this.byAcct[platform.GetAccountAddr(*(*v).GetPath())]
-		*tran = append(*tran, *v)
-	})
+	// Create an array of transactions for each account.
+	// mapi.IfNotFoundDo(this.byAcct, txTrans,
+	// 	func(univ *univalue.Univalue) string { return platform.GetAccountAddr(*univ.GetPath()) },
+	// 	func(_ string) *[]*univalue.Univalue {
+	// 		return common.New(make([]*univalue.Univalue, 0, 8))
+	// 	})
+
+	// // Add the transaction to the account's array.
+	// array.Foreach(txTrans, func(i int, v **univalue.Univalue) {
+	// 	tran := this.byAcct[platform.GetAccountAddr(*(*v).GetPath())]
+	// 	*tran = append(*tran, *v)
+	// })
 }
 
 // Only keep transation within the whitelist
@@ -135,7 +135,7 @@ func (this *Importer) WhiteList(whitelist []uint32) []error {
 		return []error{}
 	}
 
-	whitelisted := mapi.FromArray(whitelist, func(_ uint32) bool { return true })
+	whitelisted := mapi.FromSlice(whitelist, func(_ uint32) bool { return true })
 
 	for txid, vec := range this.byTx {
 		if txid == committercommon.SYSTEM {
@@ -158,19 +158,6 @@ func (this *Importer) SortDeltaSequences() {
 		deltaSeq, _ := this.deltaDict.Get(this.keyBuffer[i])
 		deltaSeq.Sort() // Sort the transitions in the sequence
 	})
-}
-
-// Remove the transitions that are marked for removal by the WhiteList function.
-// Remove the account if it has no transitions. The results will be used for updating the trie.
-func (this *Importer) OrganizeByAccount() {
-	mapi.KVsToBuffer(this.byAcct, &this.acctBuffer, &this.acctTranBuffer) // Write the results to the buffers
-	array.ParallelForeach(this.acctTranBuffer, this.numThreads, func(i int, trans **[]*univalue.Univalue) {
-		array.Remove(*trans, nil)
-		if len(**trans) == 0 {
-			this.acctTranBuffer[i] = nil
-		}
-	})
-	array.RemoveBothIf(&this.acctTranBuffer, &this.acctBuffer, func(_ int, tran *[]*univalue.Univalue, _ string) bool { return tran == nil })
 }
 
 // Merge and finalize state deltas
@@ -201,7 +188,6 @@ func (this *Importer) Clear() {
 	}
 
 	clear(this.byTx)
-	clear(this.byAcct)
 	this.deltaDict.Clear()
 	this.keyBuffer = this.keyBuffer[:0]
 	this.valBuffer = this.valBuffer[:0]
