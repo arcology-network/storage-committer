@@ -72,6 +72,7 @@ type Datastore interface {
 	Retrive(string, any) (interface{}, error)
 	BatchRetrive([]string, []any) []interface{}
 	Precommit([]string, interface{}) [32]byte
+	WriteEthTries(interface{}) [32]byte
 	Commit(uint64) error
 	UpdateCacheStats([]interface{})
 

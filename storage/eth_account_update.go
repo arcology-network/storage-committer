@@ -17,12 +17,16 @@
 
 // AccountIndexer  avoids having duplicate addresses in the account list and dictionary.
 
-package importer
+package storage
 
-import ethcommon "github.com/ethereum/go-ethereum/common"
+import (
+	"github.com/arcology-network/concurrenturl/importer"
+	ethcommon "github.com/ethereum/go-ethereum/common"
+)
 
 type AccountUpdate struct {
 	Key  string
 	Addr ethcommon.Address
-	Seqs []*DeltaSequence
+	Seqs []*importer.DeltaSequence
+	Acct *Account
 }

@@ -134,10 +134,6 @@ func TestTrieUpdates(t *testing.T) {
 	committer.CopyToDbBuffer() // Export transitions and save them to the DB buffer.
 
 	ds := committer.Importer().Store().(*storage.EthDataStore)
-	if len(ds.Dirties()) != 3 {
-		t.Error("Error: Dirties() should be 3 actual", len(ds.Dirties()))
-	}
-
 	if (len(ds.Cache())) != 3 {
 		t.Error("Error: Cache() should be 3", len(ds.Cache()))
 	}

@@ -2,6 +2,7 @@ package univalue
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
@@ -105,7 +106,12 @@ func (this *Univalues) GobDecode(data []byte) error {
 }
 
 func (this Univalues) Print() {
-	for i, v := range this {
+	sorted := array.Clone(this)
+	sort.Slice(sorted, func(i, j int) bool {
+		return (*sorted[i].GetPath()) < (*sorted[j].GetPath())
+	})
+
+	for i, v := range sorted {
 		fmt.Print(i, ": ")
 		v.Print()
 	}

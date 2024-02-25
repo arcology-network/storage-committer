@@ -13,6 +13,7 @@ import (
 	"github.com/arcology-network/common-lib/exp/array"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
+	"github.com/arcology-network/concurrenturl/importer"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
 	platform "github.com/arcology-network/concurrenturl/platform"
@@ -260,6 +261,10 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Typ
 		}, []byte{})
 	})
 
+	array.SortBy1st(encodedKeys, encodedVals, func(v0, v1 []byte) bool {
+		return string(v0) < string(v1)
+	})
+
 	// Update the storage trie with the encoded keys and values.
 	errs := this.storageTrie.ParallelUpdate(encodedKeys, encodedVals)
 	if _, err := array.FindFirstIf(errs, func(v error) bool { return v != nil }); err != nil {
@@ -270,14 +275,30 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Typ
 	return nil
 }
 
+// Write the account changes to theirs Eth Trie
+func (this *Account) ApplyAccounts(updates *AccountUpdate) *Account {
+	keys, typedVals := make([]string, len(updates.Seqs)), make([]interfaces.Type, len(updates.Seqs))
+	array.Foreach(updates.Seqs, func(i int, seq **importer.DeltaSequence) {
+		keys[i] = *((*seq).Finalized().GetPath())
+		if v := (*seq).Finalized().Value(); v != nil {
+			typedVals[i] = v.(interfaces.Type)
+		}
+	})
+
+	this.err = this.UpdateAccountTrie(keys, typedVals)
+	return this
+}
+
 func (this *Account) Precommit(keys []string, values []interface{}) {
-	this.UpdateAccountTrie(keys, array.Append(values,
+	this.err = this.UpdateAccountTrie(keys, array.Append(values,
 		func(_ int, v interface{}) interfaces.Type {
 			if v.(*univalue.Univalue).Value() != nil {
 				return v.(*univalue.Univalue).Value().(interfaces.Type)
 			}
 			return nil
 		}))
+
+	fmt.Println("Precommit Root:", this.Root)
 }
 
 func (this *Account) Encode() []byte {
@@ -310,10 +331,17 @@ func (this *Account) Hash(key []byte) []byte {
 
 func (this *Account) Print() {
 	fmt.Println("addr: ", this.addr)
-	fmt.Println("StateAccount: ", this.StateAccount)
+	PrintStateAccount(this.StateAccount)
 	fmt.Println("code: ", this.code)
 	fmt.Println("storageTrie: ", this.storageTrie)
 	fmt.Println("ethdb: ", this.ethdb)
 	fmt.Println("diskdbShards: ", this.diskdbShards)
 	fmt.Println("err: ", this.err)
+}
+
+func PrintStateAccount(state ethtypes.StateAccount) {
+	fmt.Println("Nonce: ", state.Nonce)
+	fmt.Println("Balance: ", state.Balance)
+	fmt.Println("Root: ", state.Root)
+	fmt.Println("CodeHash: ", state.CodeHash)
 }

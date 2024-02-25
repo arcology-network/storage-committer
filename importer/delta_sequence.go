@@ -9,6 +9,7 @@ import (
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	intf "github.com/arcology-network/concurrenturl/interfaces"
+	platform "github.com/arcology-network/concurrenturl/platform"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 )
 
@@ -22,7 +23,7 @@ type DeltaSequence struct {
 
 func NewDeltaSequence(key string, store interfaces.Datastore) *DeltaSequence {
 	seq := &DeltaSequence{
-		Key:         key,
+		Key:         platform.GetAccountAddr(key),
 		transitions: make([]*univalue.Univalue, 0, 16),
 		rawBytes:    nil,
 	}
@@ -34,7 +35,7 @@ func NewDeltaSequence(key string, store interfaces.Datastore) *DeltaSequence {
 }
 
 func (this *DeltaSequence) Init(key string, store interfaces.Datastore) *DeltaSequence {
-	this.Key = key
+	this.Key = platform.GetAccountAddr(key)
 	this.transitions = this.transitions[:0]
 	this.rawBytes = nil
 

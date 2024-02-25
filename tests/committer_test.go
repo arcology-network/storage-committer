@@ -9,8 +9,6 @@ import (
 	"github.com/arcology-network/common-lib/codec"
 	orderedset "github.com/arcology-network/common-lib/container/set"
 	"github.com/arcology-network/common-lib/exp/array"
-	datastore "github.com/arcology-network/common-lib/storage/datastore"
-	"github.com/arcology-network/common-lib/storage/memdb"
 	ccurl "github.com/arcology-network/concurrenturl"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/commutative"
@@ -18,7 +16,6 @@ import (
 	"github.com/arcology-network/concurrenturl/interfaces"
 	"github.com/arcology-network/concurrenturl/noncommutative"
 	platform "github.com/arcology-network/concurrenturl/platform"
-	storage "github.com/arcology-network/concurrenturl/storage"
 	"github.com/arcology-network/concurrenturl/univalue"
 	cache "github.com/arcology-network/eu/cache"
 	"github.com/holiman/uint256"
@@ -818,14 +815,9 @@ func TestTransientDBv2(t *testing.T) {
 }
 
 func TestCustomCodec(t *testing.T) {
-	// fileDB, err := datastore.NewFileDB(ROOT_PATH, 8, 2)
-	// if err != nil {
-	// 	t.Error(err)
-	// 	return
-	// }
-
-	policy := datastore.NewCachePolicy(0, 1)
-	store := datastore.NewDataStore(nil, policy, memdb.NewMemoryDB(), storage.Rlp{}.Encode, storage.Rlp{}.Decode)
+	// policy := datastore.NewCachePolicy(0, 1)
+	// store := datastore.NewDataStore(nil, policy, memdb.NewMemoryDB(), storage.Rlp{}.Encode, storage.Rlp{}.Decode)
+	store := chooseDataStore()
 	alice := AliceAccount()
 	committer := ccurl.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
