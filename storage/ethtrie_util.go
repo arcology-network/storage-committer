@@ -31,6 +31,24 @@ func commitToDB(trie *ethmpt.Trie, ethdb *ethmpt.Database, block uint64) (*ethmp
 	return ethmpt.NewParallel(ethmpt.TrieID(root), ethdb)
 }
 
+func ParallelCommitToDB(trie *ethmpt.Trie, ethdb *ethmpt.Database, block uint64) (*ethmpt.Trie, error) {
+	root, nodes, err := trie.Commit(false) // Finalized the trie
+	if err != nil {
+		return nil, err
+	}
+
+	if nodes != nil {
+		if err := ethdb.Update(root, types.EmptyRootHash, block, trienode.NewWithNodeSet(nodes), nil); err != nil { // Move to DB dirty node set
+			return nil, err
+		}
+
+		if err := ethdb.Commit(root, false); err != nil {
+			return nil, err
+		}
+	}
+	return ethmpt.NewParallel(ethmpt.TrieID(root), ethdb)
+}
+
 func ProofArrayToDB(proofs []string) (*memorydb.Database, error) {
 	proofDB := memorydb.New()
 	for i := 0; i < len(proofs); i++ {

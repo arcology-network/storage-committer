@@ -41,7 +41,7 @@ func (this *ProofProvider) GetProof(acctAddr ethcommon.Address, storageKeys []st
 
 	// Get the account either from the cache or from the database.
 	account, err := this.DataStore.GetAccount(acctAddr, new(ethmpt.AccessListCache))
-	if err != nil {
+	if account == nil || err != nil {
 		return nil, err
 	}
 

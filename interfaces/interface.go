@@ -71,8 +71,7 @@ type Datastore interface {
 	BatchInject([]string, []any) error
 	Retrive(string, any) (interface{}, error)
 	BatchRetrive([]string, []any) []interface{}
-	Precommit([]string, interface{}) [32]byte
-	WriteEthTries(interface{}) [32]byte
+	Precommit(...interface{}) [32]byte
 	Commit(uint64) error
 	UpdateCacheStats([]interface{})
 

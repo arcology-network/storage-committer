@@ -30,3 +30,7 @@ type AccountUpdate struct {
 	Seqs []*importer.DeltaSequence
 	Acct *Account
 }
+
+// func (this *AccountUpdate) Clear() [
+// 	clear(t)
+// ]

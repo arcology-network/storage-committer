@@ -91,15 +91,12 @@ func (this *StateCommitter) Init(store interfaces.Datastore) {
 
 // Clear clears the StateCommitter.
 func (this *StateCommitter) Clear() {
-	this.importer.Store().Clear()
-
 	t0 := time.Now()
+	this.importer.Store().Clear()
 	this.importer.Clear()
-	fmt.Println("importer.Clear(): ", time.Since(t0))
-
-	t0 = time.Now()
 	this.imuImporter.Clear()
-	fmt.Println("imuImporter.Clear(): ", time.Since(t0))
+	this.indexer.Clear() // Clear the account indexer
+	fmt.Println("StateCommitter.Clear(): ", time.Since(t0))
 }
 
 // Import imports the given transitions into the StateCommitter.
@@ -146,17 +143,6 @@ func (this *StateCommitter) Finalize(txs []uint32) *StateCommitter {
 	return this
 }
 
-// CopyToDbBuffer copies the transitions to the DB buffer.
-func (this *StateCommitter) CopyToDbBuffer() ([32]byte, []string, []interface{}) {
-	keys, values := this.importer.KVs()
-	invKeys, invVals := this.imuImporter.KVs()
-
-	keys, values = append(keys, invKeys...), append(values, invVals...)
-	// return this.importer.Store().Precommit(keys, values), keys, values // save the transitions to the DB buffer
-	return this.importer.Store().WriteEthTries(this.indexer.Updates()), keys, values
-
-}
-
 // Commit commits the transitions in the StateCommitter.
 func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 	if txs != nil && len(txs) == 0 {
@@ -165,8 +151,7 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 		return [32]byte{}
 	}
 	this.Finalize(txs)
-	hash, _, _ := this.CopyToDbBuffer()
-	return hash // Export transitions and save them to the DB buffer.
+	return this.importer.Store().Precommit(this.indexer.Updates()) // Write to the DB buffer
 }
 
 // Commit commits the transitions in the StateCommitter.

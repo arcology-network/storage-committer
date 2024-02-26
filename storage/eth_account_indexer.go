@@ -69,18 +69,6 @@ func (this *AccountIndexer) Updates() []*AccountUpdate {
 	return acctUpdates
 }
 
-// Remove the transitions that are marked for removal by the WhiteList function.
-// Remove the account if it has no transitions. The results will be used for updating the trie.
-// func (this *AccountIndexer) Organize() {
-// 	acctUpdates := this.dict.Elements()
-// 	array.ParallelForeach(acctUpdates, runtime.NumCPU(), func(i int, update **AccountUpdate) {
-// 		array.RemoveIf[*importer.DeltaSequence](&(*update).Seqs, func(i int, seq *importer.DeltaSequence) bool {
-// 			return seq.Finalized() == nil
-// 		})
-// 	})
-
-// 	// Remove the accounts that have no transitions left after white-listing.
-// 	// array.RemoveIf(&this.Accounts, func(_ int, triple *AccountUpdate) bool {
-// 	// 	return len(triple.Third) == 0
-// 	// })
-// }
+func (this *AccountIndexer) Clear() {
+	this.dict.Clear()
+}

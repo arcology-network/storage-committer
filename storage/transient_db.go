@@ -28,7 +28,7 @@ func NewTransientDB(readonlyParent interfaces.Datastore) interfaces.Datastore {
 }
 
 // placeholder, TransientDB does not need this at all.
-func (this *TransientDB) WriteEthTries(interface{}) [32]byte { return [32]byte{} }
+func (this *TransientDB) WriteEthTries(...interface{}) [32]byte { return [32]byte{} }
 
 func (this *TransientDB) Query(pattern string, condition func(string, string) bool) ([]string, [][]byte, error) {
 	return []string{}, [][]byte{}, nil
@@ -38,8 +38,8 @@ func (this *TransientDB) Inject(path string, v interface{}) error {
 	return this.DataStore.Inject(path, v)
 }
 
-func (this *TransientDB) Precommit(paths []string, dict interface{}) [32]byte {
-	return this.DataStore.Precommit(paths, dict)
+func (this *TransientDB) Precommit(arg ...interface{}) [32]byte {
+	return this.DataStore.Precommit(arg[0].([]string), arg[1])
 }
 
 func (this *TransientDB) IfExists(key string) bool {
