@@ -297,8 +297,6 @@ func (this *Account) Precommit(keys []string, values []interface{}) {
 			}
 			return nil
 		}))
-
-	fmt.Println("Precommit Root:", this.Root)
 }
 
 func (this *Account) Encode() []byte {

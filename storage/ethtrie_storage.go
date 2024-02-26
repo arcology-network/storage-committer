@@ -2,10 +2,8 @@ package storage
 
 import (
 	"errors"
-	"fmt"
 	"runtime"
 	"sync"
-	"time"
 
 	"github.com/VictoriaMetrics/fastcache"
 	common "github.com/arcology-network/common-lib/common"
@@ -33,9 +31,7 @@ type EthDataStore struct {
 	worldStateTrie *ethmpt.Trie
 
 	accounts map[ethcommon.Address]*Account // Account cache holds the accounts that are being accessed in the current cycle.
-	dirties  []*Account                     // Dirty accounts are the accounts that have been updated in the current cycle.
-
-	dirtyUpdates []*AccountUpdate
+	dirties  []*AccountUpdate               // Dirty accounts are the accounts that have been updated in the current cycle.
 
 	ethdb   *ethmpt.Database
 	diskdbs [16]ethdb.Database
@@ -73,7 +69,6 @@ func NewEthDataStore(trie *ethmpt.Trie, triedb *ethmpt.Database, diskdb [16]ethd
 		trieDbConfig: trieDbConfig,
 		sharedCache:  fastcache.New(trieDbConfig.CleanCacheSize),
 		accounts:     map[ethcommon.Address]*Account{},
-		dirties:      []*Account{},
 
 		worldStateTrie: trie,
 		encoder:        Rlp{}.Encode,
@@ -131,7 +126,7 @@ func (this *EthDataStore) PreloadAccount(addr []byte) *Account {
 
 // Get the account from the cache.
 func (this *EthDataStore) Cache() map[ethcommon.Address]*Account { return this.accounts }
-func (this *EthDataStore) Dirties() []*AccountUpdate             { return this.dirtyUpdates }
+func (this *EthDataStore) Dirties() []*AccountUpdate             { return this.dirties }
 func (this *EthDataStore) Clear()                                {}
 
 func (this *EthDataStore) Hash(key string) []byte {
@@ -328,7 +323,7 @@ func (this *EthDataStore) Precommit(updates ...interface{}) [32]byte {
 	}
 
 	dirties := updates[0].([]*AccountUpdate)
-	this.dirtyUpdates = dirties
+	this.dirties = dirties
 	if len(dirties) == 0 {
 		return this.worldStateTrie.Hash()
 	}
@@ -343,7 +338,6 @@ func (this *EthDataStore) Precommit(updates ...interface{}) [32]byte {
 		this.accounts[(*acct).Acct.addr] = (*acct).Acct
 	})
 
-	t0 := time.Now()
 	// Encode the account addresses.
 	encodedAddrs, encodedVals := [][]byte{}, [][]byte{}
 	common.ParallelExecute(
@@ -358,7 +352,7 @@ func (this *EthDataStore) Precommit(updates ...interface{}) [32]byte {
 			})
 		},
 	)
-	fmt.Println("Encode accounts in :", time.Since(t0))
+
 	// Write the world tree and return the first error if any.
 	errs := this.worldStateTrie.ParallelUpdate(encodedAddrs, encodedVals) // Encoded accounts
 	if _, err := array.FindFirstIf(errs, func(err error) bool { return err != nil }); err != nil {
@@ -375,16 +369,15 @@ func (this *EthDataStore) Precommit(updates ...interface{}) [32]byte {
 }
 
 func (this *EthDataStore) Commit(blockNum uint64) error {
-	array.ParallelForeach(this.dirtyUpdates, runtime.NumCPU(), func(_ int, update **AccountUpdate) {
+	array.ParallelForeach(this.dirties, runtime.NumCPU(), func(_ int, update **AccountUpdate) {
 		if err := (**update).Acct.Commit(blockNum); err != nil {
 			panic(err)
 		}
 	})
 
 	var err error
-	this.worldStateTrie, err = commitToDB(this.worldStateTrie, this.ethdb, blockNum) // Reload the trie for the next block
-	this.dirtyUpdates = this.dirtyUpdates[:0]                                        // Reset the dirties buffer
-	this.dirties = this.dirties[:0]                                                  // Reset the dirties buffer
+	this.worldStateTrie, err = parallelCommitToDB(this.worldStateTrie, this.ethdb, blockNum) // Reload the trie for the next block
+	this.dirties = this.dirties[:0]                                                          // Reset the dirties buffer
 	return err
 }
 

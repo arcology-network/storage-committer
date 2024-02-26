@@ -1,6 +1,9 @@
 package storage
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/arcology-network/common-lib/common"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -31,7 +34,7 @@ func commitToDB(trie *ethmpt.Trie, ethdb *ethmpt.Database, block uint64) (*ethmp
 	return ethmpt.NewParallel(ethmpt.TrieID(root), ethdb)
 }
 
-func ParallelCommitToDB(trie *ethmpt.Trie, ethdb *ethmpt.Database, block uint64) (*ethmpt.Trie, error) {
+func parallelCommitToDB(trie *ethmpt.Trie, ethdb *ethmpt.Database, block uint64) (*ethmpt.Trie, error) {
 	root, nodes, err := trie.Commit(false) // Finalized the trie
 	if err != nil {
 		return nil, err

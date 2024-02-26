@@ -19,9 +19,6 @@
 package storagecommitter
 
 import (
-	"fmt"
-	"time"
-
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/array"
 	platform "github.com/arcology-network/concurrenturl/platform"
@@ -91,12 +88,10 @@ func (this *StateCommitter) Init(store interfaces.Datastore) {
 
 // Clear clears the StateCommitter.
 func (this *StateCommitter) Clear() {
-	t0 := time.Now()
 	this.importer.Store().Clear()
 	this.importer.Clear()
 	this.imuImporter.Clear()
 	this.indexer.Clear() // Clear the account indexer
-	fmt.Println("StateCommitter.Clear(): ", time.Since(t0))
 }
 
 // Import imports the given transitions into the StateCommitter.
