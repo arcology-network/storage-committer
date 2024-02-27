@@ -18,9 +18,9 @@
 package common
 
 import (
-	commutative "github.com/arcology-network/concurrenturl/commutative"
-	"github.com/arcology-network/concurrenturl/interfaces"
-	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
+	commutative "github.com/arcology-network/storage-committer/commutative"
+	"github.com/arcology-network/storage-committer/interfaces"
+	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 )
 
 type Codec struct {

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"sort"
 
-	univalue "github.com/arcology-network/concurrenturl/univalue"
+	univalue "github.com/arcology-network/storage-committer/univalue"
 )
 
 func Sorter(univals []*univalue.Univalue) []*univalue.Univalue {

@@ -1,4 +1,4 @@
-package ccurltest
+package committertest
 
 import (
 	"errors"
@@ -6,17 +6,17 @@ import (
 
 	orderedset "github.com/arcology-network/common-lib/container/set"
 	"github.com/arcology-network/common-lib/exp/array"
-	commutative "github.com/arcology-network/concurrenturl/commutative"
-	importer "github.com/arcology-network/concurrenturl/importer"
-	"github.com/arcology-network/concurrenturl/interfaces"
-	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
-	platform "github.com/arcology-network/concurrenturl/platform"
-	"github.com/arcology-network/concurrenturl/univalue"
 	cache "github.com/arcology-network/eu/cache"
+	commutative "github.com/arcology-network/storage-committer/commutative"
+	importer "github.com/arcology-network/storage-committer/importer"
+	"github.com/arcology-network/storage-committer/interfaces"
+	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
+	platform "github.com/arcology-network/storage-committer/platform"
+	"github.com/arcology-network/storage-committer/univalue"
 )
 
 func Create_Ctrn_0(account string, store interfaces.Datastore) ([]byte, []*univalue.Univalue, error) {
-	// committer := ccurl.NewStorageCommitter(store)
+
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	path := commutative.NewPath() // create a path
@@ -38,7 +38,7 @@ func Create_Ctrn_0(account string, store interfaces.Datastore) ([]byte, []*univa
 }
 
 func ParallelInsert_Ctrn_0(account string, store interfaces.Datastore) ([]byte, error) {
-	// committer := ccurl.NewStorageCommitter(store)
+
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	path := commutative.NewPath() // create a path
 	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", path); err != nil {
@@ -58,7 +58,7 @@ func ParallelInsert_Ctrn_0(account string, store interfaces.Datastore) ([]byte, 
 }
 
 func Create_Ctrn_1(account string, store interfaces.Datastore) ([]byte, error) {
-	// committer := ccurl.NewStorageCommitter(store)
+
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	path := commutative.NewPath() // create a path
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/", path); err != nil {

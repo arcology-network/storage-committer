@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/concurrenturl/interfaces"
+	"github.com/arcology-network/storage-committer/interfaces"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/holiman/uint256"
 )

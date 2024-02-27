@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"github.com/arcology-network/concurrenturl/interfaces"
+	"github.com/arcology-network/storage-committer/interfaces"
 )
 
 type Rlp struct{}

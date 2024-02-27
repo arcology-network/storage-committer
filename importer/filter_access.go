@@ -19,8 +19,8 @@ package importer
 
 import (
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/concurrenturl/interfaces"
-	univalue "github.com/arcology-network/concurrenturl/univalue"
+	"github.com/arcology-network/storage-committer/interfaces"
+	univalue "github.com/arcology-network/storage-committer/univalue"
 )
 
 type IPAccess struct {

@@ -8,7 +8,7 @@ import (
 
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/array"
-	intf "github.com/arcology-network/concurrenturl/interfaces"
+	intf "github.com/arcology-network/storage-committer/interfaces"
 )
 
 // THe univalue is a combination of a value and a property field that contains the access information about the value.

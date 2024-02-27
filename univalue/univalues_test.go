@@ -6,8 +6,8 @@ import (
 	addrcompressor "github.com/arcology-network/common-lib/addrcompressor"
 	set "github.com/arcology-network/common-lib/container/set"
 	"github.com/arcology-network/common-lib/exp/array"
-	commutative "github.com/arcology-network/concurrenturl/commutative"
-	"github.com/arcology-network/concurrenturl/interfaces"
+	commutative "github.com/arcology-network/storage-committer/commutative"
+	"github.com/arcology-network/storage-committer/interfaces"
 
 	"github.com/holiman/uint256"
 )

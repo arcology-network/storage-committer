@@ -8,9 +8,9 @@ package importer
 // 	common "github.com/arcology-network/common-lib/common"
 // 	mempool "github.com/arcology-network/common-lib/mempool"
 // 	merkle "github.com/arcology-network/common-lib/merkle"
-// 	committercommon "github.com/arcology-network/concurrenturl/common"
-// 	"github.com/arcology-network/concurrenturl/interfaces"
-// 	univalue "github.com/arcology-network/concurrenturl/univalue"
+// 	stgcommcommon "github.com/arcology-network/storage-committer/common"
+// 	"github.com/arcology-network/storage-committer/interfaces"
+// 	univalue "github.com/arcology-network/storage-committer/univalue"
 // )
 
 // const (
@@ -55,7 +55,7 @@ package importer
 
 // // Insert to the merkle tree
 // func (this *AccountMerkle) Import(transitions []*univalue.Univalue) {
-// 	offset := committercommon.ETH10_ACCOUNT_PREFIX_LENGTH
+// 	offset := stgcommcommon.ETH10_ACCOUNT_PREFIX_LENGTH
 // 	for _, v := range transitions {
 // 		path := *v.GetPath()
 // 		pos := strings.Index(path[offset:], "/")
@@ -79,7 +79,7 @@ package importer
 // 	}
 
 // 	t0 := time.Now()
-// 	offset := committercommon.ETH10_ACCOUNT_PREFIX_LENGTH
+// 	offset := stgcommcommon.ETH10_ACCOUNT_PREFIX_LENGTH
 // 	ranges, ParseAccountAddrs := this.markAccountRange(keys)
 // 	builder := func(start, end, index int, args ...interface{}) {
 // 		mempool := this.nodePool.GetPool(index)
@@ -121,8 +121,8 @@ package importer
 // 	positions = append(positions, 0)
 // 	current := paths[0]
 // 	for i := 1; i < len(paths); i++ {
-// 		p0 := current[:committercommon.ETH10_ACCOUNT_PREFIX_LENGTH+committercommon.ETH10_ACCOUNT_LENGTH]
-// 		p1 := paths[i][:committercommon.ETH10_ACCOUNT_PREFIX_LENGTH+committercommon.ETH10_ACCOUNT_LENGTH]
+// 		p0 := current[:stgcommcommon.ETH10_ACCOUNT_PREFIX_LENGTH+stgcommcommon.ETH10_ACCOUNT_LENGTH]
+// 		p1 := paths[i][:stgcommcommon.ETH10_ACCOUNT_PREFIX_LENGTH+stgcommcommon.ETH10_ACCOUNT_LENGTH]
 // 		if p0 != p1 {
 // 			current = paths[i]
 // 			positions = append(positions, i)

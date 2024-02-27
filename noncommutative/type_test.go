@@ -10,7 +10,7 @@ import (
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/exp/array"
 	"github.com/ethereum/go-ethereum/rlp"
-	// "github.com/HPISTechnologies/concurrenturl/type/noncommutative"
+	// "github.com/HPISTechnologies/storage-committer/type/noncommutative"
 )
 
 func TestNewBigint(t *testing.T) {

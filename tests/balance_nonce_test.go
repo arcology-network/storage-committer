@@ -1,29 +1,29 @@
-package ccurltest
+package committertest
 
 import (
 	"math"
 	"math/big"
 	"testing"
 
-	ccurl "github.com/arcology-network/concurrenturl"
-	committercommon "github.com/arcology-network/concurrenturl/common"
-	commutative "github.com/arcology-network/concurrenturl/commutative"
-	importer "github.com/arcology-network/concurrenturl/importer"
-	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
-	platform "github.com/arcology-network/concurrenturl/platform"
-	univalue "github.com/arcology-network/concurrenturl/univalue"
 	cache "github.com/arcology-network/eu/cache"
+	stgcommitter "github.com/arcology-network/storage-committer"
+	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	commutative "github.com/arcology-network/storage-committer/commutative"
+	importer "github.com/arcology-network/storage-committer/importer"
+	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
+	platform "github.com/arcology-network/storage-committer/platform"
+	univalue "github.com/arcology-network/storage-committer/univalue"
 	"github.com/holiman/uint256"
 )
 
 func TestSimpleBalance(t *testing.T) {
 	store := chooseDataStore()
 
-	committer := ccurl.NewStorageCommitter(store)
+	committer := stgcommitter.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -89,7 +89,7 @@ func TestBalance(t *testing.T) {
 
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -177,7 +177,7 @@ func TestNonce(t *testing.T) {
 	alice := AliceAccount()
 
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
-	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -205,7 +205,7 @@ func TestNonce(t *testing.T) {
 
 	trans := univalue.Univalues((writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
-	committer := ccurl.NewStorageCommitter(store)
+	committer := stgcommitter.NewStorageCommitter(store)
 	committer.Import(trans)
 	committer.Sort()
 	committer.Precommit([]uint32{0})
@@ -222,7 +222,7 @@ func TestMultipleNonces(t *testing.T) {
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -238,7 +238,7 @@ func TestMultipleNonces(t *testing.T) {
 	trans0 := univalue.Univalues((writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
 	bob := BobAccount()
-	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, bob); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, bob); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -259,7 +259,6 @@ func TestMultipleNonces(t *testing.T) {
 
 	raw := (writeCache.Export(importer.Sorter))
 	trans1 := univalue.Univalues(raw).To(importer.ITTransition{})
-	// ccurltype.SetInvariate(trans1, "nonce")
 
 	nonce, _, _ = writeCache.Read(0, "blcc://eth1.0/account/"+bob+"/nonce", new(commutative.Uint64))
 	bobNonce = nonce.(uint64)
@@ -267,7 +266,7 @@ func TestMultipleNonces(t *testing.T) {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
 	}
 
-	committer := ccurl.NewStorageCommitter(store)
+	committer := stgcommitter.NewStorageCommitter(store)
 	committer.Import(trans0)
 	committer.Import(trans1)
 
@@ -277,7 +276,7 @@ func TestMultipleNonces(t *testing.T) {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be 2", " actual: ", bobNonce)
 	}
 
-	committer = ccurl.NewStorageCommitter(store)
+	committer = stgcommitter.NewStorageCommitter(store)
 	committer.Sort()
 	committer.Precommit([]uint32{0})
 	committer.Commit()

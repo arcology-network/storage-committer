@@ -1,4 +1,4 @@
-package ccurltest
+package committertest
 
 import (
 	"reflect"
@@ -6,24 +6,24 @@ import (
 
 	orderedset "github.com/arcology-network/common-lib/container/set"
 	"github.com/arcology-network/common-lib/exp/array"
-	ccurl "github.com/arcology-network/concurrenturl"
-	committercommon "github.com/arcology-network/concurrenturl/common"
-	commutative "github.com/arcology-network/concurrenturl/commutative"
-	importer "github.com/arcology-network/concurrenturl/importer"
-	"github.com/arcology-network/concurrenturl/interfaces"
-	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
-	platform "github.com/arcology-network/concurrenturl/platform"
-	univalue "github.com/arcology-network/concurrenturl/univalue"
 	cache "github.com/arcology-network/eu/cache"
+	stgcommitter "github.com/arcology-network/storage-committer"
+	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	commutative "github.com/arcology-network/storage-committer/commutative"
+	importer "github.com/arcology-network/storage-committer/importer"
+	"github.com/arcology-network/storage-committer/interfaces"
+	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
+	platform "github.com/arcology-network/storage-committer/platform"
+	univalue "github.com/arcology-network/storage-committer/univalue"
 )
 
 func TestAuxTrans(t *testing.T) {
 	store := chooseDataStore()
-	committer := ccurl.NewStorageCommitter(store)
+	committer := stgcommitter.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -33,7 +33,7 @@ func TestAuxTrans(t *testing.T) {
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	committer.Sort()
-	committer.Precommit([]uint32{committercommon.SYSTEM})
+	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit() // Commit
 
 	committer.Init(store)
@@ -113,10 +113,10 @@ func TestAuxTrans(t *testing.T) {
 func TestCheckAccessRecords(t *testing.T) {
 	store := chooseDataStore()
 
-	committer := ccurl.NewStorageCommitter(store)
+	committer := stgcommitter.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -162,7 +162,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	// committer.Precommit([]uint32{1})
 	committer.Commit() // Commit
 
-	// committer = ccurl.NewStorageCommitter(store)
+	// committer = stgcommitter.NewStorageCommitter(store)
 	// if len(trans11) != 3 {
 	// 	t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/2") // create a path
 	// }

@@ -1,4 +1,4 @@
-package ccurltest
+package committertest
 
 import (
 	"fmt"
@@ -10,14 +10,14 @@ import (
 	addrcompressor "github.com/arcology-network/common-lib/addrcompressor"
 	"github.com/arcology-network/common-lib/exp/array"
 	datastore "github.com/arcology-network/common-lib/storage/datastore"
-	ccurl "github.com/arcology-network/concurrenturl"
-	committercommon "github.com/arcology-network/concurrenturl/common"
-	commutative "github.com/arcology-network/concurrenturl/commutative"
-	importer "github.com/arcology-network/concurrenturl/importer"
-	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
-	platform "github.com/arcology-network/concurrenturl/platform"
-	univalue "github.com/arcology-network/concurrenturl/univalue"
 	cache "github.com/arcology-network/eu/cache"
+	stgcommitter "github.com/arcology-network/storage-committer"
+	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	commutative "github.com/arcology-network/storage-committer/commutative"
+	importer "github.com/arcology-network/storage-committer/importer"
+	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
+	platform "github.com/arcology-network/storage-committer/platform"
+	univalue "github.com/arcology-network/storage-committer/univalue"
 	orderedmap "github.com/elliotchance/orderedmap"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/google/btree"
@@ -37,9 +37,8 @@ func BenchmarkAccountMerkleImportPerf(b *testing.B) {
 	store := chooseDataStore()
 
 	meta := commutative.NewPath()
-	store.Inject((committercommon.ETH10_ACCOUNT_PREFIX), meta)
+	store.Inject((stgcommcommon.ETH10_ACCOUNT_PREFIX), meta)
 
-	// committer := ccurl.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	for i := 0; i < 100000; i++ {
 		if _, err := writeCache.CreateNewAccount(0, fmt.Sprint(rand.Float64())); err != nil { // Preload account structure {
@@ -58,7 +57,7 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -84,7 +83,7 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 
 	t0 := time.Now()
 
-	committer := ccurl.NewStorageCommitter(store)
+	committer := stgcommitter.NewStorageCommitter(store)
 	committer.Import(transitions)
 	committer.Sort()
 	committer.Precommit([]uint32{0})
@@ -102,7 +101,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -117,7 +116,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 		acct := hexutil.Encode(buf[:20])
 
 		// writeCache := committer.WriteCache()
-		if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, acct); err != nil { // NewAccount account structure {
+		if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, acct); err != nil { // NewAccount account structure {
 			fmt.Println(err)
 		}
 
@@ -142,7 +141,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	trans = univalue.Univalues(trans).To(importer.IPTransition{})
 	fmt.Println("To(importer.ITTransition{}):", len(trans), "in ", time.Since(t0))
 
-	committer := ccurl.NewStorageCommitter(store)
+	committer := stgcommitter.NewStorageCommitter(store)
 	t0 = time.Now()
 	committer.Import(trans)
 	fmt.Println("Import: ", len(trans), " in: ", time.Since(t0))
@@ -170,17 +169,17 @@ func BenchmarkUrlAddThenDelete(b *testing.B) {
 
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	meta := commutative.NewPath()
-	writeCache.Write(committercommon.SYSTEM, committercommon.ETH10_ACCOUNT_PREFIX, meta)
+	writeCache.Write(stgcommcommon.SYSTEM, stgcommcommon.ETH10_ACCOUNT_PREFIX, meta)
 	trans := univalue.Univalues(array.Clone(writeCache.Export())).To(importer.ITTransition{})
 
-	committer := ccurl.NewStorageCommitter(store)
+	committer := stgcommitter.NewStorageCommitter(store)
 	committer.Import(trans)
 	committer.Sort()
-	committer.Precommit([]uint32{committercommon.SYSTEM})
+	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit()
 
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -211,18 +210,18 @@ func BenchmarkUrlAddThenPop(b *testing.B) {
 	// writeCache := committer.WriteCache()
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	meta := commutative.NewPath()
-	writeCache.Write(committercommon.SYSTEM, committercommon.ETH10_ACCOUNT_PREFIX, meta)
+	writeCache.Write(stgcommcommon.SYSTEM, stgcommcommon.ETH10_ACCOUNT_PREFIX, meta)
 
 	trans := univalue.Univalues(array.Clone(writeCache.Export())).To(importer.ITTransition{})
 
-	committer := ccurl.NewStorageCommitter(store)
+	committer := stgcommitter.NewStorageCommitter(store)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 	committer.Sort()
-	committer.Precommit([]uint32{committercommon.SYSTEM})
+	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit()
 
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -335,16 +334,16 @@ func BenchmarkEncodeTransitions(b *testing.B) {
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	alice := AliceAccount()
-	writeCache.CreateNewAccount(committercommon.SYSTEM, alice)
+	writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice)
 	// acctTrans := univalue.Univalues(array.Clone(writeCache.Export())).To(importer.ITAccess{})
 
 	acctTrans := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITAccess{})
 
-	committer := ccurl.NewStorageCommitter(store)
+	committer := stgcommitter.NewStorageCommitter(store)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	committer.Sort()
-	committer.Precommit([]uint32{committercommon.SYSTEM})
+	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit()
 
 	path := commutative.NewPath()
@@ -394,7 +393,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	// }
 	store := chooseDataStore()
 	// store := datastore.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
-	store.Inject((committercommon.ETH10_ACCOUNT_PREFIX), commutative.NewPath())
+	store.Inject((stgcommcommon.ETH10_ACCOUNT_PREFIX), commutative.NewPath())
 
 	t0 := time.Now()
 
@@ -415,10 +414,10 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	t0 = time.Now()
 
 	// transitions := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues)
-	committer := ccurl.NewStorageCommitter(store)
+	committer := stgcommitter.NewStorageCommitter(store)
 	committer.Import(acctTrans)
 	committer.Sort()
-	committer.Precommit([]uint32{committercommon.SYSTEM})
+	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit()
 	// errs := committer.AllInOneCommit(acctTrans, []uint32{0})
 
@@ -458,7 +457,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 // 	for i := 0; i < 1; i++ {
 // 		acct := addrcompressor.RandomAccount()
 // 		for j := 0; j < 10; j++ {
-// 			paths = append(paths, (&ccurl.Platform{}).Eth10Account()+acct+"/"+fmt.Sprint(rand.Float64()))
+// 			paths = append(paths, (&stgcommitter.Platform{}).Eth10Account()+acct+"/"+fmt.Sprint(rand.Float64()))
 // 		}
 // 	}
 
@@ -466,8 +465,8 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 // 	positions = append(positions, 0)
 // 	current := paths[0]
 // 	for i := 1; i < len(paths); i++ {
-// 		p0 := current[:len((&ccurl.Platform{}).Eth10Account())+committercommon.ETH10_ACCOUNT_LENGTH]
-// 		p1 := paths[i][:len((&ccurl.Platform{}).Eth10Account())+committercommon.ETH10_ACCOUNT_LENGTH]
+// 		p0 := current[:len((&stgcommitter.Platform{}).Eth10Account())+stgcommcommon.ETH10_ACCOUNT_LENGTH]
+// 		p1 := paths[i][:len((&stgcommitter.Platform{}).Eth10Account())+stgcommcommon.ETH10_ACCOUNT_LENGTH]
 // 		if p0 != p1 {
 // 			current = paths[i]
 // 			positions = append(positions, i)
@@ -490,11 +489,11 @@ func BenchmarkStringSort(b *testing.B) {
 
 	array.ParallelForeach(paths, 6, func(i int, _ *[]*univalue.Univalue) {
 		sort.SliceStable(paths[i], func(i, j int) bool {
-			if paths[i][j].GetTx() == committercommon.SYSTEM {
+			if paths[i][j].GetTx() == stgcommcommon.SYSTEM {
 				return true
 			}
 
-			if paths[i][j].GetTx() == committercommon.SYSTEM {
+			if paths[i][j].GetTx() == stgcommcommon.SYSTEM {
 				return false
 			}
 
@@ -591,7 +590,7 @@ func (s String) Less(b btree.Item) bool {
 
 // 	records := make([]string, 10000)
 // 	for i := 0; i < len(records); i++ {
-// 		records[i] = (&ccurl.Platform{}).Eth10() + addrcompressor.RandomAccount()
+// 		records[i] = (&stgcommitter.Platform{}).Eth10() + addrcompressor.RandomAccount()
 // 	}
 
 // 	t0 := time.Now()
@@ -616,7 +615,7 @@ func (s String) Less(b btree.Item) bool {
 func BenchmarkTransitionImport(b *testing.B) {
 	store := datastore.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
 	meta := commutative.NewPath()
-	store.Inject((committercommon.ETH10_ACCOUNT_PREFIX), meta)
+	store.Inject((stgcommcommon.ETH10_ACCOUNT_PREFIX), meta)
 
 	t0 := time.Now()
 
@@ -640,7 +639,7 @@ func BenchmarkTransitionImport(b *testing.B) {
 
 	fmt.Println("-------------")
 	t0 = time.Now()
-	committer := ccurl.NewStorageCommitter(store)
+	committer := stgcommitter.NewStorageCommitter(store)
 	committer.Import(acctTrans)
 	// accountMerkle.Import(acctTrans)
 	fmt.Println("committer + accountMerkle Import "+fmt.Sprint(150000*9), time.Since(t0))
@@ -649,10 +648,10 @@ func BenchmarkTransitionImport(b *testing.B) {
 // func BenchmarkConcurrentTransitionImport(b *testing.B) {
 // 	store := datastore.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
 // 	meta := commutative.NewPath()
-// 	store.Inject((committercommon.ETH10_ACCOUNT_PREFIX), meta)
+// 	store.Inject((stgcommcommon.ETH10_ACCOUNT_PREFIX), meta)
 
 // 	t0 := time.Now()
-// 		committer := ccurl.NewStorageCommitter(store)
+// 		committer := stgcommitter.NewStorageCommitter(store)
 // writeCache := committer.WriteCache()
 // 	for i := 0; i < 90000; i++ {
 // 		acct := addrcompressor.RandomAccount()
@@ -680,10 +679,10 @@ func BenchmarkTransitionImport(b *testing.B) {
 func BenchmarkRandomAccountSort(t *testing.B) {
 	store := datastore.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
 	meta := commutative.NewPath()
-	store.Inject((committercommon.ETH10_ACCOUNT_PREFIX), meta)
+	store.Inject((stgcommcommon.ETH10_ACCOUNT_PREFIX), meta)
 
 	t0 := time.Now()
-	// committer := ccurl.NewStorageCommitter(store)
+
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	for i := 0; i < 100000; i++ {
 		acct := addrcompressor.RandomAccount()

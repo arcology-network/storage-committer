@@ -4,8 +4,8 @@ import (
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 
-	intf "github.com/arcology-network/concurrenturl/interfaces"
-	platform "github.com/arcology-network/concurrenturl/platform"
+	intf "github.com/arcology-network/storage-committer/interfaces"
+	platform "github.com/arcology-network/storage-committer/platform"
 )
 
 func (this *Univalue) Encode() []byte {

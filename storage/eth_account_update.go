@@ -20,7 +20,7 @@
 package storage
 
 import (
-	"github.com/arcology-network/concurrenturl/importer"
+	"github.com/arcology-network/storage-committer/importer"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 

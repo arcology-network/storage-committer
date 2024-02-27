@@ -1,4 +1,4 @@
-package ccurltest
+package committertest
 
 import (
 	"bytes"
@@ -7,16 +7,16 @@ import (
 	"time"
 
 	"github.com/arcology-network/common-lib/exp/array"
-	committercommon "github.com/arcology-network/concurrenturl/common"
-	commutative "github.com/arcology-network/concurrenturl/commutative"
-	importer "github.com/arcology-network/concurrenturl/importer"
-	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
-	opadapter "github.com/arcology-network/concurrenturl/op"
-	platform "github.com/arcology-network/concurrenturl/platform"
-	ccurlstorage "github.com/arcology-network/concurrenturl/storage"
-	storage "github.com/arcology-network/concurrenturl/storage"
-	univalue "github.com/arcology-network/concurrenturl/univalue"
 	cache "github.com/arcology-network/eu/cache"
+	common "github.com/arcology-network/storage-committer/common"
+	commutative "github.com/arcology-network/storage-committer/commutative"
+	importer "github.com/arcology-network/storage-committer/importer"
+	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
+	opadapter "github.com/arcology-network/storage-committer/op"
+	platform "github.com/arcology-network/storage-committer/platform"
+	stgcommstorage "github.com/arcology-network/storage-committer/storage"
+	storage "github.com/arcology-network/storage-committer/storage"
+	univalue "github.com/arcology-network/storage-committer/univalue"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 	ethmpt "github.com/ethereum/go-ethereum/trie"
@@ -31,13 +31,13 @@ func TestGetPathType(t *testing.T) {
 
 	tic := time.Now()
 	for i := 0; i < len(arr); i++ {
-		committercommon.GetPathType(arr[i])
+		common.GetPathType(arr[i])
 	}
 	fmt.Println("GetPathType Time taken", time.Since(tic))
 
 	tic = time.Now()
 	for i := 0; i < len(arr); i++ {
-		committercommon.GetPathType(arr[i])
+		common.GetPathType(arr[i])
 	}
 	fmt.Println("GetPathTypeEx Time taken", time.Since(tic))
 }
@@ -49,12 +49,12 @@ func TestEthWorldTrieProof(t *testing.T) {
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(common.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
 	bob := BobAccount()
-	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, bob); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(common.SYSTEM, bob); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	writeCache.FlushToDataSource(store)
@@ -125,11 +125,11 @@ func TestEthWorldTrieProof(t *testing.T) {
 }
 
 func TestGetProofAPI(t *testing.T) {
-	store := ccurlstorage.NewParallelEthMemDataStore()
+	store := stgcommstorage.NewParallelEthMemDataStore()
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	bob := BobAccount()
-	writeCache.CreateNewAccount(committercommon.SYSTEM, bob)
+	writeCache.CreateNewAccount(common.SYSTEM, bob)
 	writeCache.FlushToDataSource(store)
 
 	/* Bob updates */
@@ -138,8 +138,8 @@ func TestGetProofAPI(t *testing.T) {
 	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000003", noncommutative.NewBytes(ethcommon.BytesToHash([]byte{1}).Bytes()))
 	writeCache.FlushToDataSource(store)
 
-	roothash := store.Root()                                                                       // Get the proof provider by a root hash.
-	provider, err := ccurlstorage.NewMerkleProofCache(2, store.EthDB()).GetProofProvider(roothash) // Initiate the proof cache, maximum 2 blocks
+	roothash := store.Root()                                                                         // Get the proof provider by a root hash.
+	provider, err := stgcommstorage.NewMerkleProofCache(2, store.EthDB()).GetProofProvider(roothash) // Initiate the proof cache, maximum 2 blocks
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -179,11 +179,11 @@ func TestGetProofAPI(t *testing.T) {
 }
 
 func TestProofCacheBigInt(t *testing.T) {
-	store := ccurlstorage.NewParallelEthMemDataStore()
+	store := stgcommstorage.NewParallelEthMemDataStore()
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	alice := AliceAccount()
-	writeCache.CreateNewAccount(committercommon.SYSTEM, alice)
+	writeCache.CreateNewAccount(common.SYSTEM, alice)
 
 	/* Alice updates */
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000001",
@@ -211,7 +211,7 @@ func TestProofCacheBigInt(t *testing.T) {
 	}
 
 	roothash := store.Root()
-	provider, err := ccurlstorage.NewMerkleProofCache(2, store.EthDB()).GetProofProvider(roothash)
+	provider, err := stgcommstorage.NewMerkleProofCache(2, store.EthDB()).GetProofProvider(roothash)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -230,11 +230,11 @@ func TestProofCacheBigInt(t *testing.T) {
 }
 
 func TestProofCacheNonNaitve(t *testing.T) {
-	store := ccurlstorage.NewParallelEthMemDataStore()
+	store := stgcommstorage.NewParallelEthMemDataStore()
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	alice := AliceAccount()
-	writeCache.CreateNewAccount(committercommon.SYSTEM, alice)
+	writeCache.CreateNewAccount(common.SYSTEM, alice)
 	writeCache.FlushToDataSource(store)
 
 	buf := array.New[byte](32, 0)
@@ -290,14 +290,14 @@ func TestProofCacheNonNaitve(t *testing.T) {
 }
 
 func TestProofCache(t *testing.T) {
-	store := ccurlstorage.NewParallelEthMemDataStore()
+	store := stgcommstorage.NewParallelEthMemDataStore()
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	alice := AliceAccount()
-	writeCache.CreateNewAccount(committercommon.SYSTEM, alice)
+	writeCache.CreateNewAccount(common.SYSTEM, alice)
 
 	bob := BobAccount()
-	writeCache.CreateNewAccount(committercommon.SYSTEM, bob)
+	writeCache.CreateNewAccount(common.SYSTEM, bob)
 
 	writeCache.FlushToDataSource(store)
 
@@ -341,10 +341,10 @@ func TestProofCache(t *testing.T) {
 	}
 
 	// Initiate the proof cache, maximum 2 blocks
-	cache := ccurlstorage.NewMerkleProofCache(2, store.EthDB())
+	cache := stgcommstorage.NewMerkleProofCache(2, store.EthDB())
 
 	roothash := store.Root()
-	provider, err := ccurlstorage.NewMerkleProofCache(2, store.EthDB()).GetProofProvider(roothash) // Get the proof provider by a root hash.
+	provider, err := stgcommstorage.NewMerkleProofCache(2, store.EthDB()).GetProofProvider(roothash) // Get the proof provider by a root hash.
 	if err != nil {
 		t.Fatal(err)
 	}

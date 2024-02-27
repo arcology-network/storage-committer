@@ -20,8 +20,8 @@ package arbitrator
 import (
 	"testing"
 
-	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
-	univalue "github.com/arcology-network/concurrenturl/univalue"
+	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
+	univalue "github.com/arcology-network/storage-committer/univalue"
 )
 
 func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {

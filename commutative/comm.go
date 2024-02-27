@@ -17,7 +17,7 @@
 
 package commutative
 
-import intf "github.com/arcology-network/concurrenturl/interfaces"
+import intf "github.com/arcology-network/storage-committer/interfaces"
 
 func ApplyDelta[T any](initv intf.Type, typedVals []intf.Type) (interface{}, int, error) {
 	for i, v := range typedVals {

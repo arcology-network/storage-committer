@@ -6,11 +6,11 @@ import (
 
 	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/array"
-	committercommon "github.com/arcology-network/concurrenturl/common"
-	"github.com/arcology-network/concurrenturl/interfaces"
-	intf "github.com/arcology-network/concurrenturl/interfaces"
-	platform "github.com/arcology-network/concurrenturl/platform"
-	univalue "github.com/arcology-network/concurrenturl/univalue"
+	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	"github.com/arcology-network/storage-committer/interfaces"
+	intf "github.com/arcology-network/storage-committer/interfaces"
+	platform "github.com/arcology-network/storage-committer/platform"
+	univalue "github.com/arcology-network/storage-committer/univalue"
 )
 
 type DeltaSequence struct {
@@ -65,11 +65,11 @@ func (this *DeltaSequence) Sort() {
 	}
 
 	sort.SliceStable(this.transitions, func(i, j int) bool {
-		if this.transitions[i].GetTx() == committercommon.SYSTEM {
+		if this.transitions[i].GetTx() == stgcommcommon.SYSTEM {
 			return true
 		}
 
-		if this.transitions[j].GetTx() == committercommon.SYSTEM {
+		if this.transitions[j].GetTx() == stgcommcommon.SYSTEM {
 			return false
 		}
 

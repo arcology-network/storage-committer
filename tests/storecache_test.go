@@ -1,4 +1,4 @@
-package ccurltest
+package committertest
 
 // import (
 // 	"fmt"
@@ -6,9 +6,9 @@ package ccurltest
 // 	"time"
 
 // 	storage "github.com/arcology-network/common-lib/storage"
-// 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
-// 	storage "github.com/arcology-network/concurrenturl/storage"
-// 	univalue "github.com/arcology-network/concurrenturl/univalue"
+// 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
+// 	storage "github.com/arcology-network/storage-committer/storage"
+// 	univalue "github.com/arcology-network/storage-committer/univalue"
 // )
 
 // func TestCachePolicyLowScore(t *testing.T) {

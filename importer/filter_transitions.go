@@ -2,9 +2,9 @@ package importer
 
 import (
 	common "github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/concurrenturl/commutative"
-	"github.com/arcology-network/concurrenturl/interfaces"
-	univalue "github.com/arcology-network/concurrenturl/univalue"
+	"github.com/arcology-network/storage-committer/commutative"
+	"github.com/arcology-network/storage-committer/interfaces"
+	univalue "github.com/arcology-network/storage-committer/univalue"
 )
 
 // IPTransition stands for intra-process transition. It is used to filter out the fields that are not needed in inter-thread transitions to save

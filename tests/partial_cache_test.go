@@ -1,4 +1,4 @@
-package ccurltest
+package committertest
 
 // import (
 // 	"reflect"
@@ -6,29 +6,29 @@ package ccurltest
 
 // 	storage "github.com/arcology-network/common-lib/storage"
 // 	"github.com/arcology-network/common-lib/common"
-// 	ccurl "github.com/arcology-network/concurrenturl"
-// 	committercommon "github.com/arcology-network/concurrenturl/common"
-// 	importer "github.com/arcology-network/concurrenturl/importer"
-// 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
-// 	storage "github.com/arcology-network/concurrenturl/storage"
+// 	stgcomm "github.com/arcology-network/storage-committer"
+// 	stgcommcommon "github.com/arcology-network/storage-committer/common"
+// 	importer "github.com/arcology-network/storage-committer/importer"
+// 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
+// 	storage "github.com/arcology-network/storage-committer/storage"
 // )
 
 // func TestPartialCache(t *testing.T) {
 // 	memDB := storage.NewMemoryDB()
 // 	policy := storage.NewCachePolicy(10000000, 1.0)
 // 	store := storage.NewDataStore(nil, policy, memDB, platform.Codec{}.Encode, platform.Codec{}.Decode)
-// 		committer := ccurl.NewStorageCommitter(store)
+// 		committer := stgcommitter.NewStorageCommitter(store)
 // writeCache := committer.WriteCache()
 // 	alice := AliceAccount()
-// 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+// 	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 // 		t.Error(err)
 // 	}
 
-// 	committer.Write(committercommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
+// 	committer.Write(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
 // 	acctTrans := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 // 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 // 	committer.Sort()
-// 	committer.Precommit([]uint32{committercommon.SYSTEM})
+// 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 // committer.Commit()
 
 // 	/* Filter persistent data source */
@@ -80,18 +80,18 @@ package ccurltest
 // 	}
 
 // 	store := storage.NewDataStore(nil, policy, memDB, platform.Codec{}.Encode, platform.Codec{}.Decode, excludeMemDB)
-// 		committer := ccurl.NewStorageCommitter(store)
+// 		committer := stgcommitter.NewStorageCommitter(store)
 // writeCache := committer.WriteCache()
 // 	alice := AliceAccount()
-// 	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+// 	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 // 		t.Error(err)
 // 	}
 
-// 	committer.Write(committercommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
+// 	committer.Write(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
 // 	acctTrans := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 // 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 // 	committer.Sort()
-// 	committer.Precommit([]uint32{committercommon.SYSTEM})
+// 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 // committer.Commit()
 
 // 	if _, err := committer.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999")); err != nil {
@@ -100,7 +100,7 @@ package ccurltest
 
 // 	acctTrans = univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
-// 	// 	committer := ccurl.NewStorageCommitter(store)
+// 	// 	committer := stgcommitter.NewStorageCommitter(store)
 // writeCache := committer.WriteCache()
 
 // 	committer.WriteCache().Clear()

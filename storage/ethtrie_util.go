@@ -1,9 +1,6 @@
 package storage
 
 import (
-	"fmt"
-	"time"
-
 	"github.com/arcology-network/common-lib/common"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"

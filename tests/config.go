@@ -1,8 +1,8 @@
-package ccurltest
+package committertest
 
 import (
-	"github.com/arcology-network/concurrenturl/interfaces"
-	storage "github.com/arcology-network/concurrenturl/storage"
+	"github.com/arcology-network/storage-committer/interfaces"
+	storage "github.com/arcology-network/storage-committer/storage"
 	// trie "github.com/ethereum/go-ethereum/trie"
 )
 

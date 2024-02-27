@@ -21,14 +21,14 @@ package storagecommitter
 import (
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/array"
-	platform "github.com/arcology-network/concurrenturl/platform"
-	"github.com/arcology-network/concurrenturl/storage"
-	"github.com/arcology-network/concurrenturl/univalue"
+	platform "github.com/arcology-network/storage-committer/platform"
+	"github.com/arcology-network/storage-committer/storage"
+	"github.com/arcology-network/storage-committer/univalue"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
-	importer "github.com/arcology-network/concurrenturl/importer"
-	interfaces "github.com/arcology-network/concurrenturl/interfaces"
+	importer "github.com/arcology-network/storage-committer/importer"
+	interfaces "github.com/arcology-network/storage-committer/interfaces"
 )
 
 // StateCommitter represents a storage committer.
@@ -65,7 +65,7 @@ func NewStorageCommitter(store interfaces.Datastore) *StateCommitter {
 		store:       store,
 		importer:    importer.NewImporter(store, platform),
 		imuImporter: importer.NewImporter(store, platform),
-		Platform:    platform, //[]committercommon.FilteredTransitionsInterface{&importer.NonceFilter{}, &importer.BalanceFilter{}},
+		Platform:    platform, //[]stgcommcommon.FilteredTransitionsInterface{&importer.NonceFilter{}, &importer.BalanceFilter{}},
 		indexer:     storage.NewAccountIndexer(store, platform, keyGetter, inserter),
 	}
 }

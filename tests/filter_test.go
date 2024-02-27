@@ -1,4 +1,4 @@
-package ccurltest
+package committertest
 
 import (
 	"reflect"
@@ -8,12 +8,12 @@ import (
 	"github.com/arcology-network/common-lib/addrcompressor"
 	orderedset "github.com/arcology-network/common-lib/container/set"
 	"github.com/arcology-network/common-lib/exp/array"
-	committercommon "github.com/arcology-network/concurrenturl/common"
-	"github.com/arcology-network/concurrenturl/commutative"
-	importer "github.com/arcology-network/concurrenturl/importer"
-	platform "github.com/arcology-network/concurrenturl/platform"
-	univalue "github.com/arcology-network/concurrenturl/univalue"
 	cache "github.com/arcology-network/eu/cache"
+	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	"github.com/arcology-network/storage-committer/commutative"
+	importer "github.com/arcology-network/storage-committer/importer"
+	platform "github.com/arcology-network/storage-committer/platform"
+	univalue "github.com/arcology-network/storage-committer/univalue"
 	"github.com/holiman/uint256"
 )
 
@@ -24,15 +24,14 @@ func TestTransitionFilters(t *testing.T) {
 	alice := addrcompressor.RandomAccount()
 	bob := addrcompressor.RandomAccount()
 
-	// committer := ccurl.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	// writeCache = cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
-	writeCache.CreateNewAccount(committercommon.SYSTEM, alice)
-	// committer.NewAccount(committercommon.SYSTEM, bob)
+	writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice)
+	// committer.NewAccount(stgcommcommon.SYSTEM, bob)
 
-	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, bob); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, bob); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -116,10 +115,9 @@ func TestAccessFilters(t *testing.T) {
 	alice := addrcompressor.RandomAccount()
 	bob := addrcompressor.RandomAccount()
 
-	// committer := ccurl.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
-	writeCache.CreateNewAccount(committercommon.SYSTEM, alice)
-	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, bob); err != nil { // NewAccount account structure {
+	writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice)
+	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, bob); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 

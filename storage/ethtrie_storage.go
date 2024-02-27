@@ -8,9 +8,9 @@ import (
 	"github.com/VictoriaMetrics/fastcache"
 	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/array"
-	committercommon "github.com/arcology-network/concurrenturl/common"
-	"github.com/arcology-network/concurrenturl/interfaces"
-	platform "github.com/arcology-network/concurrenturl/platform"
+	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	"github.com/arcology-network/storage-committer/interfaces"
+	platform "github.com/arcology-network/storage-committer/platform"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/rawdb"
@@ -189,7 +189,7 @@ func (this *EthDataStore) IfExists(key string) bool {
 	address := ethcommon.BytesToAddress(acctBytes)
 	// address := ethcommon.BytesToAddress([]byte(accountKey))
 	if v, _ := this.accounts[address]; v != nil {
-		return len(key) == committercommon.ETH10_ACCOUNT_FULL_LENGTH+1 || v.Has(key) // If the account has the key
+		return len(key) == stgcommcommon.ETH10_ACCOUNT_FULL_LENGTH+1 || v.Has(key) // If the account has the key
 	}
 
 	// Not in cache, look up in the trie

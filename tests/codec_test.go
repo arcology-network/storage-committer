@@ -1,4 +1,4 @@
-package ccurltest
+package committertest
 
 import (
 	"fmt"
@@ -10,13 +10,13 @@ import (
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/exp/array"
 	storage "github.com/arcology-network/common-lib/storage/datastore"
-	committercommon "github.com/arcology-network/concurrenturl/common"
-	commutative "github.com/arcology-network/concurrenturl/commutative"
-	importer "github.com/arcology-network/concurrenturl/importer"
-	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
-	platform "github.com/arcology-network/concurrenturl/platform"
-	univalue "github.com/arcology-network/concurrenturl/univalue"
 	cache "github.com/arcology-network/eu/cache"
+	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	commutative "github.com/arcology-network/storage-committer/commutative"
+	importer "github.com/arcology-network/storage-committer/importer"
+	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
+	platform "github.com/arcology-network/storage-committer/platform"
+	univalue "github.com/arcology-network/storage-committer/univalue"
 	rlp "github.com/ethereum/go-ethereum/rlp"
 )
 
@@ -70,10 +70,9 @@ func TestUnivalueCodec(t *testing.T) {
 	store := storage.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
 	transitions := []*univalue.Univalue{}
 
-	// committer := ccurl.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
-	// committer.NewAccount(committercommon.SYSTEM, fmt.Sprint("rand.Int()"))
-	writeCache.CreateNewAccount(committercommon.SYSTEM, fmt.Sprint("rand.Int()"))
+	// committer.NewAccount(stgcommcommon.SYSTEM, fmt.Sprint("rand.Int()"))
+	writeCache.CreateNewAccount(stgcommcommon.SYSTEM, fmt.Sprint("rand.Int()"))
 
 	transVec := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	transitions = append(transitions, transVec...)
@@ -95,11 +94,11 @@ func TestUnivaluesCodec(t *testing.T) {
 	transitions := []*univalue.Univalue{}
 	for i := 0; i < 10; i++ {
 		acct := RandomAccount()
-		// committer := ccurl.NewStorageCommitter(store)
-		writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
-		// committer.NewAccount(committercommon.SYSTEM, acct)
 
-		writeCache.CreateNewAccount(committercommon.SYSTEM, acct)
+		writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+		// committer.NewAccount(stgcommcommon.SYSTEM, acct)
+
+		writeCache.CreateNewAccount(stgcommcommon.SYSTEM, acct)
 
 		transVec := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 		transitions = append(transitions, transVec...)

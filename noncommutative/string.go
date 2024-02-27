@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/arcology-network/common-lib/common"
-	intf "github.com/arcology-network/concurrenturl/interfaces"
+	intf "github.com/arcology-network/storage-committer/interfaces"
 )
 
 type String string

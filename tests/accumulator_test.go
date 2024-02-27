@@ -1,17 +1,17 @@
-package ccurltest
+package committertest
 
 import (
 	"strings"
 	"testing"
 
 	"github.com/arcology-network/common-lib/exp/array"
-	arbitrator "github.com/arcology-network/concurrenturl/arbitrator"
-	committercommon "github.com/arcology-network/concurrenturl/common"
-	commutative "github.com/arcology-network/concurrenturl/commutative"
-	importer "github.com/arcology-network/concurrenturl/importer"
-	platform "github.com/arcology-network/concurrenturl/platform"
-	univalue "github.com/arcology-network/concurrenturl/univalue"
 	cache "github.com/arcology-network/eu/cache"
+	arbitrator "github.com/arcology-network/storage-committer/arbitrator"
+	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	commutative "github.com/arcology-network/storage-committer/commutative"
+	importer "github.com/arcology-network/storage-committer/importer"
+	platform "github.com/arcology-network/storage-committer/platform"
+	univalue "github.com/arcology-network/storage-committer/univalue"
 	"github.com/holiman/uint256"
 )
 
@@ -19,10 +19,9 @@ func TestAccumulatorUpperLimit(t *testing.T) {
 	store := chooseDataStore()
 
 	alice := AliceAccount()
-	// committer := ccurl.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
-	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -63,9 +62,9 @@ func TestAccumulatorLowerLimit(t *testing.T) {
 	store := chooseDataStore()
 
 	alice := AliceAccount()
-	// url := ccurl.NewStorageCommitter(store)
+	// url := stgcommitter.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
-	if _, err := writeCache.CreateNewAccount(committercommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 

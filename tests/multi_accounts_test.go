@@ -1,4 +1,4 @@
-package ccurltest
+package committertest
 
 import (
 	"testing"
@@ -6,20 +6,20 @@ import (
 	// codec "github.com/arcology-network/common-lib/codec"
 
 	"github.com/arcology-network/common-lib/exp/array"
-	ccurl "github.com/arcology-network/concurrenturl"
-	committercommon "github.com/arcology-network/concurrenturl/common"
-	commutative "github.com/arcology-network/concurrenturl/commutative"
-	importer "github.com/arcology-network/concurrenturl/importer"
-	platform "github.com/arcology-network/concurrenturl/platform"
-	univalue "github.com/arcology-network/concurrenturl/univalue"
 	cache "github.com/arcology-network/eu/cache"
+	stgcommitter "github.com/arcology-network/storage-committer"
+	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	commutative "github.com/arcology-network/storage-committer/commutative"
+	importer "github.com/arcology-network/storage-committer/importer"
+	platform "github.com/arcology-network/storage-committer/platform"
+	univalue "github.com/arcology-network/storage-committer/univalue"
 )
 
 func TestMultiAccountCreation(t *testing.T) {
 	store := chooseDataStore()
 	// store := datastore.NewDataStore(nil, datastore.NewCachePolicy(0, 1), datastore.NewMemoryDB(), encoder, decoder)
 
-	store.Inject((committercommon.ETH10_ACCOUNT_PREFIX), commutative.NewPath())
+	store.Inject((stgcommcommon.ETH10_ACCOUNT_PREFIX), commutative.NewPath())
 
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
@@ -38,7 +38,7 @@ func TestMultiAccountCreation(t *testing.T) {
 		t.Error("Error: Transition counts don't match up")
 	}
 
-	committer := ccurl.NewStorageCommitter(store)
+	committer := stgcommitter.NewStorageCommitter(store)
 	committer.Import(acctTrans)
 	committer.Sort()
 	committer.Precommit([]uint32{0})

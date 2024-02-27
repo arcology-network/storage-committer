@@ -6,7 +6,7 @@ import (
 
 	datastore "github.com/arcology-network/common-lib/storage/datastore"
 	memdb "github.com/arcology-network/common-lib/storage/memdb"
-	"github.com/arcology-network/concurrenturl/interfaces"
+	"github.com/arcology-network/storage-committer/interfaces"
 )
 
 type TransientDB struct {

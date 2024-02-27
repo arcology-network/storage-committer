@@ -5,9 +5,9 @@ import (
 	"github.com/arcology-network/common-lib/exp/array"
 	ccmap "github.com/arcology-network/common-lib/exp/map"
 	mapi "github.com/arcology-network/common-lib/exp/map"
-	committercommon "github.com/arcology-network/concurrenturl/common"
-	"github.com/arcology-network/concurrenturl/interfaces"
-	univalue "github.com/arcology-network/concurrenturl/univalue"
+	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	"github.com/arcology-network/storage-committer/interfaces"
+	univalue "github.com/arcology-network/storage-committer/univalue"
 	"github.com/cespare/xxhash/v2"
 )
 
@@ -138,7 +138,7 @@ func (this *Importer) WhiteList(whitelist []uint32) []error {
 	whitelisted := mapi.FromSlice(whitelist, func(_ uint32) bool { return true })
 
 	for txid, vec := range this.byTx {
-		if txid == committercommon.SYSTEM {
+		if txid == stgcommcommon.SYSTEM {
 			continue
 		}
 

@@ -1,4 +1,4 @@
-module github.com/arcology-network/concurrenturl
+module github.com/arcology-network/storage-committer
 
 go 1.22
 

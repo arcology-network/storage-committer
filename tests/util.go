@@ -16,7 +16,7 @@
  */
 
 // Generate a random account, testing only
-package ccurltest
+package committertest
 
 import (
 	"fmt"

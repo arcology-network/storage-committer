@@ -6,7 +6,7 @@ import (
 	"sort"
 
 	"github.com/arcology-network/common-lib/exp/array"
-	committercommon "github.com/arcology-network/concurrenturl/common"
+	stgcommcommon "github.com/arcology-network/storage-committer/common"
 )
 
 type Univalues []*Univalue
@@ -92,7 +92,7 @@ func (this Univalues) Sort(groupIDs []uint32) Univalues {
 			groupID: groupIDs[i],
 			length:  len(bytes),
 			str:     *str,
-			bytes:   bytes[committercommon.ETH10_ACCOUNT_PREFIX_LENGTH:],
+			bytes:   bytes[stgcommcommon.ETH10_ACCOUNT_PREFIX_LENGTH:],
 			tx:      this[i].GetTx(),
 			value:   this[i],
 		}
@@ -125,19 +125,19 @@ func (this Univalues) Sort(groupIDs []uint32) Univalues {
 	return this
 }
 
-// func (this Univalues) CompressKeys(dict *committercommon.Dict) {
+// func (this Univalues) CompressKeys(dict *stgcommcommon.Dict) {
 // 	for i, univ := range this {
-// 		compressedKey := (*univ.GetPath())[committercommon.ETH10_ACCOUNT_PREFIX_LENGTH:committercommon.ETH10_ACCOUNT_FULL_LENGTH]
-// 		newKey := dict.Compress(compressedKey, nil) + (*univ.GetPath())[committercommon.ETH10_ACCOUNT_FULL_LENGTH:]
+// 		compressedKey := (*univ.GetPath())[stgcommcommon.ETH10_ACCOUNT_PREFIX_LENGTH:stgcommcommon.ETH10_ACCOUNT_FULL_LENGTH]
+// 		newKey := dict.Compress(compressedKey, nil) + (*univ.GetPath())[stgcommcommon.ETH10_ACCOUNT_FULL_LENGTH:]
 // 		this[i].SetPath(&newKey)
 // 	}
 // }
 
-// func (this Univalues) DecompressKeys(dict *committercommon.Dict) {
+// func (this Univalues) DecompressKeys(dict *stgcommcommon.Dict) {
 // 	for i := range this {
 // 		key := *this[i].GetPath()
 // 		idx := strings.Index(*this[i].GetPath(), "/")
-// 		newKey := committercommon.ETH10 + dict.Decompress(key[:idx]) + key[idx:]
+// 		newKey := stgcommcommon.ETH10 + dict.Decompress(key[:idx]) + key[idx:]
 // 		this[i].SetPath(&newKey)
 // 	}
 // }
