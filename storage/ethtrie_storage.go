@@ -7,7 +7,7 @@ import (
 
 	"github.com/VictoriaMetrics/fastcache"
 	common "github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/common-lib/exp/array"
+	"github.com/arcology-network/common-lib/exp/slice"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/interfaces"
 	platform "github.com/arcology-network/storage-committer/platform"
@@ -79,7 +79,7 @@ func NewEthDataStore(trie *ethmpt.Trie, triedb *ethmpt.Database, diskdb [16]ethd
 // NewParallelEthMemDataStore creates a new EthDataStore with a memory database.
 func NewParallelEthMemDataStore() *EthDataStore {
 	diskdbs := [16]ethdb.Database{}
-	array.Fill(diskdbs[:], rawdb.NewMemoryDatabase())
+	slice.Fill(diskdbs[:], rawdb.NewMemoryDatabase())
 	db := ethmpt.NewParallelDatabase(diskdbs, nil)
 
 	return NewEthDataStore(ethmpt.NewEmptyParallel(db), db, diskdbs)
@@ -88,7 +88,7 @@ func NewParallelEthMemDataStore() *EthDataStore {
 // NewParallelEthMemDataStore creates a new EthDataStore with a memory database.
 func NewParallelEthMemDataStoreWithSharedCache(trieDbConfig *hashdb.Config, cleanCache *fastcache.Cache) *EthDataStore {
 	diskdbs := [16]ethdb.Database{}
-	array.Fill(diskdbs[:], rawdb.NewMemoryDatabase())
+	slice.Fill(diskdbs[:], rawdb.NewMemoryDatabase())
 	db := ethmpt.NewParallelDatabaseWithSharedCache(diskdbs, cleanCache, nil)
 
 	return NewEthDataStore(ethmpt.NewEmptyParallel(db), db, diskdbs)
@@ -102,7 +102,7 @@ func NewLevelDBDataStore(dir string) *EthDataStore {
 	}
 
 	diskdbs := [16]ethdb.Database{}
-	array.Fill(diskdbs[:], leveldb)
+	slice.Fill(diskdbs[:], leveldb)
 	db := ethmpt.NewParallelDatabase(diskdbs, nil)
 
 	return NewEthDataStore(ethmpt.NewEmptyParallel(db), ethmpt.NewParallelDatabase(diskdbs, nil), diskdbs)
@@ -250,7 +250,7 @@ func (this *EthDataStore) BatchInject(keys []string, values []interface{}) error
 	}
 
 	acctKeys, accounts := common.MapKVs(acctDict)
-	array.Foreach(accounts, func(i int, acct **Account) {
+	slice.Foreach(accounts, func(i int, acct **Account) {
 		this.worldStateTrie.Update([]byte(acctKeys[i]), (**acct).Encode())
 	})
 
@@ -329,12 +329,12 @@ func (this *EthDataStore) Precommit(updates ...interface{}) [32]byte {
 	}
 
 	// Precommit the changes to the accounts and update the account storage trie.
-	array.ParallelForeach(dirties, 16, func(idx int, acct **AccountUpdate) {
+	slice.ParallelForeach(dirties, 16, func(idx int, acct **AccountUpdate) {
 		((*acct).Acct).ApplyAccounts(*acct)
 	})
 
 	// Update the to account cache.
-	array.Foreach(dirties, func(_ int, acct **AccountUpdate) {
+	slice.Foreach(dirties, func(_ int, acct **AccountUpdate) {
 		this.accounts[(*acct).Acct.addr] = (*acct).Acct
 	})
 
@@ -342,12 +342,12 @@ func (this *EthDataStore) Precommit(updates ...interface{}) [32]byte {
 	encodedAddrs, encodedVals := [][]byte{}, [][]byte{}
 	common.ParallelExecute(
 		func() { // Account keys
-			encodedAddrs = array.Append(dirties, func(_ int, update *AccountUpdate) []byte {
+			encodedAddrs = slice.Append(dirties, func(_ int, update *AccountUpdate) []byte {
 				return crypto.Keccak256(update.Acct.addr[:])
 			})
 		},
 		func() { // Encode the account content.
-			encodedVals = array.Append(dirties, func(_ int, update *AccountUpdate) []byte {
+			encodedVals = slice.Append(dirties, func(_ int, update *AccountUpdate) []byte {
 				return update.Acct.Encode()
 			})
 		},
@@ -355,7 +355,7 @@ func (this *EthDataStore) Precommit(updates ...interface{}) [32]byte {
 
 	// Write the world tree and return the first error if any.
 	errs := this.worldStateTrie.ParallelUpdate(encodedAddrs, encodedVals) // Encoded accounts
-	if _, err := array.FindFirstIf(errs, func(err error) bool { return err != nil }); err != nil {
+	if _, err := slice.FindFirstIf(errs, func(err error) bool { return err != nil }); err != nil {
 		panic("Error in updating the trie: " + (*err).Error())
 	}
 
@@ -369,7 +369,7 @@ func (this *EthDataStore) Precommit(updates ...interface{}) [32]byte {
 }
 
 func (this *EthDataStore) Commit(blockNum uint64) error {
-	array.ParallelForeach(this.dirties, runtime.NumCPU(), func(_ int, update **AccountUpdate) {
+	slice.ParallelForeach(this.dirties, runtime.NumCPU(), func(_ int, update **AccountUpdate) {
 		if err := (**update).Acct.Commit(blockNum); err != nil {
 			panic(err)
 		}

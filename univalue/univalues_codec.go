@@ -6,7 +6,7 @@ import (
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/common-lib/exp/array"
+	"github.com/arcology-network/common-lib/exp/slice"
 )
 
 func (this Univalues) Size() int {
@@ -31,7 +31,7 @@ func (this Univalues) Encode(selector ...interface{}) []byte {
 		return []byte{}
 	}
 
-	array.ParallelForeach(this, 6, func(i int, _ **Univalue) {
+	slice.ParallelForeach(this, 6, func(i int, _ **Univalue) {
 		if this[i] != nil {
 			lengths[i] = this[i].Size()
 		}
@@ -46,7 +46,7 @@ func (this Univalues) Encode(selector ...interface{}) []byte {
 	buffer := make([]byte, headerLen+offsets[len(offsets)-1])
 	codec.Uint32(len(this)).EncodeToBuffer(buffer)
 
-	array.ParallelForeach(this, 6, func(i int, _ **Univalue) {
+	slice.ParallelForeach(this, 6, func(i int, _ **Univalue) {
 		codec.Uint32(offsets[i]).EncodeToBuffer(buffer[(i+1)*codec.UINT32_LEN:])
 		this[i].EncodeToBuffer(buffer[headerLen+offsets[i]:])
 	})
@@ -61,7 +61,7 @@ func (Univalues) Decode(bytes []byte) interface{} {
 	buffers := [][]byte(codec.Byteset{}.Decode(bytes).(codec.Byteset))
 	univalues := make([]*Univalue, len(buffers))
 
-	array.ParallelForeach(buffers, 6, func(i int, _ *[]byte) {
+	slice.ParallelForeach(buffers, 6, func(i int, _ *[]byte) {
 		v := (&Univalue{}).Decode(buffers[i])
 		univalues[i] = v.(*Univalue)
 	})
@@ -76,7 +76,7 @@ func (Univalues) DecodeWithMempool(bytes []byte, get func() *Univalue, put func(
 	buffers := [][]byte(codec.Byteset{}.Decode(bytes).(codec.Byteset))
 	univalues := make([]*Univalue, len(buffers))
 
-	array.ParallelForeach(buffers, 6, func(i int, _ *[]byte) {
+	slice.ParallelForeach(buffers, 6, func(i int, _ *[]byte) {
 		v := get()
 		v.reclaimFunc = put
 		univalues[i] = v.Decode(buffers[i]).(*Univalue)
@@ -106,7 +106,7 @@ func (this *Univalues) GobDecode(data []byte) error {
 }
 
 func (this Univalues) Print() {
-	sorted := array.Clone(this)
+	sorted := slice.Clone(this)
 	sort.Slice(sorted, func(i, j int) bool {
 		return (*sorted[i].GetPath()) < (*sorted[j].GetPath())
 	})

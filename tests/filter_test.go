@@ -7,7 +7,7 @@ import (
 
 	"github.com/arcology-network/common-lib/addrcompressor"
 	orderedset "github.com/arcology-network/common-lib/container/set"
-	"github.com/arcology-network/common-lib/exp/array"
+	"github.com/arcology-network/common-lib/exp/slice"
 	cache "github.com/arcology-network/eu/cache"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/commutative"
@@ -37,7 +37,7 @@ func TestTransitionFilters(t *testing.T) {
 
 	raw := writeCache.Export(importer.Sorter)
 
-	acctTrans := univalue.Univalues(array.Clone(raw)).To(importer.IPTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(raw)).To(importer.IPTransition{})
 
 	if !acctTrans[1].Value().(*commutative.U256).Equal(raw[1].Value()) {
 		t.Error("Error: Non-path commutative should have the values!!")
@@ -76,7 +76,7 @@ func TestTransitionFilters(t *testing.T) {
 		t.Error("Error: Max altered")
 	}
 
-	copied := univalue.Univalues(array.Clone(acctTrans)).To(importer.IPTransition{})
+	copied := univalue.Univalues(slice.Clone(acctTrans)).To(importer.IPTransition{})
 
 	// Test Path
 	if v := copied[0].Value().(*commutative.Path).Value().(*orderedset.OrderedSet); len(v.Keys()) != 0 {
@@ -132,7 +132,7 @@ func TestAccessFilters(t *testing.T) {
 	raw[1].Value().(*commutative.U256).SetMin(*uint256.NewInt(1))
 	raw[1].Value().(*commutative.U256).SetMax(*uint256.NewInt(2222222))
 
-	acctTrans := univalue.Univalues(array.Clone(raw)).To(importer.IPAccess{})
+	acctTrans := univalue.Univalues(slice.Clone(raw)).To(importer.IPAccess{})
 
 	if acctTrans[0].Value() != nil {
 		t.Error("Error: Value altered")
@@ -154,7 +154,7 @@ func TestAccessFilters(t *testing.T) {
 		t.Error("Error: A non-path commutative variable should have the initial value")
 	}
 
-	idx, v := array.FindFirstIf(acctTrans, func(v *univalue.Univalue) bool {
+	idx, v := slice.FindFirstIf(acctTrans, func(v *univalue.Univalue) bool {
 		return strings.Index(*v.GetPath(), "/balance") == -1 && strings.Index(*v.GetPath(), "/nonce") == -1 && v.Value() != nil
 	})
 

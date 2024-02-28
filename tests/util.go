@@ -24,7 +24,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/arcology-network/common-lib/exp/array"
+	slice "github.com/arcology-network/common-lib/exp/slice"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	rlp "github.com/ethereum/go-ethereum/rlp"
 	"golang.org/x/crypto/sha3"
@@ -44,19 +44,19 @@ func RandomAccount() string {
 
 func AliceAccount() string {
 	b := make([]byte, 20)
-	array.Fill(b, 10)
+	slice.Fill(b, 10)
 	return hexutil.Encode(b)
 }
 
 func BobAccount() string {
 	b := make([]byte, 20)
-	array.Fill(b, 11)
+	slice.Fill(b, 11)
 	return hexutil.Encode(b)
 }
 
 func CarolAccount() string {
 	b := make([]byte, 20)
-	array.Fill(b, 12)
+	slice.Fill(b, 12)
 	return hexutil.Encode(b)
 }
 

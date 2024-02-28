@@ -5,7 +5,7 @@ import (
 
 	// codec "github.com/arcology-network/common-lib/codec"
 
-	"github.com/arcology-network/common-lib/exp/array"
+	"github.com/arcology-network/common-lib/exp/slice"
 	cache "github.com/arcology-network/eu/cache"
 	stgcommitter "github.com/arcology-network/storage-committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
@@ -31,7 +31,7 @@ func TestMultiAccountCreation(t *testing.T) {
 		}
 	}
 	raw := writeCache.Export(importer.Sorter)
-	acctTrans := univalue.Univalues(array.Clone(raw)).To(importer.ITTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(raw)).To(importer.ITTransition{})
 
 	paths := platform.NewPlatform().GetSysPaths()
 	if len(acctTrans) != len(paths)*len(accounts) {
@@ -44,7 +44,7 @@ func TestMultiAccountCreation(t *testing.T) {
 	committer.Precommit([]uint32{0})
 	committer.Commit()
 	writeCache.Reset(writeCache)
-	// acctTrans = univalue.Univalues(array.Clone(raw)).To(importer.ITTransition{})
+	// acctTrans = univalue.Univalues(slice.Clone(raw)).To(importer.ITTransition{})
 	// encoded := univalue.Univalues(acctTrans).Encode()
 
 	// out := univalue.Univalues{}.Decode(encoded).(univalue.Univalues)

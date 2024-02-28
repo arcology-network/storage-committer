@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	orderedset "github.com/arcology-network/common-lib/container/set"
-	"github.com/arcology-network/common-lib/exp/array"
+	"github.com/arcology-network/common-lib/exp/slice"
 	cache "github.com/arcology-network/eu/cache"
 	stgcommitter "github.com/arcology-network/storage-committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
@@ -28,7 +28,7 @@ func TestAuxTrans(t *testing.T) {
 	}
 
 	// _, trans00 := writeCache.Export(importer.Sorter)
-	acctTrans := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
@@ -86,7 +86,7 @@ func TestAuxTrans(t *testing.T) {
 		}
 	}
 
-	transitions := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	transitions := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 	if !reflect.DeepEqual(transitions[0].Value().(interfaces.Type).Delta().(*commutative.PathDelta).Added(), []string{"elem-000"}) {
 		t.Error("keys don't match")
 	}
@@ -121,7 +121,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	}
 
 	// _, trans00 := writeCache.Export(importer.Sorter)
-	trans00 := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	trans00 := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans00).Encode()).(univalue.Univalues))
 
@@ -136,7 +136,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	}
 
 	// _, trans10 := writeCache.Export(importer.Sorter)
-	trans10 := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	trans10 := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans10).Encode()).(univalue.Univalues))
 

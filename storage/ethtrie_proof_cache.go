@@ -21,7 +21,7 @@ import (
 	"sync"
 
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/common-lib/exp/array"
+	"github.com/arcology-network/common-lib/exp/slice"
 	ethmpt "github.com/ethereum/go-ethereum/trie"
 	// ethapi "github.com/ethereum/go-ethereum/internal/ethapi"
 )
@@ -67,10 +67,10 @@ func (this *MerkleProofCache) GetProofProvider(rootHash [32]byte) (*ProofProvide
 			keys, merkles := common.MapKVs(this.merkleDict)
 
 			// The visit ratio is the number of times a merkle tree has been accessed divided by the total number of times all the merkle trees have been accessed.
-			ratios := array.Append(merkles, func(_ int, v *ProofProvider) float64 { return float64(v.visits) / float64(v.totalVisits) })
+			ratios := slice.Append(merkles, func(_ int, v *ProofProvider) float64 { return float64(v.visits) / float64(v.totalVisits) })
 
 			// The entry has the lowest ratio of visits/totalVisits will be removed.
-			idx, _ := array.Min(ratios, func(v0, v1 float64) bool { return v0 < v1 })
+			idx, _ := slice.Min(ratios, func(v0, v1 float64) bool { return v0 < v1 })
 			delete(this.merkleDict, keys[idx])
 		}
 	}

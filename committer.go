@@ -20,7 +20,7 @@ package storagecommitter
 
 import (
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/common-lib/exp/array"
+	"github.com/arcology-network/common-lib/exp/slice"
 	platform "github.com/arcology-network/storage-committer/platform"
 	"github.com/arcology-network/storage-committer/storage"
 	"github.com/arcology-network/storage-committer/univalue"
@@ -97,10 +97,10 @@ func (this *StateCommitter) Clear() {
 // Import imports the given transitions into the StateCommitter.
 func (this *StateCommitter) Import(transitions []*univalue.Univalue, args ...interface{}) *StateCommitter {
 	// Move the Peristent transitions(nonce and gas fee) to another list.
-	invTransitions := array.MoveIf(&transitions, func(i int, v *univalue.Univalue) bool {
+	invTransitions := slice.MoveIf(&transitions, func(i int, v *univalue.Univalue) bool {
 		return v.Persistent()
 	})
-	array.Remove(&transitions, nil) // Remove the Peristent transitions from the transition lists
+	slice.Remove(&transitions, nil) // Remove the Peristent transitions from the transition lists
 
 	var imuSeqs, seqs []*importer.DeltaSequence
 	common.ParallelExecute(

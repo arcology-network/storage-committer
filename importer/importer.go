@@ -2,9 +2,9 @@ package importer
 
 import (
 	common "github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/common-lib/exp/array"
 	ccmap "github.com/arcology-network/common-lib/exp/map"
 	mapi "github.com/arcology-network/common-lib/exp/map"
+	"github.com/arcology-network/common-lib/exp/slice"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/interfaces"
 	univalue "github.com/arcology-network/storage-committer/univalue"
@@ -40,7 +40,7 @@ func NewImporter(store interfaces.Datastore, platform interfaces.Platform) *Impo
 	importer.platform = platform
 	importer.deltaDict = ccmap.NewConcurrentMap(8, func(v *DeltaSequence) bool { return v == nil }, func(k string) uint64 {
 		return xxhash.Sum64([]byte(k))
-		// return array.Sum[uint8, uint8]([]byte(k))
+		// return slice.Sum[uint8, uint8]([]byte(k))
 	})
 
 	// importer.seqPool = mempool.NewMempool[*DeltaSequence](4096, 64, func() *DeltaSequence {
@@ -73,23 +73,23 @@ func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) 
 	commitIfAbsent := common.IfThenDo1st(len(args) > 0 && args[0] != nil, func() bool { return args[0].(bool) }, true) //Write if absent from local
 
 	//Remove entries that preexist but not available locally, it happens with a partial cache
-	array.RemoveIf(&txTrans, func(_ int, univ *univalue.Univalue) bool {
+	slice.RemoveIf(&txTrans, func(_ int, univ *univalue.Univalue) bool {
 		return univ.Preexist() && this.store.IfExists(*univ.GetPath()) && !commitIfAbsent
 	})
 
 	// Create new sequences for the non-existing paths all at once.
-	missingKeys := array.ParallelAppend(txTrans, this.numThreads, func(i int, _ *univalue.Univalue) string {
+	missingKeys := slice.ParallelAppend(txTrans, this.numThreads, func(i int, _ *univalue.Univalue) string {
 		if _, ok := this.deltaDict.Get(*txTrans[i].GetPath()); !ok {
 			return *txTrans[i].GetPath()
 		}
 		return ""
 	})
-	array.Remove(&missingKeys, "") // Remove the keys that already exist.
+	slice.Remove(&missingKeys, "") // Remove the keys that already exist.
 
 	// Create the missing sequences as new transitions are being added.
 	missingKeys = mapi.Keys(mapi.FromSlice(missingKeys, func(k string) bool { return true })) // Get the unique keys only
 
-	newSeqs := array.ParallelAppend(missingKeys, this.numThreads, func(i int, k string) *DeltaSequence {
+	newSeqs := slice.ParallelAppend(missingKeys, this.numThreads, func(i int, k string) *DeltaSequence {
 		return NewDeltaSequence(k, this.store)
 	})
 	this.deltaDict.BatchSet(missingKeys, newSeqs)
@@ -101,13 +101,13 @@ func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) 
 			return seq.Add(txTrans[i]), false
 		})
 
-	txIDs := array.Append(txTrans, func(_ int, v *univalue.Univalue) int { return int(v.GetTx()) })
-	mapi.IfNotFoundDo(this.byTx, array.UniqueInts(txIDs), func(k int) int { return k }, func(k int) *[]*univalue.Univalue {
+	txIDs := slice.Append(txTrans, func(_ int, v *univalue.Univalue) int { return int(v.GetTx()) })
+	mapi.IfNotFoundDo(this.byTx, slice.UniqueInts(txIDs), func(k int) int { return k }, func(k int) *[]*univalue.Univalue {
 		v := (make([]*univalue.Univalue, 0, 16)) // For unique ones only
 		return &v
 	})
 
-	array.ParallelForeach(txIDs, 4, func(i int, _ *int) {
+	slice.ParallelForeach(txIDs, 4, func(i int, _ *int) {
 		v := txTrans[i]
 		tran := this.byTx[int(v.GetTx())]
 		*tran = append(*tran, v)
@@ -122,8 +122,8 @@ func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) 
 	// 		return common.New(make([]*univalue.Univalue, 0, 8))
 	// 	})
 
-	// // Add the transaction to the account's array.
-	// array.Foreach(txTrans, func(i int, v **univalue.Univalue) {
+	// // Add the transaction to the account's slice.
+	// slice.Foreach(txTrans, func(i int, v **univalue.Univalue) {
 	// 	tran := this.byAcct[platform.GetAccountAddr(*(*v).GetPath())]
 	// 	*tran = append(*tran, *v)
 	// })
@@ -154,7 +154,7 @@ func (this *Importer) WhiteList(whitelist []uint32) []error {
 func (this *Importer) SortDeltaSequences() {
 	this.keyBuffer = this.deltaDict.Keys()
 
-	array.ParallelForeach(this.keyBuffer, this.numThreads, func(i int, _ *string) {
+	slice.ParallelForeach(this.keyBuffer, this.numThreads, func(i int, _ *string) {
 		deltaSeq, _ := this.deltaDict.Get(this.keyBuffer[i])
 		deltaSeq.Sort() // Sort the transitions in the sequence
 	})
@@ -162,21 +162,21 @@ func (this *Importer) SortDeltaSequences() {
 
 // Merge and finalize state deltas
 func (this *Importer) MergeStateDelta() {
-	this.valBuffer = array.Resize(&this.valBuffer, len(this.keyBuffer))
+	this.valBuffer = slice.Resize(&this.valBuffer, len(this.keyBuffer))
 
-	array.ParallelForeach(this.keyBuffer, this.numThreads, func(i int, _ *string) {
+	slice.ParallelForeach(this.keyBuffer, this.numThreads, func(i int, _ *string) {
 		deltaSeq, _ := this.deltaDict.Get(this.keyBuffer[i])
 		this.valBuffer[i] = deltaSeq.Finalize()
 	})
 
-	array.RemoveBothIf(&this.keyBuffer, &this.valBuffer, func(i int, _ string, v interface{}) bool {
+	slice.RemoveBothIf(&this.keyBuffer, &this.valBuffer, func(i int, _ string, v interface{}) bool {
 		return this.valBuffer[i] == nil || this.valBuffer[i].(*univalue.Univalue) == nil
 	})
 }
 
 func (this *Importer) KVs() ([]string, []interface{}) {
-	array.Remove(&this.keyBuffer, "")
-	array.RemoveIf(&this.valBuffer, func(_ int, v interface{}) bool { return v.(*univalue.Univalue) == nil })
+	slice.Remove(&this.keyBuffer, "")
+	slice.RemoveIf(&this.valBuffer, func(_ int, v interface{}) bool { return v.(*univalue.Univalue) == nil })
 	return this.keyBuffer, this.valBuffer
 }
 

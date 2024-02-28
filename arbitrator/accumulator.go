@@ -21,7 +21,7 @@ import (
 	"errors"
 	"sort"
 
-	"github.com/arcology-network/common-lib/exp/array"
+	"github.com/arcology-network/common-lib/exp/slice"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	intf "github.com/arcology-network/storage-committer/interfaces"
 	"github.com/arcology-network/storage-committer/univalue"
@@ -43,7 +43,7 @@ func (this *Accumulator) CheckMinMax(transitions []*univalue.Univalue) []*Confli
 		return nil
 	}
 
-	array.RemoveIf(&transitions, func(_ int, v *univalue.Univalue) bool {
+	slice.RemoveIf(&transitions, func(_ int, v *univalue.Univalue) bool {
 		return v.IsReadOnly()
 	})
 
@@ -88,7 +88,7 @@ func (this *Accumulator) CheckMinMax(transitions []*univalue.Univalue) []*Confli
 
 // categorize transitions into two groups, one is negative, the other is positive.
 func (*Accumulator) Categorize(transitions []*univalue.Univalue) ([]*univalue.Univalue, []*univalue.Univalue) {
-	offset, _ := array.FindFirstIf(transitions, func(v *univalue.Univalue) bool { return v.Value().(intf.Type).DeltaSign() })
+	offset, _ := slice.FindFirstIf(transitions, func(v *univalue.Univalue) bool { return v.Value().(intf.Type).DeltaSign() })
 
 	if offset < 0 {
 		offset = len(transitions)
@@ -105,7 +105,7 @@ func (this *Accumulator) isOutOfLimits(k string, transitions []*univalue.Univalu
 
 	initialv := transitions[0].Value().(intf.Type).Clone().(intf.Type)
 
-	typedVals := array.Append(transitions, func(_ int, v *univalue.Univalue) intf.Type {
+	typedVals := slice.Append(transitions, func(_ int, v *univalue.Univalue) intf.Type {
 		return v.Value().(intf.Type)
 	})
 
@@ -115,7 +115,7 @@ func (this *Accumulator) isOutOfLimits(k string, transitions []*univalue.Univalu
 	}
 
 	txIDs := []uint32{}
-	array.Foreach(transitions[length+1:], func(_ int, v **univalue.Univalue) { txIDs = append(txIDs, (*v).GetTx()) })
+	slice.Foreach(transitions[length+1:], func(_ int, v **univalue.Univalue) { txIDs = append(txIDs, (*v).GetTx()) })
 
 	return &Conflict{
 		key:   k,

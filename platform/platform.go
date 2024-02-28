@@ -21,8 +21,8 @@ import (
 	"strings"
 
 	common "github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/common-lib/exp/array"
 	mapi "github.com/arcology-network/common-lib/exp/map"
+	"github.com/arcology-network/common-lib/exp/slice"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
@@ -67,7 +67,7 @@ func hex2int(c byte) int {
 // Get ths builtin paths
 func (this *Platform) GetBuiltins(acct string) ([]string, []uint8) {
 	paths, typeIds := common.MapKVs(this.syspaths)
-	array.SortBy1st(paths, typeIds, func(lhv, rhv string) bool { return lhv < rhv })
+	slice.SortBy1st(paths, typeIds, func(lhv, rhv string) bool { return lhv < rhv })
 
 	for i, path := range paths {
 		paths[i] = stgcommcommon.ETH10_ACCOUNT_PREFIX + acct + path

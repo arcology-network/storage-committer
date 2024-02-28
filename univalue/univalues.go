@@ -5,7 +5,7 @@ import (
 	"crypto/sha256"
 	"sort"
 
-	"github.com/arcology-network/common-lib/exp/array"
+	"github.com/arcology-network/common-lib/exp/slice"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 )
 
@@ -13,13 +13,13 @@ type Univalues []*Univalue
 
 func (this Univalues) To(filter interface{}) Univalues {
 	fun := filter.(interface{ From(*Univalue) *Univalue })
-	array.ParallelForeach(this, 8, func(i int, _ **Univalue) {
+	slice.ParallelForeach(this, 8, func(i int, _ **Univalue) {
 		this[i] = fun.From(this[i])
 	})
 	// for i, v := range this {
 	// 	this[i] = fun.From(v)
 	// }
-	array.Remove((*[]*Univalue)(&this), nil)
+	slice.Remove((*[]*Univalue)(&this), nil)
 	return this
 }
 
@@ -56,7 +56,7 @@ func (this Univalues) Equal(other Univalues) bool {
 }
 
 func (this Univalues) Clone() Univalues {
-	return array.Clone(this)
+	return slice.Clone(this)
 }
 
 func (this Univalues) SortByKey() Univalues {

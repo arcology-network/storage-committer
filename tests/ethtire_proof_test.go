@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/arcology-network/common-lib/exp/array"
+	"github.com/arcology-network/common-lib/exp/slice"
 	cache "github.com/arcology-network/eu/cache"
 	common "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
@@ -24,7 +24,7 @@ import (
 
 func TestGetPathType(t *testing.T) {
 	alice := AliceAccount()
-	arr := array.New(1000000, "")
+	arr := slice.New(1000000, "")
 	for i := 0; i < len(arr); i++ {
 		arr[i] = "blcc://eth1.0/account/" + alice + "/storage/native/" + fmt.Sprint(i)
 	}
@@ -76,7 +76,7 @@ func TestEthWorldTrieProof(t *testing.T) {
 		t.Error("Deleting an non-existing entry should've flaged an error", err)
 	}
 
-	raw := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	raw := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 	if acctTrans := raw; len(acctTrans) != 0 {
 		t.Error("Error: Wrong number of transitions")
 	}
@@ -189,12 +189,12 @@ func TestProofCacheBigInt(t *testing.T) {
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000001",
 		noncommutative.NewBigint(12))
 
-	v := array.New[byte](5, byte(11))
+	v := slice.New[byte](5, byte(11))
 	v = ethcommon.BytesToHash(v).Bytes()
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000003",
 		noncommutative.NewBytes(v))
 
-	v = array.New[byte](32, byte(12))
+	v = slice.New[byte](32, byte(12))
 	// v = ethcommon.BytesToHash(v).Bytes()
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000003",
 		noncommutative.NewBytes(v))
@@ -237,18 +237,18 @@ func TestProofCacheNonNaitve(t *testing.T) {
 	writeCache.CreateNewAccount(common.SYSTEM, alice)
 	writeCache.FlushToDataSource(store)
 
-	buf := array.New[byte](32, 0)
+	buf := slice.New[byte](32, 0)
 	buf[31] = 1
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000000", noncommutative.NewBytes(buf))
 
-	buf = array.New[byte](32, 1)
+	buf = slice.New[byte](32, 1)
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000001", noncommutative.NewBytes(buf))
 
-	buf = array.New[byte](33, 0)
+	buf = slice.New[byte](33, 0)
 	buf[32] = 1
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000002", noncommutative.NewBytes(buf))
 
-	buf = array.New[byte](33, 1)
+	buf = slice.New[byte](33, 1)
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000003", noncommutative.NewBytes(buf)); err != nil {
 		t.Error(err)
 	}
@@ -280,11 +280,11 @@ func TestProofCacheNonNaitve(t *testing.T) {
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath())
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ele0", noncommutative.NewString("124"))
 
-	buf = array.New[byte](33, 1)
+	buf = slice.New[byte](33, 1)
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ele1", noncommutative.NewBytes(buf))
 	writeCache.FlushToDataSource(store)
 
-	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ele1", new(noncommutative.Bytes)); !bytes.Equal(v.([]byte), array.New[byte](33, 1)) {
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ele1", new(noncommutative.Bytes)); !bytes.Equal(v.([]byte), slice.New[byte](33, 1)) {
 		t.Error("Mismatch", v)
 	}
 }
@@ -315,7 +315,7 @@ func TestProofCache(t *testing.T) {
 	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000001", noncommutative.NewInt64(1))
 	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000002", noncommutative.NewBigint(1))
 
-	buf := array.New[byte](32, 0)
+	buf := slice.New[byte](32, 0)
 	buf[30] = 1
 	buf[31] = 1
 	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000003",

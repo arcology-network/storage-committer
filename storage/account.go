@@ -10,7 +10,7 @@ import (
 	"github.com/VictoriaMetrics/fastcache"
 	"github.com/arcology-network/common-lib/codec"
 	common "github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/common-lib/exp/array"
+	"github.com/arcology-network/common-lib/exp/slice"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
 	"github.com/arcology-network/storage-committer/importer"
@@ -113,7 +113,7 @@ func (this *Account) GetStorageRoot() [32]byte {
 
 func (this *Account) GetCodeHash() [32]byte {
 	if this.storageTrie == nil {
-		return crypto.Keccak256Hash(nil) // so the codeHash is the hash of an empty bytearray.
+		return crypto.Keccak256Hash(nil) // so the codeHash is the hash of an empty byteslice.
 	}
 	return codec.Bytes32{}.Decode(this.CodeHash).(codec.Bytes32)
 }
@@ -218,56 +218,56 @@ func (this *Account) Retrive(key string, T any) (interface{}, error) {
 }
 
 func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Type) error {
-	if pos, _ := array.FindFirstIf(keys, func(k string) bool { return len(k) == stgcommcommon.ETH10_ACCOUNT_FULL_LENGTH+1 }); pos >= 0 {
-		array.RemoveAt(&keys, pos)
-		array.RemoveAt(&typedVals, pos)
+	if pos, _ := slice.FindFirstIf(keys, func(k string) bool { return len(k) == stgcommcommon.ETH10_ACCOUNT_FULL_LENGTH+1 }); pos >= 0 {
+		slice.RemoveAt(&keys, pos)
+		slice.RemoveAt(&typedVals, pos)
 	}
 
-	if pos, _ := array.FindFirstIf(keys, func(k string) bool { return strings.HasSuffix(k, "/nonce") }); pos >= 0 {
+	if pos, _ := slice.FindFirstIf(keys, func(k string) bool { return strings.HasSuffix(k, "/nonce") }); pos >= 0 {
 		this.Nonce = typedVals[pos].Value().(uint64)
-		array.RemoveAt(&keys, pos)
-		array.RemoveAt(&typedVals, pos)
+		slice.RemoveAt(&keys, pos)
+		slice.RemoveAt(&typedVals, pos)
 	}
 
-	if pos, _ := array.FindFirstIf(keys, func(k string) bool { return strings.HasSuffix(k, "/balance") }); pos >= 0 {
+	if pos, _ := slice.FindFirstIf(keys, func(k string) bool { return strings.HasSuffix(k, "/balance") }); pos >= 0 {
 		balance := typedVals[pos].Value().(uint256.Int)
 		this.Balance = balance.ToBig()
-		array.RemoveAt(&keys, pos)
-		array.RemoveAt(&typedVals, pos)
+		slice.RemoveAt(&keys, pos)
+		slice.RemoveAt(&typedVals, pos)
 	}
 
-	if pos, _ := array.FindFirstIf(keys, func(k string) bool { return strings.HasSuffix(k, "/code") }); pos >= 0 {
+	if pos, _ := slice.FindFirstIf(keys, func(k string) bool { return strings.HasSuffix(k, "/code") }); pos >= 0 {
 		this.code = typedVals[pos].Value().(codec.Bytes)
 		this.StateAccount.CodeHash = this.Hash(this.code)
 		if err := this.DB(keys[pos]).Put(this.CodeHash, this.code); err != nil { // Save to DB directly, only for code
 			return err // failed to save the code
 		}
-		array.RemoveAt(&keys, pos)
-		array.RemoveAt(&typedVals, pos)
+		slice.RemoveAt(&keys, pos)
+		slice.RemoveAt(&typedVals, pos)
 	}
 	this.StorageDirty = len(keys) > 0
 
 	numThd := common.IfThen(len(keys) < 1024, 4, 8)
 
 	// Encode the keys
-	encodedKeys := array.ParallelAppend(keys, numThd, func(i int, _ string) []byte {
+	encodedKeys := slice.ParallelAppend(keys, numThd, func(i int, _ string) []byte {
 		return []byte(this.ToStorageKey(keys[i])) // Remove the prefix to get the keys.
 	})
 
 	// Encode the values
-	encodedVals := array.ParallelAppend(typedVals, numThd, func(i int, _ interfaces.Type) []byte {
+	encodedVals := slice.ParallelAppend(typedVals, numThd, func(i int, _ interfaces.Type) []byte {
 		return common.IfThenDo1st(typedVals[i] != nil, func() []byte {
 			return typedVals[i].StorageEncode(keys[i])
 		}, []byte{})
 	})
 
-	array.SortBy1st(encodedKeys, encodedVals, func(v0, v1 []byte) bool {
+	slice.SortBy1st(encodedKeys, encodedVals, func(v0, v1 []byte) bool {
 		return string(v0) < string(v1)
 	})
 
 	// Update the storage trie with the encoded keys and values.
 	errs := this.storageTrie.ParallelUpdate(encodedKeys, encodedVals)
-	if _, err := array.FindFirstIf(errs, func(v error) bool { return v != nil }); err != nil {
+	if _, err := slice.FindFirstIf(errs, func(v error) bool { return v != nil }); err != nil {
 		return *err
 	}
 
@@ -278,7 +278,7 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Typ
 // Write the account changes to theirs Eth Trie
 func (this *Account) ApplyAccounts(updates *AccountUpdate) *Account {
 	keys, typedVals := make([]string, len(updates.Seqs)), make([]interfaces.Type, len(updates.Seqs))
-	array.Foreach(updates.Seqs, func(i int, seq **importer.DeltaSequence) {
+	slice.Foreach(updates.Seqs, func(i int, seq **importer.DeltaSequence) {
 		keys[i] = *((*seq).Finalized().GetPath())
 		if v := (*seq).Finalized().Value(); v != nil {
 			typedVals[i] = v.(interfaces.Type)
@@ -290,7 +290,7 @@ func (this *Account) ApplyAccounts(updates *AccountUpdate) *Account {
 }
 
 func (this *Account) Precommit(keys []string, values []interface{}) {
-	this.err = this.UpdateAccountTrie(keys, array.Append(values,
+	this.err = this.UpdateAccountTrie(keys, slice.Append(values,
 		func(_ int, v interface{}) interfaces.Type {
 			if v.(*univalue.Univalue).Value() != nil {
 				return v.(*univalue.Univalue).Value().(interfaces.Type)

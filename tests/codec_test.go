@@ -8,7 +8,7 @@ import (
 	"time"
 
 	codec "github.com/arcology-network/common-lib/codec"
-	"github.com/arcology-network/common-lib/exp/array"
+	"github.com/arcology-network/common-lib/exp/slice"
 	storage "github.com/arcology-network/common-lib/storage/datastore"
 	cache "github.com/arcology-network/eu/cache"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
@@ -74,7 +74,7 @@ func TestUnivalueCodec(t *testing.T) {
 	// committer.NewAccount(stgcommcommon.SYSTEM, fmt.Sprint("rand.Int()"))
 	writeCache.CreateNewAccount(stgcommcommon.SYSTEM, fmt.Sprint("rand.Int()"))
 
-	transVec := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
+	transVec := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	transitions = append(transitions, transVec...)
 
 	for i := 0; i < len(transitions); i++ {
@@ -100,7 +100,7 @@ func TestUnivaluesCodec(t *testing.T) {
 
 		writeCache.CreateNewAccount(stgcommcommon.SYSTEM, acct)
 
-		transVec := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+		transVec := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 		transitions = append(transitions, transVec...)
 	}
 	t0 := time.Now()

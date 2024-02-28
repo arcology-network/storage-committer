@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	codec "github.com/arcology-network/common-lib/codec"
-	"github.com/arcology-network/common-lib/exp/array"
+	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/ethereum/go-ethereum/rlp"
 	// "github.com/HPISTechnologies/storage-committer/type/noncommutative"
 )
@@ -95,7 +95,7 @@ func TestStringRlpCodec(t *testing.T) {
 }
 
 func TestByteRlp(t *testing.T) {
-	v2 := array.New[byte](32, 11)
+	v2 := slice.New[byte](32, 11)
 	encoded, _ := rlp.EncodeToBytes(v2)
 
 	buf := []byte{}
@@ -109,7 +109,7 @@ func TestByteRlp(t *testing.T) {
 }
 
 func TestBytesRlpCodec(t *testing.T) {
-	v2 := array.New[byte](33, 0)
+	v2 := slice.New[byte](33, 0)
 	v2[32] = 1
 	v := NewBytes(v2).(*Bytes)
 	buffer := v.StorageEncode("")
@@ -120,7 +120,7 @@ func TestBytesRlpCodec(t *testing.T) {
 		fmt.Println("Error: Missmatched")
 	}
 
-	v2 = array.New[byte](32, 11)
+	v2 = slice.New[byte](32, 11)
 	v = NewBytes(v2).(*Bytes)
 	buffer = v.StorageEncode("")
 	output = new(Bytes).StorageDecode("", buffer).(*Bytes)
@@ -130,7 +130,7 @@ func TestBytesRlpCodec(t *testing.T) {
 		fmt.Println("Error: Missmatched")
 	}
 
-	v2 = array.New[byte](25, 0)
+	v2 = slice.New[byte](25, 0)
 	v2[24] = 1
 	v = NewBytes(v2).(*Bytes)
 	buffer = v.StorageEncode("")
@@ -141,7 +141,7 @@ func TestBytesRlpCodec(t *testing.T) {
 		t.Error("Error: Missmatched")
 	}
 
-	v2 = array.New[byte](40, 0)
+	v2 = slice.New[byte](40, 0)
 	v2[0] = 1
 	v = NewBytes(v2).(*Bytes)
 	buffer = v.StorageEncode("")
@@ -152,7 +152,7 @@ func TestBytesRlpCodec(t *testing.T) {
 		fmt.Println("Error: Missmatched")
 	}
 
-	v2 = array.New[byte](40, 0)
+	v2 = slice.New[byte](40, 0)
 	v2[39] = 1
 	v = NewBytes(v2).(*Bytes)
 	buffer = v.StorageEncode("")
@@ -163,10 +163,10 @@ func TestBytesRlpCodec(t *testing.T) {
 		fmt.Println("Error: Missmatched")
 	}
 
-	v2 = array.New[byte](32, 11)
+	v2 = slice.New[byte](32, 11)
 	encoded, _ := rlp.EncodeToBytes(v2)
 
-	v3 := array.New[byte](1, 0)
+	v3 := slice.New[byte](1, 0)
 	rlp.DecodeBytes(encoded, &v3)
 
 	if !bytes.Equal(v2, v3) {

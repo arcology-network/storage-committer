@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	orderedset "github.com/arcology-network/common-lib/container/set"
-	"github.com/arcology-network/common-lib/exp/array"
+	"github.com/arcology-network/common-lib/exp/slice"
 	cache "github.com/arcology-network/eu/cache"
 	stgcommitter "github.com/arcology-network/storage-committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
@@ -44,13 +44,13 @@ func TestEmptyNodeSet(t *testing.T) {
 		t.Error(err)
 	}
 
-	acctTrans := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	committer.Sort()
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit()
 
-	// acctTrans := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	// acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 	committer.Import(univalue.Univalues{})
 	committer.Sort()
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
@@ -72,13 +72,13 @@ func TestAddAndDelete(t *testing.T) {
 		t.Error(err)
 	}
 
-	acctTrans := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	committer.Sort()
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit()
 
-	// acctTrans := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	// acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 	committer.Import(univalue.Univalues{})
 	committer.Sort()
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
@@ -92,7 +92,7 @@ func TestAddAndDelete(t *testing.T) {
 		t.Error(err)
 	}
 
-	acctTrans = univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	committer.Sort()
 	committer.Precommit([]uint32{1})
@@ -106,7 +106,7 @@ func TestAddAndDelete(t *testing.T) {
 		t.Error("Deleting an non-existing entry should've flaged an error", err)
 	}
 
-	raw := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	raw := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 	if acctTrans := raw; len(acctTrans) != 0 {
 		t.Error("Error: Wrong number of transitions")
 	}
@@ -136,7 +136,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 		t.Error(err)
 	}
 
-	acctTrans := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	committer.Sort()
@@ -148,7 +148,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 	path := commutative.NewPath()
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
 	// _, addPath := writeCache.Export(importer.Sorter)
-	addPath := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	addPath := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(addPath).Encode()).(univalue.Univalues))
 	// committer.Import(committer.Decode(univalue.Univalues(addPath).Encode()))
@@ -161,7 +161,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewInt64(1))
 	// _, addTrans := writeCache.Export(importer.Sorter)
-	addTrans := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	addTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 	// committer.Import(committer.Decode(univalue.Univalues(addTrans).Encode()))
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(addTrans).Encode()).(univalue.Univalues))
 	committer.Sort()
@@ -180,7 +180,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 
 	writeCache.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", nil)
 	// _, deleteTrans := url2.WriteCache().Export(importer.Sorter)
-	deleteTrans := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	deleteTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
 	if v, _, _ := writeCache.Read(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", new(noncommutative.Int64)); v != nil {
 		t.Error("Error: Failed to read the key !")
@@ -207,7 +207,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
-	acctTrans := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
 	committer := stgcommitter.NewStorageCommitter(store)
 	committer.Import(acctTrans)
@@ -223,7 +223,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 		t.Error("error")
 	}
 
-	acctTrans = univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	committer.Sort()
 	committer.Precommit([]uint32{1})
@@ -234,7 +234,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 	writeCache.Reset(writeCache)
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/4", nil)
 
-	if acctTrans := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{}); len(acctTrans) != 0 {
+	if acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{}); len(acctTrans) != 0 {
 		t.Error("Error: Wrong number of transitions")
 	}
 }
@@ -249,7 +249,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 		t.Error(err)
 	}
 
-	acctTrans := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
 	in := univalue.Univalues(acctTrans).Encode()
 	out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
@@ -270,7 +270,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewString("1"))
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/2", noncommutative.NewString("2"))
 
-	acctTrans = univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 	in = univalue.Univalues(acctTrans).Encode()
 	out = univalue.Univalues{}.Decode(in).(univalue.Univalues)
 	// committer.Import(committer.Decode(univalue.Univalues(out).Encode()))
@@ -297,7 +297,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	}
 
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil) // delete the path
-	if acctTrans := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{}); len(acctTrans) != 3 {
+	if acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{}); len(acctTrans) != 3 {
 		t.Error("Error: Wrong number of transitions")
 	}
 }
@@ -312,7 +312,7 @@ func TestStateUpdate(t *testing.T) {
 		t.Error(err)
 	}
 	// _, initTrans := writeCache.Export(importer.Sorter)
-	initTrans := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	initTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
 	// committer.Import(committer.Decode(univalue.Univalues(initTrans).Encode()))
 	committer := stgcommitter.NewStorageCommitter(store)
@@ -372,7 +372,7 @@ func TestStateUpdate(t *testing.T) {
 		t.Error("Error: The path should be gone already !")
 	}
 
-	transitions := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	transitions := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 	out := univalue.Univalues{}.Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues)
 
 	committer.Import(out)

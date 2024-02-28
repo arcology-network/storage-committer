@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	common "github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/common-lib/exp/array"
+	"github.com/arcology-network/common-lib/exp/slice"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/interfaces"
 	intf "github.com/arcology-network/storage-committer/interfaces"
@@ -78,7 +78,7 @@ func (this *DeltaSequence) Sort() {
 }
 
 func (this *DeltaSequence) Finalize() *univalue.Univalue {
-	array.RemoveIf(&this.transitions, func(_ int, v *univalue.Univalue) bool {
+	slice.RemoveIf(&this.transitions, func(_ int, v *univalue.Univalue) bool {
 		return v.GetPath() == nil
 	})
 

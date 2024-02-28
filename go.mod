@@ -10,7 +10,7 @@ replace github.com/ethereum/go-ethereum => ../concurrent-evm
 
 replace github.com/arcology-network/eu => ../eu
 
-replace github.com/arcology-network/vm-adaptor => ../vm-adaptor
+replace github.com/arcology-network/evm-adaptor => ../evm-adaptor
 
 require (
 	// github.com/arcology-network/common-lib
@@ -35,7 +35,7 @@ require (
 	github.com/DataDog/zstd v1.5.5 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/VictoriaMetrics/fastcache v1.12.2 // indirect
-	github.com/arcology-network/vm-adaptor v1.9.0 // indirect
+	github.com/arcology-network/evm-adaptor v1.9.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.10.0 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect

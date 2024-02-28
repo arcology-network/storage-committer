@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/arcology-network/common-lib/exp/array"
+	"github.com/arcology-network/common-lib/exp/slice"
 	cache "github.com/arcology-network/eu/cache"
 	arbitrator "github.com/arcology-network/storage-committer/arbitrator"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
@@ -26,9 +26,9 @@ func TestAccumulatorUpperLimit(t *testing.T) {
 	}
 
 	itc := importer.ITTransition{}
-	trans := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(itc)
+	trans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(itc)
 	transV := []*univalue.Univalue(trans)
-	balanceDeltas := array.CopyIf(transV, func(v *univalue.Univalue) bool { return strings.LastIndex(*v.GetPath(), "/balance") > 0 })
+	balanceDeltas := slice.CopyIf(transV, func(v *univalue.Univalue) bool { return strings.LastIndex(*v.GetPath(), "/balance") > 0 })
 
 	// v := *uint256.NewInt(0)
 	balanceDeltas[0].Value().(*commutative.U256).SetMin(*uint256.NewInt(0))
@@ -68,9 +68,9 @@ func TestAccumulatorLowerLimit(t *testing.T) {
 		t.Error(err)
 	}
 
-	trans := univalue.Univalues(array.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	trans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 	transV := []*univalue.Univalue(trans)
-	balanceDeltas := array.CopyIf(transV, func(v *univalue.Univalue) bool { return strings.LastIndex(*v.GetPath(), "/balance") > 0 })
+	balanceDeltas := slice.CopyIf(transV, func(v *univalue.Univalue) bool { return strings.LastIndex(*v.GetPath(), "/balance") > 0 })
 
 	balanceDeltas[0].SetTx(0)
 	balanceDeltas[0].Value().(*commutative.U256).SetMin((*uint256.NewInt(0)))
