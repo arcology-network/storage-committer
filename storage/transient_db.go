@@ -39,7 +39,7 @@ func (this *TransientDB) Inject(path string, v interface{}) error {
 }
 
 func (this *TransientDB) Precommit(arg ...interface{}) [32]byte {
-	return this.DataStore.Precommit(arg[0].([]string), arg[1])
+	return this.DataStore.Precommit(arg...)
 }
 
 func (this *TransientDB) IfExists(key string) bool {

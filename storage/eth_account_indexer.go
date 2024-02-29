@@ -28,11 +28,11 @@ import (
 	platform "github.com/arcology-network/storage-committer/platform"
 )
 
-// indexer  avoids having duplicate addresses in the account list and dictionary.
+// AccountIndexer is an index to put all the transitions under the same account together.
 type AccountIndexer struct {
 	platform *platform.Platform
 	store    intf.Datastore
-	dict     *indexed.IndexedSlice[*importer.DeltaSequence, string, *AccountUpdate]
+	dict     *indexed.IndexedSlice[*importer.DeltaSequence, string, *AccountUpdate] // A hybrid combining a slice and a map.
 }
 
 // Newindexer creates a new indexer instance.
@@ -63,7 +63,7 @@ func (this *AccountIndexer) Updates() []*AccountUpdate {
 	acctUpdates := this.dict.Elements()
 	slice.ParallelForeach(acctUpdates, runtime.NumCPU(), func(i int, update **AccountUpdate) {
 		slice.RemoveIf[*importer.DeltaSequence](&(*update).Seqs, func(i int, seq *importer.DeltaSequence) bool {
-			return seq.Finalized() == nil
+			return seq.Finalized == nil
 		})
 	})
 	return acctUpdates

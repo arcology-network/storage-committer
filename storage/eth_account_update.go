@@ -20,10 +20,13 @@
 package storage
 
 import (
+	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/storage-committer/importer"
+	"github.com/arcology-network/storage-committer/univalue"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 
+// AccountUpdate organizes all the transitions under the same account together.
 type AccountUpdate struct {
 	Key  string
 	Addr ethcommon.Address
@@ -31,6 +34,23 @@ type AccountUpdate struct {
 	Acct *Account
 }
 
-// func (this *AccountUpdate) Clear() [
-// 	clear(t)
-// ]
+type AccountUpdates []*AccountUpdate
+
+func (this AccountUpdates) KVs() ([]string, []interface{}) {
+	univs := slice.ConcateDo(this,
+		func(update *AccountUpdate) uint64 {
+			return uint64(len(update.Seqs))
+		},
+
+		func(update *AccountUpdate) []*univalue.Univalue {
+			return slice.Transform(update.Seqs, func(i int, seq *importer.DeltaSequence) *univalue.Univalue {
+				return seq.Finalize()
+			})
+		})
+
+	keys, values := make([]string, len(univs)), make([]interface{}, len(univs))
+	for i, univ := range univs {
+		keys[i], values[i] = *univ.GetPath(), univ.Value()
+	}
+	return keys, values
+}

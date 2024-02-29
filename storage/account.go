@@ -279,8 +279,8 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Typ
 func (this *Account) ApplyAccounts(updates *AccountUpdate) *Account {
 	keys, typedVals := make([]string, len(updates.Seqs)), make([]interfaces.Type, len(updates.Seqs))
 	slice.Foreach(updates.Seqs, func(i int, seq **importer.DeltaSequence) {
-		keys[i] = *((*seq).Finalized().GetPath())
-		if v := (*seq).Finalized().Value(); v != nil {
+		keys[i] = *((*seq).Finalized.GetPath())
+		if v := (*seq).Finalized.Value(); v != nil {
 			typedVals[i] = v.(interfaces.Type)
 		}
 	})

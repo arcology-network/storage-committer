@@ -62,7 +62,7 @@ func LoadEthDataStore(triedb *ethmpt.Database, root [32]byte) (*EthDataStore, er
 }
 
 func NewEthDataStore(trie *ethmpt.Trie, triedb *ethmpt.Database, diskdb [16]ethdb.Database) *EthDataStore {
-	trieDbConfig := &hashdb.Config{CleanCacheSize: 1024 * 1024 * 100} // 100MB
+	trieDbConfig := &hashdb.Config{CleanCacheSize: 1024 * 1024 * 100} // 100MB of the shared cache
 	return &EthDataStore{
 		ethdb:        triedb,
 		diskdbs:      diskdb,
