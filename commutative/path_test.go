@@ -18,90 +18,111 @@
 package commutative
 
 import (
-	"fmt"
 	"testing"
 
-	orderedset "github.com/arcology-network/common-lib/container/set"
 	"github.com/arcology-network/common-lib/exp/slice"
 )
 
-func TestMeta(t *testing.T) {
+func TestPath(t *testing.T) {
 	/* Noncommutative Path Test*/
 
 	meta := NewPath()
 	inPath := meta.(*Path)
 
-	inPath.SetSubs([]string{"e-01", "e-001", "e-002", "e-002"})
+	inPath.SetSubPaths([]string{"e-01", "e-001", "e-002", "e-002"})
 	inPath.SetAdded([]string{"+01", "+001", "+002", "+002"})
 	inPath.SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
 
-	metaout, _, _ := inPath.Get()
+	// metaout, _, _ := inPath.Get()
 
-	if !slice.Equal(inPath.Value().(*orderedset.OrderedSet).Keys(), []string{"e-01", "e-001", "e-002", "e-002"}) {
-		t.Error("Error: Don't match!!")
+	if !slice.EqualSet(inPath.Value().([]string), []string{"e-01", "e-001", "e-002"}) {
+		t.Error("Error: Don't match!!", inPath.Value().([]string))
 	}
 
-	if !slice.Equal(inPath.Delta().(*PathDelta).Added(), []string{"+01", "+001", "+002", "+002"}) {
-		t.Error("Error: Don't match!!")
+	if v, ok := inPath.GetByIndex(0); !ok || v != "e-01" {
+		t.Error("Error: Don't match!!", v)
 	}
 
-	if !slice.Equal(inPath.Delta().(*PathDelta).Removed(), []string{"-091", "-0092", "-092", "-092", "-097"}) {
-		t.Error("Error: Don't match!!")
+	if v, ok := inPath.GetByIndex(1); !ok || v != "e-001" {
+		t.Error("Error: Don't match!!", v)
 	}
 
-	fmt.Println(metaout)
+	if v, ok := inPath.GetByIndex(2); !ok || v != "e-002" {
+		t.Error("Error: Don't match!!", v)
+	}
+
+	if v, ok := inPath.GetByIndex(3); !ok || v != "+01" {
+		t.Error("Error: Don't match!!", v)
+	}
+
+	if v, ok := inPath.GetByIndex(4); !ok || v != "+001" {
+		t.Error("Error: Don't match!!", v)
+	}
+
+	if v, ok := inPath.GetByIndex(5); !ok || v != "+002" {
+		t.Error("Error: Don't match!!", v)
+	}
+
+	if v, ok := inPath.GetByIndex(6); ok || v != "" {
+		t.Error("Error: Don't match!!", v)
+	}
 }
 
 func TestCodecPathMeta(t *testing.T) {
 	in := NewPath().(*Path)
 
-	in.SetSubs([]string{"e-01", "e-001", "e-002", "e-002"})
+	in.SetSubPaths([]string{"e-01", "e-001", "e-002", "e-002"})
 	in.SetAdded([]string{"+01", "+001", "+002", "+002"})
 	in.SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
 
 	buffer := in.Encode()
 	out := (&Path{}).Decode(buffer).(*Path)
 
-	if !slice.Equal(out.Value().(*orderedset.OrderedSet).Keys(), []string{"e-01", "e-001", "e-002", "e-002"}) {
+	if !slice.EqualSet(out.Value().([]string), []string{"e-01", "e-001", "e-002"}) {
 		t.Error("Error: Don't match!!")
 	}
 
-	if !slice.Equal(out.Delta().(*PathDelta).Added(), []string{"+01", "+001", "+002", "+002"}) {
-		t.Error("Error: Don't match!!", out.Delta().(*PathDelta).Added())
+	if !slice.EqualSet(out.Appended(), []string{"+01", "+001", "+002"}) {
+		t.Error("Error: Don't match!!", out.Appended())
 	}
 
-	if !slice.Equal(out.Delta().(*PathDelta).Removed(), []string{"-091", "-0092", "-092", "-092", "-097"}) {
-		t.Error("Error: Don't match!!", out.Delta().(*PathDelta).Removed())
+	if !slice.EqualSet(out.Removed(), []string{"-091", "-0092", "-092", "-097"}) {
+		t.Error("Error: Don't match!!", out.Removed())
 	}
 
 	buffer = in.Encode()
 	out = (&Path{}).Decode(buffer).(*Path)
 
-	if !slice.Equal(out.Value().(*orderedset.OrderedSet).Keys(), []string{"e-01", "e-001", "e-002", "e-002"}) {
+	if !slice.EqualSet(out.Value().([]string), []string{"e-01", "e-001", "e-002"}) {
 		t.Error("Error: Don't match!! Error: Should have gone!")
 	}
 
-	if !slice.Equal(out.Delta().(*PathDelta).Added(), []string{"+01", "+001", "+002", "+002"}) {
-		t.Error("Error: Don't match!!", out.Delta().(*PathDelta).Added())
+	if !slice.EqualSet(out.Appended(), []string{"+01", "+001", "+002"}) {
+		t.Error("Error: Don't match!!", out.Appended())
 	}
 
-	if !slice.Equal(out.Delta().(*PathDelta).Removed(), []string{"-091", "-0092", "-092", "-092", "-097"}) {
-		t.Error("Error: Don't match!!", out.Delta().(*PathDelta).Removed())
+	if !slice.EqualSet(out.Removed(), []string{"-091", "-0092", "-092", "-097"}) {
+		t.Error("Error: Don't match!!", out.Removed())
 	}
 
-	in = in.New(in.Value(), nil, nil, nil, nil).(*Path)
+	in = in.New(in.Value().([]string), nil, nil, nil, nil).(*Path)
+
+	out.Committed().Init()
+
 	buffer = in.Encode()
 	out = (&Path{}).Decode(buffer).(*Path)
 
-	if !slice.Equal(out.Value().(*orderedset.OrderedSet).Keys(), []string{"e-01", "e-001", "e-002", "e-002"}) {
-		t.Error("Error: Don't match!! Error: Should have gone!")
+	out.Commit()
+
+	if !slice.EqualSet(out.Value().([]string), []string{"+01", "+001", "+002"}) {
+		t.Error("Error: Don't match!! Error: Should have gone!", out.Value().([]string))
 	}
 
-	if !slice.Equal(out.Delta().(*PathDelta).Added(), []string{}) {
-		t.Error("Error: Don't match!!", out.Delta().(*PathDelta).Added())
+	if !slice.EqualSet(out.Appended(), []string{}) {
+		t.Error("Error: Don't match!!", out.Appended())
 	}
 
-	if !slice.Equal(out.Delta().(*PathDelta).Removed(), []string{}) {
-		t.Error("Error: Don't match!!", out.Delta().(*PathDelta).Removed())
+	if !slice.EqualSet(out.Removed(), []string{}) {
+		t.Error("Error: Don't match!!", out.Removed())
 	}
 }

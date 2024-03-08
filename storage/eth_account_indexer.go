@@ -21,7 +21,7 @@ import (
 	"runtime"
 
 	"github.com/arcology-network/common-lib/common"
-	indexed "github.com/arcology-network/common-lib/container/slice"
+	indexed "github.com/arcology-network/common-lib/container/indexed"
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/storage-committer/importer"
 	intf "github.com/arcology-network/storage-committer/interfaces"

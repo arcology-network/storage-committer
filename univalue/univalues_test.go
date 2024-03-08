@@ -29,7 +29,7 @@ func TestUnivaluesCodecPathMeta(t *testing.T) {
 	// in1.deltaWrites = 6
 
 	meta := commutative.NewPath()
-	meta.(*commutative.Path).SetSubs([]string{"e-01", "e-001", "e-002", "e-002"})
+	meta.(*commutative.Path).SetSubPaths([]string{"e-01", "e-001", "e-002", "e-002"})
 	meta.(*commutative.Path).SetAdded([]string{"+01", "+001", "+002", "+002"})
 	meta.(*commutative.Path).SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
 
@@ -82,7 +82,7 @@ func TestUnivaluesCodeMeta(t *testing.T) {
 	alice := addrcompressor.RandomAccount()
 
 	path := commutative.NewPath()
-	path.(*commutative.Path).SetSubs([]string{"e-01", "e-001", "e-002", "e-002"})
+	path.(*commutative.Path).SetSubPaths([]string{"e-01", "e-001", "e-002", "e-002"})
 	path.(*commutative.Path).SetAdded([]string{"+01", "+001", "+002", "+002"})
 	path.(*commutative.Path).SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
 
@@ -97,7 +97,7 @@ func TestUnivaluesCodeMeta(t *testing.T) {
 	out := (&Univalue{}).Decode(bytes).(*Univalue)
 	outSet, _, _ := out.Value().(interfaces.Type).Get()
 
-	if !slice.Equal(inKeys.(*set.OrderedSet).Keys(), outSet.(*set.OrderedSet).Keys()) {
+	if !slice.EqualSet(inKeys.(*set.OrderedSet).Keys(), outSet.(*set.OrderedSet).Keys()) {
 		t.Error("Error")
 	}
 

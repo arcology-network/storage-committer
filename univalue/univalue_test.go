@@ -90,7 +90,7 @@ func TestUnivalueCodeMeta(t *testing.T) {
 	alice := AliceAccount()
 
 	meta := commutative.NewPath()
-	meta.(*commutative.Path).SetSubs([]string{"e-01", "e-001", "e-002", "e-002"})
+	meta.(*commutative.Path).SetSubPaths([]string{"e-01", "e-001", "e-002", "e-002"})
 	meta.(*commutative.Path).SetAdded([]string{"+01", "+001", "+002", "+002"})
 	meta.(*commutative.Path).SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
 
@@ -105,7 +105,7 @@ func TestUnivalueCodeMeta(t *testing.T) {
 	out := (&Univalue{}).Decode(bytes).(*Univalue)
 	outKeys, _, _ := out.Value().(intf.Type).Get()
 
-	if !slice.Equal(inKeys.(*set.OrderedSet).Keys(), outKeys.(*set.OrderedSet).Keys()) {
+	if !slice.EqualSet(inKeys.(*set.OrderedSet).Keys(), outKeys.(*set.OrderedSet).Keys()) {
 		t.Error("Error")
 	}
 }

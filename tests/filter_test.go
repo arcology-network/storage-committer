@@ -43,7 +43,7 @@ func TestTransitionFilters(t *testing.T) {
 		t.Error("Error: Non-path commutative should have the values!!")
 	}
 
-	acctTrans[0].Value().(*commutative.Path).SetSubs([]string{"k0", "k1"})
+	acctTrans[0].Value().(*commutative.Path).SetSubPaths([]string{"k0", "k1"})
 	acctTrans[0].Value().(*commutative.Path).SetAdded([]string{"123", "456"})
 	acctTrans[0].Value().(*commutative.Path).SetRemoved([]string{"789", "116"})
 
@@ -123,7 +123,7 @@ func TestAccessFilters(t *testing.T) {
 
 	raw := writeCache.Export(importer.Sorter)
 
-	raw[0].Value().(*commutative.Path).SetSubs([]string{"k0", "k1"})
+	raw[0].Value().(*commutative.Path).SetSubPaths([]string{"k0", "k1"})
 	raw[0].Value().(*commutative.Path).SetAdded([]string{"123", "456"})
 	raw[0].Value().(*commutative.Path).SetRemoved([]string{"789", "116"})
 

@@ -162,9 +162,17 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	// nilHash := merkle.Sha256(nil)
 	// fmt.Println("Hash:", nilHash)
 	fmt.Println("merkle: ", time.Since(t0))
+
+	t0 = time.Now()
+	writeCache.Read(0, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0"+fmt.Sprint(0), new(noncommutative.String))
+
+	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/"+fmt.Sprint(0), noncommutative.NewString(string("acct"))); err != nil { /* The first Element */
+		b.Error(err)
+	}
+	fmt.Println("Write: 2", time.Since(t0))
 }
 
-func BenchmarkUrlAddThenDelete(b *testing.B) {
+func BenchmarkAddThenDelete(b *testing.B) {
 	store := datastore.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
 
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
@@ -204,7 +212,7 @@ func BenchmarkUrlAddThenDelete(b *testing.B) {
 	fmt.Println("Deleted 50000 keys "+fmt.Sprint(50000), time.Since(t0))
 }
 
-func BenchmarkUrlAddThenPop(b *testing.B) {
+func BenchmarkAddThenPop(b *testing.B) {
 	store := datastore.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
 
 	// writeCache := committer.WriteCache()

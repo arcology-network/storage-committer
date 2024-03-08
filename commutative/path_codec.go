@@ -23,27 +23,31 @@ import (
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	"github.com/ethereum/go-ethereum/rlp"
-
 	// performance "github.com/arcology-network/common-lib/mhasher"
-	orderedset "github.com/arcology-network/common-lib/container/set"
 )
 
 func (this *Path) HeaderSize() uint32 {
-	return 3 * codec.UINT32_LEN // number of fields + 1
+	return 4 * codec.UINT32_LEN // number of fields + 1
 }
 
 func (this *Path) Size() uint32 {
+	committedEmpty := this.DeltaSet.Committed() != nil
+	appendedEmpty := this.DeltaSet.Appended() != nil
+	removedEmpty := this.DeltaSet.Removed() != nil
+
 	return this.HeaderSize() +
-		common.IfThenDo1st(this.value != nil, func() uint32 { return this.value.Size() }, 0) +
-		common.IfThenDo1st(this.delta != nil, func() uint32 { return this.delta.Size() }, 0)
+		common.IfThenDo1st(committedEmpty, func() uint32 { return codec.Strings(this.DeltaSet.Committed().Elements()).Size() }, 0) +
+		common.IfThenDo1st(appendedEmpty, func() uint32 { return codec.Strings(this.DeltaSet.Appended().Elements()).Size() }, 0) +
+		common.IfThenDo1st(removedEmpty, func() uint32 { return codec.Strings(this.DeltaSet.Removed().Elements()).Size() }, 0)
 }
 
 func (this *Path) Encode() []byte {
 	buffer := make([]byte, this.Size()) //  no need to send the committed keys
 	offset := codec.Encoder{}.FillHeader(buffer,
 		[]uint32{
-			common.IfThenDo1st(this.value != nil, func() uint32 { return this.value.Size() }, 0),
-			common.IfThenDo1st(this.delta != nil, func() uint32 { return this.delta.Size() }, 0),
+			common.IfThenDo1st(this.DeltaSet.Committed() != nil, func() uint32 { return codec.Strings(this.DeltaSet.Committed().Elements()).Size() }, 0),
+			common.IfThenDo1st(this.DeltaSet.Appended() != nil, func() uint32 { return codec.Strings(this.DeltaSet.Appended().Elements()).Size() }, 0),
+			common.IfThenDo1st(this.DeltaSet.Removed() != nil, func() uint32 { return codec.Strings(this.DeltaSet.Removed().Elements()).Size() }, 0),
 		},
 	)
 	this.EncodeToBuffer(buffer[offset:])
@@ -51,27 +55,40 @@ func (this *Path) Encode() []byte {
 }
 
 func (this *Path) EncodeToBuffer(buffer []byte) int {
-	offset := common.IfThenDo1st(this.value != nil, func() int { return this.value.EncodeToBuffer(buffer) }, 0)
-	offset += common.IfThenDo1st(this.delta != nil, func() int { return this.delta.EncodeToBuffer(buffer[offset:]) }, 0)
+	offset := common.IfThenDo1st(this.DeltaSet.Committed() != nil, func() int {
+		return (codec.Strings(this.DeltaSet.Committed().Elements()).EncodeToBuffer(buffer))
+	}, 0)
+
+	offset += common.IfThenDo1st(this.DeltaSet.Appended() != nil, func() int {
+		return codec.Strings(this.DeltaSet.Appended().Elements()).EncodeToBuffer(buffer[offset:])
+	}, 0)
+
+	offset += common.IfThenDo1st(this.DeltaSet.Removed() != nil, func() int {
+		return codec.Strings(this.DeltaSet.Removed().Elements()).EncodeToBuffer(buffer[offset:])
+	}, 0)
+
 	return offset
 }
 
-func (this *Path) Decode(buffer []byte) interface{} {
+func (*Path) Decode(buffer []byte) interface{} {
 	if len(buffer) == 0 {
-		return this
+		return NewPath()
 	}
 
+	path := NewPath().(*Path)
+	path.DeltaSet.SetNilVal("")
+
 	fields := codec.Byteset{}.Decode(buffer).(codec.Byteset)
-	return &Path{
-		value: orderedset.NewOrderedSet(codec.Strings{}.Decode(fields[0]).(codec.Strings)),
-		delta: NewPathDelta([]string{}, []string{}).Decode(fields[1]).(*PathDelta),
-	}
+	path.DeltaSet.SetCommitted(codec.Strings{}.Decode(fields[0]).(codec.Strings))
+	path.DeltaSet.SetAppended(codec.Strings{}.Decode(fields[1]).(codec.Strings))
+	path.DeltaSet.SetRemoved(codec.Strings{}.Decode(fields[2]).(codec.Strings))
+	return path
 }
 
 func (this *Path) Print() {
 	// fmt.Println("Keys: ", this.committedKeys)
-	fmt.Println("Added: ", this.delta.addDict.Keys())
-	fmt.Println("Removed: ", this.delta.delDict.Keys())
+	// fmt.Println("Added: ", this.delta.addDict.Keys())
+	// fmt.Println("Removed: ", this.delta.delDict.Keys())
 	fmt.Println()
 }
 
