@@ -134,18 +134,11 @@ func (this *Path) Set(value interface{}, source interface{}) (interface{}, uint3
 	} else {
 		this.DeltaSet.Insert(subkey) // Insert a new key
 	}
-
-	// Record the added and removed keys in the delta structure.
-	// univ, _ := writeCache.InCache(targetPath)
-	// preexists := univ.(interface{ Preexist() bool }).Preexist()
-	// this.delta.Add(subkey, value, preexists)
 	return this, 0, 0, 1, nil
 }
 
 // data cleaning before saving to storage
 func (this *Path) Reset() {
-	// this.DeltaSet = orderedset.NewOrderedSet([]string{})
-	// this.delta = NewPathDelta([]string{}, []string{})
 	this.DeltaSet.ResetDelta() // The committed keys are not reset.
 }
 
