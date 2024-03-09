@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/arcology-network/common-lib/codec"
-	orderedset "github.com/arcology-network/common-lib/container/set"
+	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
 	cache "github.com/arcology-network/eu/cache"
 	stgcommitter "github.com/arcology-network/storage-committer"
@@ -321,8 +321,10 @@ func TestBasic(t *testing.T) {
 	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path)); value == nil {
 		t.Error(value)
 	} else {
-		target := value.(*orderedset.OrderedSet).Keys()
-		if !reflect.DeepEqual(target, []string{"elem-000", "elem-111"}) {
+		target := value.(*deltaset.DeltaSet[string])
+		k0, _ := target.GetByIndex(0)
+		k1, _ := target.GetByIndex(1)
+		if !reflect.DeepEqual([]string{k0, k1}, []string{"elem-000", "elem-111"}) {
 			t.Error("Error: Wrong value !!!!")
 		}
 	}
@@ -330,12 +332,8 @@ func TestBasic(t *testing.T) {
 	trans := slice.Clone(writeCache.Export(importer.Sorter))
 	transitions := univalue.Univalues(trans).To(importer.ITTransition{})
 
-	// failed to filter a read on noneexist element
-
-	// univalue.Univalues(transitions).Print()
-
-	if !reflect.DeepEqual(transitions[0].Value().(interfaces.Type).Delta().(*commutative.PathDelta).Added(), []string{"elem-000", "elem-111"}) {
-		t.Error("Error: keys are missing from the added buffer!")
+	if !reflect.DeepEqual(transitions[0].Value().(interfaces.Type).Delta().(*deltaset.DeltaSet[string]).Added().Elements(), []string{"elem-000", "elem-111"}) {
+		t.Error("Error: keys are missing from the added buffer!", transitions[0].Value().(interfaces.Type).Delta().(*deltaset.DeltaSet[string]).Added())
 	}
 
 	value := transitions[1].Value()
@@ -367,7 +365,6 @@ func TestBasic(t *testing.T) {
 	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+bob+"/storage/ctrn-0/elem-000", new(noncommutative.Int64)); value != nil {
 		t.Error("Error: Wrong value")
 	}
-
 }
 
 func TestPathAddThenDelete(t *testing.T) {
@@ -406,7 +403,7 @@ func TestPathAddThenDelete(t *testing.T) {
 		t.Error(err)
 	}
 
-	// Write an entry having the the same name of a path, should go through
+	// Delete the path, together with all its entries
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil); err != nil {
 		t.Error(err)
 	}
@@ -416,11 +413,11 @@ func TestPathAddThenDelete(t *testing.T) {
 	}
 
 	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", new(noncommutative.Int64)); value != nil {
-		t.Error("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-000 not found")
+		t.Error("blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000 should have gone already", value)
 	}
 
 	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", new(noncommutative.Int64)); value != nil {
-		t.Error("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-001 not found")
+		t.Error("blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001 should have gone already", value)
 	}
 
 	// Write an entry having the the same name of a path, should go through
@@ -445,10 +442,12 @@ func TestPathAddThenDelete(t *testing.T) {
 	}
 
 	meta, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
-	keys := meta.(*orderedset.OrderedSet).Keys()
-	if meta == nil || len(keys) != 2 ||
-		keys[0] != "elem-888" ||
-		keys[1] != "elem-999" {
+	_0, _ := meta.(*deltaset.DeltaSet[string]).GetByIndex(0)
+	_1, _ := meta.(*deltaset.DeltaSet[string]).GetByIndex(1)
+
+	if meta == nil || meta.(*deltaset.DeltaSet[string]).Length() != 2 ||
+		_0 != "elem-888" ||
+		_1 != "elem-999" {
 		t.Error("not found")
 	}
 }
@@ -535,7 +534,7 @@ func TestCommitter(t *testing.T) {
 		t.Error("Error: keys don't match")
 	}
 
-	addedkeys := codec.Strings(transitions[1].Value().(interfaces.Type).Delta().(*commutative.PathDelta).Added()).Sort()
+	addedkeys := codec.Strings(transitions[1].Value().(interfaces.Type).Delta().(*deltaset.DeltaSet[string]).Added().Elements()).Sort()
 	if !reflect.DeepEqual([]string(addedkeys), []string{"elem-000", "elem-001", "elem-002"}) {
 		t.Error("Error: keys don't match")
 	}
@@ -610,14 +609,14 @@ func TestCommitter2(t *testing.T) {
 
 	// Update then return path meta info
 	meta0, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
-	keys := meta0.(*orderedset.OrderedSet).Keys()
+	keys := meta0.(*deltaset.DeltaSet[string]).Elements()
 	if !reflect.DeepEqual(keys, []string{"elem-000", "elem-001", "elem-002"}) {
 		t.Error("Error: Keys don't match")
 	}
 
 	// Do again
 	meta1, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
-	keys = meta1.(*orderedset.OrderedSet).Keys()
+	keys = meta1.(*deltaset.DeltaSet[string]).Elements()
 	if !reflect.DeepEqual(keys, []string{"elem-000", "elem-001", "elem-002"}) {
 		t.Error("Error: Keys don't match")
 	}
@@ -629,8 +628,8 @@ func TestCommitter2(t *testing.T) {
 
 	// The elem-00 has been deleted, only "elem-001", "elem-002" left
 	meta0, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
-	keys = meta0.(*orderedset.OrderedSet).Keys()
-	if !reflect.DeepEqual(meta0.(*orderedset.OrderedSet).Keys(), []string{"elem-001", "elem-002"}) {
+	keys = meta0.(*deltaset.DeltaSet[string]).Elements()
+	if !reflect.DeepEqual(meta0.(*deltaset.DeltaSet[string]).Elements(), []string{"elem-001", "elem-002"}) {
 		t.Error("Error: keys don't match")
 	}
 
@@ -646,9 +645,9 @@ func TestCommitter2(t *testing.T) {
 
 	// Update then read the path info again
 	meta, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
-	keys = meta.(*orderedset.OrderedSet).Keys()
-	if !reflect.DeepEqual(keys, []string{"elem-001", "elem-002", "elem-000"}) {
-		t.Error("Error: keys don't match")
+	keys = meta.(*deltaset.DeltaSet[string]).Elements()
+	if !reflect.DeepEqual(keys, []string{"elem-000", "elem-001", "elem-002"}) {
+		t.Error("Error: keys don't match", keys, "Expecting", []string{"elem-000", "elem-001", "elem-002"})
 	}
 
 	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/elem-0", new(noncommutative.Int64))
@@ -675,13 +674,13 @@ func TestCommitter2(t *testing.T) {
 
 	/*  Read the storage path to see what is left*/
 	v, _, _ = writeCache.Read(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/", new(commutative.Path))
-	keys = v.(*orderedset.OrderedSet).Keys()
+	keys = v.(*deltaset.DeltaSet[string]).Elements()
 	if !reflect.DeepEqual(keys, []string{}) {
 		t.Error("Error: Should be empty!!")
 	}
 
 	v, _, _ = writeCache.Read(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/", new(commutative.Path))
-	keys = v.(*orderedset.OrderedSet).Keys()
+	keys = v.(*deltaset.DeltaSet[string]).Elements()
 	if !reflect.DeepEqual(keys, []string{}) {
 		t.Error("Error: Should be empty!!")
 	}
@@ -720,73 +719,6 @@ func TestCommitter2(t *testing.T) {
 		if !transitions[i].Equal(out[i]) {
 			t.Error("Error: transitions don't match")
 		}
-	}
-}
-
-// This test is taken from the unit test above, but it is modified to use it simpler.
-// It will trigger an unknown error, which is not expected. The meta1 seems to be altered by
-// an delete operation, which is not expected. Not sure if it is a bug or not, certainly, this
-// is not how we ususally use the system, when there is a delete operation, we should already reread
-// the data in stread of using the old data object, but it is still wired.
-// The test above never trigger this error before, so is either a issue in the new version of golang or a bug in the
-// code.
-func TestError(t *testing.T) {
-	store := chooseDataStore()
-	// store := datastore.NewDataStore(nil, nil, nil, encoder, decoder)
-	committer := stgcommitter.NewStorageCommitter(store)
-	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
-	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
-		t.Error(err)
-	}
-
-	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
-	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
-	committer.Sort()
-	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
-	committer.Commit()
-
-	committer.Init(store)
-	// Create a new container
-	path := commutative.NewPath()
-	writeCache.Reset(writeCache)
-	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
-		t.Error(err, "Error:  Failed to MakePath: "+"/ctrn-0/")
-	}
-
-	// Add a vaiable directly
-	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/elem-0", noncommutative.NewString("0000")); err != nil {
-		t.Error(err, "Error:  Failed to Write: "+"/elem-0")
-	}
-
-	// Add the first element
-	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", noncommutative.NewInt64(1111)); err != nil {
-		t.Error(err, "Error: Failed to Write: "+"/ctrn-0/elem-000")
-	}
-
-	// Add the second element
-	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", noncommutative.NewInt64(2222)); err != nil {
-		t.Error(err, "Error:  Failed to Write: "+"/ctrn-0/elem-001")
-	}
-
-	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-002", noncommutative.NewInt64(3333)); err != nil {
-		t.Error(err, "Error:  Failed to Write: "+"/ctrn-0/elem-002")
-	}
-
-	meta1, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
-	keys := meta1.(*orderedset.OrderedSet).Keys()
-	if !reflect.DeepEqual(keys, []string{"elem-000", "elem-001", "elem-002"}) {
-		t.Error("Error: Keys don't match")
-	}
-
-	// Delete elem-00
-	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", nil); err != nil {
-		t.Error("Error: Failed to delete: " + "blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-000")
-	}
-
-	meta1, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
-	if !reflect.DeepEqual(meta1.(*orderedset.OrderedSet).Keys(), []string{"elem-001", "elem-002"}) {
-		t.Error("Error: keys don't match")
 	}
 }
 

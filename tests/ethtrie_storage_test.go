@@ -11,7 +11,7 @@ import (
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	orderedset "github.com/arcology-network/common-lib/container/set"
+	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/common-lib/merkle"
 	datastore "github.com/arcology-network/common-lib/storage/datastore"
@@ -291,7 +291,7 @@ func TestBasicAddRead(t *testing.T) {
 	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path)); value == nil {
 		t.Error(value)
 	} else {
-		target := value.(*orderedset.OrderedSet).Keys()
+		target := value.(*deltaset.DeltaSet[string]).Elements()
 		if !reflect.DeepEqual(target, []string{"elem-000", "elem-111"}) {
 			t.Error("Error: Wrong value !!!!")
 		}
@@ -340,7 +340,7 @@ func TestEthDataStoreAddDeleteRead(t *testing.T) {
 	}
 
 	meta, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path))
-	keys := meta.(*orderedset.OrderedSet).Keys()
+	keys := meta.(*deltaset.DeltaSet[string]).Elements()
 	if meta == nil || len(keys) != 2 ||
 		keys[0] != "elem-000" ||
 		keys[1] != "elem-001" {
@@ -382,7 +382,7 @@ func TestEthDataStoreAddDeleteRead(t *testing.T) {
 	}
 
 	meta, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
-	keys = meta.(*orderedset.OrderedSet).Keys()
+	keys = meta.(*deltaset.DeltaSet[string]).Elements()
 	if meta == nil || len(keys) != 2 ||
 		keys[0] != "elem-888" ||
 		keys[1] != "elem-999" {

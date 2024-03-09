@@ -6,7 +6,8 @@ import (
 	"testing"
 
 	"github.com/arcology-network/common-lib/addrcompressor"
-	orderedset "github.com/arcology-network/common-lib/container/set"
+	deltaset "github.com/arcology-network/common-lib/exp/deltaset"
+	"github.com/arcology-network/common-lib/exp/orderedset"
 	"github.com/arcology-network/common-lib/exp/slice"
 	cache "github.com/arcology-network/eu/cache"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
@@ -52,11 +53,11 @@ func TestTransitionFilters(t *testing.T) {
 	acctTrans[1].Value().(*commutative.U256).SetMin(*uint256.NewInt(1))
 	acctTrans[1].Value().(*commutative.U256).SetMax(*uint256.NewInt(2222222))
 
-	if v := raw[0].Value().(*commutative.Path).Delta().(*commutative.PathDelta); !reflect.DeepEqual(v.Added(), []string{}) {
+	if v := raw[0].Value().(*commutative.Path).Delta().(*deltaset.DeltaSet[string]); !reflect.DeepEqual(v.Added().Elements(), []string{}) {
 		t.Error("Error: Value altered")
 	}
 
-	if v := raw[0].Value().(*commutative.Path).Delta().(*commutative.PathDelta); !reflect.DeepEqual(v.Removed(), []string{}) {
+	if v := raw[0].Value().(*commutative.Path).Delta().(*deltaset.DeltaSet[string]); !reflect.DeepEqual(v.Removed().Elements(), []string{}) {
 		t.Error("Error: Delta altered")
 	}
 
@@ -79,15 +80,16 @@ func TestTransitionFilters(t *testing.T) {
 	copied := univalue.Univalues(slice.Clone(acctTrans)).To(importer.IPTransition{})
 
 	// Test Path
-	if v := copied[0].Value().(*commutative.Path).Value().(*orderedset.OrderedSet); len(v.Keys()) != 0 {
+	v := copied[0].Value().(*commutative.Path).Value() // Committed
+	if v.(*orderedset.OrderedSet[string]).Length() != 0 {
 		t.Error("Error: A path commutative variable shouldn't have the initial value")
 	}
 
-	if v := copied[0].Value().(*commutative.Path).Delta().(*commutative.PathDelta); !reflect.DeepEqual(v.Added(), []string{"123", "456"}) {
+	if v := copied[0].Value().(*commutative.Path).Delta().(*deltaset.DeltaSet[string]); !reflect.DeepEqual(v.Added().Elements(), []string{"123", "456"}) {
 		t.Error("Error: Delta altered")
 	}
 
-	if v := copied[0].Value().(*commutative.Path).Delta().(*commutative.PathDelta); !reflect.DeepEqual(v.Removed(), []string{"789", "116"}) {
+	if v := copied[0].Value().(*commutative.Path).Delta().(*deltaset.DeltaSet[string]); !reflect.DeepEqual(v.Removed().Elements(), []string{"789", "116"}) {
 		t.Error("Error: Delta altered")
 	}
 

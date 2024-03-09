@@ -15,7 +15,7 @@ import (
 	univalue "github.com/arcology-network/storage-committer/univalue"
 )
 
-func TestMultiAccountCreation(t *testing.T) {
+func TestCacheMultiAccountCreation(t *testing.T) {
 	store := chooseDataStore()
 	// store := datastore.NewDataStore(nil, datastore.NewCachePolicy(0, 1), datastore.NewMemoryDB(), encoder, decoder)
 

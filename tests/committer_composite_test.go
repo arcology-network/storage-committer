@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	orderedset "github.com/arcology-network/common-lib/container/set"
+	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
 	cache "github.com/arcology-network/eu/cache"
 	stgcommitter "github.com/arcology-network/storage-committer"
@@ -80,14 +80,14 @@ func TestAuxTrans(t *testing.T) {
 	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path)); value == nil {
 		t.Error(value)
 	} else {
-		keys := value.(*orderedset.OrderedSet).Keys()
+		keys := value.(*deltaset.DeltaSet[string]).Elements()
 		if !reflect.DeepEqual(keys, []string{"elem-000"}) {
 			t.Error("Wrong value ")
 		}
 	}
 
 	transitions := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
-	if !reflect.DeepEqual(transitions[0].Value().(interfaces.Type).Delta().(*commutative.PathDelta).Added(), []string{"elem-000"}) {
+	if !reflect.DeepEqual(transitions[0].Value().(interfaces.Type).Delta().(*deltaset.DeltaSet[string]).Added().Elements(), []string{"elem-000"}) {
 		t.Error("keys don't match")
 	}
 
@@ -184,7 +184,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	// }
 
 	v1, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path))
-	keys := v1.(*orderedset.OrderedSet).Keys()
+	keys := v1.(*deltaset.DeltaSet[string]).Elements()
 	if len(keys) != 3 {
 		t.Error("Error: There should be 3 elements only!!! actual = ", len(keys)) // create a path
 	}

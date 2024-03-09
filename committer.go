@@ -43,14 +43,14 @@ type StateCommitter struct {
 // NewStorageCommitter creates a new StateCommitter instance.
 func NewStorageCommitter(store interfaces.Datastore) *StateCommitter {
 	keyGetter := func(seq *importer.DeltaSequence) string {
-		return seq.Key
+		return seq.Account
 	}
 
 	inserter := func(seq *importer.DeltaSequence, update *storage.AccountUpdate) *storage.AccountUpdate {
 		if update == nil {
-			addr, _ := hexutil.Decode(seq.Key)
+			addr, _ := hexutil.Decode(seq.Account)
 			return &storage.AccountUpdate{
-				Key:  seq.Key,
+				Key:  seq.Account,
 				Addr: ethcommon.BytesToAddress(addr),
 				Seqs: []*importer.DeltaSequence{seq},
 				Acct: store.(*storage.EthDataStore).PreloadAccount(addr),

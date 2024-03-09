@@ -43,9 +43,9 @@ func InitNewPaths(newPaths []string) *Path {
 	}
 }
 
-func (this *Path) Length() int                                                { return this.DeltaSet.Length() }
+func (this *Path) Length() int                                                { return int(this.DeltaSet.NonNilCount()) }
 func (this *Path) View() *deltaset.DeltaSet[string]                           { return this.DeltaSet }
-func (this *Path) MemSize() uint32                                            { return uint32(this.DeltaSet.Length()) * 32 * 2 } // Just an estimate, need to update on fly instead of calculating everytime
+func (this *Path) MemSize() uint32                                            { return uint32(this.DeltaSet.NonNilCount()) * 32 * 2 } // Just an estimate, need to update on fly instead of calculating everytime
 func (this *Path) TypeID() uint8                                              { return PATH }
 func (this *Path) IsSelf(key interface{}) bool                                { return common.IsPath(key.(string)) }
 func (this *Path) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }
@@ -54,13 +54,13 @@ func (this *Path) IsNumeric() bool     { return false }
 func (this *Path) IsCommutative() bool { return true }
 func (this *Path) IsBounded() bool     { return true }
 
-func (this *Path) Value() interface{} { return this.DeltaSet.Committed().Elements() }
+func (this *Path) Value() interface{} { return this.DeltaSet.Committed() }
 func (this *Path) Delta() interface{} { return this.DeltaSet.Delta() }
 func (this *Path) DeltaSign() bool    { return true }
 func (this *Path) Min() interface{}   { return nil }
 func (this *Path) Max() interface{}   { return nil }
 
-func (this *Path) CloneDelta() interface{} { return this.CloneDelta() }
+func (this *Path) CloneDelta() interface{} { return this.DeltaSet.CloneDelta() }
 
 func (this *Path) IsDeltaApplied() bool       { return this.IsSynced() }
 func (this *Path) SetValue(v interface{})     { this.DeltaSet = v.(*deltaset.DeltaSet[string]) }
@@ -70,12 +70,16 @@ func (this *Path) SetDeltaSign(v interface{}) {}
 func (this *Path) SetMin(v interface{})       {}
 func (this *Path) SetMax(v interface{})       {}
 
-func (this *Path) Clone() interface{}           { return this.DeltaSet.CloneDelta() }
+func (this *Path) Clone() interface{} {
+	return &Path{
+		this.DeltaSet.Clone(),
+	}
+}
 func (this *Path) Equal(other interface{}) bool { return this.DeltaSet.Equal(other.(*Path).DeltaSet) }
 
 func (this *Path) Get() (interface{}, uint32, uint32) {
 	// If the value is touched, there will a write operation associated with it.
-	return this.DeltaSet.Committed().Elements(), 1, common.IfThen(!this.DeltaSet.IsSynced(), uint32(0), uint32(1))
+	return this.DeltaSet, 1, common.IfThen(!this.DeltaSet.IsSynced(), uint32(0), uint32(1))
 	// return this.DeltaSet.Keys(), 1, common.IfThen(!this.DeltaSet.Touched(), uint32(0), uint32(1))
 }
 
@@ -111,7 +115,7 @@ func (this *Path) Set(value interface{}, source interface{}) (interface{}, uint3
 
 	if common.IsPath(targetPath) && len(targetPath) == len(containerRoot) { // Delete or rewrite the path
 		if value == nil { // Delete the path and all its elements
-			for _, subpath := range this.DeltaSet.Committed().Elements() { // Get all the committed sub paths
+			for _, subpath := range this.DeltaSet.Elements() { // Get all the committed sub paths
 				writeCache.Write(tx, targetPath+subpath, nil) //FIXME: THIS EMITS SOME ERROR MESSAGEES BUT DON't SEEM TO BE HARMFUL
 			}
 			return this, 0, 1, 0, nil
@@ -120,7 +124,7 @@ func (this *Path) Set(value interface{}, source interface{}) (interface{}, uint3
 	}
 
 	subkey := targetPath[len(targetPath)-(len(targetPath)-len(containerRoot)):] // Extract the sub key from the path
-	ok := this.DeltaSet.Exists(subkey)
+	ok, _ := this.DeltaSet.Exists(subkey)
 	if (ok && value != nil) || (!ok && value == nil) {
 		return this, 1, 0, 0, nil //value update only or delete an non existent entry
 	}
@@ -158,8 +162,8 @@ func (this *Path) Keys() []string { // Committed keys
 	return common.IfThenDo1st(this.DeltaSet.Committed() != nil, func() []string { return this.DeltaSet.Committed().Elements() }, []string{})
 }
 
-func (this *Path) Appended() []string {
-	return common.IfThenDo1st(this.DeltaSet.Appended() != nil, func() []string { return this.DeltaSet.Appended().Elements() }, []string{})
+func (this *Path) Added() []string {
+	return common.IfThenDo1st(this.DeltaSet.Added() != nil, func() []string { return this.DeltaSet.Added().Elements() }, []string{})
 }
 
 func (this *Path) Removed() []string {

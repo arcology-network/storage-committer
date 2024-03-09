@@ -14,7 +14,7 @@ import (
 )
 
 type DeltaSequence struct {
-	Key         string
+	Account     string
 	Transitions []*univalue.Univalue
 	lock        sync.RWMutex
 	rawBytes    interface{}
@@ -23,7 +23,7 @@ type DeltaSequence struct {
 
 func NewDeltaSequence(key string, store interfaces.Datastore) *DeltaSequence {
 	seq := &DeltaSequence{
-		Key:         platform.GetAccountAddr(key),
+		Account:     platform.GetAccountAddr(key),
 		Transitions: make([]*univalue.Univalue, 0, 16),
 		rawBytes:    nil,
 	}
@@ -35,7 +35,7 @@ func NewDeltaSequence(key string, store interfaces.Datastore) *DeltaSequence {
 }
 
 func (this *DeltaSequence) Init(key string, store interfaces.Datastore) *DeltaSequence {
-	this.Key = platform.GetAccountAddr(key)
+	this.Account = platform.GetAccountAddr(key)
 	this.Transitions = this.Transitions[:0]
 	this.rawBytes = nil
 

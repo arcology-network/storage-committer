@@ -32,12 +32,12 @@ func (this *Path) HeaderSize() uint32 {
 
 func (this *Path) Size() uint32 {
 	committedEmpty := this.DeltaSet.Committed() != nil
-	appendedEmpty := this.DeltaSet.Appended() != nil
+	appendedEmpty := this.DeltaSet.Added() != nil
 	removedEmpty := this.DeltaSet.Removed() != nil
 
 	return this.HeaderSize() +
 		common.IfThenDo1st(committedEmpty, func() uint32 { return codec.Strings(this.DeltaSet.Committed().Elements()).Size() }, 0) +
-		common.IfThenDo1st(appendedEmpty, func() uint32 { return codec.Strings(this.DeltaSet.Appended().Elements()).Size() }, 0) +
+		common.IfThenDo1st(appendedEmpty, func() uint32 { return codec.Strings(this.DeltaSet.Added().Elements()).Size() }, 0) +
 		common.IfThenDo1st(removedEmpty, func() uint32 { return codec.Strings(this.DeltaSet.Removed().Elements()).Size() }, 0)
 }
 
@@ -46,7 +46,7 @@ func (this *Path) Encode() []byte {
 	offset := codec.Encoder{}.FillHeader(buffer,
 		[]uint32{
 			common.IfThenDo1st(this.DeltaSet.Committed() != nil, func() uint32 { return codec.Strings(this.DeltaSet.Committed().Elements()).Size() }, 0),
-			common.IfThenDo1st(this.DeltaSet.Appended() != nil, func() uint32 { return codec.Strings(this.DeltaSet.Appended().Elements()).Size() }, 0),
+			common.IfThenDo1st(this.DeltaSet.Added() != nil, func() uint32 { return codec.Strings(this.DeltaSet.Added().Elements()).Size() }, 0),
 			common.IfThenDo1st(this.DeltaSet.Removed() != nil, func() uint32 { return codec.Strings(this.DeltaSet.Removed().Elements()).Size() }, 0),
 		},
 	)
@@ -59,8 +59,8 @@ func (this *Path) EncodeToBuffer(buffer []byte) int {
 		return (codec.Strings(this.DeltaSet.Committed().Elements()).EncodeToBuffer(buffer))
 	}, 0)
 
-	offset += common.IfThenDo1st(this.DeltaSet.Appended() != nil, func() int {
-		return codec.Strings(this.DeltaSet.Appended().Elements()).EncodeToBuffer(buffer[offset:])
+	offset += common.IfThenDo1st(this.DeltaSet.Added() != nil, func() int {
+		return codec.Strings(this.DeltaSet.Added().Elements()).EncodeToBuffer(buffer[offset:])
 	}, 0)
 
 	offset += common.IfThenDo1st(this.DeltaSet.Removed() != nil, func() int {

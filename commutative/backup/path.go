@@ -23,6 +23,7 @@ import (
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	orderedset "github.com/arcology-network/common-lib/container/set"
+	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
 	intf "github.com/arcology-network/storage-committer/interfaces"
 )
@@ -95,7 +96,7 @@ func (this *Path) Get() (interface{}, uint32, uint32) {
 // For the codec only
 func (this *Path) New(value, delta, sign, min, max interface{}) interface{} {
 	return &Path{
-		value: common.IfThenDo1st(value != nil && value.(*orderedset.OrderedSet) != nil && len(value.(*orderedset.OrderedSet).Keys()) > 0,
+		value: common.IfThenDo1st(value != nil && value.(*orderedset.OrderedSet) != nil && len(value.(*deltaset.DeltaSet[string]).Elements()) > 0,
 			func() *orderedset.OrderedSet { return value.(*orderedset.OrderedSet) }, orderedset.NewOrderedSet([]string{})),
 		delta: common.IfThenDo1st(delta != nil && delta.(*PathDelta) != nil && delta.(*PathDelta).Touched(),
 			func() *PathDelta { return delta.(*PathDelta) }, NewPathDelta([]string{}, []string{})),
