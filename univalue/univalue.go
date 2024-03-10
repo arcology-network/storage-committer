@@ -141,11 +141,13 @@ func (this *Univalue) Set(tx uint32, path string, typedV interface{}, inCache bo
 		return nil
 	}
 
-	// Clone the current value, this is necessary to keep isolation between different inter-thread transactions.
-	// In such a scenario, a cascade of write caches are in place, and values are passed down from the parent thread
-	// to the child thread, without making a copy of the value, the child thread will modify the value in the parent thread.
-	// It may be an overkill to clone the value eveytime, except for the first time in the local cache, but it keeps the code simple.
-	this.value = this.value.(intf.Type).Clone()
+	// Write == 0 means the value has been not modified, so we don't need to make a deep copy.
+	// this.value == nil, this is a new value assignment, so we don't need to make a deep copy.
+	// typedV == nil, this is a delete operation, so we don't need to make a deep copy.
+	// In cascading write cache, the values' access info will stripped off, so it wouldn't introduce interference.
+	if this.writes == 0 && this.value != nil && typedV != nil { // Make a deep copy if haven't done so
+		this.value = this.value.(intf.Type).Clone()
+	}
 
 	v, r, w, dw, err := this.value.(intf.Type).Set(typedV, []interface{}{path, *this.path, tx, importer}) // Update one the current value
 	this.value = v

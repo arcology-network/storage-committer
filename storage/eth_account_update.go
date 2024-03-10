@@ -20,6 +20,8 @@
 package storage
 
 import (
+	"fmt"
+
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/storage-committer/importer"
 	"github.com/arcology-network/storage-committer/univalue"
@@ -53,4 +55,21 @@ func (this AccountUpdates) KVs() ([]string, []interface{}) {
 		keys[i], values[i] = *univ.GetPath(), univ.Value()
 	}
 	return keys, values
+}
+
+func (this AccountUpdate) Print() {
+	fmt.Println("Key:", this.Key)
+	fmt.Println("Addr:", this.Addr)
+
+	univals := slice.Transform(this.Seqs, func(i int, seq *importer.DeltaSequence) *univalue.Univalue {
+		return seq.Finalized
+	})
+	univalue.Univalues(univals).Print()
+}
+
+func (this AccountUpdates) Print() {
+	for i := range this {
+		this[i].Print()
+		fmt.Println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+	}
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"sort"
+	"strings"
 
 	"github.com/arcology-network/common-lib/exp/slice"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
@@ -21,6 +22,12 @@ func (this Univalues) To(filter interface{}) Univalues {
 	// }
 	slice.Remove((*[]*Univalue)(&this), nil)
 	return this
+}
+
+func (this Univalues) PathsContain(keyword string) Univalues {
+	return slice.CopyIf(this, func(v *Univalue) bool {
+		return strings.Contains((*v.GetPath()), (keyword))
+	})
 }
 
 // Debugging only

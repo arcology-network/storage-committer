@@ -19,6 +19,7 @@ package commutative
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/deltaset"
@@ -62,7 +63,7 @@ func (this *Path) Max() interface{}   { return nil }
 
 func (this *Path) CloneDelta() interface{} { return this.DeltaSet.CloneDelta() }
 
-func (this *Path) IsDeltaApplied() bool       { return this.IsSynced() }
+func (this *Path) IsDeltaApplied() bool       { return this.IsDirty() }
 func (this *Path) SetValue(v interface{})     { this.DeltaSet = v.(*deltaset.DeltaSet[string]) }
 func (this *Path) ResetDelta()                { this.DeltaSet.ResetDelta() }
 func (this *Path) SetDelta(v interface{})     { this.DeltaSet.SetDelta(v.(*deltaset.DeltaSet[string])) }
@@ -71,6 +72,10 @@ func (this *Path) SetMin(v interface{})       {}
 func (this *Path) SetMax(v interface{})       {}
 
 func (this *Path) Clone() interface{} {
+	fmt.Println(">>>>>>>>>>> Added Keys: ", this.DeltaSet.Added().Elements())
+	fmt.Println(">>>>>>>>>>> Removed Keys: ", this.DeltaSet.Removed().Elements())
+	fmt.Println(">>>>>>>>>>> Committed Keys: ", this.DeltaSet.Committed().Elements())
+
 	return &Path{
 		this.DeltaSet.Clone(),
 	}
@@ -79,7 +84,7 @@ func (this *Path) Equal(other interface{}) bool { return this.DeltaSet.Equal(oth
 
 func (this *Path) Get() (interface{}, uint32, uint32) {
 	// If the value is touched, there will a write operation associated with it.
-	return this.DeltaSet, 1, common.IfThen(!this.DeltaSet.IsSynced(), uint32(0), uint32(1))
+	return this.DeltaSet, 1, common.IfThen(!this.DeltaSet.IsDirty(), uint32(0), uint32(1))
 	// return this.DeltaSet.Keys(), 1, common.IfThen(!this.DeltaSet.Touched(), uint32(0), uint32(1))
 }
 
@@ -113,9 +118,13 @@ func (this *Path) Set(value interface{}, source interface{}) (interface{}, uint3
 		InCache(path string) (interface{}, bool)
 	})
 
-	if common.IsPath(targetPath) && len(targetPath) == len(containerRoot) { // Delete or rewrite the path
+	// Delete or rewrite the path. A rewrite is generally not allowed.
+	// The path is the root of the container. It cannot be rewritten. But it can be deleted.
+	// When that happens, all the sub paths are also deleted.
+	if common.IsPath(targetPath) && len(targetPath) == len(containerRoot) {
 		if value == nil { // Delete the path and all its elements
 			for _, subpath := range this.DeltaSet.Elements() { // Get all the committed sub paths
+				// Delete the sub path
 				writeCache.Write(tx, targetPath+subpath, nil) //FIXME: THIS EMITS SOME ERROR MESSAGEES BUT DON't SEEM TO BE HARMFUL
 			}
 			return this, 0, 1, 0, nil
@@ -125,14 +134,17 @@ func (this *Path) Set(value interface{}, source interface{}) (interface{}, uint3
 
 	subkey := targetPath[len(targetPath)-(len(targetPath)-len(containerRoot)):] // Extract the sub key from the path
 	ok, _ := this.DeltaSet.Exists(subkey)
+
 	if (ok && value != nil) || (!ok && value == nil) {
 		return this, 1, 0, 0, nil //value update only or delete an non existent entry
 	}
 
 	if value == nil {
-		this.DeltaSet.Delete(subkey) // Delete a key
+		// Delete an existing key
+		this.DeltaSet.Delete(subkey)
 	} else {
-		this.DeltaSet.Insert(subkey) // Insert a new key
+		// Insert a new key
+		this.DeltaSet.Insert(subkey)
 	}
 	return this, 0, 0, 1, nil
 }
