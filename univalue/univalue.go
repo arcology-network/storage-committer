@@ -2,9 +2,11 @@ package univalue
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/slice"
@@ -124,16 +126,16 @@ func (this *Univalue) CopyTo(writable interface{}) {
 	univ.(*Univalue).IncrementDeltaWrites(deltaWriteDiff)
 }
 
-func (this *Univalue) Set(tx uint32, path string, typedV interface{}, inCache bool, importer interface{}) error { // update the value
+func (this *Univalue) Set(tx uint32, path string, newV interface{}, inCache bool, importer interface{}) error { // update the value
 	this.tx = tx
-	if this.value == nil && typedV == nil {
+	if this.value == nil && newV == nil {
 		this.writes++ // Delete an non-existing value
 		return errors.New("Error: The value doesn't exists")
 	}
 
 	if this.value == nil { // Added a new value or try to delete an non-existent value
-		this.vType = typedV.(intf.Type).TypeID()
-		v, r, w, dw := typedV.(intf.Type).CopyTo(typedV)
+		this.vType = newV.(intf.Type).TypeID()
+		v, r, w, dw := newV.(intf.Type).CopyTo(newV)
 		this.value = v
 		this.writes += w
 		this.reads += r
@@ -141,23 +143,24 @@ func (this *Univalue) Set(tx uint32, path string, typedV interface{}, inCache bo
 		return nil
 	}
 
-	// Write == 0 means the value has been not modified, so we don't need to make a deep copy.
+	// Write != 0 means the value has been not modified, so we don't need to make a deep copy.
 	// this.value == nil, this is a new value assignment, so we don't need to make a deep copy.
 	// typedV == nil, this is a delete operation, so we don't need to make a deep copy.
 	// In cascading write cache, the values' access info will stripped off, so it wouldn't introduce interference.
-	if this.writes == 0 && this.value != nil && typedV != nil { // Make a deep copy if haven't done so
+	if this.writes == 0 && this.value != nil && newV != nil { // Make a deep copy if has't done so
 		this.value = this.value.(intf.Type).Clone()
 	}
 
-	v, r, w, dw, err := this.value.(intf.Type).Set(typedV, []interface{}{path, *this.path, tx, importer}) // Update one the current value
+	oldV := this.value.(intf.Type)
+	v, r, w, dw, err := oldV.Set(newV, []interface{}{path, *this.path, tx, importer}) // Update the current value
 	this.value = v
 	this.writes += w
 	this.reads += r
 	this.deltaWrites += dw
 
-	if typedV == nil && this.Value().(intf.Type).IsSelf(path) { // Delete the entry but keep the access record.
+	if newV == nil && this.Value().(intf.Type).IsSelf(path) { // Delete the entry but keep the access record.
 		this.vType = uint8(reflect.Invalid)
-		this.value = typedV // Delete the value
+		this.value = newV // Delete the value
 		this.writes++
 	}
 	return err
@@ -265,7 +268,12 @@ func (this *Univalue) Print() {
 	fmt.Print(spaces+"persistent: ", this.persistent)
 	fmt.Print(spaces+"preexists: ", this.preexists)
 
-	fmt.Print(spaces+"path: ", *this.path, "      ")
+	path := *this.path
+	if index := strings.Index(path, "container/"); index != -1 {
+		path = path[:index] + "container/" + hex.EncodeToString([]byte(path[index:]))
+	}
+
+	fmt.Print(spaces+"path: ", path, "      ")
 	common.IfThenDo(this.value != nil, func() { this.value.(intf.Type).Print() }, func() { fmt.Print("nil") })
 	fmt.Println()
 }

@@ -86,9 +86,9 @@ func (*Path) Decode(buffer []byte) interface{} {
 }
 
 func (this *Path) Print() {
-	fmt.Println("Keys: ", this.DeltaSet.Committed().Elements())
-	fmt.Println("Added: ", this.DeltaSet.Added().Elements())
-	fmt.Println("Removed: ", this.DeltaSet.Removed().Elements())
+	fmt.Println("Committed: ", codec.Strings(this.DeltaSet.Committed().Elements()).ToHex())
+	fmt.Println("Added  ", codec.Strings(this.DeltaSet.Added().Elements()).ToHex())
+	fmt.Println("Removed: ", codec.Strings(this.DeltaSet.Removed().Elements()).ToHex())
 	fmt.Println()
 }
 

@@ -19,7 +19,6 @@ package commutative
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/deltaset"
@@ -72,9 +71,9 @@ func (this *Path) SetMin(v interface{})       {}
 func (this *Path) SetMax(v interface{})       {}
 
 func (this *Path) Clone() interface{} {
-	fmt.Println(">>>>>>>>>>> Added Keys: ", this.DeltaSet.Added().Elements())
-	fmt.Println(">>>>>>>>>>> Removed Keys: ", this.DeltaSet.Removed().Elements())
-	fmt.Println(">>>>>>>>>>> Committed Keys: ", this.DeltaSet.Committed().Elements())
+	// fmt.Println(">>>>>>>>>>> Added Keys: ", codec.Strings(this.DeltaSet.Added().Elements()).ToHex())
+	// fmt.Println(">>>>>>>>>>> Removed Keys: ", codec.Strings(this.DeltaSet.Removed().Elements()).ToHex())
+	// fmt.Println(">>>>>>>>>>> Committed Keys: ", codec.Strings(this.DeltaSet.Committed().Elements()).ToHex())
 
 	return &Path{
 		this.DeltaSet.Clone(),

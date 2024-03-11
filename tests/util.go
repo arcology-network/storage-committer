@@ -25,6 +25,10 @@ import (
 	"time"
 
 	slice "github.com/arcology-network/common-lib/exp/slice"
+	cache "github.com/arcology-network/eu/cache"
+	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	"github.com/arcology-network/storage-committer/interfaces"
+	platform "github.com/arcology-network/storage-committer/platform"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	rlp "github.com/ethereum/go-ethereum/rlp"
 	"golang.org/x/crypto/sha3"
@@ -75,4 +79,27 @@ func rlpEncoder(args ...interface{}) []byte {
 		log.Fatal("Error encoding data:", err)
 	}
 	return encoded
+}
+
+func RandomKey[T ~int | uint64](seed T) string {
+	buf := sha3.Sum256([]byte(fmt.Sprint(seed)))
+	return hexutil.Encode(buf[:20])
+}
+
+func RandomKeys[T ~int | uint64](s0, s1 T) []string {
+	keys := make([]string, s1-s0)
+	for i := range keys {
+		keys[i] = RandomKey(s0 + T(i))
+	}
+	return keys
+}
+
+func NewWriteCacheWithAcounts(store interfaces.Datastore, accounts ...string) *cache.WriteCache {
+	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+	for i := range accounts {
+		if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, accounts[i]); err != nil { // NewAccount account structure {
+			fmt.Println(err)
+		}
+	}
+	return writeCache
 }

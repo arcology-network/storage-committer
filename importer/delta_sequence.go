@@ -29,7 +29,7 @@ func NewDeltaSequence(key string, store interfaces.Datastore) *DeltaSequence {
 	}
 
 	if store != nil {
-		seq.rawBytes = common.FilterFirst(store.Retrive(key, nil))
+		seq.rawBytes = common.FilterFirst(store.Retrive(key, nil)) // raw bytes have not type info
 	}
 	return seq
 }
@@ -100,4 +100,18 @@ func (this *DeltaSequence) Finalize() *univalue.Univalue {
 		panic(err)
 	}
 	return this.Finalized
+}
+
+type DeltaSequences []*DeltaSequence
+
+func (this DeltaSequences) Finalized() []intf.Type {
+	return slice.Transform(this, func(_ int, v *DeltaSequence) intf.Type {
+		return v.Finalized.Value().(intf.Type)
+	})
+}
+
+func (this DeltaSequences) Keys() []*string {
+	return slice.Transform(this, func(_ int, v *DeltaSequence) *string {
+		return v.Finalized.GetPath()
+	})
 }

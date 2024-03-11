@@ -279,6 +279,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	committer.Precommit([]uint32{1})
 	committer.Commit()
 
+	writeCache = cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	_1, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", new(noncommutative.String))
 	if _1 != "1" {
 		t.Error("Error: Not match")
@@ -287,17 +288,23 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	committer.Init(store)
 	writeCache.Reset(writeCache)
 
-	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewString("3"))
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewString("3")); err != nil {
+		t.Error(err)
+	}
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/2", noncommutative.NewString("4"))
 
 	outpath, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
 	keys := outpath.(*deltaset.DeltaSet[string]).Elements()
-	if reflect.DeepEqual(keys, []string{"1", "2", "3", "4"}) {
+	if !reflect.DeepEqual(keys, []string{"1", "2", "3", "4"}) {
 		t.Error("Error: Not match")
 	}
 
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil) // delete the path
 	if acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{}); len(acctTrans) != 3 {
+		t.Error("Error: Wrong number of transitions")
+	}
+
+	if v, univ, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewString("")); univ == nil || v == nil {
 		t.Error("Error: Wrong number of transitions")
 	}
 }

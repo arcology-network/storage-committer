@@ -74,7 +74,7 @@ type Datastore interface {
 	Precommit(...interface{}) [32]byte
 	Commit(uint64) error
 	UpdateCacheStats([]interface{})
-
+	Cache() interface{}
 	Encoder() func(string, interface{}) []byte
 	Decoder() func(string, []byte, any) interface{}
 

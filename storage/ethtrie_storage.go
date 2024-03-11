@@ -6,10 +6,14 @@ import (
 	"sync"
 
 	"github.com/VictoriaMetrics/fastcache"
+	cache "github.com/arcology-network/common-lib/cache"
 	common "github.com/arcology-network/common-lib/common"
+	"github.com/cespare/xxhash/v2"
+
 	"github.com/arcology-network/common-lib/exp/slice"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/interfaces"
+	intf "github.com/arcology-network/storage-committer/interfaces"
 	platform "github.com/arcology-network/storage-committer/platform"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
@@ -30,11 +34,13 @@ import (
 type EthDataStore struct {
 	worldStateTrie *ethmpt.Trie
 
-	accounts map[ethcommon.Address]*Account // Account cache holds the accounts that are being accessed in the current cycle.
-	dirties  []*AccountUpdate               // Dirty accounts are the accounts that have been updated in the current cycle.
-
-	ethdb   *ethmpt.Database
-	diskdbs [16]ethdb.Database
+	accounts  map[ethcommon.Address]*Account // Account cache holds the accounts that are being accessed in the current cycle.
+	dirties   []*AccountUpdate               // Dirty accounts are the accounts that have been updated in the current cycle.
+	dirtyKeys [][]string                     // Dirty accounts are the accounts that have been updated in the current cycle.
+	dirtyVals [][]interfaces.Type
+	ethdb     *ethmpt.Database
+	diskdbs   [16]ethdb.Database
+	cache     *cache.ReadCache[string, intf.Type]
 
 	encoder func(string, interface{}) []byte
 	decoder func(string, []byte, any) interface{}
@@ -69,6 +75,10 @@ func NewEthDataStore(trie *ethmpt.Trie, triedb *ethmpt.Database, diskdb [16]ethd
 		trieDbConfig: trieDbConfig,
 		sharedCache:  fastcache.New(trieDbConfig.CleanCacheSize),
 		accounts:     map[ethcommon.Address]*Account{},
+		cache: cache.NewReadCache[string, intf.Type](
+			4096,
+			func(k string) uint64 { return xxhash.Sum64String(k) },
+		),
 
 		worldStateTrie: trie,
 		encoder:        Rlp{}.Encode,
@@ -125,9 +135,11 @@ func (this *EthDataStore) PreloadAccount(addr []byte) *Account {
 }
 
 // Get the account from the cache.
-func (this *EthDataStore) Cache() map[ethcommon.Address]*Account { return this.accounts }
-func (this *EthDataStore) Dirties() []*AccountUpdate             { return this.dirties }
-func (this *EthDataStore) Clear()                                {}
+func (this *EthDataStore) Cache() interface{} { return this.cache }
+
+func (this *EthDataStore) AccountDict() map[ethcommon.Address]*Account { return this.accounts }
+func (this *EthDataStore) Dirties() []*AccountUpdate                   { return this.dirties }
+func (this *EthDataStore) Clear()                                      {}
 
 func (this *EthDataStore) Hash(key string) []byte {
 	hasher := sha3.NewLegacyKeccak256()
@@ -296,6 +308,10 @@ func (this *EthDataStore) GetAccountFromTrie(address ethcommon.Address, accesses
 }
 
 func (this *EthDataStore) Retrive(key string, T any) (interface{}, error) {
+	if v, ok := this.cache.Get(key); ok {
+		return *v, nil
+	}
+
 	accesses := ethmpt.AccessListCache{}
 	_, acctKey, _ := platform.ParseAccountAddr(key) // Get the address
 	if len(acctKey) == 0 {
@@ -310,6 +326,7 @@ func (this *EthDataStore) Retrive(key string, T any) (interface{}, error) {
 	address := ethcommon.BytesToAddress(acctBytes)
 	// address := ethcommon.BytesToAddress([]byte(acctKey))
 	account, err := this.GetAccount(address, &accesses)
+
 	if account != nil {
 		return account.Retrive(key, T) // Get the storage from the key
 	}
@@ -322,19 +339,21 @@ func (this *EthDataStore) Precommit(updates ...interface{}) [32]byte {
 		return this.worldStateTrie.Hash()
 	}
 
-	dirties := updates[0].([]*AccountUpdate)
-	this.dirties = dirties
-	if len(dirties) == 0 {
+	this.dirties = updates[0].([]*AccountUpdate)
+	if len(this.dirties) == 0 {
 		return this.worldStateTrie.Hash()
 	}
 
 	// Precommit the changes to the accounts and update the account storage trie.
-	slice.ParallelForeach(dirties, 16, func(idx int, acct **AccountUpdate) {
-		((*acct).Acct).ApplyAccounts(*acct)
+	slice.Resize(&this.dirtyKeys, len(this.dirties))
+	slice.Resize(&this.dirtyVals, len(this.dirties))
+	slice.ParallelForeach(this.dirties, 16, func(idx int, acct **AccountUpdate) {
+		this.dirtyKeys[idx], this.dirtyVals[idx] = ((*acct).Acct).ApplyAccounts(*acct)
+
 	})
 
 	// Update the to account cache.
-	slice.Foreach(dirties, func(_ int, acct **AccountUpdate) {
+	slice.Foreach(this.dirties, func(_ int, acct **AccountUpdate) {
 		this.accounts[(*acct).Acct.addr] = (*acct).Acct
 	})
 
@@ -342,12 +361,12 @@ func (this *EthDataStore) Precommit(updates ...interface{}) [32]byte {
 	encodedAddrs, encodedVals := [][]byte{}, [][]byte{}
 	common.ParallelExecute(
 		func() { // Account keys
-			encodedAddrs = slice.Append(dirties, func(_ int, update *AccountUpdate) []byte {
+			encodedAddrs = slice.Append(this.dirties, func(_ int, update *AccountUpdate) []byte {
 				return crypto.Keccak256(update.Acct.addr[:])
 			})
 		},
 		func() { // Encode the account content.
-			encodedVals = slice.Append(dirties, func(_ int, update *AccountUpdate) []byte {
+			encodedVals = slice.Append(this.dirties, func(_ int, update *AccountUpdate) []byte {
 				return update.Acct.Encode()
 			})
 		},
@@ -369,6 +388,9 @@ func (this *EthDataStore) Precommit(updates ...interface{}) [32]byte {
 }
 
 func (this *EthDataStore) Commit(blockNum uint64) error {
+	this.cache.Update(slice.Flatten(this.dirtyKeys), slice.Flatten(this.dirtyVals))
+	this.cache.Finalize()
+
 	slice.ParallelForeach(this.dirties, runtime.NumCPU(), func(_ int, update **AccountUpdate) {
 		if err := (**update).Acct.Commit(blockNum); err != nil {
 			panic(err)
@@ -377,7 +399,9 @@ func (this *EthDataStore) Commit(blockNum uint64) error {
 
 	var err error
 	this.worldStateTrie, err = parallelCommitToDB(this.worldStateTrie, this.ethdb, blockNum) // Reload the trie for the next block
-	this.dirties = this.dirties[:0]                                                          // Reset the dirties buffer
+	this.dirties = this.dirties[:0]
+	this.dirtyKeys = this.dirtyKeys[:0] // Reset the dirties buffer
+	this.dirtyVals = this.dirtyVals[:0]
 	return err
 }
 

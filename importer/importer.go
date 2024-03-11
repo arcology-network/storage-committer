@@ -1,12 +1,14 @@
 package importer
 
 import (
+	cache "github.com/arcology-network/common-lib/cache"
 	common "github.com/arcology-network/common-lib/common"
 	ccmap "github.com/arcology-network/common-lib/exp/map"
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/slice"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/interfaces"
+
 	univalue "github.com/arcology-network/storage-committer/univalue"
 	"github.com/cespare/xxhash/v2"
 )
@@ -43,9 +45,6 @@ func NewImporter(store interfaces.Datastore, platform interfaces.Platform) *Impo
 		// return slice.Sum[uint8, uint8]([]byte(k))
 	})
 
-	// importer.seqPool = mempool.NewMempool[*DeltaSequence](4096, 64, func() *DeltaSequence {
-	// 	return NewDeltaSequence("", nil) // Init an empty sequence.
-	// }, func(_ *DeltaSequence) {})
 	return &importer
 }
 
@@ -70,6 +69,12 @@ func (this *Importer) IfExists(key string) bool {
 // }
 
 func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) []*DeltaSequence {
+	// Pre-allocate the cache for the new transitions.
+	cache := this.store.Cache().(*cache.ReadCache[string, interfaces.Type])
+	cache.PreAlloc(slice.Append(txTrans,
+		func(_ int, v *univalue.Univalue) string { return *v.GetPath() }),
+		func(k string) bool { return len(k) == 0 })
+
 	commitIfAbsent := common.IfThenDo1st(len(args) > 0 && args[0] != nil, func() bool { return args[0].(bool) }, true) //Write if absent from local
 
 	//Remove entries that preexist but not available locally, it happens with a partial cache
@@ -87,7 +92,7 @@ func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) 
 	slice.Remove(&missingKeys, "") // Remove the keys that already exist.
 
 	// Create the missing sequences as new transitions are being added.
-	missingKeys = mapi.Keys(mapi.FromSlice(missingKeys, func(k string) bool { return true })) // Get the unique keys only
+	missingKeys = mapi.Keys(mapi.FromSlice(missingKeys, func(k string) bool { return true })) // Get the unique keys only by putting keys in a map
 
 	newSeqs := slice.ParallelAppend(missingKeys, this.numThreads, func(i int, k string) *DeltaSequence {
 		return NewDeltaSequence(k, this.store)

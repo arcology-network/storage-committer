@@ -8,7 +8,6 @@ import (
 	"time"
 
 	addrcompressor "github.com/arcology-network/common-lib/addrcompressor"
-	orderedset "github.com/arcology-network/common-lib/exp/orderedset"
 	"github.com/arcology-network/common-lib/exp/slice"
 	datastore "github.com/arcology-network/common-lib/storage/datastore"
 	cache "github.com/arcology-network/eu/cache"
@@ -26,59 +25,6 @@ import (
 	// "github.com/google/btree"
 	// ehtrlp "github.com/elliotchance/orderedmap"
 )
-
-func BenchmarkPathReadAndWrites(b *testing.B) {
-	store := chooseDataStore()
-
-	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
-	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
-		fmt.Println(err)
-	}
-
-	path := commutative.NewPath() // create a path
-	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", path); err != nil {
-		b.Error(err)
-	}
-
-	keys := make([]string, 100000)
-	values := make([]interface{}, len(keys))
-
-	// Generate random keys and values
-	for i := 0; i < len(keys); i++ {
-		buf := sha3.Sum256([]byte(fmt.Sprint(rand.Int())))
-		keys[i] = hexutil.Encode(buf[:20])
-		values[i] = commutative.NewUnboundedU256()
-	}
-
-	// Insert keys and values
-	t0 := time.Now()
-	for i := 0; i < len(keys); i++ {
-		if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/"+keys[i], values[i]); err != nil {
-			b.Error(err)
-		}
-	}
-	fmt.Println("writeCache: Inserted ", len(keys), "Keys in:", time.Since(t0))
-
-	// Read keys and values
-	t0 = time.Now()
-	for i := 0; i < len(keys); i++ {
-		writeCache.Read(0, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/"+keys[i], values[i])
-	}
-	fmt.Println("writeCache: Read ", len(keys), "Keys in:", time.Since(t0))
-
-	sets := make([]*orderedset.OrderedSet[string], 50)
-	t0 = time.Now()
-	for i := 0; i < len(sets); i++ {
-		sets[i] = orderedset.NewOrderedSet[string]("", 1000)
-	}
-
-	t0 = time.Now()
-	slice.ParallelTransform(sets, 16, func(i int, _ *orderedset.OrderedSet[string]) *orderedset.OrderedSet[string] {
-		return orderedset.NewOrderedSet[string]("", 1000)
-	})
-	fmt.Println("NewOrderedSet:  ", len(sets), "Keys in:", time.Since(t0))
-}
 
 func BenchmarkAccountMerkleImportPerf(b *testing.B) {
 	// lut := addrcompressor.NewCompressionLut()

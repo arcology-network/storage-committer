@@ -94,6 +94,8 @@ func NewU256DeltaFromBigInt(delta *big.Int) (interface{}, bool) {
 	}, true
 }
 
+// A commutative type shouldn't have the initial value other than the type default value.
+// This function is mainly for debugging purpose.
 func (*U256) NewBoundedU256(value, delta, min, max *uint256.Int, sign bool) *U256 {
 	return &U256{
 		value:         *value,
@@ -102,6 +104,16 @@ func (*U256) NewBoundedU256(value, delta, min, max *uint256.Int, sign bool) *U25
 		max:           *max,
 		deltaPositive: sign, // positive delta by default
 	}
+}
+
+func (*U256) NewBoundedU256FromUint64(value, delta, min, max int64, sign bool) *U256 {
+	u256Value := &U256{}
+	u256Value.value.SetFromBig(big.NewInt(value))
+	u256Value.delta.SetFromBig(big.NewInt(delta))
+	u256Value.min.SetFromBig(big.NewInt(min))
+	u256Value.max.SetFromBig(big.NewInt(max))
+	u256Value.deltaPositive = sign
+	return u256Value
 }
 
 func (this *U256) New(value, delta, sign, min, max interface{}) interface{} {
