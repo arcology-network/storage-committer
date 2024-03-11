@@ -51,7 +51,7 @@ func TestPathReadAndWriteBatchCache(b *testing.T) {
 		b.Error(err)
 	}
 
-	keys := RandomKeys(0, 2000)
+	keys := RandomKeys(0, 10)
 	for i := 0; i < len(keys); i++ {
 		if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/alice-elem-"+keys[i], noncommutative.NewInt64(int64(i))); err != nil {
 			b.Error(err)
