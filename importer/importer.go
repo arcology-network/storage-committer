@@ -1,7 +1,6 @@
 package importer
 
 import (
-	cache "github.com/arcology-network/common-lib/cache"
 	common "github.com/arcology-network/common-lib/common"
 	ccmap "github.com/arcology-network/common-lib/exp/map"
 	mapi "github.com/arcology-network/common-lib/exp/map"
@@ -69,12 +68,6 @@ func (this *Importer) IfExists(key string) bool {
 // }
 
 func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) []*DeltaSequence {
-	// Pre-allocate the cache for the new transitions.
-	cache := this.store.Cache().(*cache.ReadCache[string, interfaces.Type])
-	cache.PreAlloc(slice.Append(txTrans,
-		func(_ int, v *univalue.Univalue) string { return *v.GetPath() }),
-		func(k string) bool { return len(k) == 0 })
-
 	commitIfAbsent := common.IfThenDo1st(len(args) > 0 && args[0] != nil, func() bool { return args[0].(bool) }, true) //Write if absent from local
 
 	//Remove entries that preexist but not available locally, it happens with a partial cache

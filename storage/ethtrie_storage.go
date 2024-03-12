@@ -49,7 +49,7 @@ type EthDataStore struct {
 	dbErr error
 
 	trieDbConfig *hashdb.Config   // The config for the hash db underlying the trie.
-	sharedCache  *fastcache.Cache // A shared cache to be used by different instances of the Eth Database
+	encodedCache *fastcache.Cache // A shared cache holding the encoded account states to be used by different instances of the Eth Database
 }
 
 // LoadEthDataStore loads the trie from the database with the root provided.
@@ -73,11 +73,12 @@ func NewEthDataStore(trie *ethmpt.Trie, triedb *ethmpt.Database, diskdb [16]ethd
 		ethdb:        triedb,
 		diskdbs:      diskdb,
 		trieDbConfig: trieDbConfig,
-		sharedCache:  fastcache.New(trieDbConfig.CleanCacheSize),
+		encodedCache: fastcache.New(trieDbConfig.CleanCacheSize),
 		accounts:     map[ethcommon.Address]*Account{},
 		cache: cache.NewReadCache[string, intf.Type](
-			4096,
+			4096, // 4096 shards to avoid lock contention
 			func(k string) uint64 { return xxhash.Sum64String(k) },
+			"",
 		),
 
 		worldStateTrie: trie,
@@ -129,7 +130,7 @@ func (this *EthDataStore) PreloadAccount(addr []byte) *Account {
 			this.diskdbs,
 			EmptyAccountState(),
 			this.trieDbConfig,
-			this.sharedCache) // empty account state
+			this.encodedCache) // empty account state
 	}
 	return acct
 }
@@ -392,9 +393,6 @@ func (this *EthDataStore) Precommit(updates ...interface{}) [32]byte {
 }
 
 func (this *EthDataStore) Commit(blockNum uint64) error {
-	this.cache.Update(slice.Flatten(this.dirtyKeys), slice.Flatten(this.dirtyVals))
-	this.cache.Finalize()
-
 	slice.ParallelForeach(this.dirties, runtime.NumCPU(), func(_ int, update **AccountUpdate) {
 		if err := (**update).Acct.Commit(blockNum); err != nil {
 			panic(err)
@@ -403,6 +401,10 @@ func (this *EthDataStore) Commit(blockNum uint64) error {
 
 	var err error
 	this.worldStateTrie, err = parallelCommitToDB(this.worldStateTrie, this.ethdb, blockNum) // Reload the trie for the next block
+
+	// this.cache.Update(slice.Flatten(this.dirtyKeys), slice.Flatten(this.dirtyVals))
+	this.cache.Commit(slice.Flatten(this.dirtyKeys), slice.Flatten(this.dirtyVals))
+
 	this.dirties = this.dirties[:0]
 	this.dirtyKeys = this.dirtyKeys[:0] // Reset the dirties buffer
 	this.dirtyVals = this.dirtyVals[:0]

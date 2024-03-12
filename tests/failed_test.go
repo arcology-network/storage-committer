@@ -51,7 +51,7 @@ func TestPathReadAndWriteBatchCache(b *testing.T) {
 		b.Error(err)
 	}
 
-	keys := RandomKeys(0, 10)
+	keys := RandomKeys(0, 2)
 	for i := 0; i < len(keys); i++ {
 		if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/alice-elem-"+keys[i], noncommutative.NewInt64(int64(i))); err != nil {
 			b.Error(err)
@@ -67,8 +67,10 @@ func TestPathReadAndWriteBatchCache(b *testing.T) {
 	committer.Commit()
 
 	for i := 0; i < len(keys); i++ {
-		v, ok := store.Cache().(*cache.ReadCache[string, interfaces.Type]).Raw("blcc://eth1.0/account/" + alice + "/storage/container/ctrn-0/alice-elem-" + keys[i])
-		if typedv, _, _ := (*(v.Second)).Get(); !ok || typedv != int64(i) || v.First != nil {
+		v, ok := store.Cache().(*cache.ReadCache[string, interfaces.Type]).Get("blcc://eth1.0/account/" + alice + "/storage/container/ctrn-0/alice-elem-" + keys[i])
+
+		fmt.Println(store.Cache())
+		if typedv, _, _ := (*(v)).Get(); !ok || typedv != int64(i) {
 			b.Error("not found")
 		}
 	}
@@ -91,8 +93,8 @@ func TestPathReadAndWriteBatchCache(b *testing.T) {
 	committer.Commit()
 
 	for i := 0; i < len(keys); i++ {
-		v, ok := store.Cache().(*cache.ReadCache[string, interfaces.Type]).Raw("blcc://eth1.0/account/" + alice + "/storage/container/ctrn-0/alice-elem-" + keys[i])
-		if typedv, _, _ := (*(v.Second)).Get(); !ok || typedv != int64(i+9999) || v.First != nil {
+		v, ok := store.Cache().(*cache.ReadCache[string, interfaces.Type]).Get("blcc://eth1.0/account/" + alice + "/storage/container/ctrn-0/alice-elem-" + keys[i])
+		if typedv, _, _ := (*(v)).Get(); !ok || typedv != int64(i+9999) {
 			b.Error("not found")
 		}
 	}

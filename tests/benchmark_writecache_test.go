@@ -107,7 +107,7 @@ func TestWriteWithNewWriteCache(b *testing.T) {
 		b.Error(err)
 	}
 
-	keys := RandomKeys(0, 10000)
+	keys := RandomKeys(0, 100000)
 	t0 := time.Now()
 	for i := 0; i < len(keys); i++ {
 		writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/alice-elem-"+keys[i], noncommutative.NewInt64(int64(i)))
