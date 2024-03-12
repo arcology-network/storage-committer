@@ -291,6 +291,10 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewString("3")); err != nil {
 		t.Error(err)
 	}
+
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/3", noncommutative.NewString("13"))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/4", noncommutative.NewString("14"))
+
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/2", noncommutative.NewString("4"))
 
 	outpath, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
@@ -304,8 +308,8 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 		t.Error("Error: Wrong number of transitions")
 	}
 
-	if v, univ, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewString("")); univ == nil || v == nil {
-		t.Error("Error: Wrong number of transitions")
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", new(noncommutative.String)); v != nil {
+		t.Error("Error: Should be gone already !")
 	}
 }
 

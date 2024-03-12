@@ -30,7 +30,7 @@ import (
 
 // AccountUpdate organizes all the transitions under the same account together.
 type AccountUpdate struct {
-	Key  string
+	Key  string // Address in string
 	Addr ethcommon.Address
 	Seqs []*importer.DeltaSequence
 	Acct *Account

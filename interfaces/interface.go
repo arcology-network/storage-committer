@@ -63,6 +63,7 @@ type Type interface { // value type
 type ReadOnlyDataStore interface {
 	IfExists(string) bool
 	Retrive(string, any) (interface{}, error)
+	RetriveFromStorage(string, any) (interface{}, error) // Skip the cache and read from storage directly
 }
 
 type Datastore interface {
@@ -70,6 +71,7 @@ type Datastore interface {
 	Inject(string, any) error
 	BatchInject([]string, []any) error
 	Retrive(string, any) (interface{}, error)
+	RetriveFromStorage(string, any) (interface{}, error)
 	BatchRetrive([]string, []any) []interface{}
 	Precommit(...interface{}) [32]byte
 	Commit(uint64) error

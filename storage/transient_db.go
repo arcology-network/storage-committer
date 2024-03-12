@@ -72,6 +72,11 @@ func (this *TransientDB) Retrive(path string, T any) (interface{}, error) {
 	return v, nil
 }
 
+// Placeholder, skip the cache and read from storage directly
+func (this *TransientDB) RetriveFromStorage(path string, T any) (interface{}, error) {
+	return this.Retrive(path, T)
+}
+
 func (this *TransientDB) BatchRetrive(paths []string, T []any) []interface{} {
 	queryKeys := make([]string, 0, len(paths))
 	queryIdxes := make([]int, 0, len(paths))

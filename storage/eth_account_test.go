@@ -28,7 +28,7 @@ import (
 
 func TestGetPathType(t *testing.T) {
 	_0 := &importer.DeltaSequence{
-		Key:       "0",
+		Account:   "0",
 		Finalized: univalue.NewUnivalue(0, "0x1", 1, 2, 3, noncommutative.NewString("0x"), nil),
 		Transitions: []*univalue.Univalue{
 			univalue.NewUnivalue(2, "0x", 1, 2, 3, noncommutative.NewString("0x"), nil),
@@ -37,7 +37,7 @@ func TestGetPathType(t *testing.T) {
 	}
 
 	_1 := &importer.DeltaSequence{
-		Key:       "1",
+		Account:   "1",
 		Finalized: univalue.NewUnivalue(1, "0x", 1, 2, 3, noncommutative.NewString("0x"), nil),
 		Transitions: []*univalue.Univalue{
 			univalue.NewUnivalue(2, "0x", 1, 2, 3, noncommutative.NewString("0x"), nil),
@@ -46,7 +46,7 @@ func TestGetPathType(t *testing.T) {
 	}
 
 	_2 := &importer.DeltaSequence{
-		Key:       "2",
+		Account:   "2",
 		Finalized: univalue.NewUnivalue(2, "0x", 1, 2, 3, noncommutative.NewString("0x"), nil),
 		Transitions: []*univalue.Univalue{
 			univalue.NewUnivalue(2, "0x", 1, 2, 3, noncommutative.NewString("0x"), nil),
@@ -55,7 +55,7 @@ func TestGetPathType(t *testing.T) {
 	}
 
 	_3 := &importer.DeltaSequence{
-		Key:       "3",
+		Account:   "3",
 		Finalized: univalue.NewUnivalue(3, "0x", 1, 2, 3, noncommutative.NewString("0x"), nil),
 		Transitions: []*univalue.Univalue{
 			univalue.NewUnivalue(2, "0x", 1, 2, 3, noncommutative.NewString("0x"), nil),

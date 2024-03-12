@@ -311,7 +311,11 @@ func (this *EthDataStore) Retrive(key string, T any) (interface{}, error) {
 	if v, ok := this.cache.Get(key); ok {
 		return *v, nil
 	}
+	return this.RetriveFromStorage(key, T)
+}
 
+// Skip the cache and get from the trie
+func (this *EthDataStore) RetriveFromStorage(key string, T any) (interface{}, error) {
 	accesses := ethmpt.AccessListCache{}
 	_, acctKey, _ := platform.ParseAccountAddr(key) // Get the address
 	if len(acctKey) == 0 {

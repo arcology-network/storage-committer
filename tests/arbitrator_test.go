@@ -180,8 +180,9 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 
 	toCommit := slice.Exclude([]uint32{1, 2}, mapi.Keys(conflictDict))
 
-	in := univalue.Univalues(append(transitions1, transitions2...)).Encode()
-	out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
+	in := append(transitions1, transitions2...)
+	buffer := univalue.Univalues(in).Encode()
+	out := univalue.Univalues{}.Decode(buffer).(univalue.Univalues)
 	committer.Import(out)
 	committer.Sort()
 	committer.Precommit(toCommit)
@@ -221,8 +222,8 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 		return ok
 	})
 
-	in = univalue.Univalues(append(transitions3, transitions4...)).Encode()
-	out = univalue.Univalues{}.Decode(in).(univalue.Univalues)
+	buffer = univalue.Univalues(append(transitions3, transitions4...)).Encode()
+	out = univalue.Univalues{}.Decode(buffer).(univalue.Univalues)
 
 	acctTrans = append(transitions3, transitions4...)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))

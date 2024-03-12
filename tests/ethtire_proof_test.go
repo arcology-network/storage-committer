@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/exp/slice"
 	cache "github.com/arcology-network/eu/cache"
 	common "github.com/arcology-network/storage-committer/common"
@@ -255,19 +256,22 @@ func TestProofCacheNonNaitve(t *testing.T) {
 	writeCache.FlushToDataSource(store)
 
 	// Reads
-	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000000",
-		new(noncommutative.Bytes)); v.([]byte)[0] != 1 {
+	v, _ := writeCache.ReadOnlyDataStore().RetriveFromStorage("blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000000", new(noncommutative.Bytes))
+	buffer := v.(*noncommutative.Bytes).Value().(codec.Bytes)
+	if buffer[0] != 1 {
 		t.Error("Mismatch", v)
 	}
 
-	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000001",
-		new(noncommutative.Bytes)); v.([]byte)[31] != 1 { // Native encoder will remove the prefix zeros, so the result is 1 bytes.
+	v, _ = writeCache.ReadOnlyDataStore().RetriveFromStorage("blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000001", new(noncommutative.Bytes))
+	buffer = v.(*noncommutative.Bytes).Value().(codec.Bytes)
+	if buffer[31] != 1 { // Native encoder will remove the prefix zeros, so the result is 1 bytes.
 		t.Error("Mismatch", v)
 	}
 
 	// Big int encoder will trim the leading zeros, only keep the last 1, so when decoding, it will be 32 bytes with 31 zeros and 1
-	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000002",
-		new(noncommutative.Bytes)); v.([]byte)[0] != 1 { // Native encoder will remove the prefix zeros, so the result is 1 bytes.
+	v, _ = writeCache.ReadOnlyDataStore().RetriveFromStorage("blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000002", new(noncommutative.Bytes))
+	buffer = v.(*noncommutative.Bytes).Value().(codec.Bytes)
+	if buffer[0] != 1 { // Native encoder will remove the prefix zeros, so the result is 1 bytes.
 		t.Error("Mismatch", v)
 	}
 
@@ -333,15 +337,15 @@ func TestProofCache(t *testing.T) {
 		t.Fatal("String mismatch")
 	}
 
-	if str, _, _ := writeCache.Read(
-		1,
-		"blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000003",
-		new(noncommutative.Bytes)); !bytes.Equal(str.([]byte), []byte{1, 1}) { // Native encoder will remove the prefix zeros, so the result is 2 bytes.
+	v, _ := writeCache.ReadOnlyDataStore().RetriveFromStorage("blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000003", new(noncommutative.Bytes))
+	buffer := v.(*noncommutative.Bytes).Value().(codec.Bytes)
+
+	if !bytes.Equal(buffer, []byte{1, 1}) { // Native encoder will remove the prefix zeros, so the result is 2 bytes.
 		t.Fatal("String mismatch")
 	}
 
 	// Initiate the proof cache, maximum 2 blocks
-	cache := stgcommstorage.NewMerkleProofCache(2, store.EthDB())
+	// cache := stgcommstorage.NewMerkleProofCache(2, store.EthDB())
 
 	roothash := store.Root()
 	provider, err := stgcommstorage.NewMerkleProofCache(2, store.EthDB()).GetProofProvider(roothash) // Get the proof provider by a root hash.
@@ -424,6 +428,17 @@ func TestProofCache(t *testing.T) {
 	if err := accountResult.Validate(provider.Root()); err == nil {
 		t.Error("This should fail")
 	}
+}
+
+func TestMultiBlocks(t *testing.T) {
+	store := stgcommstorage.NewParallelEthMemDataStore()
+	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+
+	alice := AliceAccount()
+	writeCache.CreateNewAccount(common.SYSTEM, alice)
+
+	// Initiate the proof cache, maximum 2 blocks
+	cache := stgcommstorage.NewMerkleProofCache(2, store.EthDB())
 
 	// Simulate 5 consecutive blocks, record the root hashes and the keys.
 	historyRoots := []ethcommon.Hash{}
@@ -438,6 +453,10 @@ func TestProofCache(t *testing.T) {
 		historyRoots = append(historyRoots, store.Root())
 	}
 
+	writeCache.FlushToDataSource(store)
+
+	aliceAddr := ethcommon.BytesToAddress([]byte(hexutil.MustDecode(alice)))
+
 	// Get the proof provider by a root hash from the history.
 	for i := 0; i < len(historyRoots); i++ {
 		provider, err := cache.GetProofProvider(historyRoots[i])
@@ -450,4 +469,5 @@ func TestProofCache(t *testing.T) {
 			t.Error(err)
 		}
 	}
+
 }

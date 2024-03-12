@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
-	"time"
 
 	"github.com/VictoriaMetrics/fastcache"
 	"github.com/arcology-network/common-lib/codec"
@@ -183,16 +182,13 @@ func (this *Account) Has(key string) bool {
 }
 
 func (this *Account) Retrive(key string, T any) (interface{}, error) {
-	t0 := time.Now()
 	if strings.HasSuffix(key, "/balance") {
 		balance, _ := uint256.FromBig(this.StateAccount.Balance)
 		v := commutative.NewUnboundedU256()
 		v.SetValue(*balance)
 		return v, nil
 	}
-	fmt.Println("balance:", time.Since(t0))
 
-	t0 = time.Now()
 	if strings.HasSuffix(key, "/nonce") {
 		v := commutative.NewUnboundedUint64()
 		v.SetValue(this.StateAccount.Nonce)
@@ -208,13 +204,9 @@ func (this *Account) Retrive(key string, T any) (interface{}, error) {
 		}
 		return noncommutative.NewBytes(this.code), nil
 	}
-	fmt.Println("key + Code:", time.Since(t0))
 
-	t0 = time.Now()
 	k := this.ToStorageKey(key)
 	buffer, err := this.storageTrie.Get([]byte(k))
-	fmt.Println("storageTrie.Get:", time.Since(t0))
-
 	if len(buffer) == 0 {
 		return nil, nil
 	}
@@ -222,10 +214,6 @@ func (this *Account) Retrive(key string, T any) (interface{}, error) {
 	if T == nil { // A deletion
 		return T, nil
 	}
-
-	t0 = time.Now()
-	T.(interfaces.Type).StorageDecode(key, buffer)
-	fmt.Println("StorageDecode.Get:", len(buffer), time.Since(t0))
 
 	return T.(interfaces.Type).StorageDecode(key, buffer), err
 }
