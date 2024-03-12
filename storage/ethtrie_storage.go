@@ -393,6 +393,23 @@ func (this *EthDataStore) Precommit(updates ...interface{}) [32]byte {
 }
 
 func (this *EthDataStore) Commit(blockNum uint64) error {
+	var err error
+	common.ParallelExecute(
+		func() { this.RefreshCache(blockNum) },
+		func() { err = this.CommitToEthStorage(blockNum) },
+	)
+	return err
+}
+
+func (this *EthDataStore) RefreshCache(blockNum uint64) {
+	// this.cache.Update(slice.Flatten(this.dirtyKeys), slice.Flatten(this.dirtyVals))
+	this.cache.Commit(slice.Flatten(this.dirtyKeys), slice.Flatten(this.dirtyVals))
+	this.dirties = this.dirties[:0]
+	this.dirtyKeys = this.dirtyKeys[:0] // Reset the dirties buffer
+	this.dirtyVals = this.dirtyVals[:0]
+}
+
+func (this *EthDataStore) CommitToEthStorage(blockNum uint64) error {
 	slice.ParallelForeach(this.dirties, runtime.NumCPU(), func(_ int, update **AccountUpdate) {
 		if err := (**update).Acct.Commit(blockNum); err != nil {
 			panic(err)
