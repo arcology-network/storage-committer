@@ -32,10 +32,14 @@ type StoreRouter struct {
 	localDataStore *datastore.DataStore
 }
 
-func NewStoreRouter() *StoreRouter {
+func NewHybirdStore() *StoreRouter {
 	return &StoreRouter{
-		ethDataStore:   NewParallelEthMemDataStore(),
-		localDataStore: datastore.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode),
+		ethDataStore: NewParallelEthMemDataStore(),
+		localDataStore: datastore.NewDataStore(
+			nil,
+			nil,
+			nil,
+			platform.Codec{}.Encode, platform.Codec{}.Decode),
 	}
 }
 
@@ -69,9 +73,9 @@ func (this *StoreRouter) BatchRetrive(keys []string, vals []any) []interface{} {
 		return strings.Contains(str, "/container")
 	})
 
-	locals := this.localDataStore.BatchRetrive(localKeys, localVals)
 	ethData := this.ethDataStore.BatchRetrive(keys, vals)
-	return append(locals, ethData...)
+	locals := this.localDataStore.BatchRetrive(localKeys, localVals)
+	return append(ethData, locals...)
 }
 
 func (this *StoreRouter) Precommit(args ...interface{}) [32]byte {
