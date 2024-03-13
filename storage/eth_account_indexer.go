@@ -67,13 +67,11 @@ func NewAccountIndexer(
 }
 
 // Add the transaction to the account dictionary.
-func (this *AccountIndexer) Add(transitions []*importer.DeltaSequence) {
-	// if !common.IsType[*EthDataStore](this.store) {
-	// 	return
-	// }
-
-	for _, tran := range transitions {
-		this.dict.Insert(tran)
+func (this *AccountIndexer) Add(transitionSets ...[]*importer.DeltaSequence) {
+	for _, trans := range transitionSets {
+		for _, tran := range trans {
+			this.dict.Insert(tran)
+		}
 	}
 }
 

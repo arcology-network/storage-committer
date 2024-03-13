@@ -31,11 +31,12 @@ import (
 
 // StateCommitter represents a storage committer.
 type StateCommitter struct {
-	store       interfaces.Datastore
+	store    interfaces.Datastore
+	Platform *platform.Platform
+
 	acctIndex   *storage.AccountIndexer // Account acctIndex is an index by unique account address.
 	importer    *importer.Importer
 	imuImporter *importer.Importer // transitions that will take effect anyway regardless of execution failures or conflicts
-	Platform    *platform.Platform
 }
 
 // NewStorageCommitter creates a new StateCommitter instance.
@@ -59,7 +60,7 @@ func (this *StateCommitter) New(args ...interface{}) *StateCommitter {
 }
 
 // Importer returns the importer of the StateCommitter.
-func (this *StateCommitter) Importer() *importer.Importer { return this.importer }
+func (this *StateCommitter) Store() interfaces.Datastore { return this.store }
 
 // Init initializes the StateCommitter with the given datastore.
 func (this *StateCommitter) Init(store interfaces.Datastore) {
@@ -89,21 +90,19 @@ func (this *StateCommitter) Import(transitions []*univalue.Univalue, args ...int
 		func() { seqs = this.importer.Import(transitions, args...) })
 
 	// Add to the acctIndex for the account index
-	this.acctIndex.Add(append(seqs, imuSeqs...))
-	return this
-}
-
-// Sort sorts the transitions in the StateCommitter.
-func (this *StateCommitter) Sort() *StateCommitter {
-	common.ParallelExecute(
-		func() { this.imuImporter.SortDeltaSequences() },
-		func() { this.importer.SortDeltaSequences() })
+	this.acctIndex.Add(seqs, imuSeqs)
 	return this
 }
 
 // Finalize finalizes the transitions in the StateCommitter.
 func (this *StateCommitter) Finalize(txs []uint32) *StateCommitter {
-	if txs != nil && len(txs) == 0 { // Commit all the transactions when txs == nil
+	// Sort delta transitions
+	common.ParallelExecute(
+		func() { this.imuImporter.SortDeltaSequences() },
+		func() { this.importer.SortDeltaSequences() })
+
+	// Commit all the transactions
+	if txs != nil && len(txs) == 0 {
 		return this
 	}
 

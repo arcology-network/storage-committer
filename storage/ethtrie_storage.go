@@ -309,9 +309,9 @@ func (this *EthDataStore) GetAccountFromTrie(address ethcommon.Address, accesses
 }
 
 func (this *EthDataStore) Retrive(key string, T any) (interface{}, error) {
-	if v, ok := this.cache.Get(key); ok {
-		return *v, nil
-	}
+	// if v, ok := this.cache.Get(key); ok {
+	// 	return *v, nil
+	// }
 	return this.RetriveFromStorage(key, T)
 }
 
@@ -328,8 +328,8 @@ func (this *EthDataStore) RetriveFromStorage(key string, T any) (interface{}, er
 		return nil, errors.New("Invalid account format: " + acctKey)
 	}
 
+	// Get the account the key belongs to.
 	address := ethcommon.BytesToAddress(acctBytes)
-	// address := ethcommon.BytesToAddress([]byte(acctKey))
 	account, err := this.GetAccount(address, &accesses)
 
 	if account != nil {

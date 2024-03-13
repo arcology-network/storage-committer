@@ -40,7 +40,7 @@ func TestCacheMultiAccountCreation(t *testing.T) {
 
 	committer := stgcommitter.NewStorageCommitter(store)
 	committer.Import(acctTrans)
-	committer.Sort()
+
 	committer.Precommit([]uint32{0})
 	committer.Commit()
 	writeCache.Reset(writeCache)

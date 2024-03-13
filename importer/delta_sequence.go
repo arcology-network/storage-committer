@@ -4,7 +4,6 @@ import (
 	"sort"
 	"sync"
 
-	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/slice"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/interfaces"
@@ -17,7 +16,6 @@ type DeltaSequence struct {
 	Account     string
 	Transitions []*univalue.Univalue
 	lock        sync.RWMutex
-	rawBytes    interface{}
 	Finalized   *univalue.Univalue
 }
 
@@ -25,29 +23,9 @@ func NewDeltaSequence(key string, store interfaces.Datastore) *DeltaSequence {
 	seq := &DeltaSequence{
 		Account:     platform.GetAccountAddr(key),
 		Transitions: make([]*univalue.Univalue, 0, 16),
-		rawBytes:    nil,
-	}
-
-	if store != nil {
-		seq.rawBytes = common.FilterFirst(store.Retrive(key, nil)) // raw bytes have not type info
 	}
 	return seq
 }
-
-func (this *DeltaSequence) Init(key string, store interfaces.Datastore) *DeltaSequence {
-	this.Account = platform.GetAccountAddr(key)
-	this.Transitions = this.Transitions[:0]
-	this.rawBytes = nil
-
-	if len(key) > 0 {
-		this.rawBytes = common.FilterFirst(store.Retrive(key, nil))
-	}
-	return this
-}
-
-// func (this *DeltaSequence) SetFinalized(v *univalue.Univalue) { this.finalized = v } // for debugging only
-
-// func (this *DeltaSequence) Finalized() *univalue.Univalue { return this.finalized }
 
 func (this *DeltaSequence) UnsafeAdd(v *univalue.Univalue) *DeltaSequence {
 	this.Transitions = append(this.Transitions, v)
@@ -89,13 +67,6 @@ func (this *DeltaSequence) Finalize() *univalue.Univalue {
 	}
 
 	this.Finalized = this.Transitions[0]
-	if (this.rawBytes != nil) && (this.Finalized.Value() != nil) { // Value update not an assignment or deletion
-		if encoded, ok := this.rawBytes.([]byte); ok {
-			v := this.Finalized.Value().(intf.Type).StorageDecode(*this.Finalized.GetPath(), encoded).(intf.Type).Value()
-			this.Finalized.Value().(intf.Type).SetValue(v)
-		}
-	}
-
 	if err := this.Finalized.ApplyDelta(this.Transitions[1:]); err != nil {
 		panic(err)
 	}

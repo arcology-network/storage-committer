@@ -30,7 +30,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 
 	committer := stgcommitter.NewStorageCommitter(store)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
-	committer.Sort()
+
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit()
 	writeCache.Reset(writeCache)
@@ -74,7 +74,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 
 	committer := stgcommitter.NewStorageCommitter(store)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
-	committer.Sort()
+
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit()
 
@@ -135,7 +135,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 
 	committer := stgcommitter.NewStorageCommitter(store)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
-	committer.Sort()
+
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit()
 	committer.Init(store)
@@ -184,7 +184,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	buffer := univalue.Univalues(in).Encode()
 	out := univalue.Univalues{}.Decode(buffer).(univalue.Univalues)
 	committer.Import(out)
-	committer.Sort()
+
 	committer.Precommit(toCommit)
 	committer.Commit()
 	writeCache.Reset(writeCache)
@@ -229,7 +229,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	// committer.Import(committer.Decode(univalue.Univalues(append(transitions3, transitions4...)).Encode()))
-	committer.Sort()
+
 	committer.Precommit(toCommit)
 	committer.Commit()
 	committer.Init(store)

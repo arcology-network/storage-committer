@@ -85,7 +85,7 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 
 	committer := stgcommitter.NewStorageCommitter(store)
 	committer.Import(transitions)
-	committer.Sort()
+
 	committer.Precommit([]uint32{0})
 	committer.Commit()
 	fmt.Println("Account Commit single Total time= :", time.Since(t0))
@@ -143,7 +143,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	fmt.Println("Import: ", len(trans), " in: ", time.Since(t0))
 
 	t0 = time.Now()
-	committer.Sort()
+
 	fmt.Println("Sort: ", len(trans), " in: ", time.Since(t0))
 
 	t0 = time.Now()
@@ -178,7 +178,7 @@ func BenchmarkAddThenDelete(b *testing.B) {
 
 	committer := stgcommitter.NewStorageCommitter(store)
 	committer.Import(trans)
-	committer.Sort()
+
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit()
 
@@ -220,7 +220,7 @@ func BenchmarkAddThenPop(b *testing.B) {
 
 	committer := stgcommitter.NewStorageCommitter(store)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
-	committer.Sort()
+
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit()
 
@@ -346,7 +346,6 @@ func BenchmarkEncodeTransitions(b *testing.B) {
 	committer := stgcommitter.NewStorageCommitter(store)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
-	committer.Sort()
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit()
 
@@ -420,7 +419,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	// transitions := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues)
 	committer := stgcommitter.NewStorageCommitter(store)
 	committer.Import(acctTrans)
-	committer.Sort()
+
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit()
 	// errs := committer.AllInOneCommit(acctTrans, []uint32{0})

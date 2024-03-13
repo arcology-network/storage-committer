@@ -58,7 +58,6 @@ func TestSize(t *testing.T) {
 	acctTrans := univalue.Univalues(slice.Clone(raw)).To(importer.IPTransition{})
 
 	committer.Import(acctTrans)
-	committer.Sort()
 	committer.Precommit([]uint32{1})
 	committer.Commit()
 
@@ -141,7 +140,7 @@ func TestAddThenDeletePath(t *testing.T) {
 	// out := univalue.Univalues{}.Decode(buffer).(univalue.Univalues)
 
 	// committer.Import(out)
-	// committer.Sort()
+	//
 	// committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit()
 
@@ -154,7 +153,7 @@ func TestAddThenDeletePath(t *testing.T) {
 
 	// transitions := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	// committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues))
-	// committer.Sort()
+	//
 	// committer.Precommit([]uint32{1})
 	committer.Commit()
 
@@ -171,7 +170,7 @@ func TestAddThenDeletePath(t *testing.T) {
 	// acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	// buffer = univalue.Univalues(acctTrans).Encode()
 	// committer.Import(univalue.Univalues{}.Decode(buffer).(univalue.Univalues))
-	// committer.Sort()
+	//
 	// committer.Precommit([]uint32{1})
 	committer.Commit()
 
@@ -198,7 +197,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 
 	committer := stgcommitter.NewStorageCommitter(store)
 	committer.Import(ts)
-	committer.Sort()
+
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit()
 
@@ -214,7 +213,6 @@ func TestAddThenDeletePath2(t *testing.T) {
 	transitions := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	committer.Import((&univalue.Univalues{}).Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues))
 
-	committer.Sort()
 	committer.Precommit([]uint32{1})
 	committer.Commit()
 	writeCache.Reset(writeCache)
@@ -231,7 +229,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 
 	trans = univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	committer.Import((&univalue.Univalues{}).Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
-	committer.Sort()
+
 	committer.Precommit([]uint32{1})
 	committer.Commit()
 	committer.Init(store)
@@ -254,7 +252,7 @@ func TestBasic(t *testing.T) {
 
 	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
-	committer.Sort()
+
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit()
 	// univalue.Univalues(acctTrans).Print()
@@ -351,7 +349,7 @@ func TestBasic(t *testing.T) {
 	buffer := univalue.Univalues(univalue.Univalues(transitions).To(importer.IPTransition{})).Encode()
 	committer.Import(univalue.Univalues{}.Decode(buffer).(univalue.Univalues))
 	// committer.Import(committer.Decode(univalue.Univalues(transitions).Encode()))
-	committer.Sort()
+
 	committer.Precommit([]uint32{1})
 	committer.Commit()
 
@@ -379,7 +377,6 @@ func TestPathAddThenDelete(t *testing.T) {
 	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
-	committer.Sort()
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit()
 
@@ -468,7 +465,6 @@ func TestCommitter(t *testing.T) {
 
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
-	committer.Sort()
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit()
 
@@ -556,7 +552,7 @@ func TestCommitter2(t *testing.T) {
 
 	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
-	committer.Sort()
+
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit()
 
@@ -764,7 +760,6 @@ func TestCustomCodec(t *testing.T) {
 	univalue.Univalues{}.Decode(buffer)
 	committer.Import(acctTrans)
 
-	committer.Sort()
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit()
 

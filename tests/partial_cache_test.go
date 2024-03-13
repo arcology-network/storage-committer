@@ -27,7 +27,7 @@ package committertest
 // 	committer.Write(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
 // 	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 // 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
-// 	committer.Sort()
+//
 // 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 // committer.Commit()
 
@@ -41,7 +41,7 @@ package committertest
 // 	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 // 	committer.Importer().Store().(*storage.DataStore).Cache().Clear()
 // 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues), true, excludeMemDB) // The changes will be discarded.
-// 	committer.Sort()
+//
 // 	committer.Precommit([]uint32{1})
 // committer.Commit()
 
@@ -57,7 +57,7 @@ package committertest
 // 	committer.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999"))
 // 	committer.Importer().Store().(*storage.DataStore).Cache().Clear()                                 // Make sure only the persistent storage has the data.
 // 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues)) // This should take effect
-// 	committer.Sort()
+//
 // 	committer.Precommit([]uint32{1})
 // committer.Commit()
 
@@ -90,7 +90,7 @@ package committertest
 // 	committer.Write(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
 // 	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 // 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
-// 	committer.Sort()
+//
 // 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 // committer.Commit()
 
@@ -109,7 +109,7 @@ package committertest
 // 	// fmt.Print(ccmap2)
 // 	out := univalue.Univalues{}.Decode(univalue.Univalues(slice.Clone(acctTrans)).Encode()).(univalue.Univalues)
 // 	committer.Import(out, true, excludeMemDB) // The changes will be discarded.
-// 	committer.Sort()
+//
 // 	committer.Precommit([]uint32{1})
 // committer.Commit()
 

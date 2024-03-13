@@ -81,6 +81,13 @@ func NewU256Delta(delta *uint256.Int, deltaPositive bool) interfaces.Type {
 	}
 }
 
+func NewU256DeltaFromU64(delta uint64, deltaPositive bool) interfaces.Type {
+	return &U256{
+		delta:         *uint256.NewInt(delta),
+		deltaPositive: deltaPositive,
+	}
+}
+
 func NewU256DeltaFromBigInt(delta *big.Int) (interface{}, bool) {
 	sign := delta.Sign()
 	deltaV, overflowed := uint256.FromBig(delta.Abs(delta))

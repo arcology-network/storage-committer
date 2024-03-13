@@ -98,7 +98,7 @@ func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) 
 
 	txIDs := slice.Append(txTrans, func(_ int, v *univalue.Univalue) int { return int(v.GetTx()) })
 	mapi.IfNotFoundDo(this.byTx, slice.UniqueInts(txIDs), func(k int) int { return k }, func(k int) *[]*univalue.Univalue {
-		v := (make([]*univalue.Univalue, 0, 16)) // For unique ones only
+		v := (make([]*univalue.Univalue, 0, 4)) // For unique ones only
 		return &v
 	})
 
