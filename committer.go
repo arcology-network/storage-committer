@@ -24,8 +24,6 @@ import (
 	platform "github.com/arcology-network/storage-committer/platform"
 	"github.com/arcology-network/storage-committer/storage"
 	"github.com/arcology-network/storage-committer/univalue"
-	ethcommon "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	importer "github.com/arcology-network/storage-committer/importer"
 	interfaces "github.com/arcology-network/storage-committer/interfaces"
@@ -34,7 +32,7 @@ import (
 // StateCommitter represents a storage committer.
 type StateCommitter struct {
 	store       interfaces.Datastore
-	indexer     *storage.AccountIndexer // Account indexer is an index by unique account address.
+	acctIndex   *storage.AccountIndexer // Account acctIndex is an index by unique account address.
 	importer    *importer.Importer
 	imuImporter *importer.Importer // transitions that will take effect anyway regardless of execution failures or conflicts
 	Platform    *platform.Platform
@@ -42,31 +40,14 @@ type StateCommitter struct {
 
 // NewStorageCommitter creates a new StateCommitter instance.
 func NewStorageCommitter(store interfaces.Datastore) *StateCommitter {
-	keyGetter := func(seq *importer.DeltaSequence) string {
-		return seq.Account
-	}
-
-	inserter := func(seq *importer.DeltaSequence, update *storage.AccountUpdate) *storage.AccountUpdate {
-		if update == nil {
-			addr, _ := hexutil.Decode(seq.Account)
-			return &storage.AccountUpdate{
-				Key:  seq.Account,
-				Addr: ethcommon.BytesToAddress(addr),
-				Seqs: []*importer.DeltaSequence{seq},
-				Acct: store.(*storage.EthDataStore).PreloadAccount(addr),
-			}
-		}
-		update.Seqs = append(update.Seqs, seq)
-		return update
-	}
-
 	platform := platform.NewPlatform()
 	return &StateCommitter{
-		store:       store,
+		store:    store,
+		Platform: platform, //[]stgcommcommon.FilteredTransitionsInterface{&importer.NonceFilter{}, &importer.BalanceFilter{}},
+
 		importer:    importer.NewImporter(store, platform),
 		imuImporter: importer.NewImporter(store, platform),
-		Platform:    platform, //[]stgcommcommon.FilteredTransitionsInterface{&importer.NonceFilter{}, &importer.BalanceFilter{}},
-		indexer:     storage.NewAccountIndexer(store, platform, keyGetter, inserter),
+		acctIndex:   storage.NewAccountIndexer(store, platform),
 	}
 }
 
@@ -91,7 +72,7 @@ func (this *StateCommitter) Clear() {
 	this.importer.Store().Clear()
 	this.importer.Clear()
 	this.imuImporter.Clear()
-	this.indexer.Clear() // Clear the account indexer
+	this.acctIndex.Clear() // Clear the account acctIndex
 }
 
 // Import imports the given transitions into the StateCommitter.
@@ -107,8 +88,8 @@ func (this *StateCommitter) Import(transitions []*univalue.Univalue, args ...int
 		func() { imuSeqs = this.imuImporter.Import(invTransitions, args...) },
 		func() { seqs = this.importer.Import(transitions, args...) })
 
-	// Add to the indexer for the account index
-	this.indexer.Add(append(seqs, imuSeqs...))
+	// Add to the acctIndex for the account index
+	this.acctIndex.Add(append(seqs, imuSeqs...))
 	return this
 }
 
@@ -146,7 +127,7 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 		return [32]byte{}
 	}
 	this.Finalize(txs)
-	return this.importer.Store().Precommit(this.indexer.Updates()) // Write to the DB buffer
+	return this.store.Precommit(this.acctIndex.Updates()) // Write to the DB buffer
 }
 
 // Commit commits the transitions in the StateCommitter.

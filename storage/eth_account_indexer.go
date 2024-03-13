@@ -20,12 +20,13 @@ package storage
 import (
 	"runtime"
 
-	"github.com/arcology-network/common-lib/common"
 	indexed "github.com/arcology-network/common-lib/container/indexed"
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/storage-committer/importer"
 	intf "github.com/arcology-network/storage-committer/interfaces"
 	platform "github.com/arcology-network/storage-committer/platform"
+	ethcommon "github.com/ethereum/go-ethereum/common"
+	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 // AccountIndexer is an index to put all the transitions under the same account together.
@@ -38,21 +39,38 @@ type AccountIndexer struct {
 // Newindexer creates a new indexer instance.
 func NewAccountIndexer(
 	store intf.Datastore,
-	platform *platform.Platform,
-	keygetter func(*importer.DeltaSequence) string,
-	inserter func(*importer.DeltaSequence, *AccountUpdate) *AccountUpdate) *AccountIndexer {
+	platform *platform.Platform) *AccountIndexer {
+
+	gkeyGetter := func(seq *importer.DeltaSequence) string {
+		return seq.Account
+	}
+
+	ginserter := func(seq *importer.DeltaSequence, update *AccountUpdate) *AccountUpdate {
+		if update == nil {
+			addr, _ := hexutil.Decode(seq.Account)
+			return &AccountUpdate{
+				Key:  seq.Account,
+				Addr: ethcommon.BytesToAddress(addr),
+				Seqs: []*importer.DeltaSequence{seq},
+				Acct: store.Preload(addr).(*Account),
+			}
+		}
+		update.Seqs = append(update.Seqs, seq)
+		return update
+	}
+
 	return &AccountIndexer{
 		platform: platform,
 		store:    store,
-		dict:     indexed.NewIndexedSlice[*importer.DeltaSequence, string, *AccountUpdate](keygetter, inserter, nil),
+		dict:     indexed.NewIndexedSlice[*importer.DeltaSequence, string, *AccountUpdate](gkeyGetter, ginserter, nil),
 	}
 }
 
 // Add the transaction to the account dictionary.
 func (this *AccountIndexer) Add(transitions []*importer.DeltaSequence) {
-	if !common.IsType[*EthDataStore](this.store) {
-		return
-	}
+	// if !common.IsType[*EthDataStore](this.store) {
+	// 	return
+	// }
 
 	for _, tran := range transitions {
 		this.dict.Insert(tran)

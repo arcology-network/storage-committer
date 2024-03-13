@@ -28,6 +28,8 @@ func NewTransientDB(readonlyParent interfaces.Datastore) interfaces.Datastore {
 }
 
 // placeholder, TransientDB does not need this at all.
+func (this *TransientDB) Preload([]byte) interface{} { return nil }
+
 func (this *TransientDB) WriteEthTries(...interface{}) [32]byte { return [32]byte{} }
 
 // placeholder, TransientDB does not need this at all.

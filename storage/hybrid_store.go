@@ -43,9 +43,16 @@ func NewHybirdStore() *StoreRouter {
 	}
 }
 
+func (this *StoreRouter) Preload(data []byte) interface{} {
+	this.ethDataStore.Preload(data)
+	this.localDataStore.Preload(data)
+	return nil
+}
+
 func (this *StoreRouter) IfExists(key string) bool {
 	return this.GetStorage(key).IfExists(key)
 }
+
 func (this *StoreRouter) Inject(key string, v any) error {
 	return this.GetStorage(key).Inject(key, v)
 }
@@ -79,6 +86,7 @@ func (this *StoreRouter) BatchRetrive(keys []string, vals []any) []interface{} {
 }
 
 func (this *StoreRouter) Precommit(args ...interface{}) [32]byte {
+	this.localDataStore.Precommit(args)
 	return this.ethDataStore.Precommit(args)
 }
 

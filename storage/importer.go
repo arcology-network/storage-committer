@@ -1,4 +1,4 @@
-package importer
+package storage
 
 import (
 	common "github.com/arcology-network/common-lib/common"
@@ -6,37 +6,47 @@ import (
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/slice"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	"github.com/arcology-network/storage-committer/importer"
+	impt "github.com/arcology-network/storage-committer/importer"
 	"github.com/arcology-network/storage-committer/interfaces"
 
 	univalue "github.com/arcology-network/storage-committer/univalue"
 	"github.com/cespare/xxhash/v2"
 )
 
+// The importer is responsible for importing the transitions and organizing them into sequences based on the transaction id
 type Importer struct {
 	numThreads int
 	store      interfaces.Datastore
 	platform   interfaces.Platform
 	byTx       map[int]*[]*univalue.Univalue // Index by transaction id
-	deltaDict  *ccmap.ConcurrentMap[string, *DeltaSequence]
+	deltaDict  *ccmap.ConcurrentMap[string, *impt.DeltaSequence]
 	keyBuffer  []string      // Keys updated in the cycle
 	valBuffer  []interface{} // Value updated in the cycle
 
+	acctBuffer     []string
+	acctTranBuffer []*[]*univalue.Univalue
+	filterFunc     func(*univalue.Univalue) bool // The filter function determines if a transition should be included or ignored.
 	// seqPool *mempool.Mempool[*DeltaSequence] // Pool of sequences but very slow
 }
 
-func NewImporter(store interfaces.Datastore, platform interfaces.Platform) *Importer {
+func NewImporter(store interfaces.Datastore, platform interfaces.Platform, filterFunc func(*univalue.Univalue) bool) *Importer {
 	var importer Importer
 	importer.numThreads = 8
 	importer.store = store
 
 	importer.byTx = make(map[int]*[]*univalue.Univalue)
-	// importer.byAcct = make(map[string]*[]*univalue.Univalue)
+
+	importer.acctBuffer = []string{}
+	importer.acctTranBuffer = []*[]*univalue.Univalue{}
 
 	importer.platform = platform
-	importer.deltaDict = ccmap.NewConcurrentMap(8, func(v *DeltaSequence) bool { return v == nil }, func(k string) uint64 {
+	importer.deltaDict = ccmap.NewConcurrentMap(8, func(v *impt.DeltaSequence) bool { return v == nil }, func(k string) uint64 {
 		return xxhash.Sum64([]byte(k))
 		// return slice.Sum[uint8, uint8]([]byte(k))
 	})
+
+	importer.filterFunc = filterFunc
 
 	return &importer
 }
@@ -61,16 +71,13 @@ func (this *Importer) IfExists(key string) bool {
 // 	return this.seqPool.New().Init(k, store)
 // }
 
-// Remove entries that preexist but not available locally, it happens with a partial cache
-func (this *Importer) RemoveRemoteEntries(txTrans *[]*univalue.Univalue, commitIfAbsent bool) {
-	slice.RemoveIf(txTrans, func(_ int, univ *univalue.Univalue) bool {
+func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) []*impt.DeltaSequence {
+	commitIfAbsent := common.IfThenDo1st(len(args) > 0 && args[0] != nil, func() bool { return args[0].(bool) }, true) //Write if absent from local
+
+	//Remove entries that preexist but not available locally, it happens with a partial cache
+	slice.RemoveIf(&txTrans, func(_ int, univ *univalue.Univalue) bool {
 		return univ.Preexist() && this.store.IfExists(*univ.GetPath()) && !commitIfAbsent
 	})
-}
-
-func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) []*DeltaSequence {
-	commitIfAbsent := common.IfThenDo1st(len(args) > 0 && args[0] != nil, func() bool { return args[0].(bool) }, true) //Write if absent from local
-	this.RemoveRemoteEntries(&txTrans, commitIfAbsent)
 
 	// Create new sequences for the non-existing paths all at once.
 	missingKeys := slice.ParallelAppend(txTrans, this.numThreads, func(i int, _ *univalue.Univalue) string {
@@ -84,15 +91,15 @@ func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) 
 	// Create the missing sequences as new transitions are being added.
 	missingKeys = mapi.Keys(mapi.FromSlice(missingKeys, func(k string) bool { return true })) // Get the unique keys only by putting keys in a map
 
-	newSeqs := slice.ParallelAppend(missingKeys, this.numThreads, func(i int, k string) *DeltaSequence {
-		return NewDeltaSequence(k, this.store)
+	newSeqs := slice.ParallelAppend(missingKeys, this.numThreads, func(i int, k string) *impt.DeltaSequence {
+		return importer.NewDeltaSequence(k, this.store)
 	})
 	this.deltaDict.BatchSet(missingKeys, newSeqs)
 
 	// Update the delta dictionary with the new sequences in parallel.
 	this.deltaDict.ParallelFor(0, len(txTrans),
 		func(i int) string { return *txTrans[i].GetPath() },
-		func(i int, k string, seq *DeltaSequence, _ bool) (*DeltaSequence, bool) {
+		func(i int, k string, seq *impt.DeltaSequence, _ bool) (*impt.DeltaSequence, bool) {
 			return seq.Add(txTrans[i]), false
 		})
 
@@ -109,6 +116,19 @@ func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) 
 	})
 
 	return newSeqs
+
+	// Create an array of transactions for each account.
+	// mapi.IfNotFoundDo(this.byAcct, txTrans,
+	// 	func(univ *univalue.Univalue) string { return platform.GetAccountAddr(*univ.GetPath()) },
+	// 	func(_ string) *[]*univalue.Univalue {
+	// 		return common.New(make([]*univalue.Univalue, 0, 8))
+	// 	})
+
+	// // Add the transaction to the account's slice.
+	// slice.Foreach(txTrans, func(i int, v **univalue.Univalue) {
+	// 	tran := this.byAcct[platform.GetAccountAddr(*(*v).GetPath())]
+	// 	*tran = append(*tran, *v)
+	// })
 }
 
 // Only keep transation within the whitelist
@@ -173,5 +193,12 @@ func (this *Importer) Clear() {
 	this.deltaDict.Clear()
 	this.keyBuffer = this.keyBuffer[:0]
 	this.valBuffer = this.valBuffer[:0]
+
+	this.acctBuffer = this.acctBuffer[:0]
+	this.acctTranBuffer = this.acctTranBuffer[:0]
+	// t0 := time.Now()
+	// this.seqPool.Reset() // Very slow
+	// this.seqPool.ReclaimRecursive()
+	// fmt.Println("Reset: ", time.Since(t0))
 	this.store.Clear()
 }

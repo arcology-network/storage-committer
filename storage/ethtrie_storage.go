@@ -119,9 +119,9 @@ func NewLevelDBDataStore(dir string) *EthDataStore {
 	return NewEthDataStore(ethmpt.NewEmptyParallel(db), ethmpt.NewParallelDatabase(diskdbs, nil), diskdbs)
 }
 
-// PreloadAccount loads an existing account from the trie and the disk db.
+// Preload loads an existing account from the trie and the disk db.
 // If the account is not found, it creates a new account with default account state and shared cache.
-func (this *EthDataStore) PreloadAccount(addr []byte) *Account {
+func (this *EthDataStore) Preload(addr []byte) interface{} {
 	// AccessListCache doesn't serve any purpose for now. It is only a place holder, the parallelized trie update requires its presence.
 	acct, _ := this.GetAccount(ethcommon.BytesToAddress(addr), common.Reference(ethmpt.AccessListCache{}))
 	if acct == nil {

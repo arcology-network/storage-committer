@@ -70,6 +70,7 @@ type Datastore interface {
 	IfExists(string) bool
 	Inject(string, any) error
 	BatchInject([]string, []any) error
+	Preload([]byte) interface{}
 	Retrive(string, any) (interface{}, error)
 	RetriveFromStorage(string, any) (interface{}, error)
 	BatchRetrive([]string, []any) []interface{}
