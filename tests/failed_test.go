@@ -67,9 +67,7 @@ func TestPathReadAndWriteBatchCache(b *testing.T) {
 	committer.Commit()
 
 	for i := 0; i < len(keys); i++ {
-		v, ok := store.Cache().(*cache.ReadCache[string, interfaces.Type]).Get("blcc://eth1.0/account/" + alice + "/storage/container/ctrn-0/alice-elem-" + keys[i])
-
-		fmt.Println(store.Cache())
+		v, ok := store.Cache(nil).(*cache.ReadCache[string, interfaces.Type]).Get("blcc://eth1.0/account/" + alice + "/storage/container/ctrn-0/alice-elem-" + keys[i])
 		if typedv, _, _ := (*(v)).Get(); !ok || typedv != int64(i) {
 			b.Error("not found")
 		}
@@ -93,12 +91,11 @@ func TestPathReadAndWriteBatchCache(b *testing.T) {
 	committer.Commit()
 
 	for i := 0; i < len(keys); i++ {
-		v, ok := store.Cache().(*cache.ReadCache[string, interfaces.Type]).Get("blcc://eth1.0/account/" + alice + "/storage/container/ctrn-0/alice-elem-" + keys[i])
+		v, ok := store.Cache(nil).(*cache.ReadCache[string, interfaces.Type]).Get("blcc://eth1.0/account/" + alice + "/storage/container/ctrn-0/alice-elem-" + keys[i])
 		if typedv, _, _ := (*(v)).Get(); !ok || typedv != int64(i+9999) {
 			b.Error("not found")
 		}
 	}
-
 }
 
 func TestPathReadAndWriteBatch(b *testing.T) {

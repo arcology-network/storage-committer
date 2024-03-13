@@ -136,7 +136,7 @@ func (this *EthDataStore) PreloadAccount(addr []byte) *Account {
 }
 
 // Get the account from the cache.
-func (this *EthDataStore) Cache() interface{} { return this.cache }
+func (this *EthDataStore) Cache(any) interface{} { return this.cache }
 
 func (this *EthDataStore) AccountDict() map[ethcommon.Address]*Account { return this.accounts }
 func (this *EthDataStore) Dirties() []*AccountUpdate                   { return this.dirties }
@@ -441,15 +441,15 @@ func (this *EthDataStore) DiskDBs() [16]ethdb.Database {
 }
 
 // Place holders
-func (this *EthDataStore) Root() [32]byte                                 { return this.worldStateTrie.Hash() }
-func (this *EthDataStore) Encoder() func(string, interface{}) []byte      { return this.encoder }
-func (this *EthDataStore) Decoder() func(string, []byte, any) interface{} { return this.decoder }
-func (this *EthDataStore) EthDB() *ethmpt.Database                        { return this.ethdb }
-func (this *EthDataStore) Trie() *ethmpt.Trie                             { return this.worldStateTrie }
-func (this *EthDataStore) UpdateCacheStats([]interface{})                 {}
-func (this *EthDataStore) GetRootHash() [32]byte                          { return this.worldStateTrie.Hash() }
-func (this *EthDataStore) Print()                                         {}
-func (this *EthDataStore) CheckSum() [32]byte                             { return [32]byte{} }
+func (this *EthDataStore) Root() [32]byte                                    { return this.worldStateTrie.Hash() }
+func (this *EthDataStore) Encoder(any) func(string, interface{}) []byte      { return this.encoder }
+func (this *EthDataStore) Decoder(any) func(string, []byte, any) interface{} { return this.decoder }
+func (this *EthDataStore) EthDB() *ethmpt.Database                           { return this.ethdb }
+func (this *EthDataStore) Trie() *ethmpt.Trie                                { return this.worldStateTrie }
+func (this *EthDataStore) UpdateCacheStats([]interface{})                    {}
+func (this *EthDataStore) GetRootHash() [32]byte                             { return this.worldStateTrie.Hash() }
+func (this *EthDataStore) Print()                                            {}
+func (this *EthDataStore) CheckSum() [32]byte                                { return [32]byte{} }
 func (this *EthDataStore) Query(string, func(string, string) bool) ([]string, [][]byte, error) {
 	return nil, nil, nil
 }

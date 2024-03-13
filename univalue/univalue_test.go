@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/arcology-network/common-lib/addrcompressor"
-	set "github.com/arcology-network/common-lib/container/set"
+	orderedset "github.com/arcology-network/common-lib/exp/orderedset"
 	"github.com/arcology-network/common-lib/exp/slice"
 	commutative "github.com/arcology-network/storage-committer/commutative"
 	intf "github.com/arcology-network/storage-committer/interfaces"
@@ -105,7 +105,7 @@ func TestUnivalueCodeMeta(t *testing.T) {
 	out := (&Univalue{}).Decode(bytes).(*Univalue)
 	outKeys, _, _ := out.Value().(intf.Type).Get()
 
-	if !slice.EqualSet(inKeys.(*set.OrderedSet).Keys(), outKeys.(*set.OrderedSet).Keys()) {
+	if !slice.EqualSet(inKeys.(*orderedset.OrderedSet[string]).Elements(), outKeys.(*orderedset.OrderedSet[string]).Elements()) {
 		t.Error("Error")
 	}
 }
