@@ -120,3 +120,8 @@ func GetPathUnder(key, prefix string) string {
 	}
 	return ""
 }
+
+// Get ths builtin paths
+func IsEthPath(path string) bool {
+	return !strings.Contains(path, "/container/")
+}
