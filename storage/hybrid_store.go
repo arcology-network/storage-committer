@@ -43,10 +43,13 @@ func NewHybirdStore() *StoreRouter {
 	}
 }
 
+func (this *StoreRouter) EthStore() *EthDataStore       { return this.ethDataStore }   // Eth storage
+func (this *StoreRouter) CCStore() *datastore.DataStore { return this.localDataStore } // Arcology storage
+
 func (this *StoreRouter) Preload(data []byte) interface{} {
-	this.ethDataStore.Preload(data)
-	this.localDataStore.Preload(data)
-	return nil
+	return this.ethDataStore.Preload(data)
+	// this.localDataStore.Preload(data)
+	// return nil
 }
 
 func (this *StoreRouter) IfExists(key string) bool {

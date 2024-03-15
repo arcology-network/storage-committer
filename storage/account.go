@@ -277,7 +277,20 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Typ
 }
 
 // Write the account changes to theirs Eth Trie
-func (this *Account) ApplyAccounts(updates *AccountUpdate) ([]string, []interfaces.Type) {
+func (this *Account) ApplyChangesV2(transitions [][]*univalue.Univalue, getter func([]*univalue.Univalue) (string, interfaces.Type)) ([]string, []interfaces.Type) {
+	keys := make([]string, len(transitions))
+	typedVals := slice.Transform(transitions, func(i int, vals []*univalue.Univalue) interfaces.Type {
+		_, v := getter(vals)
+		keys[i] = *vals[i].GetPath()
+		return v
+	})
+
+	this.err = this.UpdateAccountTrie(keys, typedVals)
+	return keys, typedVals
+}
+
+// Write the account changes to theirs Eth Trie
+func (this *Account) ApplyChanges(updates *AccountUpdate) ([]string, []interfaces.Type) {
 	keys, typedVals := make([]string, len(updates.Seqs)), make([]interfaces.Type, len(updates.Seqs))
 	slice.Foreach(updates.Seqs, func(i int, seq **importer.DeltaSequence) {
 		keys[i] = *((*seq).Finalized.GetPath())
@@ -290,15 +303,15 @@ func (this *Account) ApplyAccounts(updates *AccountUpdate) ([]string, []interfac
 	return keys, typedVals
 }
 
-func (this *Account) Precommit(keys []string, values []interface{}) {
-	this.err = this.UpdateAccountTrie(keys, slice.Append(values,
-		func(_ int, v interface{}) interfaces.Type {
-			if v.(*univalue.Univalue).Value() != nil {
-				return v.(*univalue.Univalue).Value().(interfaces.Type)
-			}
-			return nil
-		}))
-}
+// func (this *Account) Precommit(keys []string, values []interface{}) {
+// 	this.err = this.UpdateAccount(keys, slice.Append(values,
+// 		func(_ int, v interface{}) interfaces.Type {
+// 			if v.(*univalue.Univalue).Value() != nil {
+// 				return v.(*univalue.Univalue).Value().(interfaces.Type)
+// 			}
+// 			return nil
+// 		}))
+// }
 
 func (this *Account) Encode() []byte {
 	encoded, _ := rlp.EncodeToBytes(&this.StateAccount)

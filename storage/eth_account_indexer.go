@@ -78,7 +78,7 @@ func (this *AccountIndexer) Add(transitionSets ...[]*importer.DeltaSequence) {
 func (this *AccountIndexer) Updates() []*AccountUpdate {
 	acctUpdates := this.dict.Elements()
 	slice.ParallelForeach(acctUpdates, runtime.NumCPU(), func(i int, update **AccountUpdate) {
-		slice.RemoveIf[*importer.DeltaSequence](&(*update).Seqs, func(i int, seq *importer.DeltaSequence) bool {
+		slice.RemoveIf(&(*update).Seqs, func(i int, seq *importer.DeltaSequence) bool {
 			return seq.Finalized == nil
 		})
 	})

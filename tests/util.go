@@ -32,6 +32,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	rlp "github.com/ethereum/go-ethereum/rlp"
 	"golang.org/x/crypto/sha3"
+	"golang.org/x/exp/constraints"
 )
 
 func RandomAccount() string {
@@ -81,12 +82,12 @@ func rlpEncoder(args ...interface{}) []byte {
 	return encoded
 }
 
-func RandomKey[T ~int | uint64](seed T) string {
+func RandomKey[T constraints.Integer](seed T) string {
 	buf := sha3.Sum256([]byte(fmt.Sprint(seed)))
 	return hexutil.Encode(buf[:20])
 }
 
-func RandomKeys[T ~int | uint64](s0, s1 T) []string {
+func RandomKeys[T constraints.Integer](s0, s1 T) []string {
 	keys := make([]string, s1-s0)
 	for i := range keys {
 		keys[i] = RandomKey(s0 + T(i))

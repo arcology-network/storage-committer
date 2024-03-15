@@ -17,39 +17,52 @@
 package storagecommitter
 
 import (
+	"sync"
+
 	"github.com/arcology-network/common-lib/exp/orderedmap"
 
 	interfaces "github.com/arcology-network/storage-committer/interfaces"
 )
 
-type Indexer[K comparable, T any] struct {
+type Indexer[K comparable, T, V any] struct {
+	*orderedmap.OrderedMap[K, T, V]
 	store    interfaces.Datastore
-	index    *orderedmap.OrderedMap[K, T, []T]
+	lock     sync.Mutex
 	ifAccept func(T) (K, bool)
 }
 
-func NewIndexer[K comparable, T any](store interfaces.Datastore, ifAccept func(T) (K, bool)) *Indexer[K, T] {
-	return &Indexer[K, T]{
+func NewIndexer[K comparable, T, V any](store interfaces.Datastore,
+	ifAccept func(T) (K, bool),
+	nilValue V,
+	init func(K, T) V,
+	setter func(K, T, *V)) *Indexer[K, T, V] {
+	return &Indexer[K, T, V]{
 		store:    store,
 		ifAccept: ifAccept,
 
-		index: orderedmap.NewOrderedMap[K, T, []T](
-			nil,
+		OrderedMap: orderedmap.NewOrderedMap[K, T, V](
+			nilValue,
 			1024,
-			func(k K, v T) []T {
-				return []T{v}
-			},
-			func(k K, v T, seq *[]T) {
-				*seq = append(*seq, v)
-			}),
+			init,
+			setter,
+		),
 	}
 }
 
 // New creates a new StateCommitter instance.
-func (this *Indexer[K, T]) Import(transitions []T) {
-	for _, v := range transitions {
-		if k, ok := this.ifAccept(v); ok {
-			this.index.Set(k, v)
+func (this *Indexer[K, T, V]) Add(transitions []T) {
+	this.lock.Lock()
+	defer this.lock.Unlock()
+
+	for _, t := range transitions {
+		if k, ok := this.ifAccept(t); ok {
+			this.Set(k, t)
 		}
 	}
 }
+
+func (this *Indexer[K, T, V]) ParallelForeachDo(do func(k K, v V)) {
+	this.OrderedMap.ParallelForeachDo(do)
+}
+func (this *Indexer[K, T, V]) ForeachDo(do func(k K, v V)) { this.OrderedMap.ForeachDo(do) }
+func (this *Indexer[K, T, V]) Clear()                      { this.OrderedMap.Clear() }

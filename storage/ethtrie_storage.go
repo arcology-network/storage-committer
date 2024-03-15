@@ -10,11 +10,13 @@ import (
 	common "github.com/arcology-network/common-lib/common"
 	"github.com/cespare/xxhash/v2"
 
+	"github.com/arcology-network/common-lib/exp/associative"
 	"github.com/arcology-network/common-lib/exp/slice"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/interfaces"
 	intf "github.com/arcology-network/storage-committer/interfaces"
 	platform "github.com/arcology-network/storage-committer/platform"
+	"github.com/arcology-network/storage-committer/univalue"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/rawdb"
@@ -34,13 +36,18 @@ import (
 type EthDataStore struct {
 	worldStateTrie *ethmpt.Trie
 
-	accounts  map[ethcommon.Address]*Account // Account cache holds the accounts that are being accessed in the current cycle.
-	dirties   []*AccountUpdate               // Dirty accounts are the accounts that have been updated in the current cycle.
-	dirtyKeys [][]string                     // Dirty accounts are the accounts that have been updated in the current cycle.
-	dirtyVals [][]interfaces.Type
-	ethdb     *ethmpt.Database
-	diskdbs   [16]ethdb.Database
-	cache     *cache.ReadCache[string, intf.Type]
+	accountCache map[ethcommon.Address]*Account // Account cache holds the accountCache that are being accessed in the current cycle.
+
+	dirties       []*AccountUpdate // Dirty accountCache are the accountCache that have been updated in the current cycle.
+	dirtyAccounts []*associative.Pair[*Account, *[]*univalue.Univalue]
+
+	dirtyVals [][]interfaces.Type // Dirty accountCache are the accountCache that have been updated in the current cycle.
+	dirtyKeys [][]string          // Dirty accountCache are the accountCache that have been updated in the current cycle.
+
+	ethdb    *ethmpt.Database
+	diskdbs  [16]ethdb.Database
+	cache    *cache.ReadCache[string, intf.Type]
+	useCache bool
 
 	encoder func(string, interface{}) []byte
 	decoder func(string, []byte, any) interface{}
@@ -74,13 +81,13 @@ func NewEthDataStore(trie *ethmpt.Trie, triedb *ethmpt.Database, diskdb [16]ethd
 		diskdbs:      diskdb,
 		trieDbConfig: trieDbConfig,
 		encodedCache: fastcache.New(trieDbConfig.CleanCacheSize),
-		accounts:     map[ethcommon.Address]*Account{},
+		accountCache: map[ethcommon.Address]*Account{},
 		cache: cache.NewReadCache[string, intf.Type](
 			4096, // 4096 shards to avoid lock contention
 			func(k string) uint64 { return xxhash.Sum64String(k) },
 			"",
 		),
-
+		useCache:       true,
 		worldStateTrie: trie,
 		encoder:        Rlp{}.Encode,
 		decoder:        Rlp{}.Decode,
@@ -119,6 +126,9 @@ func NewLevelDBDataStore(dir string) *EthDataStore {
 	return NewEthDataStore(ethmpt.NewEmptyParallel(db), ethmpt.NewParallelDatabase(diskdbs, nil), diskdbs)
 }
 
+func (this *EthDataStore) SetCacheStatus(useCache bool) { this.useCache = useCache }
+func (this *EthDataStore) ClearCache()                  { this.cache.Clear() }
+
 // Preload loads an existing account from the trie and the disk db.
 // If the account is not found, it creates a new account with default account state and shared cache.
 func (this *EthDataStore) Preload(addr []byte) interface{} {
@@ -138,7 +148,7 @@ func (this *EthDataStore) Preload(addr []byte) interface{} {
 // Get the account from the cache.
 func (this *EthDataStore) Cache(any) interface{} { return this.cache }
 
-func (this *EthDataStore) AccountDict() map[ethcommon.Address]*Account { return this.accounts }
+func (this *EthDataStore) AccountDict() map[ethcommon.Address]*Account { return this.accountCache }
 func (this *EthDataStore) Dirties() []*AccountUpdate                   { return this.dirties }
 func (this *EthDataStore) Clear()                                      {}
 
@@ -201,7 +211,7 @@ func (this *EthDataStore) IfExists(key string) bool {
 
 	address := ethcommon.BytesToAddress(acctBytes)
 	// address := ethcommon.BytesToAddress([]byte(accountKey))
-	if v, _ := this.accounts[address]; v != nil {
+	if v := this.accountCache[address]; v != nil {
 		return len(key) == stgcommcommon.ETH10_ACCOUNT_FULL_LENGTH+1 || v.Has(key) // If the account has the key
 	}
 
@@ -239,18 +249,18 @@ func (this *EthDataStore) BatchInject(keys []string, values []interface{}) error
 
 		address := ethcommon.BytesToAddress(hexutil.MustDecode(acctKey))
 		// address := ethcommon.BytesToAddress([]byte(acctKey))
-		account, ok := this.accounts[address]
+		account, ok := this.accountCache[address]
 		// if account != nil {
 		// 	account = account.(*Account)
 		// }
 
-		// if v := common.FilterFirst(this.accounts[address]); v != nil {
-		// 	account = this.accounts[address]
+		// if v := common.FilterFirst(this.accountCache[address]); v != nil {
+		// 	account = this.accountCache[address]
 		// }
 
 		if !ok {
 			account = NewAccount(address, this.diskdbs, EmptyAccountState()) // empty account
-			this.accounts[address] = account
+			this.accountCache[address] = account
 		}
 
 		// v := values[i]
@@ -262,8 +272,8 @@ func (this *EthDataStore) BatchInject(keys []string, values []interface{}) error
 		acctDict[acctKey] = account
 	}
 
-	acctKeys, accounts := common.MapKVs(acctDict)
-	slice.Foreach(accounts, func(i int, acct **Account) {
+	acctKeys, accountCache := common.MapKVs(acctDict)
+	slice.Foreach(accountCache, func(i int, acct **Account) {
 		this.worldStateTrie.Update([]byte(acctKeys[i]), (**acct).Encode())
 	})
 
@@ -273,7 +283,7 @@ func (this *EthDataStore) BatchInject(keys []string, values []interface{}) error
 // Get the account from the cache first, if not found, get it from the trie.
 func (this *EthDataStore) GetAccount(address ethcommon.Address, accesses *ethmpt.AccessListCache) (*Account, error) {
 	if len(address) > 0 {
-		if v, _ := this.accounts[address]; v != nil { // Lookup in the cache first
+		if v, _ := this.accountCache[address]; v != nil { // Lookup in the cache first
 			return v, nil
 		}
 		return this.GetAccountFromTrie(address, accesses)
@@ -309,9 +319,9 @@ func (this *EthDataStore) GetAccountFromTrie(address ethcommon.Address, accesses
 }
 
 func (this *EthDataStore) Retrive(key string, T any) (interface{}, error) {
-	// if v, ok := this.cache.Get(key); ok {
-	// 	return *v, nil
-	// }
+	if v, ok := this.cache.Get(key); ok {
+		return *v, nil
+	}
 	return this.RetriveFromStorage(key, T)
 }
 
@@ -349,17 +359,16 @@ func (this *EthDataStore) Precommit(updates ...interface{}) [32]byte {
 		return this.worldStateTrie.Hash()
 	}
 
-	// Precommit the changes to the accounts and update the account storage trie.
+	// Precommit the changes to the accountCache and update the account storage trie.
 	slice.Resize(&this.dirtyKeys, len(this.dirties))
 	slice.Resize(&this.dirtyVals, len(this.dirties))
 	slice.ParallelForeach(this.dirties, 16, func(idx int, acct **AccountUpdate) {
-		this.dirtyKeys[idx], this.dirtyVals[idx] = ((*acct).Acct).ApplyAccounts(*acct)
-
+		this.dirtyKeys[idx], this.dirtyVals[idx] = ((*acct).Acct).ApplyChanges(*acct)
 	})
 
 	// Update the to account cache.
 	slice.Foreach(this.dirties, func(_ int, acct **AccountUpdate) {
-		this.accounts[(*acct).Acct.addr] = (*acct).Acct
+		this.accountCache[(*acct).Acct.addr] = (*acct).Acct
 	})
 
 	// Encode the account addresses.
@@ -378,7 +387,7 @@ func (this *EthDataStore) Precommit(updates ...interface{}) [32]byte {
 	)
 
 	// Write the world tree and return the first error if any.
-	errs := this.worldStateTrie.ParallelUpdate(encodedAddrs, encodedVals) // Encoded accounts
+	errs := this.worldStateTrie.ParallelUpdate(encodedAddrs, encodedVals) // Encoded accountCache
 	if _, err := slice.FindFirstIf(errs, func(err error) bool { return err != nil }); err != nil {
 		panic("Error in updating the trie: " + (*err).Error())
 	}
@@ -401,9 +410,12 @@ func (this *EthDataStore) Commit(blockNum uint64) error {
 	return err
 }
 
+// Update the object cache.
 func (this *EthDataStore) RefreshCache(blockNum uint64) {
-	// this.cache.Update(slice.Flatten(this.dirtyKeys), slice.Flatten(this.dirtyVals))
-	this.cache.Commit(slice.Flatten(this.dirtyKeys), slice.Flatten(this.dirtyVals))
+	if this.useCache {
+		this.cache.Commit(slice.Flatten(this.dirtyKeys), slice.Flatten(this.dirtyVals))
+	}
+
 	this.dirties = this.dirties[:0]
 	this.dirtyKeys = this.dirtyKeys[:0] // Reset the dirties buffer
 	this.dirtyVals = this.dirtyVals[:0]

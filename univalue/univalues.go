@@ -8,6 +8,7 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/slice"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	intf "github.com/arcology-network/storage-committer/interfaces"
 )
 
 type Univalues []*Univalue
@@ -46,6 +47,24 @@ func (this Univalues) Keys() []string {
 		keys[i] = *v.GetPath()
 	}
 	return keys
+}
+
+func (this Univalues) Values() []intf.Type {
+	vals := make([]intf.Type, len(this))
+	for i, v := range this {
+		vals[i] = v.Value().(intf.Type)
+	}
+	return vals
+}
+
+func (this Univalues) KVs() ([]string, []intf.Type) {
+	keys := make([]string, len(this))
+	vals := make([]intf.Type, len(this))
+	for i, v := range this {
+		keys[i] = *v.GetPath()
+		vals[i] = v.Value().(intf.Type)
+	}
+	return keys, vals
 }
 
 // For debug only
