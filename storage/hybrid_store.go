@@ -26,6 +26,7 @@ import (
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/slice"
 	datastore "github.com/arcology-network/common-lib/storage/datastore"
+	memdb "github.com/arcology-network/common-lib/storage/memdb"
 	intf "github.com/arcology-network/storage-committer/interfaces"
 	platform "github.com/arcology-network/storage-committer/platform"
 	"github.com/cespare/xxhash/v2"
@@ -50,15 +51,16 @@ func NewHybirdStore() *StoreRouter {
 		ethDataStore: NewParallelEthMemDataStore(),
 		ccDataStore: datastore.NewDataStore(
 			nil,
-			nil,
-			nil,
+			datastore.NewCachePolicy(0, 1),
+			memdb.NewMemoryDB(),
 			platform.Codec{}.Encode, platform.Codec{}.Decode),
 	}
 }
 
-func (this *StoreRouter) Cache(any) interface{}     { return this.cache }
-func (this *StoreRouter) ActivateCache(active bool) { this.cacheActive = active }
-func (this *StoreRouter) ClearCache()               { this.cache.Clear() }
+func (this *StoreRouter) Cache(any) interface{} { return this.cache }
+func (this *StoreRouter) EnableCache()          { this.cacheActive = true }
+func (this *StoreRouter) DisableCache()         { this.cacheActive = false }
+func (this *StoreRouter) ClearCache()           { this.cache.Clear() }
 
 func (this *StoreRouter) EthStore() *EthDataStore       { return this.ethDataStore } // Eth storage
 func (this *StoreRouter) CCStore() *datastore.DataStore { return this.ccDataStore }  // Arcology storage

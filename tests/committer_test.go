@@ -46,12 +46,12 @@ func TestSize(t *testing.T) {
 	}
 
 	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path)); v == nil {
-		t.Error("Error: The path should exists")
+		t.Error("Error: The path should exist")
 	}
 
 	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/ele0", new(noncommutative.String))
 	if v == nil || v.(string) != "124" {
-		t.Error("Error: The path should exists")
+		t.Error("Error: The path should exist")
 	}
 
 	raw := writeCache.Export(importer.Sorter)
@@ -66,7 +66,7 @@ func TestSize(t *testing.T) {
 
 	outV, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/ele1", new(noncommutative.Bytes))
 	if !bytes.Equal(outV.([]byte), slice.New[byte](320, 11)) {
-		t.Error("Error: The path should exists")
+		t.Error("Error: The path should exist")
 	}
 }
 
@@ -159,7 +159,7 @@ func TestAddThenDeletePath(t *testing.T) {
 
 	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
 	if v == nil {
-		t.Error("Error: The path should exists")
+		t.Error("Error: The path should exist")
 	}
 
 	committer.Init(store)
@@ -219,7 +219,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 
 	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
 	if v == nil {
-		t.Error("Error: The path should exists")
+		t.Error("Error: The path should exist")
 	}
 
 	committer.Init(store)

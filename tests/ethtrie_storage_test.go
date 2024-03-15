@@ -347,7 +347,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 	writeCache.Reset(writeCache)
 	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", &commutative.Path{})
 	if v == nil {
-		t.Error("Error: The path should exists")
+		t.Error("Error: The path should exist")
 	}
 
 	committer.Init(store)

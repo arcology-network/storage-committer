@@ -33,22 +33,24 @@ import (
 	univalue "github.com/arcology-network/storage-committer/univalue"
 )
 
-func TestNewCommitter(t *testing.T) {
-	// store := chooseDataStore()
+func CommitterCache(flag bool, t *testing.T) {
 	store := storage.NewHybirdStore()
+	if flag {
+		store.EnableCache()
+	} else {
+		store.DisableCache()
+	}
 
 	alice := AliceAccount()
 	committer := stgcommitter.NewStorageCommitterV2(store)
+
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 
-	raw := writeCache.Export(importer.Sorter)
-	acctTrans := univalue.Univalues(slice.Clone(raw)).To(importer.IPTransition{})
-
-	committer.Import(acctTrans)
-	committer.Precommit([]uint32{1})
+	committer.Import(acctTrans).Precommit([]uint32{1})
 	committer.Commit(1)
 	committer.Clear()
 	writeCache.Reset(writeCache)
@@ -56,30 +58,59 @@ func TestNewCommitter(t *testing.T) {
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(0), noncommutative.NewBytes([]byte{1, 2, 3})); err != nil {
 		t.Error(err)
 	}
-
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(1), noncommutative.NewBytes([]byte{2, 2, 3})); err != nil {
 		t.Error(err)
 	}
-
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), noncommutative.NewBytes([]byte{199, 45, 67})); err != nil {
 		t.Error(err)
 	}
+	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 
-	raw = writeCache.Export(importer.Sorter)
-	acctTrans = univalue.Univalues(slice.Clone(raw)).To(importer.IPTransition{})
-
-	committer.Import(acctTrans)
-	committer.Precommit([]uint32{1})
+	// committer.Import(acctTrans)
+	committer.Import(acctTrans).Precommit([]uint32{1})
 	committer.Commit(2).Clear()
 	writeCache.Reset(writeCache)
 
 	outV, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(0), new(noncommutative.Bytes))
 	if outV == nil || !bytes.Equal(outV.([]byte), []byte{1, 2, 3}) {
-		t.Error("Error: The path should exists", outV)
+		t.Error("Error: The path should exist", outV)
 	}
 
 	outV, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(1), new(noncommutative.Bytes))
 	if outV == nil || !bytes.Equal(outV.([]byte), []byte{2, 2, 3}) {
-		t.Error("Error: The path should exists", outV)
+		t.Error("Error: The path should exist", outV)
 	}
+
+	outV, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), new(noncommutative.Bytes))
+	if outV == nil || !bytes.Equal(outV.([]byte), []byte{199, 45, 67}) {
+		t.Error("Error: The path should exist", outV)
+	}
+
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), noncommutative.NewBytes([]byte{199, 199, 199})); err != nil {
+		t.Error(err)
+	}
+
+	outV, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), new(noncommutative.Bytes))
+	if outV == nil || !bytes.Equal(outV.([]byte), []byte{199, 199, 199}) {
+		t.Error("Error: The path should exist", outV)
+	}
+
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), nil); err != nil {
+		t.Error(err)
+	}
+
+	outV, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), new(noncommutative.Bytes))
+	if outV != nil {
+		t.Error("Error: The path should not exist", outV)
+	}
+
+	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
+	committer.Import(acctTrans).Precommit([]uint32{1})
+	committer.Commit(2).Clear()
+	writeCache.Reset(writeCache)
+}
+
+func TestNewCommitterWithoutCache(t *testing.T) {
+	CommitterCache(false, t)
+	CommitterCache(true, t)
 }

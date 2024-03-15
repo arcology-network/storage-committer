@@ -189,7 +189,10 @@ func (this *StateCommitterV2) Precommit(txs []uint32) [32]byte {
 func (this *StateCommitterV2) Commit(blockNum uint64) *StateCommitterV2 {
 	keys := this.byPath.Keys()
 	typedVals := slice.Transform(this.byPath.Values(), func(_ int, v []*univalue.Univalue) intf.Type {
-		return v[0].Value().(intf.Type)
+		if v[0].Value() != nil {
+			return v[0].Value().(intf.Type)
+		}
+		return nil
 	})
 
 	this.Store().(*storage.StoreRouter).RefreshCache(blockNum, keys, typedVals) // Update the cache

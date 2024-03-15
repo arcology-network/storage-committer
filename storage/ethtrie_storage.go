@@ -126,8 +126,8 @@ func NewLevelDBDataStore(dir string) *EthDataStore {
 	return NewEthDataStore(ethmpt.NewEmptyParallel(db), ethmpt.NewParallelDatabase(diskdbs, nil), diskdbs)
 }
 
-func (this *EthDataStore) ActivateCache(active bool) { this.cacheActive = active }
-func (this *EthDataStore) ClearCache()               { this.cache.Clear() }
+func (this *EthDataStore) EnableCache(active bool) { this.cacheActive = active }
+func (this *EthDataStore) ClearCache()             { this.cache.Clear() }
 
 // Preload loads an existing account from the trie and the disk db.
 // If the account is not found, it creates a new account with default account state and shared cache.
