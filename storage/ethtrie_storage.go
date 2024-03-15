@@ -39,15 +39,15 @@ type EthDataStore struct {
 	accountCache map[ethcommon.Address]*Account // Account cache holds the accountCache that are being accessed in the current cycle.
 
 	dirties       []*AccountUpdate // Dirty accountCache are the accountCache that have been updated in the current cycle.
-	dirtyAccounts []*associative.Pair[*Account, *[]*univalue.Univalue]
+	dirtyAccounts []*associative.Pair[*Account, []*univalue.Univalue]
 
 	dirtyVals [][]interfaces.Type // Dirty accountCache are the accountCache that have been updated in the current cycle.
 	dirtyKeys [][]string          // Dirty accountCache are the accountCache that have been updated in the current cycle.
 
-	ethdb    *ethmpt.Database
-	diskdbs  [16]ethdb.Database
-	cache    *cache.ReadCache[string, intf.Type]
-	useCache bool
+	ethdb       *ethmpt.Database
+	diskdbs     [16]ethdb.Database
+	cache       *cache.ReadCache[string, intf.Type]
+	cacheActive bool
 
 	encoder func(string, interface{}) []byte
 	decoder func(string, []byte, any) interface{}
@@ -85,9 +85,9 @@ func NewEthDataStore(trie *ethmpt.Trie, triedb *ethmpt.Database, diskdb [16]ethd
 		cache: cache.NewReadCache[string, intf.Type](
 			4096, // 4096 shards to avoid lock contention
 			func(k string) uint64 { return xxhash.Sum64String(k) },
-			"",
+			func(v intf.Type) bool { return v == nil },
 		),
-		useCache:       true,
+		cacheActive:    true,
 		worldStateTrie: trie,
 		encoder:        Rlp{}.Encode,
 		decoder:        Rlp{}.Decode,
@@ -126,8 +126,8 @@ func NewLevelDBDataStore(dir string) *EthDataStore {
 	return NewEthDataStore(ethmpt.NewEmptyParallel(db), ethmpt.NewParallelDatabase(diskdbs, nil), diskdbs)
 }
 
-func (this *EthDataStore) SetCacheStatus(useCache bool) { this.useCache = useCache }
-func (this *EthDataStore) ClearCache()                  { this.cache.Clear() }
+func (this *EthDataStore) ActivateCache(active bool) { this.cacheActive = active }
+func (this *EthDataStore) ClearCache()               { this.cache.Clear() }
 
 // Preload loads an existing account from the trie and the disk db.
 // If the account is not found, it creates a new account with default account state and shared cache.
@@ -412,7 +412,7 @@ func (this *EthDataStore) Commit(blockNum uint64) error {
 
 // Update the object cache.
 func (this *EthDataStore) RefreshCache(blockNum uint64) {
-	if this.useCache {
+	if this.cacheActive {
 		this.cache.Commit(slice.Flatten(this.dirtyKeys), slice.Flatten(this.dirtyVals))
 	}
 

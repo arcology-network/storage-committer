@@ -28,7 +28,7 @@ type Indexer[K comparable, T, V any] struct {
 	*orderedmap.OrderedMap[K, T, V]
 	store    interfaces.Datastore
 	lock     sync.Mutex
-	ifAccept func(T) (K, bool)
+	ifAccept func(T) (K, bool) // If the transition is accepted and the key is returned. An index is only supposed to index the accepted transitions.
 }
 
 func NewIndexer[K comparable, T, V any](store interfaces.Datastore,

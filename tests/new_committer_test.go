@@ -19,7 +19,6 @@ package committertest
 
 import (
 	"bytes"
-	"fmt"
 	"testing"
 
 	cache "github.com/arcology-network/eu/cache"
@@ -50,7 +49,7 @@ func TestNewCommitter(t *testing.T) {
 
 	committer.Import(acctTrans)
 	committer.Precommit([]uint32{1})
-	committer.Commit().Clear()
+	committer.Commit(1)
 	committer.Clear()
 	writeCache.Reset(writeCache)
 
@@ -71,7 +70,7 @@ func TestNewCommitter(t *testing.T) {
 
 	committer.Import(acctTrans)
 	committer.Precommit([]uint32{1})
-	committer.Commit().Clear()
+	committer.Commit(2).Clear()
 	writeCache.Reset(writeCache)
 
 	outV, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(0), new(noncommutative.Bytes))
@@ -83,16 +82,4 @@ func TestNewCommitter(t *testing.T) {
 	if outV == nil || !bytes.Equal(outV.([]byte), []byte{2, 2, 3}) {
 		t.Error("Error: The path should exists", outV)
 	}
-
-	arr := [][]int{
-		{1, 2, 3},
-		{4, 5, 6},
-	}
-
-	remover := func(arr [][]int) {
-		arr[0] = arr[0][:0]
-	}
-	fmt.Println(arr)
-	remover(arr)
-	fmt.Println(arr)
 }

@@ -30,37 +30,35 @@ import (
 
 // Precommit update the account state tries and the world state trie.
 // It returns the hash of the world state trie.
-func (this *EthDataStore) PrecommitV2(arg []*associative.Pair[*Account, *[]*univalue.Univalue]) [32]byte {
+func (this *EthDataStore) PrecommitV2(arg []*associative.Pair[*Account, []*univalue.Univalue]) [32]byte {
 	this.dirtyAccounts = arg
 	if len(this.dirtyAccounts) == 0 {
 		return this.worldStateTrie.Hash() // No updates
 	}
 
 	// Need to check if this is necessary or could be moved to the import phase
-	slice.Foreach(this.dirtyAccounts, func(_ int, pair **associative.Pair[*Account, *[]*univalue.Univalue]) {
+	slice.Foreach(this.dirtyAccounts, func(_ int, pair **associative.Pair[*Account, []*univalue.Univalue]) {
 		this.accountCache[(**pair).First.Address()] = (**pair).First // Add the account to the cache
 	})
 
-	slice.Resize(&this.dirtyKeys, len(this.dirtyAccounts))
-	slice.Resize(&this.dirtyVals, len(this.dirtyAccounts))
-	slice.ParallelForeach(this.dirtyAccounts, runtime.NumCPU(), func(i int, account **associative.Pair[*Account, *[]*univalue.Univalue]) {
-		keys, vals := univalue.Univalues(*(**account).Second).KVs() // Get all transitions under the same account
-		(**account).First.UpdateAccountTrie(keys, vals)             // Update the account trie with the transitions
+	slice.ParallelForeach(this.dirtyAccounts, runtime.NumCPU(), func(i int, account **associative.Pair[*Account, []*univalue.Univalue]) {
+		keys, vals := univalue.Univalues((**account).Second).KVs() // Get all transitions under the same account
+		(**account).First.UpdateAccountTrie(keys, vals)            // Update the account trie with the transitions
 	})
 	return this.WriteWorldTrie(this.dirtyAccounts)
 }
 
 // The WriteWorldTrie writes the updated accounts to the world trie.
-func (this *EthDataStore) WriteWorldTrie(dirtyAccounts []*associative.Pair[*Account, *[]*univalue.Univalue]) [32]byte {
+func (this *EthDataStore) WriteWorldTrie(dirtyAccounts []*associative.Pair[*Account, []*univalue.Univalue]) [32]byte {
 	encodedAddrs, encodedAcct := [][]byte{}, [][]byte{} // Encode the account key and values
 	common.ParallelExecute(
 		func() { // Account keys
-			encodedAddrs = slice.Append(dirtyAccounts, func(_ int, update *associative.Pair[*Account, *[]*univalue.Univalue]) []byte {
+			encodedAddrs = slice.Append(dirtyAccounts, func(_ int, update *associative.Pair[*Account, []*univalue.Univalue]) []byte {
 				return crypto.Keccak256(update.First.addr[:]) // Hash the account address
 			})
 		},
 		func() { // Encode the account content.
-			encodedAcct = slice.Append(dirtyAccounts, func(_ int, update *associative.Pair[*Account, *[]*univalue.Univalue]) []byte {
+			encodedAcct = slice.Append(dirtyAccounts, func(_ int, update *associative.Pair[*Account, []*univalue.Univalue]) []byte {
 				return update.First.Encode() // Encode the account
 			})
 		},

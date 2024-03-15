@@ -32,7 +32,7 @@ func (this *StoreRouter) GetStorage(key string) intf.Datastore {
 	if !strings.Contains(key, "/container") {
 		return this.ethDataStore
 	}
-	return this.localDataStore
+	return this.ccDataStore
 }
 
 func (this *StoreRouter) FilterLocalByType(vals *[]*univalue.Univalue) ([]*univalue.Univalue, []*univalue.Univalue) {
