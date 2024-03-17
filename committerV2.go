@@ -48,7 +48,7 @@ type StateCommitterV2 struct {
 }
 
 // NewStorageCommitter creates a new StateCommitterV2 instance.
-func NewStorageCommitterV2(store interfaces.Datastore) *StateCommitterV2 {
+func NewStorageCommitter(store interfaces.Datastore) *StateCommitterV2 {
 	plat := platform.NewPlatform()
 
 	return &StateCommitterV2{
@@ -130,7 +130,8 @@ func (this *StateCommitterV2) New(args ...interface{}) *StateCommitterV2 {
 }
 
 // Importer returns the importer of the StateCommitterV2.
-func (this *StateCommitterV2) Store() interfaces.Datastore { return this.store }
+func (this *StateCommitterV2) Store() interfaces.Datastore     { return this.store }
+func (this *StateCommitterV2) Init(store interfaces.Datastore) {}
 
 // Init initializes the StateCommitterV2 with the given datastore.
 // func (this *StateCommitterV2) Init(store interfaces.Datastore) {

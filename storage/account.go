@@ -290,7 +290,7 @@ func (this *Account) ApplyChangesV2(transitions [][]*univalue.Univalue, getter f
 }
 
 // Write the account changes to theirs Eth Trie
-func (this *Account) ApplyChanges(updates *AccountUpdate) ([]string, []interfaces.Type) {
+func (this *Account) PrecommitAcctStorage(updates *AccountUpdate) ([]string, []interfaces.Type) {
 	keys, typedVals := make([]string, len(updates.Seqs)), make([]interfaces.Type, len(updates.Seqs))
 	slice.Foreach(updates.Seqs, func(i int, seq **importer.DeltaSequence) {
 		keys[i] = *((*seq).Finalized.GetPath())

@@ -32,7 +32,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
-	committer.Commit()
+	committer.Commit(0)
 	writeCache.Reset(writeCache)
 
 	alice := AliceAccount()
@@ -76,7 +76,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
-	committer.Commit()
+	committer.Commit(0)
 
 	committer.Init(store)
 	alice := AliceAccount()
@@ -137,7 +137,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
-	committer.Commit()
+	committer.Commit(0)
 	committer.Init(store)
 
 	// committer.NewAccount(1, alice)
@@ -183,10 +183,11 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	in := append(transitions1, transitions2...)
 	buffer := univalue.Univalues(in).Encode()
 	out := univalue.Univalues{}.Decode(buffer).(univalue.Univalues)
-	committer.Import(out)
 
+	committer = stgcommitter.NewStorageCommitter(store)
+	committer.Import(out)
 	committer.Precommit(toCommit)
-	committer.Commit()
+	committer.Commit(0)
 	writeCache.Reset(writeCache)
 
 	if _, err := writeCache.Write(3, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("committer-1-by-tx-3")); err != nil {
@@ -226,12 +227,13 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	out = univalue.Univalues{}.Decode(buffer).(univalue.Univalues)
 
 	acctTrans = append(transitions3, transitions4...)
+	committer = stgcommitter.NewStorageCommitter(store)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	// committer.Import(committer.Decode(univalue.Univalues(append(transitions3, transitions4...)).Encode()))
 
 	committer.Precommit(toCommit)
-	committer.Commit()
+	committer.Commit(0)
 	committer.Init(store)
 
 	writeCache.Reset(writeCache)

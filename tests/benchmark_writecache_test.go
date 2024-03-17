@@ -67,7 +67,7 @@ func TestWriteWithNewWriteCacheSlowWrite(b *testing.T) {
 
 	committer := stgcommitter.NewStorageCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
 	committer.Precommit([]uint32{0})
-	committer.Commit()
+	committer.Commit(0)
 	fmt.Println("Commit time:", time.Since(t0))
 
 	writeCache = cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
@@ -117,7 +117,7 @@ func TestWriteWithNewWriteCache(b *testing.T) {
 
 	committer := stgcommitter.NewStorageCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
 	committer.Precommit([]uint32{0})
-	committer.Commit()
+	committer.Commit(0)
 	fmt.Println("Commit time:", time.Since(t0))
 
 	t0 = time.Now()
@@ -164,7 +164,7 @@ func BenchmarkWriteAfterLargeCommitUint64(b *testing.B) {
 	t0 = time.Now()
 	committer := stgcommitter.NewStorageCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
 	committer.Precommit([]uint32{0})
-	committer.Commit()
+	committer.Commit(0)
 	fmt.Println("Commit time:", time.Since(t0))
 
 	t0 = time.Now()
@@ -196,7 +196,7 @@ func BenchmarkWriteAfterLargeCommitUint64(b *testing.B) {
 	t0 = time.Now()
 	committer = stgcommitter.NewStorageCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
 	committer.Precommit([]uint32{0})
-	committer.Commit()
+	committer.Commit(0)
 	fmt.Println("2.Commit time:", time.Since(t0))
 
 	t0 = time.Now()
@@ -245,7 +245,7 @@ func BenchmarkWriteAfterLargeCommitUint256(b *testing.B) {
 	t0 = time.Now()
 	committer := stgcommitter.NewStorageCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
 	committer.Precommit([]uint32{0})
-	committer.Commit()
+	committer.Commit(0)
 	fmt.Println("Commit time:", time.Since(t0))
 
 	t0 = time.Now()
@@ -277,7 +277,7 @@ func BenchmarkWriteAfterLargeCommitUint256(b *testing.B) {
 	t0 = time.Now()
 	committer = stgcommitter.NewStorageCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
 	committer.Precommit([]uint32{0})
-	committer.Commit()
+	committer.Commit(0)
 	fmt.Println("2.Commit time:", time.Since(t0))
 
 	t0 = time.Now()
@@ -330,7 +330,7 @@ func BenchmarkPathReadAndWrites(b *testing.B) {
 	t0 = time.Now()
 	committer := stgcommitter.NewStorageCommitter(store).Import(writeCache.Export())
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
-	committer.Commit()
+	committer.Commit(0)
 	fmt.Println("committer ", len(keys), "Keys in:", time.Since(t0))
 
 	// Read keys and values

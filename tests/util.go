@@ -22,13 +22,18 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"testing"
 	"time"
 
 	slice "github.com/arcology-network/common-lib/exp/slice"
 	cache "github.com/arcology-network/eu/cache"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/interfaces"
+	opadapter "github.com/arcology-network/storage-committer/op"
 	platform "github.com/arcology-network/storage-committer/platform"
+	stgcommstorage "github.com/arcology-network/storage-committer/storage"
+	storage "github.com/arcology-network/storage-committer/storage"
+	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	rlp "github.com/ethereum/go-ethereum/rlp"
 	"golang.org/x/crypto/sha3"
@@ -103,4 +108,25 @@ func NewWriteCacheWithAcounts(store interfaces.Datastore, accounts ...string) *c
 		}
 	}
 	return writeCache
+}
+
+func verifierEthMerkle(roothash [32]byte, acct string, key string, store interfaces.Datastore, t *testing.T) {
+	// roothash := store.(*storage.StoreRouter).EthStore().Root()                               // Get the proof provider by a root hash.
+	ethdb := store.(*storage.StoreRouter).EthStore().EthDB()                                 // Get the proof provider by a root hash.
+	provider, err := stgcommstorage.NewMerkleProofCache(2, ethdb).GetProofProvider(roothash) // Initiate the proof cache, maximum 2 blocks
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Verify Bob's storage for a big int value.
+	bobAddr := ethcommon.BytesToAddress([]byte(hexutil.MustDecode(acct)))
+	accountResult, err := provider.GetProof(bobAddr, []string{key})
+	if err := accountResult.Validate(provider.Root()); err != nil {
+		t.Error(err)
+	}
+
+	opProof := opadapter.Convertible(*accountResult).New() // Convert Bob's proof to OP format and verify.
+	if err := opProof.Verify(provider.Root()); err != nil {
+		t.Error(err)
+	}
 }

@@ -29,11 +29,10 @@ import (
 	memdb "github.com/arcology-network/common-lib/storage/memdb"
 	intf "github.com/arcology-network/storage-committer/interfaces"
 	platform "github.com/arcology-network/storage-committer/platform"
-	"github.com/cespare/xxhash/v2"
 )
 
 type StoreRouter struct {
-	cache       *cache.ReadCache[string, intf.Type] // Cache shared by all storage
+	objectCache *cache.ReadCache[string, intf.Type] // Cache shared by all storage
 	cacheActive bool
 
 	ethDataStore *EthDataStore
@@ -42,9 +41,9 @@ type StoreRouter struct {
 
 func NewHybirdStore() *StoreRouter {
 	return &StoreRouter{
-		cache: cache.NewReadCache[string, intf.Type](
+		objectCache: cache.NewReadCache[string, intf.Type](
 			4096, // 4096 shards to avoid lock contention
-			func(k string) uint64 { return xxhash.Sum64String(k) },
+			// func(k string) uint64 { return xxhash.Sum64String(k) },
 			func(v intf.Type) bool { return v == nil },
 		),
 		cacheActive:  true,
@@ -57,10 +56,10 @@ func NewHybirdStore() *StoreRouter {
 	}
 }
 
-func (this *StoreRouter) Cache(any) interface{} { return this.cache }
-func (this *StoreRouter) EnableCache()          { this.cacheActive = true }
-func (this *StoreRouter) DisableCache()         { this.cacheActive = false }
-func (this *StoreRouter) ClearCache()           { this.cache.Clear() }
+func (this *StoreRouter) Cache(any) interface{}     { return this.objectCache }
+func (this *StoreRouter) EnableGlobalObjectCache()  { this.cacheActive = true }
+func (this *StoreRouter) DisableGlobalObjectCache() { this.cacheActive = false }
+func (this *StoreRouter) ClearCache()               { this.objectCache.Clear() }
 
 func (this *StoreRouter) EthStore() *EthDataStore       { return this.ethDataStore } // Eth storage
 func (this *StoreRouter) CCStore() *datastore.DataStore { return this.ccDataStore }  // Arcology storage
@@ -74,7 +73,7 @@ func (this *StoreRouter) Preload(data []byte) interface{} {
 }
 
 func (this *StoreRouter) IfExists(key string) bool {
-	if _, ok := this.cache.Get(key); ok { // Check the cache first
+	if _, ok := this.objectCache.Get(key); ok { // Check the cache first
 		return true
 	}
 	return this.GetStorage(key).IfExists(key)
@@ -95,7 +94,7 @@ func (this *StoreRouter) BatchInject(key []string, vals []any) error {
 }
 
 func (this *StoreRouter) Retrive(key string, v any) (interface{}, error) {
-	if v, ok := this.cache.Get(key); ok { // Get from cache first
+	if v, ok := this.objectCache.Get(key); ok { // Get from cache first
 		return *v, nil
 	}
 	return this.GetStorage(key).Retrive(key, v)
@@ -107,7 +106,7 @@ func (this *StoreRouter) RetriveFromStorage(key string, v any) (interface{}, err
 
 func (this *StoreRouter) BatchRetrive(keys []string, vals []any) []interface{} {
 	return slice.ParallelTransform(keys, runtime.NumCPU(), func(i int, k string) interface{} {
-		v, _ := this.cache.Get(k)
+		v, _ := this.objectCache.Get(k)
 		return v
 	})
 }
@@ -121,7 +120,7 @@ func (this *StoreRouter) Commit(blockNum uint64) error {
 // Update the object cache.
 func (this *StoreRouter) RefreshCache(blockNum uint64, dirtyKeys []string, dirtyVals []intf.Type) {
 	if this.cacheActive {
-		this.cache.Commit(dirtyKeys, dirtyVals)
+		this.objectCache.Commit(dirtyKeys, dirtyVals)
 	}
 }
 

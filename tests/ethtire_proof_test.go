@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"fmt"
 	"testing"
-	"time"
 
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/exp/slice"
 	cache "github.com/arcology-network/eu/cache"
+	eucache "github.com/arcology-network/eu/cache"
 	common "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
 	importer "github.com/arcology-network/storage-committer/importer"
@@ -22,26 +22,6 @@ import (
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 	ethmpt "github.com/ethereum/go-ethereum/trie"
 )
-
-func TestGetPathType(t *testing.T) {
-	alice := AliceAccount()
-	arr := slice.New(1000000, "")
-	for i := 0; i < len(arr); i++ {
-		arr[i] = "blcc://eth1.0/account/" + alice + "/storage/native/" + fmt.Sprint(i)
-	}
-
-	tic := time.Now()
-	for i := 0; i < len(arr); i++ {
-		common.GetPathType(arr[i])
-	}
-	fmt.Println("GetPathType Time taken", time.Since(tic))
-
-	tic = time.Now()
-	for i := 0; i < len(arr); i++ {
-		common.GetPathType(arr[i])
-	}
-	fmt.Println("GetPathTypeEx Time taken", time.Since(tic))
-}
 
 func TestEthWorldTrieProof(t *testing.T) {
 	store := chooseDataStore()
@@ -58,7 +38,7 @@ func TestEthWorldTrieProof(t *testing.T) {
 	if _, err := writeCache.CreateNewAccount(common.SYSTEM, bob); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
-	writeCache.FlushToDataSource(store)
+	writeCache.FlushToEthStore(store)
 
 	path := commutative.NewPath()
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
@@ -70,7 +50,7 @@ func TestEthWorldTrieProof(t *testing.T) {
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000009", noncommutative.NewString("435")); err != nil {
 		t.Error(err)
 	}
-	writeCache.FlushToDataSource(store)
+	writeCache.FlushToEthStore(store)
 
 	// Delete an non-existing entry, should NOT appear in the transitions
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/4", nil); err == nil {
@@ -95,10 +75,10 @@ func TestEthWorldTrieProof(t *testing.T) {
 		t.Error("Error: Wrong return value")
 	}
 
-	writeCache.FlushToDataSource(store)
+	writeCache.FlushToEthStore(store)
 
 	/* Get Account Proofs */
-	dstore := store.(*storage.EthDataStore)
+	dstore := store.(*storage.StoreRouter).EthStore()
 	if _, err := dstore.IsAccountProvable(alice); err != nil {
 		t.Error(err)
 	}
@@ -123,24 +103,43 @@ func TestEthWorldTrieProof(t *testing.T) {
 	if _, _, err := aliceCache.IsStorageProvable("0x0000000000000000000000000000000000000000000000000000000000000009"); err != nil {
 		t.Error(err)
 	}
+
+	// Through the provider
+
+	// roothash := store.(*storage.StoreRouter).EthStore().Root()                               // Get the proof provider by a root hash.
+	// ethdb := dstore.EthDB()                                                                  // Get the proof provider by a root hash.
+	// provider, err := stgcommstorage.NewMerkleProofCache(2, ethdb).GetProofProvider(roothash) // Initiate the proof cache, maximum 2 blocks
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+
+	// // Verify Bob's storage for a big int value.
+	// bobAddr = ethcommon.BytesToAddress([]byte(hexutil.MustDecode(bob)))
+	// baccountResult, _ := provider.GetProof(bobAddr, []string{string("0x0000000000000000000000000000000000000000000000000000000000000000")})
+	// if err := baccountResult.Validate(provider.Root()); err != nil {
+	// 	t.Error(err)
+	// }
 }
 
 func TestGetProofAPI(t *testing.T) {
-	store := stgcommstorage.NewParallelEthMemDataStore()
+	// store := stgcommstorage.NewParallelEthMemDataStore()
+	store := chooseDataStore()
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	bob := BobAccount()
 	writeCache.CreateNewAccount(common.SYSTEM, bob)
-	writeCache.FlushToDataSource(store)
+	writeCache.FlushToEthStore(store)
 
 	/* Bob updates */
 	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000001", noncommutative.NewBigint(1999))
 	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000002", noncommutative.NewBigint(1))
 	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000003", noncommutative.NewBytes(ethcommon.BytesToHash([]byte{1}).Bytes()))
-	writeCache.FlushToDataSource(store)
+	writeCache.FlushToEthStore(store)
 
-	roothash := store.Root()                                                                         // Get the proof provider by a root hash.
-	provider, err := stgcommstorage.NewMerkleProofCache(2, store.EthDB()).GetProofProvider(roothash) // Initiate the proof cache, maximum 2 blocks
+	// (storage.StoreRouter(store).EthStore()
+	roothash := store.(*storage.StoreRouter).EthStore().Root()                               // Get the proof provider by a root hash.
+	ethdb := store.(*storage.StoreRouter).EthStore().EthDB()                                 // Get the proof provider by a root hash.
+	provider, err := stgcommstorage.NewMerkleProofCache(2, ethdb).GetProofProvider(roothash) // Initiate the proof cache, maximum 2 blocks
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -180,7 +179,9 @@ func TestGetProofAPI(t *testing.T) {
 }
 
 func TestProofCacheBigInt(t *testing.T) {
-	store := stgcommstorage.NewParallelEthMemDataStore()
+	store := chooseDataStore()
+	// store := hybridStore.(*storage.StoreRouter).EthStore()
+	// store := stgcommstorage.NewParallelEthMemDataStore()
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	alice := AliceAccount()
@@ -200,7 +201,7 @@ func TestProofCacheBigInt(t *testing.T) {
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000003",
 		noncommutative.NewBytes(v))
 
-	writeCache.FlushToDataSource(store)
+	writeCache.FlushToEthStore(store)
 
 	outv, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000003",
 		new(noncommutative.Bytes))
@@ -211,8 +212,9 @@ func TestProofCacheBigInt(t *testing.T) {
 		t.Error("Mismatch", outv, "!=", v)
 	}
 
-	roothash := store.Root()
-	provider, err := stgcommstorage.NewMerkleProofCache(2, store.EthDB()).GetProofProvider(roothash)
+	roothash := store.(*storage.StoreRouter).EthStore().Root()
+	EthDB := store.(*storage.StoreRouter).EthStore().EthDB()
+	provider, err := stgcommstorage.NewMerkleProofCache(2, EthDB).GetProofProvider(roothash)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -231,12 +233,13 @@ func TestProofCacheBigInt(t *testing.T) {
 }
 
 func TestProofCacheNonNaitve(t *testing.T) {
-	store := stgcommstorage.NewParallelEthMemDataStore()
+	store := chooseDataStore()
+	// store := stgcommstorage.NewParallelEthMemDataStore()
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	alice := AliceAccount()
 	writeCache.CreateNewAccount(common.SYSTEM, alice)
-	writeCache.FlushToDataSource(store)
+	writeCache.FlushToEthStore(store)
 
 	buf := slice.New[byte](32, 0)
 	buf[31] = 1
@@ -253,7 +256,7 @@ func TestProofCacheNonNaitve(t *testing.T) {
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000003", noncommutative.NewBytes(buf)); err != nil {
 		t.Error(err)
 	}
-	writeCache.FlushToDataSource(store)
+	writeCache.FlushToEthStore(store)
 
 	// Reads
 	v, _ := writeCache.ReadOnlyDataStore().RetriveFromStorage("blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000000", new(noncommutative.Bytes))
@@ -286,7 +289,7 @@ func TestProofCacheNonNaitve(t *testing.T) {
 
 	buf = slice.New[byte](33, 1)
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ele1", noncommutative.NewBytes(buf))
-	writeCache.FlushToDataSource(store)
+	writeCache.FlushToEthStore(store)
 
 	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ele1", new(noncommutative.Bytes)); !bytes.Equal(v.([]byte), slice.New[byte](33, 1)) {
 		t.Error("Mismatch", v)
@@ -294,7 +297,11 @@ func TestProofCacheNonNaitve(t *testing.T) {
 }
 
 func TestProofCache(t *testing.T) {
-	store := stgcommstorage.NewParallelEthMemDataStore()
+	store := chooseDataStore()
+	store.(*storage.StoreRouter).DisableGlobalObjectCache()
+	store.(*storage.StoreRouter).EthStore().DisableAccountCache()
+
+	// store := stgcommstorage.NewParallelEthMemDataStore()
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	alice := AliceAccount()
@@ -303,7 +310,7 @@ func TestProofCache(t *testing.T) {
 	bob := BobAccount()
 	writeCache.CreateNewAccount(common.SYSTEM, bob)
 
-	writeCache.FlushToDataSource(store)
+	writeCache.FlushToEthStore(store)
 
 	/* Alice updates */
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath())
@@ -327,7 +334,7 @@ func TestProofCache(t *testing.T) {
 
 	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/", commutative.NewPath())
 	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/ele1", noncommutative.NewString("6789"))
-	writeCache.FlushToDataSource(store)
+	writeCache.FlushToEthStore(store)
 
 	if str, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ele0", new(noncommutative.String)); str != "124" {
 		t.Fatal("String mismatch")
@@ -347,8 +354,9 @@ func TestProofCache(t *testing.T) {
 	// Initiate the proof cache, maximum 2 blocks
 	// cache := stgcommstorage.NewMerkleProofCache(2, store.EthDB())
 
-	roothash := store.Root()
-	provider, err := stgcommstorage.NewMerkleProofCache(2, store.EthDB()).GetProofProvider(roothash) // Get the proof provider by a root hash.
+	EthDB := store.(*storage.StoreRouter).EthStore().EthDB()
+	Root := store.(*storage.StoreRouter).EthStore().Root()
+	provider, err := stgcommstorage.NewMerkleProofCache(2, EthDB).GetProofProvider(Root) // Get the proof provider by a root hash.
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -430,44 +438,36 @@ func TestProofCache(t *testing.T) {
 	}
 }
 
-func TestMultiBlocks(t *testing.T) {
-	store := stgcommstorage.NewParallelEthMemDataStore()
-	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+func TestHistoryProofs(t *testing.T) {
+	store := chooseDataStore()
+	store.(*storage.StoreRouter).DisableGlobalObjectCache()
+	store.(*storage.StoreRouter).EthStore().DisableAccountCache()
+
+	writeCache := eucache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	alice := AliceAccount()
 	writeCache.CreateNewAccount(common.SYSTEM, alice)
+	writeCache.FlushToEthStore(store)
 
-	// Initiate the proof cache, maximum 2 blocks
-	cache := stgcommstorage.NewMerkleProofCache(2, store.EthDB())
+	/* Bob updates */
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000001", noncommutative.NewBigint(999))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000002", noncommutative.NewBigint(222))
 
-	// Simulate 5 consecutive blocks, record the root hashes and the keys.
-	historyRoots := []ethcommon.Hash{}
-	keys := []string{}
-	for i := 5; i < 10; i++ {
-		k := "0x000000000000000000000000000000000000000000000000000000000000000" + fmt.Sprint(i)
+	writeCache.FlushToEthStore(store)
+	roothash0 := store.(*storage.StoreRouter).EthStore().Root()
+	verifierEthMerkle(roothash0, alice, "0x0000000000000000000000000000000000000000000000000000000000000001", store, t)
 
-		writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+k, noncommutative.NewInt64(int64(i)))
-		writeCache.FlushToDataSource(store)
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000001", noncommutative.NewBigint(1999))
+	writeCache.FlushToEthStore(store)
+	roothash1 := store.(*storage.StoreRouter).EthStore().Root()
+	verifierEthMerkle(roothash1, alice, "0x0000000000000000000000000000000000000000000000000000000000000001", store, t)
 
-		keys = append(keys, k)
-		historyRoots = append(historyRoots, store.Root())
-	}
+	verifierEthMerkle(roothash0, alice, "0x0000000000000000000000000000000000000000000000000000000000000001", store, t)
+	verifierEthMerkle(roothash0, alice, "0x0000000000000000000000000000000000000000000000000000000000000002", store, t)
 
-	writeCache.FlushToDataSource(store)
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000003", noncommutative.NewBigint(1999))
+	writeCache.FlushToEthStore(store)
 
-	aliceAddr := ethcommon.BytesToAddress([]byte(hexutil.MustDecode(alice)))
-
-	// Get the proof provider by a root hash from the history.
-	for i := 0; i < len(historyRoots); i++ {
-		provider, err := cache.GetProofProvider(historyRoots[i])
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		accountResult, err := provider.GetProof(aliceAddr, []string{keys[i]})
-		if err := accountResult.Validate(provider.Root()); err != nil {
-			t.Error(err)
-		}
-	}
-
+	roothash3 := store.(*storage.StoreRouter).EthStore().Root()
+	verifierEthMerkle(roothash3, alice, "0x0000000000000000000000000000000000000000000000000000000000000001", store, t)
 }

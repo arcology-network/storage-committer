@@ -87,7 +87,7 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 	committer.Import(transitions)
 
 	committer.Precommit([]uint32{0})
-	committer.Commit()
+	committer.Commit(0)
 	fmt.Println("Account Commit single Total time= :", time.Since(t0))
 }
 
@@ -151,7 +151,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	fmt.Println("Precommit:", time.Since(t0))
 
 	t0 = time.Now()
-	committer.Commit()
+	committer.Commit(0)
 	fmt.Println("Commit:", time.Since(t0))
 
 	t0 = time.Now()
@@ -180,7 +180,7 @@ func BenchmarkAddThenDelete(b *testing.B) {
 	committer.Import(trans)
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
-	committer.Commit()
+	committer.Commit(0)
 
 	alice := AliceAccount()
 	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
@@ -222,7 +222,7 @@ func BenchmarkAddThenPop(b *testing.B) {
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
-	committer.Commit()
+	committer.Commit(0)
 
 	alice := AliceAccount()
 	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
@@ -347,7 +347,7 @@ func BenchmarkEncodeTransitions(b *testing.B) {
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
-	committer.Commit()
+	committer.Commit(0)
 
 	path := commutative.NewPath()
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
@@ -421,7 +421,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	committer.Import(acctTrans)
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
-	committer.Commit()
+	committer.Commit(0)
 	// errs := committer.AllInOneCommit(acctTrans, []uint32{0})
 
 	// if len(errs) > 0 {

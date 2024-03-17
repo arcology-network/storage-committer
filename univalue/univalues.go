@@ -62,6 +62,10 @@ func (this Univalues) KVs() ([]string, []intf.Type) {
 	vals := make([]intf.Type, len(this))
 	for i, v := range this {
 		keys[i] = *v.GetPath()
+		if v.Value() == nil {
+			vals[i] = nil
+			continue
+		}
 		vals[i] = v.Value().(intf.Type)
 	}
 	return keys, vals

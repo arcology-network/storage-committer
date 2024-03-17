@@ -33,7 +33,7 @@ func TestAuxTrans(t *testing.T) {
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
-	committer.Commit() // Commit
+	committer.Commit(0) // Commit
 
 	committer.Init(store)
 	// create a path
@@ -103,10 +103,11 @@ func TestAuxTrans(t *testing.T) {
 	in := univalue.Univalues(transitions).Encode()
 	out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
 
+	committer = stgcommitter.NewStorageCommitter(store)
 	committer.Import(out)
 
 	committer.Precommit([]uint32{1})
-	committer.Commit()
+	committer.Commit(0)
 }
 
 func TestCheckAccessRecords(t *testing.T) {
@@ -122,10 +123,11 @@ func TestCheckAccessRecords(t *testing.T) {
 	// _, trans00 := writeCache.Export(importer.Sorter)
 	trans00 := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
+	committer = stgcommitter.NewStorageCommitter(store)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans00).Encode()).(univalue.Univalues))
 
 	committer.Precommit([]uint32{1})
-	committer.Commit() // Commit
+	committer.Commit(0) // Commit
 
 	committer.Init(store)
 	path := commutative.NewPath()
@@ -136,10 +138,10 @@ func TestCheckAccessRecords(t *testing.T) {
 	// _, trans10 := writeCache.Export(importer.Sorter)
 	trans10 := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
+	committer = stgcommitter.NewStorageCommitter(store)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans10).Encode()).(univalue.Univalues))
-
 	committer.Precommit([]uint32{1})
-	committer.Commit() // Commit
+	committer.Commit(0) // Commit
 
 	committer.Init(store)
 	writeCache.Reset(writeCache)
@@ -157,7 +159,8 @@ func TestCheckAccessRecords(t *testing.T) {
 
 	//
 	// committer.Precommit([]uint32{1})
-	committer.Commit() // Commit
+	// committer = stgcommitter.NewStorageCommitter(store)
+	// committer.Commit(0) // Commit
 
 	// committer = stgcommitter.NewStorageCommitter(store)
 	// if len(trans11) != 3 {

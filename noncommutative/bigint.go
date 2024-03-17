@@ -62,7 +62,7 @@ func (this *Bigint) New(_, delta, _, _, _ interface{}) interface{} {
 
 func (this *Bigint) Set(value interface{}, _ interface{}) (interface{}, uint32, uint32, uint32, error) {
 	if value != nil {
-		*this = Bigint(*(value.(*big.Int)))
+		*this = *(value.(*Bigint))
 	}
 	return this, 0, 1, 0, nil
 }

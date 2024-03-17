@@ -55,7 +55,7 @@ func TestSimpleBalance(t *testing.T) {
 	committer.Import(out)
 
 	committer.Precommit([]uint32{0, 1})
-	committer.Commit()
+	committer.Commit(0)
 	// Read alice's balance again
 	writeCache.Reset(writeCache)
 
@@ -209,7 +209,7 @@ func TestNonce(t *testing.T) {
 	committer.Import(trans)
 
 	committer.Precommit([]uint32{0})
-	committer.Commit()
+	committer.Commit(0)
 	nonce, _, _ = writeCache.Read(0, "blcc://eth1.0/account/"+alice+"/nonce", new(commutative.Uint64))
 	v = nonce.(uint64)
 	if v != 6 {
@@ -279,7 +279,7 @@ func TestMultipleNonces(t *testing.T) {
 	committer = stgcommitter.NewStorageCommitter(store)
 
 	committer.Precommit([]uint32{0})
-	committer.Commit()
+	committer.Commit(0)
 
 	nonce, _, _ = writeCache.Read(0, "blcc://eth1.0/account/"+bob+"/nonce", new(commutative.Uint64))
 	bobNonce = nonce.(uint64)

@@ -36,13 +36,13 @@ import (
 func CommitterCache(flag bool, t *testing.T) {
 	store := storage.NewHybirdStore()
 	if flag {
-		store.EnableCache()
+		store.EnableGlobalObjectCache()
 	} else {
-		store.DisableCache()
+		store.DisableGlobalObjectCache()
 	}
 
 	alice := AliceAccount()
-	committer := stgcommitter.NewStorageCommitterV2(store)
+	committer := stgcommitter.NewStorageCommitter(store)
 
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
