@@ -19,6 +19,7 @@
 package storagecommitter
 
 import (
+	"errors"
 	"math"
 
 	platform "github.com/arcology-network/storage-committer/platform"
@@ -35,8 +36,8 @@ import (
 	intf "github.com/arcology-network/storage-committer/interfaces"
 )
 
-// StateCommitterV2 represents a storage committer.
-type StateCommitterV2 struct {
+// StateCommitter represents a storage committer.
+type StateCommitter struct {
 	store interfaces.Datastore
 	// store    storage.StoreRouter
 	Platform *platform.Platform
@@ -44,14 +45,16 @@ type StateCommitterV2 struct {
 	byPath *Indexer[string, *univalue.Univalue, []*univalue.Univalue]
 	byTxID *Indexer[uint32, *univalue.Univalue, []*univalue.Univalue]
 	byEth  *Indexer[[20]byte, *univalue.Univalue, *associative.Pair[*storage.Account, []*univalue.Univalue]]
-	byCtrn *Indexer[string, *univalue.Univalue, interface{}]
+	byCtrn []*univalue.Univalue
+
+	Err error
 }
 
-// NewStorageCommitter creates a new StateCommitterV2 instance.
-func NewStorageCommitter(store interfaces.Datastore) *StateCommitterV2 {
+// NewStorageCommitter creates a new StateCommitter instance.
+func NewStorageCommitter(store interfaces.Datastore) *StateCommitter {
 	plat := platform.NewPlatform()
 
-	return &StateCommitterV2{
+	return &StateCommitter{
 		store:    store,
 		Platform: plat, //[]stgcommcommon.FilteredTransitionsInterface{&importer.NonceFilter{}, &importer.BalanceFilter{}},
 
@@ -110,54 +113,56 @@ func NewStorageCommitter(store interfaces.Datastore) *StateCommitterV2 {
 		// The transitions will be put into the index if the account address is a concurrent container and
 		// later stored in the concurrent container storage, which is different from the ETH storage.
 		// All the transitions will be under the same key.
-		byCtrn: NewIndexer(
-			store,
-			func(v *univalue.Univalue) (string, bool) {
-				return *v.GetPath(), !platform.IsEthPath(*v.GetPath()) // All under the same key
-			},
-			nil,
-			func(_ string, v *univalue.Univalue) interface{} { return v },
-			func(_ string, v *univalue.Univalue, oldv *interface{}) { (*oldv) = v },
-		),
+		// byCtrn: NewIndexer(
+		// 	store,
+		// 	func(v *univalue.Univalue) (string, bool) {
+		// 		return *v.GetPath(), !platform.IsEthPath(*v.GetPath()) // All under the same key
+		// 	},
+		// 	nil,
+		// 	func(_ string, v *univalue.Univalue) []*univalue.Univalue { return []*univalue.Univalue{v} },
+		// 	func(_ string, v *univalue.Univalue, vals *[]*univalue.Univalue) { *vals = append(*vals, v) },
+		// ),
+		byCtrn: []*univalue.Univalue{},
 	}
 }
 
-// New creates a new StateCommitterV2 instance.
-func (this *StateCommitterV2) New(args ...interface{}) *StateCommitterV2 {
-	return &StateCommitterV2{
+// New creates a new StateCommitter instance.
+func (this *StateCommitter) New(args ...interface{}) *StateCommitter {
+	return &StateCommitter{
 		Platform: platform.NewPlatform(),
 	}
 }
 
-// Importer returns the importer of the StateCommitterV2.
-func (this *StateCommitterV2) Store() interfaces.Datastore     { return this.store }
-func (this *StateCommitterV2) Init(store interfaces.Datastore) {}
+// Importer returns the importer of the StateCommitter.
+func (this *StateCommitter) Store() interfaces.Datastore     { return this.store }
+func (this *StateCommitter) Init(store interfaces.Datastore) {}
 
-// Init initializes the StateCommitterV2 with the given datastore.
-// func (this *StateCommitterV2) Init(store interfaces.Datastore) {
+// Init initializes the StateCommitter with the given datastore.
+// func (this *StateCommitter) Init(store interfaces.Datastore) {
 // 	this.importer.Init(store)
 // 	this.imuImporter.Init(store)
 // }
 
-// Import imports the given transitions into the StateCommitterV2.
-func (this *StateCommitterV2) Import(transitions []*univalue.Univalue, args ...interface{}) *StateCommitterV2 {
+// Import imports the given transitions into the StateCommitter.
+func (this *StateCommitter) Import(transitions []*univalue.Univalue, args ...interface{}) *StateCommitter {
 	this.byPath.Add(transitions)
 	this.byTxID.Add(transitions)
 	this.byEth.Add(transitions)
-	this.byCtrn.Add(transitions)
+	// this.byCtrn.Add(transitions)
+	this.byCtrn = append(this.byCtrn, transitions...)
 	return this
 }
 
-// Finalize finalizes the transitions in the StateCommitterV2.
-func (this *StateCommitterV2) Whitelist(txs []uint32) *StateCommitterV2 {
+// Finalize finalizes the transitions in the StateCommitter.
+func (this *StateCommitter) Whitelist(txs []uint32) *StateCommitter {
 	if len(txs) == 0 {
 		return this
 	}
 
 	whitelistDict := mapi.FromSlice(txs, func(_ uint32) bool { return true })
-	this.byTxID.ParallelForeachDo(func(txid uint32, vec []*univalue.Univalue) {
+	this.byTxID.ParallelForeachDo(func(txid uint32, vec *[]*univalue.Univalue) {
 		if _, ok := whitelistDict[uint32(txid)]; !ok {
-			for _, v := range vec {
+			for _, v := range *vec {
 				v.SetPath(nil) // Mark the transition status, so that it can be removed later.
 			}
 		}
@@ -165,47 +170,66 @@ func (this *StateCommitterV2) Whitelist(txs []uint32) *StateCommitterV2 {
 	return this
 }
 
-// Finalize finalizes the transitions in the StateCommitterV2.
-func (this *StateCommitterV2) Finalize(txs []uint32) *StateCommitterV2 {
-	this.byPath.ParallelForeachDo(func(_ string, v []*univalue.Univalue) {
-		importer.DeltaSequenceV2(v).Finalize()
+// Finalize finalizes the transitions in the StateCommitter.
+func (this *StateCommitter) Finalize(txs []uint32) *StateCommitter {
+	this.byPath.ParallelForeachDo(func(_ string, v *[]*univalue.Univalue) {
+		importer.DeltaSequenceV2(*v).Finalize()
 	})
 	return this
 }
 
-// Commit commits the transitions in the StateCommitterV2.
-func (this *StateCommitterV2) Precommit(txs []uint32) [32]byte {
-	this.byPath.ParallelForeachDo(func(_ string, v []*univalue.Univalue) {
-		importer.DeltaSequenceV2(v).Finalize() // Finalize all the transitions
+// Commit commits the transitions in the StateCommitter.
+func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
+	this.Whitelist(txs)
+
+	// Finalize all the transitions for both the ETH storage and the concurrent container transitions
+	this.byPath.ParallelForeachDo(func(_ string, v *[]*univalue.Univalue) {
+		slice.RemoveIf(v, func(_ int, val *univalue.Univalue) bool { return val.GetPath() == nil }) // Remove conflicting ones.
+		if len(*v) > 0 {
+			importer.DeltaSequenceV2(*v).Finalize()
+		}
 	})
 
-	// Write the concurrent transitions to the concurrent container storage. All in the same slice.
-	this.Store().(*storage.StoreRouter).CCStore().PrecommitV2(this.byCtrn.Keys(), this.byCtrn.Values())
+	// Write concurrent transitions to the concurrent storage
+	slice.RemoveIf(&this.byCtrn, func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil }) // Remove the transitions that are marked
+	keys := univalue.Univalues(this.byCtrn).Keys()
+	vals := slice.To[*univalue.Univalue, interface{}](this.byCtrn)
+	this.Store().(*storage.StoreRouter).CCStore().Precommit(keys, vals)
 
 	// Write Eth transitions to the Eth storage
-	return this.Store().(*storage.StoreRouter).EthStore().PrecommitV2(this.byEth.Values()) // Write to the DB buffer
+	this.byEth.ParallelForeachDo(func(_ [20]byte, v **associative.Pair[*storage.Account, []*univalue.Univalue]) {
+		slice.RemoveIf(&((**v).Second), func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil })
+	})
+	return this.Store().(*storage.StoreRouter).EthStore().Precommit(this.byEth.Values()) // Write to the DB buffer
 }
 
-// Commit commits the transitions in the StateCommitterV2.
-func (this *StateCommitterV2) Commit(blockNum uint64) *StateCommitterV2 {
-	keys := this.byPath.Keys()
-	typedVals := slice.Transform(this.byPath.Values(), func(_ int, v []*univalue.Univalue) intf.Type {
-		if v[0].Value() != nil {
-			return v[0].Value().(intf.Type)
-		}
-		return nil
-	})
+// Commit commits the transitions in the StateCommitter.
+func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
+	trans := slice.Flatten(this.byPath.Values())
+	slice.RemoveIf(&trans, func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil }) // Remove conflict ones
 
+	// Update the cache
+	keys := make([]string, len(trans))
+	typedVals := slice.Transform(trans, func(i int, v *univalue.Univalue) intf.Type {
+		keys[i] = *v.GetPath()
+		if v.Value() != nil {
+			return v.Value().(intf.Type)
+		}
+		return nil // A deletion
+	})
 	this.Store().(*storage.StoreRouter).RefreshCache(blockNum, keys, typedVals) // Update the cache
-	this.Store().(*storage.StoreRouter).CCStore().Commit(0)                     // Write the container storage
-	this.Store().(*storage.StoreRouter).EthStore().Commit(0)                    // Write the Eth storage
+
+	// Write the concurrent container  and the Eth storage
+	ethErr := this.Store().(*storage.StoreRouter).CCStore().Commit(blockNum)    // Write the container storage
+	ccStgErr := this.Store().(*storage.StoreRouter).EthStore().Commit(blockNum) // Write the Eth storage
+	this.Err = errors.Join(ethErr, ccStgErr)
 	return this
 }
 
-// Clear clears the StateCommitterV2.
-func (this *StateCommitterV2) Clear() {
+// Clear clears the StateCommitter.
+func (this *StateCommitter) Clear() {
 	this.byPath.Clear()
 	this.byTxID.Clear()
 	this.byEth.Clear()
-	this.byCtrn.Clear()
+	this.byCtrn = this.byCtrn[:0]
 }

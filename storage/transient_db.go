@@ -6,6 +6,7 @@ import (
 
 	datastore "github.com/arcology-network/common-lib/storage/datastore"
 	memdb "github.com/arcology-network/common-lib/storage/memdb"
+	policy "github.com/arcology-network/common-lib/storage/policy"
 	"github.com/arcology-network/storage-committer/interfaces"
 )
 
@@ -18,7 +19,7 @@ func NewTransientDB(readonlyParent interfaces.Datastore) interfaces.Datastore {
 	return &TransientDB{
 		DataStore: datastore.NewDataStore(
 			nil,
-			datastore.NewCachePolicy(math.MaxUint64, 1),
+			policy.NewCachePolicy(math.MaxUint64, 1),
 			memdb.NewMemoryDB(),
 			Rlp{}.Encode,
 			Rlp{}.Decode,

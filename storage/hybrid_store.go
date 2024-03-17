@@ -27,14 +27,13 @@ import (
 	"github.com/arcology-network/common-lib/exp/slice"
 	datastore "github.com/arcology-network/common-lib/storage/datastore"
 	memdb "github.com/arcology-network/common-lib/storage/memdb"
+	policy "github.com/arcology-network/common-lib/storage/policy"
 	intf "github.com/arcology-network/storage-committer/interfaces"
 	platform "github.com/arcology-network/storage-committer/platform"
 )
 
 type StoreRouter struct {
-	objectCache *cache.ReadCache[string, intf.Type] // Cache shared by all storage
-	cacheActive bool
-
+	objectCache  *cache.ReadCache[string, intf.Type] // Cache shared by all storage
 	ethDataStore *EthDataStore
 	ccDataStore  *datastore.DataStore
 }
@@ -43,23 +42,21 @@ func NewHybirdStore() *StoreRouter {
 	return &StoreRouter{
 		objectCache: cache.NewReadCache[string, intf.Type](
 			4096, // 4096 shards to avoid lock contention
-			// func(k string) uint64 { return xxhash.Sum64String(k) },
 			func(v intf.Type) bool { return v == nil },
 		),
-		cacheActive:  true,
 		ethDataStore: NewParallelEthMemDataStore(),
 		ccDataStore: datastore.NewDataStore(
 			nil,
-			datastore.NewCachePolicy(0, 1),
+			policy.NewCachePolicy(0, 1), // Don't cache anything in the underlying storage, the cache is managed by the router
 			memdb.NewMemoryDB(),
 			platform.Codec{}.Encode, platform.Codec{}.Decode),
 	}
 }
 
-func (this *StoreRouter) Cache(any) interface{}     { return this.objectCache }
-func (this *StoreRouter) EnableGlobalObjectCache()  { this.cacheActive = true }
-func (this *StoreRouter) DisableGlobalObjectCache() { this.cacheActive = false }
-func (this *StoreRouter) ClearCache()               { this.objectCache.Clear() }
+func (this *StoreRouter) Cache(any) interface{} { return this.objectCache }
+func (this *StoreRouter) EnableCache()          { this.objectCache.Enable() }
+func (this *StoreRouter) DisableCache()         { this.objectCache.Disable() }
+func (this *StoreRouter) ClearCache()           { this.objectCache.Clear() }
 
 func (this *StoreRouter) EthStore() *EthDataStore       { return this.ethDataStore } // Eth storage
 func (this *StoreRouter) CCStore() *datastore.DataStore { return this.ccDataStore }  // Arcology storage
@@ -100,6 +97,7 @@ func (this *StoreRouter) Retrive(key string, v any) (interface{}, error) {
 	return this.GetStorage(key).Retrive(key, v)
 }
 
+// Retrive the data from the underlying storage directly, skipping the cache.
 func (this *StoreRouter) RetriveFromStorage(key string, v any) (interface{}, error) {
 	return this.GetStorage(key).RetriveFromStorage(key, v)
 }
@@ -119,9 +117,7 @@ func (this *StoreRouter) Commit(blockNum uint64) error {
 
 // Update the object cache.
 func (this *StoreRouter) RefreshCache(blockNum uint64, dirtyKeys []string, dirtyVals []intf.Type) {
-	if this.cacheActive {
-		this.objectCache.Commit(dirtyKeys, dirtyVals)
-	}
+	this.objectCache.Commit(dirtyKeys, dirtyVals)
 }
 
 func (this *StoreRouter) UpdateCacheStats(arg []interface{}) {

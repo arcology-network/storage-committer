@@ -298,7 +298,7 @@ func TestProofCacheNonNaitve(t *testing.T) {
 
 func TestProofCache(t *testing.T) {
 	store := chooseDataStore()
-	store.(*storage.StoreRouter).DisableGlobalObjectCache()
+	store.(*storage.StoreRouter).DisableCache()
 	store.(*storage.StoreRouter).EthStore().DisableAccountCache()
 
 	// store := stgcommstorage.NewParallelEthMemDataStore()
@@ -440,7 +440,7 @@ func TestProofCache(t *testing.T) {
 
 func TestHistoryProofs(t *testing.T) {
 	store := chooseDataStore()
-	store.(*storage.StoreRouter).DisableGlobalObjectCache()
+	store.(*storage.StoreRouter).DisableCache()
 	store.(*storage.StoreRouter).EthStore().DisableAccountCache()
 
 	writeCache := eucache.NewWriteCache(store, 1, 1, platform.NewPlatform())

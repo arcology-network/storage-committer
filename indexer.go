@@ -61,7 +61,7 @@ func (this *Indexer[K, T, V]) Add(transitions []T) {
 	}
 }
 
-func (this *Indexer[K, T, V]) ParallelForeachDo(do func(k K, v V)) {
+func (this *Indexer[K, T, V]) ParallelForeachDo(do func(k K, v *V)) {
 	this.OrderedMap.ParallelForeachDo(do)
 }
 func (this *Indexer[K, T, V]) ForeachDo(do func(k K, v V)) { this.OrderedMap.ForeachDo(do) }

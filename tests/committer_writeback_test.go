@@ -89,8 +89,8 @@ func TestAddAndDelete(t *testing.T) {
 	committer.Commit(0)
 
 	committer.Init(store)
-	path := commutative.NewPath()
-	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
+	// path := commutative.NewPath()
+	// writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/c", path)
 
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000000", noncommutative.NewString("124")); err != nil {
 		t.Error(err)
@@ -107,7 +107,7 @@ func TestAddAndDelete(t *testing.T) {
 	writeCache.Reset(writeCache)
 
 	// Delete an non-existing entry, should NOT appear in the transitions
-	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/4", nil); err == nil {
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/4", nil); err == nil {
 		t.Error("Deleting an non-existing entry should've flaged an error", err)
 	}
 
@@ -117,11 +117,11 @@ func TestAddAndDelete(t *testing.T) {
 	}
 
 	// Delete an non-existing entry, should NOT appear in the transitions
-	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/4", noncommutative.NewString("124")); err != nil {
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/4", noncommutative.NewString("124")); err != nil {
 		t.Error("Failed to write", err)
 	}
 
-	if v, _, err := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/4", nil); v != "124" {
+	if v, _, err := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/4", nil); v != "124" {
 		t.Error("Wrong return value", err)
 	}
 
@@ -150,7 +150,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 	committer.Init(store)
 	// create a path
 	path := commutative.NewPath()
-	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/", path)
 	// _, addPath := writeCache.Export(importer.Sorter)
 	addPath := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
@@ -164,7 +164,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 
 	writeCache.Reset(writeCache)
 
-	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewInt64(1))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/1", noncommutative.NewInt64(1))
 	// _, addTrans := writeCache.Export(importer.Sorter)
 	addTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 	// committer.Import(committer.Decode(univalue.Univalues(addTrans).Encode()))
@@ -175,20 +175,20 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 	committer.Commit(0)
 	writeCache.Reset(writeCache)
 
-	if v, _, _ := writeCache.Read(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", new(noncommutative.Int64)); v == nil {
+	if v, _, _ := writeCache.Read(2, "blcc://eth1.0/account/"+alice+"/storage/container/1", new(noncommutative.Int64)); v == nil {
 		t.Error("Error: Failed to read the key !")
 	}
 
 	// url2 := stgcommitter.NewStorageCommitter(store)
-	if v, _, _ := writeCache.Read(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", new(noncommutative.Int64)); v.(int64) != 1 {
+	if v, _, _ := writeCache.Read(2, "blcc://eth1.0/account/"+alice+"/storage/container/1", new(noncommutative.Int64)); v.(int64) != 1 {
 		t.Error("Error: Failed to read the key !")
 	}
 
-	writeCache.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", nil)
+	writeCache.Write(2, "blcc://eth1.0/account/"+alice+"/storage/container/1", nil)
 	// _, deleteTrans := url2.WriteCache().Export(importer.Sorter)
 	deleteTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
-	if v, _, _ := writeCache.Read(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", new(noncommutative.Int64)); v != nil {
+	if v, _, _ := writeCache.Read(2, "blcc://eth1.0/account/"+alice+"/storage/container/1", new(noncommutative.Int64)); v != nil {
 		t.Error("Error: Failed to read the key !")
 	}
 
@@ -199,7 +199,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 	committer.Commit(0)
 	writeCache.Reset(writeCache)
 
-	if v, _, _ := writeCache.Read(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", new(noncommutative.Int64)); v != nil {
+	if v, _, _ := writeCache.Read(2, "blcc://eth1.0/account/"+alice+"/storage/container/1", new(noncommutative.Int64)); v != nil {
 		t.Error("Error: Failed to delete the entry !")
 	}
 }
@@ -222,12 +222,12 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 	committer.Commit(0)
 
 	committer.Init(store)
-	path := commutative.NewPath()
-	_, err := writeCache.Write(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", path)
+	// path := commutative.NewPath()
+	// _, err := writeCache.Write(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", path)
 
-	if err != nil {
-		t.Error("error")
-	}
+	// if err != nil {
+	// 	t.Error("error")
+	// }
 
 	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 	committer = stgcommitter.NewStorageCommitter(store)
@@ -238,7 +238,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 	committer.Init(store)
 
 	writeCache.Reset(writeCache)
-	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/4", nil)
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/4", nil)
 
 	if acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{}); len(acctTrans) != 0 {
 		t.Error("Error: Wrong number of transitions")
@@ -272,9 +272,9 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	path := commutative.NewPath()
 	writeCache.Reset(writeCache)
 
-	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
-	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewString("1"))
-	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/2", noncommutative.NewString("2"))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/", path)
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/1", noncommutative.NewString("1"))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/2", noncommutative.NewString("2"))
 
 	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 	in = univalue.Univalues(acctTrans).Encode()
@@ -287,7 +287,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	committer.Commit(0)
 
 	writeCache = cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
-	_1, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", new(noncommutative.String))
+	_1, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/1", new(noncommutative.String))
 	if _1 != "1" {
 		t.Error("Error: Not match")
 	}
@@ -295,27 +295,27 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	committer.Init(store)
 	writeCache.Reset(writeCache)
 
-	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewString("3")); err != nil {
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/1", noncommutative.NewString("3")); err != nil {
 		t.Error(err)
 	}
 
-	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/3", noncommutative.NewString("13"))
-	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/4", noncommutative.NewString("14"))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/3", noncommutative.NewString("13"))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/4", noncommutative.NewString("14"))
 
-	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/2", noncommutative.NewString("4"))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/2", noncommutative.NewString("4"))
 
-	outpath, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
+	outpath, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/", &commutative.Path{})
 	keys := outpath.(*deltaset.DeltaSet[string]).Elements()
 	if !reflect.DeepEqual(keys, []string{"1", "2", "3", "4"}) {
 		t.Error("Error: Not match")
 	}
 
-	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil) // delete the path
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/", nil) // delete the path
 	if acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{}); len(acctTrans) != 3 {
 		t.Error("Error: Wrong number of transitions")
 	}
 
-	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", new(noncommutative.String)); v != nil {
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/1", new(noncommutative.String)); v != nil {
 		t.Error("Error: Should be gone already !")
 	}
 }
