@@ -15,7 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package common
+package platform
 
 import (
 	"strings"
@@ -42,7 +42,6 @@ func NewPlatform() *Platform {
 			"/storage/":           commutative.PATH,
 			"/storage/container/": commutative.PATH,
 			"/storage/native/":    commutative.PATH,
-			// "/storage/native/local/": commutative.PATH,
 		},
 	}
 }

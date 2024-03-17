@@ -457,7 +457,7 @@ func TestEthDataStoreAddDeleteRead(t *testing.T) {
 
 	committer.Init(store)
 	// create a path
-	writeCache.Reset(writeCache)
+	writeCache.Reset()
 
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
 		t.Error(err)

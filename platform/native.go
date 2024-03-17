@@ -15,7 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package common
+package platform
 
 import (
 	commutative "github.com/arcology-network/storage-committer/commutative"

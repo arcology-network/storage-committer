@@ -67,7 +67,7 @@ func (this *MerkleProofCache) GetProofProvider(rootHash [32]byte) (*ProofProvide
 			keys, merkles := common.MapKVs(this.merkleDict)
 
 			// The visit ratio is the number of times a merkle tree has been accessed divided by the total number of times all the merkle trees have been accessed.
-			ratios := slice.Append(merkles, func(_ int, v *ProofProvider) float64 { return float64(v.visits) / float64(v.totalVisits) })
+			ratios := slice.Transform(merkles, func(_ int, v *ProofProvider) float64 { return float64(v.visits) / float64(v.totalVisits) })
 
 			// The entry has the lowest ratio of visits/totalVisits will be removed.
 			idx, _ := slice.Min(ratios, func(v0, v1 float64) bool { return v0 < v1 })

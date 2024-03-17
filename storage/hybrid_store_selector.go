@@ -18,33 +18,29 @@
 package storage
 
 import (
-	"strings"
-
-	"github.com/arcology-network/common-lib/exp/slice"
-	commutative "github.com/arcology-network/storage-committer/commutative"
 	intf "github.com/arcology-network/storage-committer/interfaces"
-	"github.com/arcology-network/storage-committer/univalue"
+	platform "github.com/arcology-network/storage-committer/platform"
 )
 
 type StoreSelector struct{}
 
 func (this *StoreRouter) GetStorage(key string) intf.Datastore {
-	if !strings.Contains(key, "/container") {
+	if platform.IsEthPath(key) {
 		return this.ethDataStore
 	}
 	return this.ccDataStore
 }
 
-func (this *StoreRouter) FilterLocalByType(vals *[]*univalue.Univalue) ([]*univalue.Univalue, []*univalue.Univalue) {
-	localTrans := slice.MoveIf(vals, func(i int, v *univalue.Univalue) bool {
-		return v.TypeID() == commutative.PATH // Move all the path metadata to the local storage
-	})
-	return *vals, localTrans
-}
+// func (this *StoreRouter) FilterLocalByType(vals *[]*univalue.Univalue) ([]*univalue.Univalue, []*univalue.Univalue) {
+// 	localTrans := slice.MoveIf(vals, func(i int, v *univalue.Univalue) bool {
+// 		return v.TypeID() == commutative.PATH // Move all the path metadata to the local storage
+// 	})
+// 	return *vals, localTrans
+// }
 
-func (this *StoreRouter) FilterLocalByPath(key *[]string, vals *[]any) ([]string, []any) {
-	localKeys, localVals := slice.MoveBothIf(key, vals, func(i int, str string, v any) bool {
-		return strings.Contains(str, "/container")
-	})
-	return localKeys, localVals
-}
+// func (this *StoreRouter) FilterLocalByPath(key *[]string, vals *[]any) ([]string, []any) {
+// 	localKeys, localVals := slice.MoveBothIf(key, vals, func(i int, str string, v any) bool {
+// 		return strings.Contains(str, "/container")
+// 	})
+// 	return localKeys, localVals
+// }

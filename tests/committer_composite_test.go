@@ -37,7 +37,7 @@ func TestAuxTrans(t *testing.T) {
 
 	committer.Init(store)
 	// create a path
-	writeCache.Reset(writeCache)
+	writeCache.Reset()
 
 	path := commutative.NewPath()
 
@@ -144,7 +144,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	committer.Commit(0) // Commit
 
 	committer.Init(store)
-	writeCache.Reset(writeCache)
+	writeCache.Reset()
 
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewInt64(1111)); err != nil {
 		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/1") // create a path

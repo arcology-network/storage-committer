@@ -19,7 +19,6 @@
 package storagecommitter
 
 import (
-	"errors"
 	"math"
 
 	platform "github.com/arcology-network/storage-committer/platform"
@@ -45,9 +44,7 @@ type StateCommitter struct {
 	byPath *Indexer[string, *univalue.Univalue, []*univalue.Univalue]
 	byTxID *Indexer[uint32, *univalue.Univalue, []*univalue.Univalue]
 	byEth  *Indexer[[20]byte, *univalue.Univalue, *associative.Pair[*storage.Account, []*univalue.Univalue]]
-	byCtrn []*univalue.Univalue
-
-	Err error
+	byCtrn *Indexer[string, *univalue.Univalue, interface{}]
 }
 
 // NewStorageCommitter creates a new StateCommitter instance.
@@ -113,16 +110,15 @@ func NewStorageCommitter(store interfaces.Datastore) *StateCommitter {
 		// The transitions will be put into the index if the account address is a concurrent container and
 		// later stored in the concurrent container storage, which is different from the ETH storage.
 		// All the transitions will be under the same key.
-		// byCtrn: NewIndexer(
-		// 	store,
-		// 	func(v *univalue.Univalue) (string, bool) {
-		// 		return *v.GetPath(), !platform.IsEthPath(*v.GetPath()) // All under the same key
-		// 	},
-		// 	nil,
-		// 	func(_ string, v *univalue.Univalue) []*univalue.Univalue { return []*univalue.Univalue{v} },
-		// 	func(_ string, v *univalue.Univalue, vals *[]*univalue.Univalue) { *vals = append(*vals, v) },
-		// ),
-		byCtrn: []*univalue.Univalue{},
+		byCtrn: NewIndexer(
+			store,
+			func(v *univalue.Univalue) (string, bool) {
+				return *v.GetPath(), !platform.IsEthPath(*v.GetPath()) // All under the same key
+			},
+			nil,
+			func(_ string, v *univalue.Univalue) interface{} { return v },
+			func(_ string, v *univalue.Univalue, oldv *interface{}) { (*oldv) = v },
+		),
 	}
 }
 
@@ -148,13 +144,7 @@ func (this *StateCommitter) Import(transitions []*univalue.Univalue, args ...int
 	this.byPath.Add(transitions)
 	this.byTxID.Add(transitions)
 	this.byEth.Add(transitions)
-	// this.byCtrn.Add(transitions)
-
-	for _, v := range transitions {
-		if v.GetPath() != nil || !platform.IsEthPath(*v.GetPath()) {
-			this.byCtrn = append(this.byCtrn, v)
-		}
-	}
+	this.byCtrn.Add(transitions)
 	return this
 }
 
@@ -165,9 +155,9 @@ func (this *StateCommitter) Whitelist(txs []uint32) *StateCommitter {
 	}
 
 	whitelistDict := mapi.FromSlice(txs, func(_ uint32) bool { return true })
-	this.byTxID.ParallelForeachDo(func(txid uint32, vec *[]*univalue.Univalue) {
+	this.byTxID.ParallelForeachDo(func(txid uint32, vec []*univalue.Univalue) {
 		if _, ok := whitelistDict[uint32(txid)]; !ok {
-			for _, v := range *vec {
+			for _, v := range vec {
 				v.SetPath(nil) // Mark the transition status, so that it can be removed later.
 			}
 		}
@@ -177,57 +167,38 @@ func (this *StateCommitter) Whitelist(txs []uint32) *StateCommitter {
 
 // Finalize finalizes the transitions in the StateCommitter.
 func (this *StateCommitter) Finalize(txs []uint32) *StateCommitter {
-	this.byPath.ParallelForeachDo(func(_ string, v *[]*univalue.Univalue) {
-		importer.DeltaSequenceV2(*v).Finalize()
+	this.byPath.ParallelForeachDo(func(_ string, v []*univalue.Univalue) {
+		importer.DeltaSequenceV2(v).Finalize()
 	})
 	return this
 }
 
 // Commit commits the transitions in the StateCommitter.
 func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
-	this.Whitelist(txs)
-
-	// Finalize all the transitions for both the ETH storage and the concurrent container transitions
-	this.byPath.ParallelForeachDo(func(_ string, v *[]*univalue.Univalue) {
-		slice.RemoveIf(v, func(_ int, val *univalue.Univalue) bool { return val.GetPath() == nil }) // Remove conflicting ones.
-		if len(*v) > 0 {
-			importer.DeltaSequenceV2(*v).Finalize()
-		}
+	this.byPath.ParallelForeachDo(func(_ string, v []*univalue.Univalue) {
+		importer.DeltaSequenceV2(v).Finalize() // Finalize all the transitions
 	})
 
-	// Write concurrent transitions to the concurrent storage
-	slice.RemoveIf(&this.byCtrn, func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil }) // Remove the transitions that are marked
-	keys := univalue.Univalues(this.byCtrn).Keys()
-	vals := slice.To[*univalue.Univalue, interface{}](this.byCtrn)
-	this.Store().(*storage.StoreRouter).CCStore().Precommit(keys, vals)
+	// Write the concurrent transitions to the concurrent container storage. All in the same slice.
+	this.Store().(*storage.StoreRouter).CCStore().PrecommitV2(this.byCtrn.Keys(), this.byCtrn.Values())
 
 	// Write Eth transitions to the Eth storage
-	this.byEth.ParallelForeachDo(func(_ [20]byte, v **associative.Pair[*storage.Account, []*univalue.Univalue]) {
-		slice.RemoveIf(&((**v).Second), func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil })
-	})
-	return this.Store().(*storage.StoreRouter).EthStore().Precommit(this.byEth.Values()) // Write to the DB buffer
+	return this.Store().(*storage.StoreRouter).EthStore().PrecommitV2(this.byEth.Values()) // Write to the DB buffer
 }
 
 // Commit commits the transitions in the StateCommitter.
 func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
-	trans := slice.Flatten(this.byPath.Values())
-	slice.RemoveIf(&trans, func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil }) // Remove conflict ones
-
-	// Update the cache
-	keys := make([]string, len(trans))
-	typedVals := slice.Transform(trans, func(i int, v *univalue.Univalue) intf.Type {
-		keys[i] = *v.GetPath()
-		if v.Value() != nil {
-			return v.Value().(intf.Type)
+	keys := this.byPath.Keys()
+	typedVals := slice.Transform(this.byPath.Values(), func(_ int, v []*univalue.Univalue) intf.Type {
+		if v[0].Value() != nil {
+			return v[0].Value().(intf.Type)
 		}
-		return nil // A deletion
+		return nil
 	})
-	this.Store().(*storage.StoreRouter).RefreshCache(blockNum, keys, typedVals) // Update the cache
 
-	// Write the concurrent container  and the Eth storage
-	ethErr := this.Store().(*storage.StoreRouter).CCStore().Commit(blockNum)    // Write the container storage
-	ccStgErr := this.Store().(*storage.StoreRouter).EthStore().Commit(blockNum) // Write the Eth storage
-	this.Err = errors.Join(ethErr, ccStgErr)
+	this.Store().(*storage.StoreRouter).RefreshCache(blockNum, keys, typedVals) // Update the cache
+	this.Store().(*storage.StoreRouter).CCStore().Commit(0)                     // Write the container storage
+	this.Store().(*storage.StoreRouter).EthStore().Commit(0)                    // Write the Eth storage
 	return this
 }
 
@@ -236,5 +207,5 @@ func (this *StateCommitter) Clear() {
 	this.byPath.Clear()
 	this.byTxID.Clear()
 	this.byEth.Clear()
-	this.byCtrn = this.byCtrn[:0]
+	this.byCtrn.Clear()
 }

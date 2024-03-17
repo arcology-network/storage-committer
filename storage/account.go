@@ -304,7 +304,7 @@ func (this *Account) PrecommitAcctStorage(updates *AccountUpdate) ([]string, []i
 }
 
 // func (this *Account) Precommit(keys []string, values []interface{}) {
-// 	this.err = this.UpdateAccount(keys, slice.Append(values,
+// 	this.err = this.UpdateAccount(keys, slice.Transform(values,
 // 		func(_ int, v interface{}) interfaces.Type {
 // 			if v.(*univalue.Univalue).Value() != nil {
 // 				return v.(*univalue.Univalue).Value().(interfaces.Type)

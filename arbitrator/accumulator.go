@@ -105,7 +105,7 @@ func (this *Accumulator) isOutOfLimits(k string, transitions []*univalue.Univalu
 
 	initialv := transitions[0].Value().(intf.Type).Clone().(intf.Type)
 
-	typedVals := slice.Append(transitions, func(_ int, v *univalue.Univalue) intf.Type {
+	typedVals := slice.Transform(transitions, func(_ int, v *univalue.Univalue) intf.Type {
 		return v.Value().(intf.Type)
 	})
 

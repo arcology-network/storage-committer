@@ -179,7 +179,7 @@ func (this *Univalue) ApplyDelta(vec []*Univalue) error {
 	}
 
 	// Apply transitions
-	typedVals := slice.Append(vec, func(_ int, v *Univalue) intf.Type {
+	typedVals := slice.Transform(vec, func(_ int, v *Univalue) intf.Type {
 		if v.Value() != nil {
 			return v.Value().(intf.Type)
 		}

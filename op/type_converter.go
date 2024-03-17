@@ -31,11 +31,11 @@ type Convertible storage.AccountResult
 // The main difference is that the Ethereum storage proof is a list of hex STRINGS with the 0x prefix, but
 // the Optimism storage proof is a list of hex BYTES without the 0x prefix.
 func (Convertible) ToStorageProof(res []storage.StorageResult) []OptimismStorageProof {
-	opProof := slice.Append(res, func(i int, storageResult storage.StorageResult) OptimismStorageProof {
+	opProof := slice.Transform(res, func(i int, storageResult storage.StorageResult) OptimismStorageProof {
 		return OptimismStorageProof{
 			Key:   ethcommon.BytesToHash(hexutil.MustDecode(storageResult.Key)),
 			Value: *storageResult.Value,
-			Proof: slice.Append(storageResult.Proof, func(i int, hexStr string) hexutil.Bytes {
+			Proof: slice.Transform(storageResult.Proof, func(i int, hexStr string) hexutil.Bytes {
 				return hexutil.MustDecode(hexStr) // strip 0x prefix and decode hex string to bytes
 			}),
 		}
@@ -46,7 +46,7 @@ func (Convertible) ToStorageProof(res []storage.StorageResult) []OptimismStorage
 // Convert from Ethereum account proof to Optimism proof format.
 func (this Convertible) New() OptimismAccountResult {
 	return OptimismAccountResult{
-		AccountProof: slice.Append(this.AccountProof, func(i int, hexStr string) hexutil.Bytes {
+		AccountProof: slice.Transform(this.AccountProof, func(i int, hexStr string) hexutil.Bytes {
 			return hexutil.MustDecode(hexStr) // strip 0x prefix and decode hex string to bytes
 		}),
 		Address:      this.Address,
