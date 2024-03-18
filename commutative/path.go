@@ -87,10 +87,6 @@ func (this *Path) Preload(k string, arg interface{}) {
 }
 
 func (this *Path) Clone() interface{} {
-	// fmt.Println(">>>>>>>>>>> Added Keys: ", codec.Strings(this.DeltaSet.Added().Elements()).ToHex())
-	// fmt.Println(">>>>>>>>>>> Removed Keys: ", codec.Strings(this.DeltaSet.Removed().Elements()).ToHex())
-	// fmt.Println(">>>>>>>>>>> Committed Keys: ", codec.Strings(this.DeltaSet.Committed().Elements()).ToHex())
-
 	return &Path{
 		DeltaSet:  this.DeltaSet.Clone(),
 		preloaded: this.preloaded,
@@ -118,8 +114,15 @@ func (this *Path) ApplyDelta(typedVals []intf.Type) (intf.Type, int, error) {
 		return nil, 1, nil //This is a deletion and when this is true, the number of write operations is 1.
 	}
 
+	// Due to the async nature of the importing process, the preloaded value may not be in the first element of the slice.
+	// If this is the case, we need to find the preloaded value and set it to the preloaded field of the first element.
 	if this.preloaded != nil {
 		this.DeltaSet.SetCommitted(this.preloaded)
+	} else {
+		if idx, v := slice.FindFirstIf(typedVals, func(v intf.Type) bool { return v.(*Path).preloaded != nil }); idx >= 0 {
+			typedVals[idx].(*Path).preloaded = nil
+			this.preloaded = (*v).(*Path).preloaded
+		}
 	}
 
 	deltaSets := slice.Transform(typedVals, func(_ int, v intf.Type) *deltaset.DeltaSet[string] { return v.(*Path).DeltaSet })
