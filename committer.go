@@ -21,6 +21,7 @@ package storagecommitter
 import (
 	"errors"
 	"math"
+	"runtime"
 
 	platform "github.com/arcology-network/storage-committer/platform"
 	"github.com/arcology-network/storage-committer/storage"
@@ -28,6 +29,7 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
+	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/associative"
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/slice"
@@ -195,27 +197,45 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 		}
 	})
 
-	// Write concurrent transitions to the concurrent storage
-	slice.RemoveIf(&this.byCtrn, func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil }) // Remove the transitions that are marked
-	keys := univalue.Univalues(this.byCtrn).Keys()
-	vals := slice.To[*univalue.Univalue, interface{}](this.byCtrn)
-	this.Store().(*storage.StoreRouter).CCStore().Precommit(keys, vals)
+	var ethRootHash [32]byte
+	common.ParallelExecute(
+		func() {
+			slice.RemoveIf(&this.byCtrn, func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil }) // Remove the transitions that are marked
+			keys := univalue.Univalues(this.byCtrn).Keys()
+			vals := slice.To[*univalue.Univalue, interface{}](this.byCtrn)
+			this.Store().(*storage.StoreRouter).CCStore().Precommit(keys, vals)
+		},
 
-	// Write Eth transitions to the Eth storage
-	this.byEth.ParallelForeachDo(func(_ [20]byte, v **associative.Pair[*storage.Account, []*univalue.Univalue]) {
-		slice.RemoveIf(&((**v).Second), func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil })
-	})
-	return this.Store().(*storage.StoreRouter).EthStore().Precommit(this.byEth.Values()) // Write to the DB buffer
+		func() {
+			this.byEth.ParallelForeachDo(func(_ [20]byte, v **associative.Pair[*storage.Account, []*univalue.Univalue]) {
+				slice.RemoveIf(&((**v).Second), func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil })
+			})
+			ethRootHash = this.Store().(*storage.StoreRouter).EthStore().Precommit(this.byEth.Values())
+		},
+	)
+	return ethRootHash // Write to the DB buffer
 }
 
 // Commit commits the transitions in the StateCommitter.
 func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
-	trans := slice.Flatten(this.byPath.Values())
-	slice.RemoveIf(&trans, func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil }) // Remove conflict ones
+	var ethStgErr, ccStgErr error
+	common.ParallelExecute(
+		func() {
+			trans := slice.Flatten(this.byPath.Values())
+			slice.RemoveIf(&trans, func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil }) // Remove conflict ones
+			this.CommitToCache(blockNum, trans)
+		},
+		func() { ccStgErr = this.Store().(*storage.StoreRouter).CCStore().Commit(blockNum) },
+		func() { ethStgErr = this.Store().(*storage.StoreRouter).EthStore().Commit(blockNum) },
+	)
+	this.Err = errors.Join(ethStgErr, ccStgErr)
+	return this
+}
 
-	// Update the cache
+// Update the cache
+func (this *StateCommitter) CommitToCache(blockNum uint64, trans []*univalue.Univalue) {
 	keys := make([]string, len(trans))
-	typedVals := slice.Transform(trans, func(i int, v *univalue.Univalue) intf.Type {
+	typedVals := slice.ParallelTransform(trans, runtime.NumCPU(), func(i int, v *univalue.Univalue) intf.Type {
 		keys[i] = *v.GetPath()
 		if v.Value() != nil {
 			return v.Value().(intf.Type)
@@ -223,12 +243,6 @@ func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
 		return nil // A deletion
 	})
 	this.Store().(*storage.StoreRouter).RefreshCache(blockNum, keys, typedVals) // Update the cache
-
-	// Write the concurrent container  and the Eth storage
-	ethErr := this.Store().(*storage.StoreRouter).CCStore().Commit(blockNum)    // Write the container storage
-	ccStgErr := this.Store().(*storage.StoreRouter).EthStore().Commit(blockNum) // Write the Eth storage
-	this.Err = errors.Join(ethErr, ccStgErr)
-	return this
 }
 
 // Clear clears the StateCommitter.

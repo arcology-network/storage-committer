@@ -73,7 +73,7 @@ func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) 
 	this.RemoveRemoteEntries(&txTrans, commitIfAbsent)
 
 	// Create new sequences for the non-existing paths all at once.
-	missingKeys := slice.ParallelAppend(txTrans, this.numThreads, func(i int, _ *univalue.Univalue) string {
+	missingKeys := slice.ParallelTransform(txTrans, this.numThreads, func(i int, _ *univalue.Univalue) string {
 		if _, ok := this.deltaDict.Get(*txTrans[i].GetPath()); !ok {
 			return *txTrans[i].GetPath()
 		}
@@ -84,7 +84,7 @@ func (this *Importer) Import(txTrans []*univalue.Univalue, args ...interface{}) 
 	// Create the missing sequences as new transitions are being added.
 	missingKeys = mapi.Keys(mapi.FromSlice(missingKeys, func(k string) bool { return true })) // Get the unique keys only by putting keys in a map
 
-	newSeqs := slice.ParallelAppend(missingKeys, this.numThreads, func(i int, k string) *DeltaSequence {
+	newSeqs := slice.ParallelTransform(missingKeys, this.numThreads, func(i int, k string) *DeltaSequence {
 		return NewDeltaSequence(k, this.store)
 	})
 	this.deltaDict.BatchSet(missingKeys, newSeqs)

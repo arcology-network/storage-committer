@@ -115,8 +115,15 @@ func TestWriteWithNewWriteCache(b *testing.T) {
 	}
 	fmt.Println("First Write time:", len(keys)*2, "keys in", time.Since(t0))
 
+	t0 = time.Now()
 	committer := stgcommitter.NewStorageCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
+	fmt.Println("New committer + Import:", time.Since(t0))
+
+	t0 = time.Now()
 	committer.Precommit([]uint32{0})
+	fmt.Println("Precommit time:", time.Since(t0))
+
+	t0 = time.Now()
 	committer.Commit(0)
 	fmt.Println("Commit time:", time.Since(t0))
 

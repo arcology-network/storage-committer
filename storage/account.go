@@ -251,12 +251,12 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Typ
 	numThd := common.IfThen(len(keys) < 1024, 4, 8)
 
 	// Encode the keys
-	encodedKeys := slice.ParallelAppend(keys, numThd, func(i int, _ string) []byte {
+	encodedKeys := slice.ParallelTransform(keys, numThd, func(i int, _ string) []byte {
 		return []byte(this.ToStorageKey(keys[i])) // Remove the prefix to get the keys.
 	})
 
 	// Encode the values
-	encodedVals := slice.ParallelAppend(typedVals, numThd, func(i int, _ interfaces.Type) []byte {
+	encodedVals := slice.ParallelTransform(typedVals, numThd, func(i int, _ interfaces.Type) []byte {
 		return common.IfThenDo1st(typedVals[i] != nil, func() []byte {
 			return typedVals[i].StorageEncode(keys[i])
 		}, []byte{})
