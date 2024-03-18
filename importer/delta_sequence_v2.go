@@ -24,13 +24,12 @@ func (this DeltaSequenceV2) sort() DeltaSequenceV2 {
 		if this[j].GetTx() == stgcommcommon.SYSTEM {
 			return false
 		}
-
 		return this[i].GetTx() < this[j].GetTx()
 	})
 	return this
 }
 
-func (this DeltaSequenceV2) Finalize() *univalue.Univalue {
+func (this DeltaSequenceV2) Finalize(store intf.ReadOnlyDataStore) *univalue.Univalue {
 	trans := []*univalue.Univalue(this)
 	slice.RemoveIf(&trans, func(_ int, v *univalue.Univalue) bool {
 		return v.GetPath() == nil

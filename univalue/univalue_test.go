@@ -92,7 +92,7 @@ func TestUnivalueCodeMeta(t *testing.T) {
 	meta := commutative.NewPath()
 	meta.(*commutative.Path).SetSubPaths([]string{"e-01", "e-001", "e-002", "e-002"})
 	meta.(*commutative.Path).SetAdded([]string{"+01", "+001", "+002", "+002"})
-	meta.(*commutative.Path).SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
+	meta.(*commutative.Path).InsertRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
 
 	in := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 11, meta, nil)
 	in.reads = 1

@@ -77,11 +77,13 @@ func (this *Uint64) DeltaSign() bool    { return true }
 func (this *Uint64) Min() interface{}   { return this.min }
 func (this *Uint64) Max() interface{}   { return this.max }
 
-func (this *Uint64) CloneDelta() interface{} { return this.delta }
-func (this *Uint64) SetValue(v interface{})  { this.value = v.(uint64) }
-func (this *Uint64) IsDeltaApplied() bool    { return this.delta == 0 }
+func (this *Uint64) Reset()                          { this.delta = 0 }
+func (this *Uint64) IsDeltaApplied() bool            { return this.delta == 0 }
+func (this *Uint64) CloneDelta() interface{}         { return this.delta }
+func (this *Uint64) ResetDelta()                     { this.SetDelta(common.New[codec.Uint64](0)) }
+func (this *Uint64) Preload(_ string, _ interface{}) {}
 
-func (this *Uint64) ResetDelta()                { this.SetDelta(common.New[codec.Uint64](0)) }
+func (this *Uint64) SetValue(v interface{})     { this.value = v.(uint64) }
 func (this *Uint64) SetDelta(v interface{})     { this.delta = v.(uint64) }
 func (this *Uint64) SetDeltaSign(v interface{}) {}
 func (this *Uint64) SetMin(v interface{})       { this.min = v.(uint64) }
@@ -90,7 +92,6 @@ func (this *Uint64) SetMax(v interface{})       { this.max = v.(uint64) }
 func (this *Uint64) TypeID() uint8                                              { return UINT64 }
 func (this *Uint64) IsSelf(key interface{}) bool                                { return true }
 func (this *Uint64) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }
-func (this *Uint64) Reset()                                                     { this.delta = 0 }
 
 func (this *Uint64) Get() (interface{}, uint32, uint32) {
 	return this.value + this.delta, 1, common.IfThen(this.delta == 0, uint32(0), uint32(1))

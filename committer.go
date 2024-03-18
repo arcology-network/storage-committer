@@ -69,7 +69,12 @@ func NewStorageCommitter(store interfaces.Datastore) *StateCommitter {
 				return *(*v).GetPath(), true
 			},
 			nil,
-			func(_ string, v *univalue.Univalue) []*univalue.Univalue { return []*univalue.Univalue{v} },
+			func(k string, v *univalue.Univalue) []*univalue.Univalue {
+				if v.Value() != nil {
+					v.Value().(intf.Type).Preload(k, store)
+				}
+				return []*univalue.Univalue{v}
+			},
 			func(_ string, v *univalue.Univalue, vals *[]*univalue.Univalue) { *vals = append(*vals, v) },
 		),
 		// An index by tx number, transitions have the same tx number will be put together in a list.
@@ -177,14 +182,6 @@ func (this *StateCommitter) Whitelist(txs []uint32) *StateCommitter {
 	return this
 }
 
-// Finalize finalizes the transitions in the StateCommitter.
-func (this *StateCommitter) Finalize(txs []uint32) *StateCommitter {
-	this.byPath.ParallelForeachDo(func(_ string, v *[]*univalue.Univalue) {
-		importer.DeltaSequenceV2(*v).Finalize()
-	})
-	return this
-}
-
 // Commit commits the transitions in the StateCommitter.
 func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 	this.Whitelist(txs)
@@ -193,7 +190,7 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 	this.byPath.ParallelForeachDo(func(_ string, v *[]*univalue.Univalue) {
 		slice.RemoveIf(v, func(_ int, val *univalue.Univalue) bool { return val.GetPath() == nil }) // Remove conflicting ones.
 		if len(*v) > 0 {
-			importer.DeltaSequenceV2(*v).Finalize()
+			importer.DeltaSequenceV2(*v).Finalize(this.store)
 		}
 	})
 

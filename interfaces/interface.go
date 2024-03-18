@@ -55,6 +55,8 @@ type Type interface { // value type
 	StorageEncode(string) []byte
 	StorageDecode(string, []byte) interface{}
 
+	Preload(string, interface{})
+
 	Hash(func([]byte) []byte) []byte
 	Reset()
 	Print()

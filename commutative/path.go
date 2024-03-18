@@ -22,12 +22,14 @@ import (
 
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/deltaset"
+	"github.com/arcology-network/common-lib/exp/orderedset"
 	"github.com/arcology-network/common-lib/exp/slice"
 	intf "github.com/arcology-network/storage-committer/interfaces"
 )
 
 type Path struct {
 	*deltaset.DeltaSet[string]
+	preloaded *orderedset.OrderedSet[string]
 }
 
 func NewPath() intf.Type {
@@ -70,13 +72,28 @@ func (this *Path) SetDeltaSign(v interface{}) {}
 func (this *Path) SetMin(v interface{})       {}
 func (this *Path) SetMax(v interface{})       {}
 
+func (this *Path) Preload(k string, arg interface{}) {
+	if this.preloaded != nil { // Already preloaded
+		return
+	}
+
+	store := arg.(interface {
+		Retrive(string, any) (interface{}, error)
+	})
+
+	if v, err := store.Retrive(k, new(deltaset.DeltaSet[string])); v != nil && err == nil && v.(*Path).Committed().Length() > 0 {
+		this.preloaded = v.(*Path).Committed()
+	}
+}
+
 func (this *Path) Clone() interface{} {
 	// fmt.Println(">>>>>>>>>>> Added Keys: ", codec.Strings(this.DeltaSet.Added().Elements()).ToHex())
 	// fmt.Println(">>>>>>>>>>> Removed Keys: ", codec.Strings(this.DeltaSet.Removed().Elements()).ToHex())
 	// fmt.Println(">>>>>>>>>>> Committed Keys: ", codec.Strings(this.DeltaSet.Committed().Elements()).ToHex())
 
 	return &Path{
-		this.DeltaSet.Clone(),
+		DeltaSet:  this.DeltaSet.Clone(),
+		preloaded: this.preloaded,
 	}
 }
 func (this *Path) Equal(other interface{}) bool { return this.DeltaSet.Equal(other.(*Path).DeltaSet) }
@@ -99,6 +116,10 @@ func (this *Path) New(value, delta, sign, min, max interface{}) interface{} {
 func (this *Path) ApplyDelta(typedVals []intf.Type) (intf.Type, int, error) {
 	if idx, _ := slice.FindFirst(typedVals, nil); idx >= 0 {
 		return nil, 1, nil //This is a deletion and when this is true, the number of write operations is 1.
+	}
+
+	if this.preloaded != nil {
+		this.DeltaSet.SetCommitted(this.preloaded)
 	}
 
 	deltaSets := slice.Transform(typedVals, func(_ int, v intf.Type) *deltaset.DeltaSet[string] { return v.(*Path).DeltaSet })
@@ -158,16 +179,16 @@ func (this *Path) Hash(hasher func([]byte) []byte) []byte {
 }
 
 // For Debug
-func (this *Path) SetSubPaths(keys []string) { this.DeltaSet.SetCommitted(keys) }
-func (this *Path) SetAdded(keys []string)    { this.DeltaSet.SetAppended(keys) }
-func (this *Path) SetRemoved(keys []string)  { this.DeltaSet.SetRemoved(keys) }
+func (this *Path) SetSubPaths(keys []string)   { this.DeltaSet.InsertCommitted(keys) }
+func (this *Path) SetAdded(keys []string)      { this.DeltaSet.InsertUpdated(keys) }
+func (this *Path) InsertRemoved(keys []string) { this.DeltaSet.InsertRemoved(keys) }
 
 func (this *Path) Keys() []string { // Committed keys
 	return common.IfThenDo1st(this.DeltaSet.Committed() != nil, func() []string { return this.DeltaSet.Committed().Elements() }, []string{})
 }
 
 func (this *Path) Added() []string {
-	return common.IfThenDo1st(this.DeltaSet.Added() != nil, func() []string { return this.DeltaSet.Added().Elements() }, []string{})
+	return common.IfThenDo1st(this.DeltaSet.Updated() != nil, func() []string { return this.DeltaSet.Updated().Elements() }, []string{})
 }
 
 func (this *Path) Removed() []string {

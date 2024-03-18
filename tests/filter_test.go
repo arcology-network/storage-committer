@@ -46,14 +46,14 @@ func TestTransitionFilters(t *testing.T) {
 
 	acctTrans[0].Value().(*commutative.Path).SetSubPaths([]string{"k0", "k1"})
 	acctTrans[0].Value().(*commutative.Path).SetAdded([]string{"123", "456"})
-	acctTrans[0].Value().(*commutative.Path).SetRemoved([]string{"789", "116"})
+	acctTrans[0].Value().(*commutative.Path).InsertRemoved([]string{"789", "116"})
 
 	acctTrans[1].Value().(*commutative.U256).SetValue(*uint256.NewInt(111))
 	acctTrans[1].Value().(*commutative.U256).SetDelta(*uint256.NewInt(999))
 	acctTrans[1].Value().(*commutative.U256).SetMin(*uint256.NewInt(1))
 	acctTrans[1].Value().(*commutative.U256).SetMax(*uint256.NewInt(2222222))
 
-	if v := raw[0].Value().(*commutative.Path).Delta().(*deltaset.DeltaSet[string]); !reflect.DeepEqual(v.Added().Elements(), []string{}) {
+	if v := raw[0].Value().(*commutative.Path).Delta().(*deltaset.DeltaSet[string]); !reflect.DeepEqual(v.Updated().Elements(), []string{}) {
 		t.Error("Error: Value altered")
 	}
 
@@ -85,7 +85,7 @@ func TestTransitionFilters(t *testing.T) {
 		t.Error("Error: A path commutative variable shouldn't have the initial value")
 	}
 
-	if v := copied[0].Value().(*commutative.Path).Delta().(*deltaset.DeltaSet[string]); !reflect.DeepEqual(v.Added().Elements(), []string{"123", "456"}) {
+	if v := copied[0].Value().(*commutative.Path).Delta().(*deltaset.DeltaSet[string]); !reflect.DeepEqual(v.Updated().Elements(), []string{"123", "456"}) {
 		t.Error("Error: Delta altered")
 	}
 
@@ -127,7 +127,7 @@ func TestAccessFilters(t *testing.T) {
 
 	raw[0].Value().(*commutative.Path).SetSubPaths([]string{"k0", "k1"})
 	raw[0].Value().(*commutative.Path).SetAdded([]string{"123", "456"})
-	raw[0].Value().(*commutative.Path).SetRemoved([]string{"789", "116"})
+	raw[0].Value().(*commutative.Path).InsertRemoved([]string{"789", "116"})
 
 	raw[1].Value().(*commutative.U256).SetValue(*uint256.NewInt(111))
 	raw[1].Value().(*commutative.U256).SetDelta(*uint256.NewInt(999))

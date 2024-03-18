@@ -78,8 +78,9 @@ func (this *Int64) DeltaSign() bool    { return this.delta >= 0 }
 func (this *Int64) Min() interface{}   { return this.min }
 func (this *Int64) Max() interface{}   { return this.max }
 
-func (this *Int64) CloneDelta() interface{} { return (this.delta) }
-func (this *Int64) SetValue(v interface{})  { this.value = v.(int64) }
+func (this *Int64) CloneDelta() interface{}         { return (this.delta) }
+func (this *Int64) SetValue(v interface{})          { this.value = v.(int64) }
+func (this *Int64) Preload(_ string, _ interface{}) {}
 
 func (this *Int64) IsDeltaApplied() bool       { return this.delta == 0 }
 func (this *Int64) ResetDelta()                { this.SetDelta(common.New[int64](0)) }

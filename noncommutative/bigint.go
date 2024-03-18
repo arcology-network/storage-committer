@@ -45,7 +45,8 @@ func (this *Bigint) Max() interface{}   { return nil }
 
 func (this *Bigint) CloneDelta() interface{} { return this.Clone() }
 
-func (this *Bigint) SetValue(v interface{}) { this.SetDelta(v) }
+func (this *Bigint) SetValue(v interface{})          { this.SetDelta(v) }
+func (this *Bigint) Preload(_ string, _ interface{}) {}
 
 func (this *Bigint) IsDeltaApplied() bool       { return true }
 func (this *Bigint) ResetDelta()                { this.SetDelta(big.NewInt(0)) }

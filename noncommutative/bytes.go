@@ -59,16 +59,16 @@ func (this *Bytes) DeltaSign() bool    { return true } // delta sign
 func (this *Bytes) Min() interface{}   { return nil }
 func (this *Bytes) Max() interface{}   { return nil }
 
-func (this *Bytes) CloneDelta() interface{} { return codec.Bytes(slice.Clone(this.value)) }
-func (this *Bytes) SetValue(v interface{})  { this.SetDelta(v) }
+func (this *Bytes) CloneDelta() interface{}         { return codec.Bytes(slice.Clone(this.value)) }
+func (this *Bytes) SetValue(v interface{})          { this.SetDelta(v) }
+func (this *Bytes) Preload(_ string, _ interface{}) {}
 
-func (this *Bytes) IsDeltaApplied() bool       { return true }
-func (this *Bytes) ResetDelta()                { this.SetDelta(codec.Bytes([]byte{})) }
-func (this *Bytes) SetDelta(v interface{})     { copy(this.value, v.(codec.Bytes)) }
-func (this *Bytes) SetDeltaSign(v interface{}) {}
-func (this *Bytes) SetMin(v interface{})       {}
-func (this *Bytes) SetMax(v interface{})       {}
-
+func (this *Bytes) IsDeltaApplied() bool               { return true }
+func (this *Bytes) ResetDelta()                        { this.SetDelta(codec.Bytes([]byte{})) }
+func (this *Bytes) SetDelta(v interface{})             { copy(this.value, v.(codec.Bytes)) }
+func (this *Bytes) SetDeltaSign(v interface{})         {}
+func (this *Bytes) SetMin(v interface{})               {}
+func (this *Bytes) SetMax(v interface{})               {}
 func (this *Bytes) Get() (interface{}, uint32, uint32) { return []byte(this.value), 1, 0 }
 
 func (this *Bytes) New(_, delta, _, _, _ interface{}) interface{} {
