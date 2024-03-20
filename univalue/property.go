@@ -9,6 +9,7 @@ type Property struct {
 	writes      uint32
 	deltaWrites uint32
 	preexists   bool
+	msg         string
 	reclaimFunc func(interface{})
 }
 
@@ -41,6 +42,10 @@ func (this *Property) Merge(other *Property) {
 	this.deltaWrites += other.deltaWrites
 	this.persistent = this.persistent || other.persistent
 }
+
+func (this *Property) GetMsg() string       { return this.msg }
+func (this *Property) SetMsg(msg string)    { this.msg = msg }
+func (this *Property) AppendMsg(msg string) { this.msg = this.msg + "\n" + msg }
 
 func (this *Property) GetPersistent() bool  { return this.persistent }
 func (this *Property) SetPersistent(v bool) { this.persistent = v }
@@ -76,7 +81,8 @@ func (this *Property) Equal(other *Property) bool {
 		*this.path == *other.path &&
 		this.reads == other.reads &&
 		this.writes == other.writes &&
-		this.deltaWrites == other.deltaWrites
+		this.deltaWrites == other.deltaWrites &&
+		this.msg == other.msg
 }
 
 func (this *Property) Clone() Property {
@@ -89,5 +95,6 @@ func (this *Property) Clone() Property {
 		writes:      this.writes,
 		preexists:   this.preexists,
 		reclaimFunc: this.reclaimFunc,
+		msg:         this.msg,
 	}
 }

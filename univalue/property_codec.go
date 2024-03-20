@@ -14,7 +14,7 @@ func (this *Property) Encode() []byte {
 }
 
 func (this *Property) HeaderSize() uint32 {
-	return uint32(9 * codec.UINT32_LEN)
+	return uint32(10 * codec.UINT32_LEN)
 }
 
 func (this *Property) Size() uint32 {
@@ -26,7 +26,8 @@ func (this *Property) Size() uint32 {
 		uint32(4) + // codec.Uint32(this.writes).Size() +
 		uint32(4) + // codec.Uint32(this.deltaWrites).Size() +
 		uint32(1) + //+  codec.Bool(this.preexists).Size() +
-		uint32(1) //+  codec.Bool(this.persistent).Size() +
+		uint32(1) + //+  codec.Bool(this.persistent).Size() +
+		uint32(len(this.msg))
 }
 
 func (this *Property) FillHeader(buffer []byte) int {
@@ -41,6 +42,7 @@ func (this *Property) FillHeader(buffer []byte) int {
 			codec.Uint32(this.deltaWrites).Size(),
 			codec.Bool(this.preexists).Size(),
 			codec.Bool(this.persistent).Size(),
+			codec.String(this.msg).Size(),
 		},
 	)
 }
@@ -55,6 +57,7 @@ func (this *Property) EncodeToBuffer(buffer []byte) int {
 	offset += codec.Uint32(this.deltaWrites).EncodeToBuffer(buffer[offset:])
 	offset += codec.Bool(this.preexists).EncodeToBuffer(buffer[offset:])
 	offset += codec.Bool(this.persistent).EncodeToBuffer(buffer[offset:])
+	offset += codec.String(this.msg).EncodeToBuffer(buffer[offset:])
 
 	return offset
 }
@@ -74,7 +77,7 @@ func (this *Property) Decode(buffer []byte) interface{} {
 	this.deltaWrites = uint32(codec.Uint32(1).Decode(fields[5]).(codec.Uint32))
 	this.preexists = bool(codec.Bool(false).Decode(fields[6]).(codec.Bool))
 	this.persistent = bool(codec.Bool(true).Decode(fields[7]).(codec.Bool))
-
+	this.msg = string(codec.String("").Decode(bytes.Clone(fields[8])).(codec.String))
 	return this
 }
 
@@ -92,5 +95,6 @@ func (this *Property) GobDecode(data []byte) error {
 	this.reads = v.reads
 	this.writes = v.writes
 	this.deltaWrites = v.deltaWrites
+	this.msg = v.msg
 	return nil
 }

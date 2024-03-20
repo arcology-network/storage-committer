@@ -207,7 +207,11 @@ func (this *Univalue) PrecheckAttributes(other *Univalue) {
 		panic("Error: Value type mismatched!") // Read only variable should never be here.
 	}
 
-	if this.preexists && this.Value().(intf.Type).IsCommutative() && this.Reads() > 0 && this.IsDeltaWriteOnly() == other.IsDeltaWriteOnly() {
+	if this.GetTx() != other.GetTx() &&
+		this.preexists &&
+		this.Value().(intf.Type).IsCommutative() &&
+		this.Reads() > 0 &&
+		this.IsDeltaWriteOnly() == other.IsDeltaWriteOnly() {
 		this.Print()
 		fmt.Println("================================================================")
 		other.Print()
@@ -215,7 +219,7 @@ func (this *Univalue) PrecheckAttributes(other *Univalue) {
 	}
 
 	if this.Value() == nil && this.IsDeltaWriteOnly() {
-		// panic("Error: A deleted value cann't be composite")
+		panic("Error: A deleted value cann't be composite")
 	}
 
 	if !this.preexists && this.IsDeltaWriteOnly() {

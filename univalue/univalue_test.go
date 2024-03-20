@@ -1,10 +1,11 @@
 package univalue
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/arcology-network/common-lib/addrcompressor"
-	orderedset "github.com/arcology-network/common-lib/exp/orderedset"
+	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
 	commutative "github.com/arcology-network/storage-committer/commutative"
 	intf "github.com/arcology-network/storage-committer/interfaces"
@@ -80,9 +81,16 @@ func TestUnivalueCodecU256(t *testing.T) {
 		*in.path != *v.path ||
 		in.writes != v.writes ||
 		in.deltaWrites != v.deltaWrites ||
-		in.preexists != v.preexists {
+		in.preexists != v.preexists || in.msg != v.msg {
 		t.Error("Error: mismatch after decoding")
 	}
+
+	str1 := "First string"
+	str2 := "Second string"
+
+	result := str1 + "\n" + str2
+
+	fmt.Println(result)
 }
 
 func TestUnivalueCodeMeta(t *testing.T) {
@@ -105,7 +113,7 @@ func TestUnivalueCodeMeta(t *testing.T) {
 	out := (&Univalue{}).Decode(bytes).(*Univalue)
 	outKeys, _, _ := out.Value().(intf.Type).Get()
 
-	if !slice.EqualSet(inKeys.(*orderedset.OrderedSet[string]).Elements(), outKeys.(*orderedset.OrderedSet[string]).Elements()) {
+	if !slice.EqualSet(inKeys.(*deltaset.DeltaSet[string]).Elements(), outKeys.(*deltaset.DeltaSet[string]).Elements()) {
 		t.Error("Error")
 	}
 }
@@ -120,11 +128,12 @@ func TestPropertyCodecUint64(t *testing.T) {
 	in.reads = 1
 	in.writes = 2
 	in.deltaWrites = 3
+	in.msg = "hello"
 
 	bytes := in.Encode()
 	out := (&Property{}).Decode(bytes).(*Property)
 
-	if in == out {
+	if !in.Equal(out) {
 		t.Error("Error")
 	}
 }
