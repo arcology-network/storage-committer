@@ -52,6 +52,11 @@ type StateCommitter struct {
 	Err error
 }
 
+// 	return &StateCommitter{
+// 		Platform: platform.NewPlatform(),
+// 	}
+// }
+
 // NewStorageCommitter creates a new StateCommitter instance.
 func NewStorageCommitter(store interfaces.Datastore) *StateCommitter {
 	plat := platform.NewPlatform()
@@ -240,6 +245,24 @@ func (this *StateCommitter) CommitToCache(blockNum uint64, trans []*univalue.Uni
 		return nil // A deletion
 	})
 	this.Store().(*storage.StoreRouter).RefreshCache(blockNum, keys, typedVals) // Update the cache
+}
+
+// New creates a new StateCommitter instance.
+func (this *StateCommitter) ByPath() *Indexer[string, *univalue.Univalue, []*univalue.Univalue] {
+	return this.byPath
+
+}
+
+func (this *StateCommitter) ByTxID() *Indexer[uint32, *univalue.Univalue, []*univalue.Univalue] {
+	return this.byTxID
+}
+
+func (this *StateCommitter) ByEth() *Indexer[[20]byte, *univalue.Univalue, *associative.Pair[*storage.Account, []*univalue.Univalue]] {
+	return this.byEth
+}
+
+func (this *StateCommitter) ByCtrn() []*univalue.Univalue {
+	return this.byCtrn
 }
 
 // Clear clears the StateCommitter.
