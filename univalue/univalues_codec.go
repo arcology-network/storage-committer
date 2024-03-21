@@ -105,13 +105,17 @@ func (this *Univalues) GobDecode(data []byte) error {
 	return nil
 }
 
-func (this Univalues) Print() {
+func (this Univalues) Print(condition ...func(v *Univalue) bool) {
 	sorted := slice.Clone(this)
 	sort.Slice(sorted, func(i, j int) bool {
 		return (*sorted[i].GetPath()) < (*sorted[j].GetPath())
 	})
 
 	for i, v := range sorted {
+		if len(condition) > 0 && !condition[0](v) {
+			continue
+		}
+
 		fmt.Print(i, ": ")
 		v.Print()
 	}

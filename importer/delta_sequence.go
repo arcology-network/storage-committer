@@ -2,87 +2,65 @@ package importer
 
 import (
 	"sort"
-	"sync"
 
 	"github.com/arcology-network/common-lib/exp/slice"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
-	"github.com/arcology-network/storage-committer/interfaces"
 	intf "github.com/arcology-network/storage-committer/interfaces"
-	platform "github.com/arcology-network/storage-committer/platform"
 	univalue "github.com/arcology-network/storage-committer/univalue"
 )
 
-type DeltaSequence struct {
-	Account     string
-	Transitions []*univalue.Univalue
-	lock        sync.RWMutex
-	Finalized   *univalue.Univalue
-}
+type DeltaSequence []*univalue.Univalue
 
-func NewDeltaSequence(key string, store interfaces.Datastore) *DeltaSequence {
-	seq := &DeltaSequence{
-		Account:     platform.GetAccountAddr(key),
-		Transitions: make([]*univalue.Univalue, 0, 16),
-	}
-	return seq
-}
-
-func (this *DeltaSequence) UnsafeAdd(v *univalue.Univalue) *DeltaSequence {
-	this.Transitions = append(this.Transitions, v)
-	return this
-}
-
-func (this *DeltaSequence) Add(v *univalue.Univalue) *DeltaSequence {
-	this.lock.Lock()
-	defer this.lock.Unlock()
-	this.Transitions = append(this.Transitions, v)
-	return this
-}
-
-func (this *DeltaSequence) Sort() {
-	if len(this.Transitions) <= 1 {
-		return
+func (this DeltaSequence) sort() DeltaSequence {
+	if len(this) <= 1 {
+		return this
 	}
 
-	sort.SliceStable(this.Transitions, func(i, j int) bool {
-		if this.Transitions[i].GetTx() == stgcommcommon.SYSTEM {
+	sort.SliceStable(this, func(i, j int) bool {
+		if this[i].GetTx() == stgcommcommon.SYSTEM {
 			return true
 		}
 
-		if this.Transitions[j].GetTx() == stgcommcommon.SYSTEM {
+		if this[j].GetTx() == stgcommcommon.SYSTEM {
 			return false
 		}
-
-		return this.Transitions[i].GetTx() < this.Transitions[j].GetTx()
+		return this[i].GetTx() < this[j].GetTx()
 	})
+	return this
 }
 
-func (this *DeltaSequence) Finalize() *univalue.Univalue {
-	slice.RemoveIf(&this.Transitions, func(_ int, v *univalue.Univalue) bool {
+func (this DeltaSequence) Finalize(store intf.ReadOnlyDataStore) *univalue.Univalue {
+	trans := []*univalue.Univalue(this)
+	slice.RemoveIf(&trans, func(_ int, v *univalue.Univalue) bool {
 		return v.GetPath() == nil
 	})
 
-	if len(this.Transitions) == 0 {
+	if len(this) == 0 {
 		return nil
 	}
 
-	this.Finalized = this.Transitions[0]
-	if err := this.Finalized.ApplyDelta(this.Transitions[1:]); err != nil {
+	this.sort()
+	if err := this[0].ApplyDelta(this[1:]); err != nil {
 		panic(err)
 	}
-	return this.Finalized
+
+	// Remove the transition to indicate that the delta sequence has been finalized
+	this = this[:1]
+	return this[0]
 }
 
-type DeltaSequences []*DeltaSequence
+func (this DeltaSequence) Finalized() *univalue.Univalue { return this[0] }
 
-func (this DeltaSequences) Finalized() []intf.Type {
-	return slice.Transform(this, func(_ int, v *DeltaSequence) intf.Type {
-		return v.Finalized.Value().(intf.Type)
+type DeltaSequencesV2 []DeltaSequence
+
+func (this DeltaSequencesV2) Finalized() []intf.Type {
+	return slice.Transform(this, func(_ int, v DeltaSequence) intf.Type {
+		return v[0].Value().(intf.Type)
 	})
 }
 
-func (this DeltaSequences) Keys() []*string {
-	return slice.Transform(this, func(_ int, v *DeltaSequence) *string {
-		return v.Finalized.GetPath()
+func (this DeltaSequencesV2) Keys() []*string {
+	return slice.Transform(this, func(_ int, v DeltaSequence) *string {
+		return v[0].GetPath()
 	})
 }

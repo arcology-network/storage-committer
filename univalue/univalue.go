@@ -108,15 +108,24 @@ func (this *Univalue) CopyTo(writable interface{}) {
 	writeCache := writable.(interface {
 		Read(uint32, string, interface{}) (interface{}, interface{}, uint64)
 		Write(uint32, string, interface{}) (int64, error)
-		Find(string, interface{}) (interface{}, interface{})
+		Find(uint32, string, interface{}) (interface{}, interface{})
 	})
 
-	common.IfThenDo(this.writes == 0 && this.deltaWrites == 0,
-		func() { writeCache.Read(this.tx, *this.GetPath(), this.value) }, // Add reads
-		func() { writeCache.Write(this.tx, *this.GetPath(), this.value) },
-	)
+	// common.IfThenDo(this.writes == 0 && this.deltaWrites == 0,
+	// 	func() { writeCache.Read(this.tx, *this.GetPath(), this.value) }, // Add reads
+	// 	func() { writeCache.Write(this.tx, *this.GetPath(), this.value) },
+	// )
+	if this.value == nil {
+		fmt.Print(this)
+	}
 
-	_, univ := writeCache.Find(*this.GetPath(), nil)
+	if this.writes == 0 && this.deltaWrites == 0 {
+		writeCache.Read(this.tx, *this.GetPath(), this.value)
+	} else {
+		writeCache.Write(this.tx, *this.GetPath(), this.value)
+	}
+
+	_, univ := writeCache.Find(this.tx, *this.GetPath(), nil)
 	readsDiff := this.Reads() - univ.(*Univalue).Reads()
 	writesDiff := this.Writes() - univ.(*Univalue).Writes()
 	deltaWriteDiff := this.DeltaWrites() - univ.(*Univalue).DeltaWrites()

@@ -189,13 +189,15 @@ func (this *StateCommitter) Whitelist(txs []uint32) *StateCommitter {
 
 // Commit commits the transitions in the StateCommitter.
 func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
+	// Mark the transitions that are not in the whitelist
 	this.Whitelist(txs)
 
 	// Finalize all the transitions for both the ETH storage and the concurrent container transitions
 	this.byPath.ParallelForeachDo(func(_ string, v *[]*univalue.Univalue) {
-		slice.RemoveIf(v, func(_ int, val *univalue.Univalue) bool { return val.GetPath() == nil }) // Remove conflicting ones.
+		// Remove conflicting ones.
+		slice.RemoveIf(v, func(_ int, val *univalue.Univalue) bool { return val.GetPath() == nil })
 		if len(*v) > 0 {
-			importer.DeltaSequenceV2(*v).Finalize(this.store)
+			importer.DeltaSequence(*v).Finalize(this.store) // Finalize the transitions
 		}
 	})
 
@@ -223,14 +225,19 @@ func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
 	var ethStgErr, ccStgErr error
 	common.ParallelExecute(
 		func() {
-			trans := slice.Flatten(this.byPath.Values())
-			slice.RemoveIf(&trans, func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil }) // Remove conflict ones
+			trans := slice.TransformIf(this.byPath.Values(), func(_ int, v []*univalue.Univalue) (bool, *univalue.Univalue) {
+				if len(v) > 0 {
+					return true, v[0]
+				}
+				return false, nil
+			})
 			this.CommitToCache(blockNum, trans)
 		},
 		func() { ccStgErr = this.Store().(*storage.StoreRouter).CCStore().Commit(blockNum) },
 		func() { ethStgErr = this.Store().(*storage.StoreRouter).EthStore().Commit(blockNum) },
 	)
 	this.Err = errors.Join(ethStgErr, ccStgErr)
+	this.Clear()
 	return this
 }
 

@@ -28,6 +28,7 @@ import (
 	datastore "github.com/arcology-network/common-lib/storage/datastore"
 	memdb "github.com/arcology-network/common-lib/storage/memdb"
 	policy "github.com/arcology-network/common-lib/storage/policy"
+	"github.com/arcology-network/storage-committer/commutative"
 	intf "github.com/arcology-network/storage-committer/interfaces"
 	platform "github.com/arcology-network/storage-committer/platform"
 )
@@ -117,6 +118,12 @@ func (this *StoreRouter) Commit(blockNum uint64) error {
 
 // Update the object cache.
 func (this *StoreRouter) RefreshCache(blockNum uint64, dirtyKeys []string, dirtyVals []intf.Type) {
+	for _, v := range dirtyVals {
+		if common.IsType[*commutative.Uint64](v) && v.(*commutative.Uint64).Delta().(uint64) != 0 {
+			panic("Error: Delta value should not be in the dirtyVals")
+		}
+	}
+
 	this.objectCache.Commit(dirtyKeys, dirtyVals)
 }
 

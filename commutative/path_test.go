@@ -20,6 +20,7 @@ package commutative
 import (
 	"testing"
 
+	"github.com/arcology-network/common-lib/exp/orderedset"
 	"github.com/arcology-network/common-lib/exp/slice"
 )
 
@@ -68,6 +69,8 @@ func TestPath(t *testing.T) {
 	}
 }
 
+// panic: interface conversion: interface {} is *orderedset.OrderedSet[string], not []string [recovered]
+
 func TestCodecPathMeta(t *testing.T) {
 	in := NewPath().(*Path)
 
@@ -78,11 +81,11 @@ func TestCodecPathMeta(t *testing.T) {
 	buffer := in.Encode()
 	out := (&Path{}).Decode(buffer).(*Path)
 
-	if !slice.EqualSet(out.Value().([]string), []string{"e-01", "e-001", "e-002"}) {
+	if !slice.EqualSet(out.Value().(*orderedset.OrderedSet[string]).Elements(), []string{"e-01", "e-001", "e-002"}) {
 		t.Error("Error: Don't match!!")
 	}
 
-	if !slice.EqualSet(out.Updated(), []string{"+01", "+001", "+002"}) {
+	if !slice.EqualSet(out.Updated().Elements(), []string{"+01", "+001", "+002"}) {
 		t.Error("Error: Don't match!!", out.Updated())
 	}
 
@@ -93,11 +96,11 @@ func TestCodecPathMeta(t *testing.T) {
 	buffer = in.Encode()
 	out = (&Path{}).Decode(buffer).(*Path)
 
-	if !slice.EqualSet(out.Value().([]string), []string{"e-01", "e-001", "e-002"}) {
+	if !slice.EqualSet(out.Value().(*orderedset.OrderedSet[string]).Elements(), []string{"e-01", "e-001", "e-002"}) {
 		t.Error("Error: Don't match!! Error: Should have gone!")
 	}
 
-	if !slice.EqualSet(out.Updated(), []string{"+01", "+001", "+002"}) {
+	if !slice.EqualSet(out.Updated().Elements(), []string{"+01", "+001", "+002"}) {
 		t.Error("Error: Don't match!!", out.Updated())
 	}
 
@@ -105,7 +108,7 @@ func TestCodecPathMeta(t *testing.T) {
 		t.Error("Error: Don't match!!", out.Removed())
 	}
 
-	in = in.New(in.Value().([]string), nil, nil, nil, nil).(*Path)
+	in = in.New(in.Value().(*orderedset.OrderedSet[string]).Elements(), nil, nil, nil, nil).(*Path)
 
 	out.Committed().Init()
 
@@ -114,11 +117,11 @@ func TestCodecPathMeta(t *testing.T) {
 
 	out.Commit()
 
-	if !slice.EqualSet(out.Value().([]string), []string{"+01", "+001", "+002"}) {
+	if !slice.EqualSet(out.Value().(*orderedset.OrderedSet[string]).Elements(), []string{"+01", "+001", "+002"}) {
 		t.Error("Error: Don't match!! Error: Should have gone!", out.Value().([]string))
 	}
 
-	if !slice.EqualSet(out.Updated(), []string{}) {
+	if !slice.EqualSet(out.Updated().Elements(), []string{}) {
 		t.Error("Error: Don't match!!", out.Updated())
 	}
 

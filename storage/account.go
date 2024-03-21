@@ -13,7 +13,6 @@ import (
 	"github.com/arcology-network/common-lib/exp/slice"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
-	"github.com/arcology-network/storage-committer/importer"
 	"github.com/arcology-network/storage-committer/interfaces"
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 	platform "github.com/arcology-network/storage-committer/platform"
@@ -219,38 +218,16 @@ func (this *Account) Retrive(key string, T any) (interface{}, error) {
 }
 
 func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Type) error {
-	if pos, _ := slice.FindFirstIf(keys, func(k string) bool { return len(k) == stgcommcommon.ETH10_ACCOUNT_FULL_LENGTH+1 }); pos >= 0 {
-		slice.RemoveAt(&keys, pos)
-		slice.RemoveAt(&typedVals, pos)
-	}
-
-	if pos, _ := slice.FindFirstIf(keys, func(k string) bool { return strings.HasSuffix(k, "/nonce") }); pos >= 0 {
-		this.Nonce = typedVals[pos].Value().(uint64)
-		slice.RemoveAt(&keys, pos)
-		slice.RemoveAt(&typedVals, pos)
-	}
-
-	if pos, _ := slice.FindFirstIf(keys, func(k string) bool { return strings.HasSuffix(k, "/balance") }); pos >= 0 {
-		balance := typedVals[pos].Value().(uint256.Int)
-		this.Balance = balance.ToBig()
-		slice.RemoveAt(&keys, pos)
-		slice.RemoveAt(&typedVals, pos)
-	}
-
-	if pos, _ := slice.FindFirstIf(keys, func(k string) bool { return strings.HasSuffix(k, "/code") }); pos >= 0 {
-		this.code = typedVals[pos].Value().(codec.Bytes)
-		this.StateAccount.CodeHash = this.Hash(this.code)
-		if err := this.DB(keys[pos]).Put(this.CodeHash, this.code); err != nil { // Save to DB directly, only for code
-			return err // failed to save the code
-		}
-		slice.RemoveAt(&keys, pos)
-		slice.RemoveAt(&typedVals, pos)
-	}
+	slice.RemoveBothIf(&keys, &typedVals, func(_ int, k string, _ interfaces.Type) bool {
+		return len(k) == stgcommcommon.ETH10_ACCOUNT_FULL_LENGTH+1 ||
+			strings.HasSuffix(k, "/nonce") ||
+			strings.HasSuffix(k, "/balance") ||
+			strings.HasSuffix(k, "/code")
+	})
 	this.StorageDirty = len(keys) > 0
 
-	numThd := common.IfThen(len(keys) < 1024, 4, 8)
-
 	// Encode the keys
+	numThd := common.IfThen(len(keys) < 1024, 4, 8)
 	encodedKeys := slice.ParallelTransform(keys, numThd, func(i int, _ string) []byte {
 		return []byte(this.ToStorageKey(keys[i])) // Remove the prefix to get the keys.
 	})
@@ -277,7 +254,7 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Typ
 }
 
 // Write the account changes to theirs Eth Trie
-func (this *Account) ApplyChangesV2(transitions [][]*univalue.Univalue, getter func([]*univalue.Univalue) (string, interfaces.Type)) ([]string, []interfaces.Type) {
+func (this *Account) ApplyChanges(transitions [][]*univalue.Univalue, getter func([]*univalue.Univalue) (string, interfaces.Type)) ([]string, []interfaces.Type) {
 	keys := make([]string, len(transitions))
 	typedVals := slice.Transform(transitions, func(i int, vals []*univalue.Univalue) interfaces.Type {
 		_, v := getter(vals)
@@ -289,19 +266,19 @@ func (this *Account) ApplyChangesV2(transitions [][]*univalue.Univalue, getter f
 	return keys, typedVals
 }
 
-// Write the account changes to theirs Eth Trie
-func (this *Account) PrecommitAcctStorage(updates *AccountUpdate) ([]string, []interfaces.Type) {
-	keys, typedVals := make([]string, len(updates.Seqs)), make([]interfaces.Type, len(updates.Seqs))
-	slice.Foreach(updates.Seqs, func(i int, seq **importer.DeltaSequence) {
-		keys[i] = *((*seq).Finalized.GetPath())
-		if v := (*seq).Finalized.Value(); v != nil {
-			typedVals[i] = v.(interfaces.Type)
-		}
-	})
+// // Write the account changes to theirs Eth Trie
+// func (this *Account) PrecommitAcctStorage(updates *AccountUpdate) ([]string, []interfaces.Type) {
+// 	keys, typedVals := make([]string, len(updates.Seqs)), make([]interfaces.Type, len(updates.Seqs))
+// 	slice.Foreach(updates.Seqs, func(i int, seq **importer.DeltaSequence) {
+// 		keys[i] = *((*seq).Finalized.GetPath())
+// 		if v := (*seq).Finalized.Value(); v != nil {
+// 			typedVals[i] = v.(interfaces.Type)
+// 		}
+// 	})
 
-	this.err = this.UpdateAccountTrie(keys, typedVals)
-	return keys, typedVals
-}
+// 	this.err = this.UpdateAccountTrie(keys, typedVals)
+// 	return keys, typedVals
+// }
 
 // func (this *Account) Precommit(keys []string, values []interface{}) {
 // 	this.err = this.UpdateAccount(keys, slice.Transform(values,
