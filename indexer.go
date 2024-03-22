@@ -18,7 +18,6 @@ package storagecommitter
 
 import (
 	"math"
-	"sync"
 
 	"github.com/arcology-network/common-lib/exp/associative"
 	"github.com/arcology-network/common-lib/exp/orderedmap"
@@ -34,21 +33,16 @@ import (
 
 type Indexer[K comparable, T, V any] struct {
 	*orderedmap.OrderedMap[K, T, V]
-	store    interfaces.Datastore
-	lock     sync.Mutex
-	ifAccept func(T) (K, bool) // If the transition is accepted and the key is returned. An index is only supposed to index the accepted transitions.
+	isIndexable func(T) (K, bool) // If the transition is accepted and the key is returned. An index is only supposed to index the accepted transitions.
 }
 
 func NewIndexer[K comparable, T, V any](
-	store interfaces.Datastore,
-	ifAccept func(T) (K, bool),
 	nilValue V,
+	isIndexable func(T) (K, bool),
 	init func(K, T) V,
 	setter func(K, T, *V)) *Indexer[K, T, V] {
 	return &Indexer[K, T, V]{
-		store:    store,
-		ifAccept: ifAccept,
-
+		isIndexable: isIndexable,
 		OrderedMap: orderedmap.NewOrderedMap[K, T, V](
 			nilValue,
 			1024,
@@ -60,11 +54,8 @@ func NewIndexer[K comparable, T, V any](
 
 // New creates a new StateCommitter instance.
 func (this *Indexer[K, T, V]) Add(transitions []T) {
-	this.lock.Lock()
-	defer this.lock.Unlock()
-
 	for _, t := range transitions {
-		if k, ok := this.ifAccept(t); ok {
+		if k, ok := this.isIndexable(t); ok { // If the transition is indexable by the index.
 			this.Set(k, t)
 		}
 	}
@@ -81,17 +72,19 @@ func (this *Indexer[K, T, V]) Clear()                      { this.OrderedMap.Cle
 // should be put into this index.
 func PathIndexer(store interfaces.Datastore) *Indexer[string, *univalue.Univalue, []*univalue.Univalue] {
 	return NewIndexer(
-		store,
+		nil,
+
 		func(v *univalue.Univalue) (string, bool) {
 			return *(*v).GetPath(), true
 		},
-		nil,
+
 		func(k string, v *univalue.Univalue) []*univalue.Univalue {
 			if v.Value() != nil {
 				v.Value().(intf.Type).Preload(k, store)
 			}
 			return []*univalue.Univalue{v}
 		},
+
 		func(_ string, v *univalue.Univalue, vals *[]*univalue.Univalue) { *vals = append(*vals, v) },
 	)
 }
@@ -101,14 +94,14 @@ func PathIndexer(store interfaces.Datastore) *Indexer[string, *univalue.Univalue
 // So, the immutable transitions should not be put into this index.
 func TxIndexer(store interfaces.Datastore) *Indexer[uint32, *univalue.Univalue, []*univalue.Univalue] {
 	return NewIndexer(
-		store,
+		nil,
+
 		func(v *univalue.Univalue) (uint32, bool) {
 			if !v.Persistent() {
 				return v.GetTx(), true
 			}
 			return math.MaxUint32, false
 		},
-		nil,
 		func(_ uint32, v *univalue.Univalue) []*univalue.Univalue { return []*univalue.Univalue{v} },
 		func(_ uint32, v *univalue.Univalue, vals *[]*univalue.Univalue) { *vals = append(*vals, v) },
 	)
@@ -118,7 +111,7 @@ func TxIndexer(store interfaces.Datastore) *Indexer[uint32, *univalue.Univalue, 
 // This is for ETH storage, concurrent container related sub-paths won't be put into this index.
 func EthIndexer(store interfaces.Datastore) *Indexer[[20]byte, *univalue.Univalue, *associative.Pair[*storage.Account, []*univalue.Univalue]] {
 	return NewIndexer(
-		store,
+		nil,
 		func(v *univalue.Univalue) ([20]byte, bool) {
 			if !platform.IsEthPath(*v.GetPath()) {
 				return [20]byte{}, false
@@ -126,13 +119,14 @@ func EthIndexer(store interfaces.Datastore) *Indexer[[20]byte, *univalue.Univalu
 			addr, _ := hexutil.Decode(platform.GetAccountAddr(*v.GetPath()))
 			return ethcommon.BytesToAddress(addr), platform.IsEthPath(*v.GetPath())
 		},
-		nil,
+
 		func(addr [20]byte, v *univalue.Univalue) *associative.Pair[*storage.Account, []*univalue.Univalue] {
 			return &associative.Pair[*storage.Account, []*univalue.Univalue]{
 				First:  store.Preload(addr[:]).(*storage.Account),
 				Second: []*univalue.Univalue{v},
 			}
 		},
+
 		func(_ [20]byte, v *univalue.Univalue, pair **associative.Pair[*storage.Account, []*univalue.Univalue]) {
 			(**pair).Second = append((**pair).Second, v)
 		},

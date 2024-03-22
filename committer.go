@@ -37,8 +37,7 @@ import (
 
 // StateCommitter represents a storage committer.
 type StateCommitter struct {
-	store interfaces.Datastore
-	// store    storage.StoreRouter
+	store    interfaces.Datastore
 	Platform *platform.Platform
 
 	byPath *Indexer[string, *univalue.Univalue, []*univalue.Univalue]
@@ -47,11 +46,6 @@ type StateCommitter struct {
 	byCtrn []*univalue.Univalue
 	Err    error
 }
-
-// 	return &StateCommitter{
-// 		Platform: platform.NewPlatform(),
-// 	}
-// }
 
 // NewStorageCommitter creates a new StateCommitter instance.
 func NewStorageCommitter(store interfaces.Datastore) *StateCommitter {
