@@ -22,6 +22,7 @@ import (
 	"errors"
 	"runtime"
 
+	indexer "github.com/arcology-network/common-lib/storage/indexer"
 	platform "github.com/arcology-network/storage-committer/platform"
 	"github.com/arcology-network/storage-committer/storage"
 	"github.com/arcology-network/storage-committer/univalue"
@@ -40,9 +41,9 @@ type StateCommitter struct {
 	store    interfaces.Datastore
 	Platform *platform.Platform
 
-	byPath *Indexer[string, *univalue.Univalue, []*univalue.Univalue]
-	byTxID *Indexer[uint32, *univalue.Univalue, []*univalue.Univalue]
-	byEth  *Indexer[[20]byte, *univalue.Univalue, *associative.Pair[*storage.Account, []*univalue.Univalue]]
+	byPath *indexer.UnorderedIndexer[string, *univalue.Univalue, []*univalue.Univalue]
+	byTxID *indexer.UnorderedIndexer[uint32, *univalue.Univalue, []*univalue.Univalue]
+	byEth  *indexer.UnorderedIndexer[[20]byte, *univalue.Univalue, *associative.Pair[*storage.Account, []*univalue.Univalue]]
 	byCtrn []*univalue.Univalue
 	Err    error
 }
@@ -173,16 +174,15 @@ func (this *StateCommitter) CommitToCache(blockNum uint64, trans []*univalue.Uni
 }
 
 // New creates a new StateCommitter instance.
-func (this *StateCommitter) ByPath() *Indexer[string, *univalue.Univalue, []*univalue.Univalue] {
+func (this *StateCommitter) ByPath() *indexer.UnorderedIndexer[string, *univalue.Univalue, []*univalue.Univalue] {
 	return this.byPath
-
 }
 
-func (this *StateCommitter) ByTxID() *Indexer[uint32, *univalue.Univalue, []*univalue.Univalue] {
+func (this *StateCommitter) ByTxID() *indexer.UnorderedIndexer[uint32, *univalue.Univalue, []*univalue.Univalue] {
 	return this.byTxID
 }
 
-func (this *StateCommitter) ByEth() *Indexer[[20]byte, *univalue.Univalue, *associative.Pair[*storage.Account, []*univalue.Univalue]] {
+func (this *StateCommitter) ByEth() *indexer.UnorderedIndexer[[20]byte, *univalue.Univalue, *associative.Pair[*storage.Account, []*univalue.Univalue]] {
 	return this.byEth
 }
 
