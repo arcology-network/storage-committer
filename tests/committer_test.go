@@ -24,14 +24,7 @@ import (
 	"github.com/holiman/uint256"
 )
 
-func CommitterCache(flag bool, t *testing.T) {
-	store := storage.NewHybirdStore()
-	if flag {
-		store.EnableCache()
-	} else {
-		store.DisableCache()
-	}
-
+func CommitterCache(store interfaces.Datastore, t *testing.T) {
 	alice := AliceAccount()
 	committer := stgcommitter.NewStorageCommitter(store)
 
@@ -101,53 +94,23 @@ func CommitterCache(flag bool, t *testing.T) {
 	committer.Import(acctTrans).Precommit([]uint32{1})
 	committer.Commit(2).Clear()
 	writeCache.Reset()
-}
 
-func TestUint64Delta(t *testing.T) {
-	store := storage.NewHybirdStore()
-	alice := AliceAccount()
-	committer := stgcommitter.NewStorageCommitter(store)
-
-	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
-		t.Error(err)
-	}
-	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
-
-	committer.Import(acctTrans).Precommit([]uint32{stgcommcommon.SYSTEM})
-	committer.Commit(stgcommcommon.SYSTEM)
-	committer.Clear()
-	writeCache.Reset()
-
-	deltav1 := commutative.NewUint64Delta(11)
-	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/nonce", deltav1); err != nil {
+	transientStore := storage.NewTransientDB(store)
+	writeCache = cache.NewWriteCache(transientStore, 1, 1, platform.NewPlatform())
+	v, err, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(0), new(noncommutative.Bytes))
+	if v == nil || !reflect.DeepEqual(v.([]byte), []byte{1, 2, 3}) {
 		t.Error(err)
 	}
 
-	writeCache2 := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
-	deltav2 := commutative.NewUint64Delta(21)
-	if _, err := writeCache2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/native/nonce", deltav2); err != nil {
+	if v, err, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(1), new(noncommutative.Bytes)); v == nil {
 		t.Error(err)
 	}
-
-	acctTrans0 := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
-	acctTrans1 := univalue.Univalues(slice.Clone(writeCache2.Export(importer.Sorter))).To(importer.IPTransition{})
-
-	acctTrans0.Print()
-	fmt.Println("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
-	acctTrans1.Print()
-
-	committer = stgcommitter.NewStorageCommitter(store)
-	committer.Import(acctTrans0)
-	committer.Import(acctTrans1)
-	committer.Precommit([]uint32{1, 2})
-	committer.Commit(0).Clear()
-	writeCache.Reset()
 }
 
 func TestNewCommitterWithoutCache(t *testing.T) {
-	CommitterCache(false, t)
-	CommitterCache(true, t)
+	store := storage.NewHybirdStore().EnableCache()
+	CommitterCache(store, t)                                   // Use cache
+	CommitterCache(storage.NewHybirdStore().DisableCache(), t) // Don't use cache
 }
 
 func TestSize(t *testing.T) {
@@ -765,6 +728,7 @@ func TestTransientDBv2(t *testing.T) {
 	store := chooseDataStore()
 
 	alice := AliceAccount()
+
 	committer := stgcommitter.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {

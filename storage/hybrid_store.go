@@ -54,10 +54,10 @@ func NewHybirdStore() *StoreRouter {
 	}
 }
 
-func (this *StoreRouter) Cache(any) interface{} { return this.objectCache }
-func (this *StoreRouter) EnableCache()          { this.objectCache.Enable() }
-func (this *StoreRouter) DisableCache()         { this.objectCache.Disable() }
-func (this *StoreRouter) ClearCache()           { this.objectCache.Clear() }
+func (this *StoreRouter) Cache(any) interface{}      { return this.objectCache }
+func (this *StoreRouter) EnableCache() *StoreRouter  { this.objectCache.Enable(); return this }
+func (this *StoreRouter) DisableCache() *StoreRouter { this.objectCache.Disable(); return this }
+func (this *StoreRouter) ClearCache()                { this.objectCache.Clear() }
 
 func (this *StoreRouter) EthStore() *EthDataStore       { return this.ethDataStore } // Eth storage
 func (this *StoreRouter) CCStore() *datastore.DataStore { return this.ccDataStore }  // Arcology storage

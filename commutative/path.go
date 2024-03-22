@@ -95,9 +95,7 @@ func (this *Path) Clone() interface{} {
 func (this *Path) Equal(other interface{}) bool { return this.DeltaSet.Equal(other.(*Path).DeltaSet) }
 
 func (this *Path) Get() (interface{}, uint32, uint32) {
-	// If the value is touched, there will a write operation associated with it.
-	return this.DeltaSet, 1, common.IfThen(!this.DeltaSet.IsDirty(), uint32(0), uint32(1))
-	// return this.DeltaSet.Keys(), 1, common.IfThen(!this.DeltaSet.Touched(), uint32(0), uint32(1))
+	return this.DeltaSet, 1, common.IfThen(this.DeltaSet.IsDirty(), uint32(1), uint32(0))
 }
 
 // For the codec only

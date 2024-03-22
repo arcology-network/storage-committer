@@ -1,10 +1,12 @@
 package committertest
 
 import (
+	"fmt"
 	"math"
 	"math/big"
 	"testing"
 
+	"github.com/arcology-network/common-lib/exp/slice"
 	cache "github.com/arcology-network/eu/cache"
 	stgcommitter "github.com/arcology-network/storage-committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
@@ -12,6 +14,7 @@ import (
 	importer "github.com/arcology-network/storage-committer/importer"
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 	platform "github.com/arcology-network/storage-committer/platform"
+	storage "github.com/arcology-network/storage-committer/storage"
 	univalue "github.com/arcology-network/storage-committer/univalue"
 	"github.com/holiman/uint256"
 )
@@ -291,4 +294,46 @@ func TestMultipleNonces(t *testing.T) {
 	if bobNonce != 2 {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
 	}
+}
+
+func TestUint64Delta(t *testing.T) {
+	store := storage.NewHybirdStore()
+	alice := AliceAccount()
+	committer := stgcommitter.NewStorageCommitter(store)
+
+	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+		t.Error(err)
+	}
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
+
+	committer.Import(acctTrans).Precommit([]uint32{stgcommcommon.SYSTEM})
+	committer.Commit(stgcommcommon.SYSTEM)
+	committer.Clear()
+	writeCache.Reset()
+
+	deltav1 := commutative.NewUint64Delta(11)
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/nonce", deltav1); err != nil {
+		t.Error(err)
+	}
+
+	writeCache2 := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+	deltav2 := commutative.NewUint64Delta(21)
+	if _, err := writeCache2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/native/nonce", deltav2); err != nil {
+		t.Error(err)
+	}
+
+	acctTrans0 := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
+	acctTrans1 := univalue.Univalues(slice.Clone(writeCache2.Export(importer.Sorter))).To(importer.IPTransition{})
+
+	acctTrans0.Print()
+	fmt.Println("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+	acctTrans1.Print()
+
+	committer = stgcommitter.NewStorageCommitter(store)
+	committer.Import(acctTrans0)
+	committer.Import(acctTrans1)
+	committer.Precommit([]uint32{1, 2})
+	committer.Commit(0).Clear()
+	writeCache.Reset()
 }
