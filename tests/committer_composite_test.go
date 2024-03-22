@@ -71,7 +71,7 @@ func TestAuxTrans(t *testing.T) {
 	}
 
 	// Read the entry back
-	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", new(noncommutative.Int64)); value.(int64) != 1111 {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", new(noncommutative.Int64)); value == nil || value.(int64) != 1111 {
 		t.Error("Shouldn't be not found")
 	}
 
@@ -86,7 +86,7 @@ func TestAuxTrans(t *testing.T) {
 	}
 
 	transitions := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
-	if !reflect.DeepEqual(transitions[0].Value().(interfaces.Type).Delta().(*deltaset.DeltaSet[string]).Updated().Elements(), []string{"elem-000"}) {
+	if len(transitions) == 0 || !reflect.DeepEqual(transitions[0].Value().(interfaces.Type).Delta().(*deltaset.DeltaSet[string]).Updated().Elements(), []string{"elem-000"}) {
 		t.Error("keys don't match")
 	}
 
@@ -184,6 +184,10 @@ func TestCheckAccessRecords(t *testing.T) {
 	// }
 
 	v1, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path))
+	if v1 == nil {
+		t.Error("Error: Failed to read blcc://eth1.0/account/alice/storage/ctrn-0/") // create a path
+	}
+
 	keys := v1.(*deltaset.DeltaSet[string]).Elements()
 	if len(keys) != 3 {
 		t.Error("Error: There should be 3 elements only!!! actual = ", len(keys)) // create a path

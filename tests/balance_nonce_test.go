@@ -53,8 +53,7 @@ func TestSimpleBalance(t *testing.T) {
 	}
 
 	committer.Import(out)
-
-	committer.Precommit([]uint32{0, 1})
+	committer.Precommit([]uint32{stgcommcommon.SYSTEM, 0, 1})
 	committer.Commit(0)
 	// Read alice's balance again
 	writeCache.Reset()
@@ -62,7 +61,7 @@ func TestSimpleBalance(t *testing.T) {
 	balance, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/balance", new(commutative.U256))
 	balanceAddr := balance.(uint256.Int)
 	if (&balanceAddr).Cmp(uint256.NewInt(33)) != 0 {
-		t.Error("Error: Wrong blcc://eth1.0/account/alice/balance value")
+		t.Error("Error: Wrong blcc://eth1.0/account/alice/balance value", balanceAddr)
 	}
 
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(10), true))
@@ -70,7 +69,7 @@ func TestSimpleBalance(t *testing.T) {
 
 	balanceAddr = balance.(uint256.Int)
 	if (&balanceAddr).Cmp(uint256.NewInt(43)) != 0 {
-		t.Error("Error: Wrong blcc://eth1.0/account/alice/balance value")
+		t.Error("Error: Wrong blcc://eth1.0/account/alice/balance value", balanceAddr)
 	}
 
 	trans := univalue.Univalues((writeCache.Export(importer.Sorter))).To(importer.ITTransition{})

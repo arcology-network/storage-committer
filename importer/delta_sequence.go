@@ -45,6 +45,10 @@ func (this DeltaSequence) Finalize(store intf.ReadOnlyDataStore) *univalue.Univa
 	}
 
 	// Remove the transition to indicate that the delta sequence has been finalized
+	for i := 1; i < len(this); i++ {
+		this[i].Property.SetPath(nil)
+	}
+
 	this = this[:1]
 	return this[0]
 }

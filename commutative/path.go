@@ -81,7 +81,7 @@ func (this *Path) Preload(k string, arg interface{}) {
 		Retrive(string, any) (interface{}, error)
 	})
 
-	if v, err := store.Retrive(k, new(deltaset.DeltaSet[string])); v != nil && err == nil && v.(*Path).Committed().Length() > 0 {
+	if v, err := store.Retrive(k, new(Path)); v != nil && err == nil && v.(*Path).Committed().Length() > 0 {
 		this.preloaded = v.(*Path).Committed()
 	}
 }

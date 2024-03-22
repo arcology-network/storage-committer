@@ -218,12 +218,33 @@ func (this *Account) Retrive(key string, T any) (interface{}, error) {
 }
 
 func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Type) error {
-	slice.RemoveBothIf(&keys, &typedVals, func(_ int, k string, _ interfaces.Type) bool {
-		return len(k) == stgcommcommon.ETH10_ACCOUNT_FULL_LENGTH+1 ||
-			strings.HasSuffix(k, "/nonce") ||
-			strings.HasSuffix(k, "/balance") ||
-			strings.HasSuffix(k, "/code")
-	})
+	if pos, _ := slice.FindFirstIf(keys, func(k string) bool { return len(k) == stgcommcommon.ETH10_ACCOUNT_FULL_LENGTH+1 }); pos >= 0 {
+		slice.RemoveAt(&keys, pos)
+		slice.RemoveAt(&typedVals, pos)
+	}
+
+	if pos, _ := slice.FindFirstIf(keys, func(k string) bool { return strings.HasSuffix(k, "/nonce") }); pos >= 0 {
+		this.Nonce = typedVals[pos].Value().(uint64)
+		slice.RemoveAt(&keys, pos)
+		slice.RemoveAt(&typedVals, pos)
+	}
+
+	if pos, _ := slice.FindFirstIf(keys, func(k string) bool { return strings.HasSuffix(k, "/balance") }); pos >= 0 {
+		balance := typedVals[pos].Value().(uint256.Int)
+		this.Balance = balance.ToBig()
+		slice.RemoveAt(&keys, pos)
+		slice.RemoveAt(&typedVals, pos)
+	}
+
+	if pos, _ := slice.FindFirstIf(keys, func(k string) bool { return strings.HasSuffix(k, "/code") }); pos >= 0 {
+		this.code = typedVals[pos].Value().(codec.Bytes)
+		this.StateAccount.CodeHash = this.Hash(this.code)
+		if err := this.DB(keys[pos]).Put(this.CodeHash, this.code); err != nil { // Save to DB directly, only for code
+			return err // failed to save the code
+		}
+		slice.RemoveAt(&keys, pos)
+		slice.RemoveAt(&typedVals, pos)
+	}
 	this.StorageDirty = len(keys) > 0
 
 	// Encode the keys

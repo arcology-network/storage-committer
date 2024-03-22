@@ -48,8 +48,7 @@ type StateCommitter struct {
 	byTxID *Indexer[uint32, *univalue.Univalue, []*univalue.Univalue]
 	byEth  *Indexer[[20]byte, *univalue.Univalue, *associative.Pair[*storage.Account, []*univalue.Univalue]]
 	byCtrn []*univalue.Univalue
-
-	Err error
+	Err    error
 }
 
 // 	return &StateCommitter{
@@ -134,7 +133,7 @@ func NewStorageCommitter(store interfaces.Datastore) *StateCommitter {
 		// 	func(_ string, v *univalue.Univalue) []*univalue.Univalue { return []*univalue.Univalue{v} },
 		// 	func(_ string, v *univalue.Univalue, vals *[]*univalue.Univalue) { *vals = append(*vals, v) },
 		// ),
-		byCtrn: []*univalue.Univalue{},
+		byCtrn: []*univalue.Univalue{}, // CC container transitions
 	}
 }
 
@@ -197,7 +196,7 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 		// Remove conflicting ones.
 		slice.RemoveIf(v, func(_ int, val *univalue.Univalue) bool { return val.GetPath() == nil })
 		if len(*v) > 0 {
-			importer.DeltaSequence(*v).Finalize(this.store) // Finalize the transitions
+			importer.DeltaSequence(*v).Finalize(this.store) // Finalize the transitions and flag the merged ones.
 		}
 	})
 
@@ -205,8 +204,8 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 	common.ParallelExecute(
 		func() {
 			slice.RemoveIf(&this.byCtrn, func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil }) // Remove the transitions that are marked
-			keys := univalue.Univalues(this.byCtrn).Keys()
-			vals := slice.To[*univalue.Univalue, interface{}](this.byCtrn)
+			keys := univalue.Univalues(this.byCtrn).Keys()                                                     // Get the keys
+			vals := slice.To[*univalue.Univalue, interface{}](this.byCtrn)                                     // Convert to interface{} for the storage
 			this.Store().(*storage.StoreRouter).CCStore().Precommit(keys, vals)
 		},
 
