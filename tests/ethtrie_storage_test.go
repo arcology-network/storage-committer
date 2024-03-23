@@ -132,7 +132,7 @@ func TestTrieUpdates(t *testing.T) {
 	}
 	committer.Commit(0)
 
-	committer.Init(store)
+	committer.SetStore(store)
 	writeCache.Reset()
 
 	if _, err := writeCache.Write(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
@@ -161,7 +161,7 @@ func TestTrieUpdates(t *testing.T) {
 	// }
 	committer.Commit(0)
 
-	committer.Init(store)
+	committer.SetStore(store)
 	writeCache.Reset()
 
 	if _, err := writeCache.Write(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(100), true)); err != nil {
@@ -329,7 +329,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(0)
-	committer.Init(store)
+	committer.SetStore(store)
 
 	writeCache.Reset()
 	// create a path
@@ -351,7 +351,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 		t.Error("Error: The path should exist")
 	}
 
-	committer.Init(store)
+	committer.SetStore(store)
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", nil); err != nil { // Delete the path
 		t.Error(err)
 	}

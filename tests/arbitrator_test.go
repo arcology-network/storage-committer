@@ -78,7 +78,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(0)
 
-	committer.Init(store)
+	committer.SetStore(store)
 	alice := AliceAccount()
 
 	writeCache.Reset()                                               // = committer.WriteCache()
@@ -138,7 +138,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(0)
-	committer.Init(store)
+	committer.SetStore(store)
 
 	// committer.NewAccount(1, alice)
 	writeCache.Reset()
@@ -234,7 +234,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 
 	committer.Precommit(toCommit)
 	committer.Commit(0)
-	committer.Init(store)
+	committer.SetStore(store)
 
 	writeCache.Reset()
 	v, _, _ := writeCache.Read(3, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", new(noncommutative.String))

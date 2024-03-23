@@ -27,6 +27,8 @@ import (
 	intf "github.com/arcology-network/storage-committer/interfaces"
 )
 
+// The Path type is a special commutative type that represents a path in the concurrent storage.
+// It keeps track of the all the sub paths that are added, removed or updated.
 type Path struct {
 	*deltaset.DeltaSet[string]
 	preloaded *orderedset.OrderedSet[string]

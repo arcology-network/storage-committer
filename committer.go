@@ -71,8 +71,8 @@ func (this *StateCommitter) New(args ...interface{}) *StateCommitter {
 }
 
 // Importer returns the importer of the StateCommitter.
-func (this *StateCommitter) Store() interfaces.Datastore     { return this.store }
-func (this *StateCommitter) Init(store interfaces.Datastore) { this.store = store }
+func (this *StateCommitter) Store() interfaces.Datastore         { return this.store }
+func (this *StateCommitter) SetStore(store interfaces.Datastore) { this.store = store }
 
 // Import imports the given transitions into the StateCommitter.
 func (this *StateCommitter) Import(transitions []*univalue.Univalue, args ...interface{}) *StateCommitter {

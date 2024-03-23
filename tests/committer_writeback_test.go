@@ -81,7 +81,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(0)
-	committer.Init(store)
+	committer.SetStore(store)
 	// create a path
 	path := commutative.NewPath()
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/", path)
@@ -94,7 +94,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 
 	committer.Precommit([]uint32{1})
 	committer.Commit(0)
-	committer.Init(store)
+	committer.SetStore(store)
 
 	writeCache.Reset()
 
@@ -155,7 +155,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(0)
 
-	committer.Init(store)
+	committer.SetStore(store)
 	// path := commutative.NewPath()
 	// _, err := writeCache.Write(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", path)
 
@@ -169,7 +169,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 	committer.Precommit([]uint32{1})
 	committer.Commit(0)
 
-	committer.Init(store)
+	committer.SetStore(store)
 
 	writeCache.Reset()
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/4", nil)
@@ -201,7 +201,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(0)
 
-	committer.Init(store)
+	committer.SetStore(store)
 	// create a path
 	path := commutative.NewPath()
 	writeCache.Reset()
@@ -226,7 +226,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 		t.Error("Error: Not match")
 	}
 
-	committer.Init(store)
+	committer.SetStore(store)
 	writeCache.Reset()
 
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/1", noncommutative.NewString("3")); err != nil {
@@ -272,7 +272,7 @@ func TestStateUpdate(t *testing.T) {
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(0)
-	committer.Init(store)
+	committer.SetStore(store)
 
 	writeCache.Reset()
 	tx0bytes, trans, err := Create_Ctrn_0(alice, store)

@@ -39,7 +39,7 @@ func PathIndexer(store interfaces.Datastore) *indexer.UnorderedIndexer[string, *
 		nil,
 
 		func(v *univalue.Univalue) (string, bool) {
-			return *(*v).GetPath(), true
+			return *v.GetPath(), true
 		},
 
 		func(k string, v *univalue.Univalue) []*univalue.Univalue {

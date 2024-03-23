@@ -185,7 +185,7 @@ func TestNativeStorageReadWrite(t *testing.T) {
 	committer.Import(ts)
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(0)
-	committer.Init(store)
+	committer.SetStore(store)
 	writeCache.Reset()
 
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000011", noncommutative.NewString("124")); err != nil {
@@ -280,7 +280,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(0)
 
-	committer.Init(store)
+	committer.SetStore(store)
 	writeCache.Reset()
 
 	// create a path
@@ -307,7 +307,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 		t.Error("Error: The path should exist")
 	}
 
-	committer.Init(store)
+	committer.SetStore(store)
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", nil); err != nil { // Delete the path
 		t.Error(err)
 	}
@@ -318,7 +318,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 	committer.Import((&univalue.Univalues{}).Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 	committer.Precommit([]uint32{1})
 	committer.Commit(0)
-	committer.Init(store)
+	committer.SetStore(store)
 
 	writeCache.Reset()
 	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", new(commutative.Path)); v != nil {
@@ -348,7 +348,7 @@ func TestBasic(t *testing.T) {
 	committer.Commit(0)
 	// univalue.Univalues(acctTrans).Print()
 
-	committer.Init(store)
+	committer.SetStore(store)
 	writeCache.Reset()
 	// create a path
 	// path := commutative.NewPath()
@@ -476,7 +476,7 @@ func TestCommitter(t *testing.T) {
 	committer.Commit(0)
 
 	writeCache.Reset()
-	// committer.Init(store)
+	// committer.SetStore(store)
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
 		t.Error(err)
 	}
@@ -562,7 +562,7 @@ func TestCommitter2(t *testing.T) {
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(0)
 
-	committer.Init(store)
+	committer.SetStore(store)
 	// Create a new container
 	path := commutative.NewPath()
 	writeCache.Reset()
@@ -769,7 +769,7 @@ func TestCustomCodec(t *testing.T) {
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(0)
 
-	committer.Init(store)
+	committer.SetStore(store)
 	writeCache.Reset()
 	// commutative.NewU256Delta(100)
 	// writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/balance", &commutative.U256{value: 100})
@@ -1136,7 +1136,7 @@ func TestEthDataStoreAddDeleteRead(t *testing.T) {
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(0)
 
-	committer.Init(store)
+	committer.SetStore(store)
 	// create a path
 	writeCache.Reset()
 

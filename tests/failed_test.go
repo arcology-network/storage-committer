@@ -60,7 +60,7 @@ func TestAddAndDelete(t *testing.T) {
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(0)
 
-	committer.Init(store)
+	committer.SetStore(store)
 	// path := commutative.NewPath()
 	// writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/c", path)
 
@@ -75,7 +75,7 @@ func TestAddAndDelete(t *testing.T) {
 	committer.Precommit([]uint32{1})
 	committer.Commit(0)
 
-	committer.Init(store)
+	committer.SetStore(store)
 	writeCache.Reset()
 
 	// Delete an non-existing entry, should NOT appear in the transitions
