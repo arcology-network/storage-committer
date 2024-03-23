@@ -630,7 +630,6 @@ func TestCommitter2(t *testing.T) {
 
 	// The elem-00 has been deleted, only "elem-001", "elem-002" left
 	meta0, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", &commutative.Path{})
-	keys = meta0.(*deltaset.DeltaSet[string]).Elements()
 	if !reflect.DeepEqual(meta0.(*deltaset.DeltaSet[string]).Elements(), []string{"elem-001", "elem-002"}) {
 		t.Error("Error: keys don't match")
 	}

@@ -34,14 +34,14 @@ type Path struct {
 
 func NewPath() intf.Type {
 	this := &Path{
-		DeltaSet: deltaset.NewDeltaSet("", 1000),
+		DeltaSet: deltaset.NewDeltaSet("", 1000, nil),
 	}
 	return this
 }
 
 func InitNewPaths(newPaths []string) *Path {
 	return &Path{
-		DeltaSet: deltaset.NewDeltaSet("", 1000, newPaths...),
+		DeltaSet: deltaset.NewDeltaSet("", 1000, nil, newPaths...),
 	}
 }
 

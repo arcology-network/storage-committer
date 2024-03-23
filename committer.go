@@ -39,7 +39,7 @@ import (
 // StateCommitter represents a storage committer.
 type StateCommitter struct {
 	store    interfaces.Datastore
-	Platform *platform.Platform
+	platform *platform.Platform
 
 	byPath *indexer.UnorderedIndexer[string, *univalue.Univalue, []*univalue.Univalue]
 	byTxID *indexer.UnorderedIndexer[uint32, *univalue.Univalue, []*univalue.Univalue]
@@ -54,7 +54,7 @@ func NewStorageCommitter(store interfaces.Datastore) *StateCommitter {
 
 	return &StateCommitter{
 		store:    store,
-		Platform: plat, //[]stgcommcommon.FilteredTransitionsInterface{&importer.NonceFilter{}, &importer.BalanceFilter{}},
+		platform: plat, //[]stgcommcommon.FilteredTransitionsInterface{&importer.NonceFilter{}, &importer.BalanceFilter{}},
 
 		byPath: PathIndexer(store),     // By storage path
 		byTxID: TxIndexer(store),       // By tx ID
@@ -66,7 +66,7 @@ func NewStorageCommitter(store interfaces.Datastore) *StateCommitter {
 // New creates a new StateCommitter instance.
 func (this *StateCommitter) New(args ...interface{}) *StateCommitter {
 	return &StateCommitter{
-		Platform: platform.NewPlatform(),
+		platform: platform.NewPlatform(),
 	}
 }
 
