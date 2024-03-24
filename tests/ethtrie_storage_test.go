@@ -133,7 +133,7 @@ func TestTrieUpdates(t *testing.T) {
 	committer.Commit(0)
 
 	committer.SetStore(store)
-	writeCache.Reset()
+	writeCache.Clear()
 
 	if _, err := writeCache.Write(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
 		t.Error(err)
@@ -162,7 +162,7 @@ func TestTrieUpdates(t *testing.T) {
 	committer.Commit(0)
 
 	committer.SetStore(store)
-	writeCache.Reset()
+	writeCache.Clear()
 
 	if _, err := writeCache.Write(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(100), true)); err != nil {
 		t.Error(err)
@@ -331,7 +331,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 	committer.Commit(0)
 	committer.SetStore(store)
 
-	writeCache.Reset()
+	writeCache.Clear()
 	// create a path
 	path := commutative.NewPath()
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", path); err != nil {
@@ -345,7 +345,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 	committer.Precommit([]uint32{1})
 	committer.Commit(0)
 
-	writeCache.Reset()
+	writeCache.Clear()
 	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", &commutative.Path{})
 	if v == nil {
 		t.Error("Error: The path should exist")
@@ -363,7 +363,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 	committer.Precommit([]uint32{1})
 	committer.Commit(0)
 
-	writeCache.Reset()
+	writeCache.Clear()
 	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", new(commutative.Path)); v != nil {
 		t.Error("Error: The path should have been deleted")
 	}

@@ -76,7 +76,7 @@ func TestAddAndDelete(t *testing.T) {
 	committer.Commit(0)
 
 	committer.SetStore(store)
-	writeCache.Reset()
+	writeCache.Clear()
 
 	// Delete an non-existing entry, should NOT appear in the transitions
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/4", nil); err == nil {

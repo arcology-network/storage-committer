@@ -59,7 +59,7 @@ func TestSimpleBalance(t *testing.T) {
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM, 0, 1})
 	committer.Commit(0)
 	// Read alice's balance again
-	writeCache.Reset()
+	writeCache.Clear()
 
 	balance, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/balance", new(commutative.U256))
 	balanceAddr := balance.(uint256.Int)
@@ -310,7 +310,7 @@ func TestUint64Delta(t *testing.T) {
 	committer.Import(acctTrans).Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(stgcommcommon.SYSTEM)
 	committer.Clear()
-	writeCache.Reset()
+	writeCache.Clear()
 
 	deltav1 := commutative.NewUint64Delta(11)
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/nonce", deltav1); err != nil {
@@ -335,5 +335,5 @@ func TestUint64Delta(t *testing.T) {
 	committer.Import(acctTrans1)
 	committer.Precommit([]uint32{1, 2})
 	committer.Commit(0).Clear()
-	writeCache.Reset()
+	writeCache.Clear()
 }

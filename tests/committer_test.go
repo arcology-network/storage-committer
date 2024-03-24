@@ -37,7 +37,7 @@ func CommitterCache(store interfaces.Datastore, t *testing.T) {
 	committer.Import(acctTrans).Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(stgcommcommon.SYSTEM)
 	committer.Clear()
-	writeCache.Reset()
+	writeCache.Clear()
 
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(0), noncommutative.NewBytes([]byte{1, 2, 3})); err != nil {
 		t.Error(err)
@@ -54,7 +54,7 @@ func CommitterCache(store interfaces.Datastore, t *testing.T) {
 	committer = stgcommitter.NewStorageCommitter(store)
 	committer.Import(acctTrans).Precommit([]uint32{1})
 	committer.Commit(2).Clear()
-	writeCache.Reset()
+	writeCache.Clear()
 
 	outV, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(0), new(noncommutative.Bytes))
 	if outV == nil || !bytes.Equal(outV.([]byte), []byte{1, 2, 3}) {
@@ -93,7 +93,7 @@ func CommitterCache(store interfaces.Datastore, t *testing.T) {
 	committer = stgcommitter.NewStorageCommitter(store)
 	committer.Import(acctTrans).Precommit([]uint32{1})
 	committer.Commit(2).Clear()
-	writeCache.Reset()
+	writeCache.Clear()
 
 	transientStore := storage.NewTransientDB(store)
 	writeCache = cache.NewWriteCache(transientStore, 1, 1, platform.NewPlatform())
@@ -126,7 +126,7 @@ func TestSize(t *testing.T) {
 	committer.Import(acctTrans)
 	committer.Precommit([]uint32{1})
 	committer.Commit(0)
-	writeCache.Reset()
+	writeCache.Clear()
 
 	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
 		t.Error(err)
@@ -155,7 +155,7 @@ func TestSize(t *testing.T) {
 	committer.Import(acctTrans)
 	committer.Precommit([]uint32{1})
 	committer.Commit(0)
-	writeCache.Reset()
+	writeCache.Clear()
 
 	outV, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+key, new(noncommutative.Bytes))
 	if !bytes.Equal(outV.([]byte), slice.New[byte](320, 11)) {
@@ -186,7 +186,7 @@ func TestNativeStorageReadWrite(t *testing.T) {
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(0)
 	committer.SetStore(store)
-	writeCache.Reset()
+	writeCache.Clear()
 
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000011", noncommutative.NewString("124")); err != nil {
 		t.Error(err)
@@ -201,7 +201,7 @@ func TestNativeStorageReadWrite(t *testing.T) {
 	committer.Import(transitions)
 	committer.Precommit([]uint32{1})
 	committer.Commit(0)
-	writeCache.Reset()
+	writeCache.Clear()
 
 	_0, _, _ := writeCache.Read(0, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000011", new(noncommutative.String))
 	if !reflect.DeepEqual(_0, "124") {
@@ -281,7 +281,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 	committer.Commit(0)
 
 	committer.SetStore(store)
-	writeCache.Reset()
+	writeCache.Clear()
 
 	// create a path
 	path := commutative.NewPath()
@@ -300,7 +300,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 
 	committer.Precommit([]uint32{1})
 	committer.Commit(0)
-	writeCache.Reset()
+	writeCache.Clear()
 
 	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", &commutative.Path{})
 	if v == nil {
@@ -320,7 +320,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 	committer.Commit(0)
 	committer.SetStore(store)
 
-	writeCache.Reset()
+	writeCache.Clear()
 	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", new(commutative.Path)); v != nil {
 		t.Error("Error: The path should have been deleted")
 	}
@@ -349,7 +349,7 @@ func TestBasic(t *testing.T) {
 	// univalue.Univalues(acctTrans).Print()
 
 	committer.SetStore(store)
-	writeCache.Reset()
+	writeCache.Clear()
 	// create a path
 	// path := commutative.NewPath()
 	// if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/", path); err != nil {
@@ -475,7 +475,7 @@ func TestCommitter(t *testing.T) {
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(0)
 
-	writeCache.Reset()
+	writeCache.Clear()
 	// committer.SetStore(store)
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
 		t.Error(err)
@@ -565,7 +565,7 @@ func TestCommitter2(t *testing.T) {
 	committer.SetStore(store)
 	// Create a new container
 	path := commutative.NewPath()
-	writeCache.Reset()
+	writeCache.Clear()
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", path); err != nil {
 		t.Error(err, "Error:  Failed to MakePath: "+"/ctrn-0/")
 	}
@@ -770,7 +770,7 @@ func TestCustomCodec(t *testing.T) {
 	committer.Commit(0)
 
 	committer.SetStore(store)
-	writeCache.Reset()
+	writeCache.Clear()
 	// commutative.NewU256Delta(100)
 	// writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/balance", &commutative.U256{value: 100})
 
@@ -1138,7 +1138,7 @@ func TestEthDataStoreAddDeleteRead(t *testing.T) {
 
 	committer.SetStore(store)
 	// create a path
-	writeCache.Reset()
+	writeCache.Clear()
 
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
 		t.Error(err)
@@ -1179,7 +1179,7 @@ func TestPathMultiBatch(b *testing.T) {
 	committer.Import(acctTrans)
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(0)
-	writeCache.Reset()
+	writeCache.Clear()
 
 	keys := RandomKeys(0, 5)
 	for i := 0; i < len(keys); i++ {
@@ -1193,7 +1193,7 @@ func TestPathMultiBatch(b *testing.T) {
 	committer.Import(acctTrans)
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
-	writeCache.Reset()
+	writeCache.Clear()
 
 	for i := 0; i < len(keys); i++ {
 		if v, _, err := writeCache.Read(0, "blcc://eth1.0/account/"+alice+"/storage/container/"+keys[i], new(noncommutative.Int64)); v == nil ||
@@ -1219,7 +1219,7 @@ func TestPathMultiBatch(b *testing.T) {
 	committer.Import(acctTrans)
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
-	writeCache.Reset()
+	writeCache.Clear()
 
 	for i, k := range keys {
 		if v, _, err := writeCache.Read(0, "blcc://eth1.0/account/"+alice+"/storage/container/"+k, new(noncommutative.Int64)); v == nil ||

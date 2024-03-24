@@ -96,7 +96,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 	committer.Commit(0)
 	committer.SetStore(store)
 
-	writeCache.Reset()
+	writeCache.Clear()
 
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/1", noncommutative.NewInt64(1))
 	// _, addTrans := writeCache.Export(importer.Sorter)
@@ -107,7 +107,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 
 	committer.Precommit([]uint32{1})
 	committer.Commit(0)
-	writeCache.Reset()
+	writeCache.Clear()
 
 	if v, _, _ := writeCache.Read(2, "blcc://eth1.0/account/"+alice+"/storage/container/1", new(noncommutative.Int64)); v == nil {
 		t.Error("Error: Failed to read the key !")
@@ -131,7 +131,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 
 	committer.Precommit([]uint32{1, 2})
 	committer.Commit(0)
-	writeCache.Reset()
+	writeCache.Clear()
 
 	if v, _, _ := writeCache.Read(2, "blcc://eth1.0/account/"+alice+"/storage/container/1", new(noncommutative.Int64)); v != nil {
 		t.Error("Error: Failed to delete the entry !")
@@ -171,7 +171,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 
 	committer.SetStore(store)
 
-	writeCache.Reset()
+	writeCache.Clear()
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/4", nil)
 
 	if acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{}); len(acctTrans) != 0 {
@@ -204,7 +204,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	committer.SetStore(store)
 	// create a path
 	path := commutative.NewPath()
-	writeCache.Reset()
+	writeCache.Clear()
 
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/", path)
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/1", noncommutative.NewString("1"))
@@ -227,7 +227,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	}
 
 	committer.SetStore(store)
-	writeCache.Reset()
+	writeCache.Clear()
 
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/1", noncommutative.NewString("3")); err != nil {
 		t.Error(err)
@@ -274,7 +274,7 @@ func TestStateUpdate(t *testing.T) {
 	committer.Commit(0)
 	committer.SetStore(store)
 
-	writeCache.Reset()
+	writeCache.Clear()
 	tx0bytes, trans, err := Create_Ctrn_0(alice, store)
 	if err != nil {
 		t.Error(err)
@@ -296,7 +296,7 @@ func TestStateUpdate(t *testing.T) {
 	committer.Commit(0)
 	//need to encode delta only now it encodes everything
 
-	writeCache.Reset()
+	writeCache.Clear()
 	if err := CheckPaths(alice, writeCache); err != nil {
 		t.Error(err)
 	}
@@ -334,7 +334,7 @@ func TestStateUpdate(t *testing.T) {
 	committer.Precommit([]uint32{1})
 	committer.Commit(0)
 
-	writeCache.Reset()
+	writeCache.Clear()
 	if v, _, _ := writeCache.Read(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{}); v != nil {
 		t.Error("Error: Should be gone already !")
 	}
