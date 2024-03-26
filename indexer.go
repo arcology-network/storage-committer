@@ -24,10 +24,10 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
+	ethstg "github.com/arcology-network/storage-committer/ethstorage"
 	interfaces "github.com/arcology-network/storage-committer/interfaces"
 	intf "github.com/arcology-network/storage-committer/interfaces"
 	platform "github.com/arcology-network/storage-committer/platform"
-	"github.com/arcology-network/storage-committer/storage"
 	"github.com/arcology-network/storage-committer/univalue"
 )
 
@@ -73,7 +73,7 @@ func TxIndexer(store interfaces.Datastore) *indexer.UnorderedIndexer[uint32, *un
 
 // An index by account address, transitions have the same Eth account address will be put together in a list
 // This is for ETH storage, concurrent container related sub-paths won't be put into this index.
-func EthIndexer(store interfaces.Datastore) *indexer.UnorderedIndexer[[20]byte, *univalue.Univalue, *associative.Pair[*storage.Account, []*univalue.Univalue]] {
+func EthIndexer(store interfaces.Datastore) *indexer.UnorderedIndexer[[20]byte, *univalue.Univalue, *associative.Pair[*ethstg.Account, []*univalue.Univalue]] {
 	return indexer.NewUnorderedIndexer(
 		nil,
 		func(v *univalue.Univalue) ([20]byte, bool) {
@@ -84,14 +84,14 @@ func EthIndexer(store interfaces.Datastore) *indexer.UnorderedIndexer[[20]byte, 
 			return ethcommon.BytesToAddress(addr), platform.IsEthPath(*v.GetPath())
 		},
 
-		func(addr [20]byte, v *univalue.Univalue) *associative.Pair[*storage.Account, []*univalue.Univalue] {
-			return &associative.Pair[*storage.Account, []*univalue.Univalue]{
-				First:  store.Preload(addr[:]).(*storage.Account),
+		func(addr [20]byte, v *univalue.Univalue) *associative.Pair[*ethstg.Account, []*univalue.Univalue] {
+			return &associative.Pair[*ethstg.Account, []*univalue.Univalue]{
+				First:  store.Preload(addr[:]).(*ethstg.Account),
 				Second: []*univalue.Univalue{v},
 			}
 		},
 
-		func(_ [20]byte, v *univalue.Univalue, pair **associative.Pair[*storage.Account, []*univalue.Univalue]) {
+		func(_ [20]byte, v *univalue.Univalue, pair **associative.Pair[*ethstg.Account, []*univalue.Univalue]) {
 			(**pair).Second = append((**pair).Second, v)
 		},
 	)

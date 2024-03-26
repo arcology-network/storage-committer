@@ -23,6 +23,7 @@ import (
 	"runtime"
 
 	indexer "github.com/arcology-network/common-lib/storage/indexer"
+	ethstg "github.com/arcology-network/storage-committer/ethstorage"
 	platform "github.com/arcology-network/storage-committer/platform"
 	"github.com/arcology-network/storage-committer/storage"
 	"github.com/arcology-network/storage-committer/univalue"
@@ -43,7 +44,7 @@ type StateCommitter struct {
 
 	byPath *indexer.UnorderedIndexer[string, *univalue.Univalue, []*univalue.Univalue]
 	byTxID *indexer.UnorderedIndexer[uint32, *univalue.Univalue, []*univalue.Univalue]
-	byEth  *indexer.UnorderedIndexer[[20]byte, *univalue.Univalue, *associative.Pair[*storage.Account, []*univalue.Univalue]]
+	byEth  *indexer.UnorderedIndexer[[20]byte, *univalue.Univalue, *associative.Pair[*ethstg.Account, []*univalue.Univalue]]
 	byCtrn []*univalue.Univalue
 	Err    error
 }
@@ -71,8 +72,10 @@ func (this *StateCommitter) New(args ...interface{}) *StateCommitter {
 }
 
 // Importer returns the importer of the StateCommitter.
-func (this *StateCommitter) Store() interfaces.Datastore         { return this.store }
-func (this *StateCommitter) SetStore(store interfaces.Datastore) { this.store = store }
+func (this *StateCommitter) Store() interfaces.Datastore { return this.store }
+func (this *StateCommitter) SetStore(store interfaces.Datastore) {
+	this.store = store
+}
 
 // Import imports the given transitions into the StateCommitter.
 func (this *StateCommitter) Import(transitions []*univalue.Univalue, args ...interface{}) *StateCommitter {
@@ -130,7 +133,7 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 		},
 
 		func() {
-			this.byEth.ParallelForeachDo(func(_ [20]byte, v **associative.Pair[*storage.Account, []*univalue.Univalue]) {
+			this.byEth.ParallelForeachDo(func(_ [20]byte, v **associative.Pair[*ethstg.Account, []*univalue.Univalue]) {
 				slice.RemoveIf(&((**v).Second), func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil })
 			})
 			ethRootHash = this.Store().(*storage.StoreRouter).EthStore().Precommit(this.byEth.Values())
@@ -182,7 +185,7 @@ func (this *StateCommitter) ByTxID() *indexer.UnorderedIndexer[uint32, *univalue
 	return this.byTxID
 }
 
-func (this *StateCommitter) ByEth() *indexer.UnorderedIndexer[[20]byte, *univalue.Univalue, *associative.Pair[*storage.Account, []*univalue.Univalue]] {
+func (this *StateCommitter) ByEth() *indexer.UnorderedIndexer[[20]byte, *univalue.Univalue, *associative.Pair[*ethstg.Account, []*univalue.Univalue]] {
 	return this.byEth
 }
 

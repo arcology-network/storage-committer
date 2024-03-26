@@ -21,17 +21,17 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/arcology-network/common-lib/exp/slice"
-	storage "github.com/arcology-network/storage-committer/storage"
+	ethstg "github.com/arcology-network/storage-committer/ethstorage"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 
-type Convertible storage.AccountResult
+type Convertible ethstg.AccountResult
 
 // Convert from Ethereum storage proof to Optimism proof format.
 // The main difference is that the Ethereum storage proof is a list of hex STRINGS with the 0x prefix, but
 // the Optimism storage proof is a list of hex BYTES without the 0x prefix.
-func (Convertible) ToStorageProof(res []storage.StorageResult) []OptimismStorageProof {
-	opProof := slice.Transform(res, func(i int, storageResult storage.StorageResult) OptimismStorageProof {
+func (Convertible) ToStorageProof(res []ethstg.StorageResult) []OptimismStorageProof {
+	opProof := slice.Transform(res, func(i int, storageResult ethstg.StorageResult) OptimismStorageProof {
 		return OptimismStorageProof{
 			Key:   ethcommon.BytesToHash(hexutil.MustDecode(storageResult.Key)),
 			Value: *storageResult.Value,

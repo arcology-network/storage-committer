@@ -28,10 +28,10 @@ import (
 	slice "github.com/arcology-network/common-lib/exp/slice"
 	cache "github.com/arcology-network/eu/cache"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	ethstg "github.com/arcology-network/storage-committer/ethstorage"
 	"github.com/arcology-network/storage-committer/interfaces"
 	opadapter "github.com/arcology-network/storage-committer/op"
 	platform "github.com/arcology-network/storage-committer/platform"
-	stgcommstorage "github.com/arcology-network/storage-committer/storage"
 	storage "github.com/arcology-network/storage-committer/storage"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -112,8 +112,8 @@ func NewWriteCacheWithAcounts(store interfaces.Datastore, accounts ...string) *c
 
 func verifierEthMerkle(roothash [32]byte, acct string, key string, store interfaces.Datastore, t *testing.T) {
 	// roothash := store.(*storage.StoreRouter).EthStore().Root()                               // Get the proof provider by a root hash.
-	ethdb := store.(*storage.StoreRouter).EthStore().EthDB()                                 // Get the proof provider by a root hash.
-	provider, err := stgcommstorage.NewMerkleProofCache(2, ethdb).GetProofProvider(roothash) // Initiate the proof cache, maximum 2 blocks
+	ethdb := store.(*storage.StoreRouter).EthStore().EthDB()                         // Get the proof provider by a root hash.
+	provider, err := ethstg.NewMerkleProofCache(2, ethdb).GetProofProvider(roothash) // Initiate the proof cache, maximum 2 blocks
 	if err != nil {
 		t.Fatal(err)
 	}

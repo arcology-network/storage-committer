@@ -111,28 +111,17 @@ func (this *Univalue) CopyTo(writable interface{}) {
 		Find(uint32, string, interface{}) (interface{}, interface{})
 	})
 
-	// common.IfThenDo(this.writes == 0 && this.deltaWrites == 0,
-	// 	func() { writeCache.Read(this.tx, *this.GetPath(), this.value) }, // Add reads
-	// 	func() { writeCache.Write(this.tx, *this.GetPath(), this.value) },
-	// )
-	if this.value == nil {
-		fmt.Print(this)
-	}
-
 	if this.writes == 0 && this.deltaWrites == 0 {
 		writeCache.Read(this.tx, *this.GetPath(), this.value)
 	} else {
 		writeCache.Write(this.tx, *this.GetPath(), this.value)
 	}
 
+	// here !!!
 	_, univ := writeCache.Find(this.tx, *this.GetPath(), nil)
-	readsDiff := this.Reads() - univ.(*Univalue).Reads()
-	writesDiff := this.Writes() - univ.(*Univalue).Writes()
-	deltaWriteDiff := this.DeltaWrites() - univ.(*Univalue).DeltaWrites()
-
-	univ.(*Univalue).IncrementReads(readsDiff)
-	univ.(*Univalue).IncrementWrites(writesDiff)
-	univ.(*Univalue).IncrementDeltaWrites(deltaWriteDiff)
+	univ.(*Univalue).IncrementReads(this.Reads())
+	univ.(*Univalue).IncrementWrites(this.Writes())
+	univ.(*Univalue).IncrementDeltaWrites(this.DeltaWrites())
 }
 
 func (this *Univalue) Set(tx uint32, path string, newV interface{}, inCache bool, importer interface{}) error { // update the value

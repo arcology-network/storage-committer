@@ -65,31 +65,15 @@ type Type interface { // value type
 type ReadOnlyDataStore interface {
 	IfExists(string) bool
 	Retrive(string, any) (interface{}, error)
-	RetriveFromStorage(string, any) (interface{}, error) // Skip the cache and read from storage directly
 }
 
 type Datastore interface {
 	IfExists(string) bool
 	Inject(string, any) error
-	BatchInject([]string, []any) error
-	Preload([]byte) interface{}
 	Retrive(string, any) (interface{}, error)
-	RetriveFromStorage(string, any) (interface{}, error)
-	BatchRetrive([]string, []any) []interface{}
-	Precommit(...interface{}) [32]byte
+	Preload([]byte) interface{}
+	Precommit(...interface{}) [32]byte //key gatter, value gatter,
 	Commit(uint64) error
-	UpdateCacheStats([]interface{})
-	// Cache(any) interface{}
-	Encoder(any) func(string, interface{}) []byte
-	Decoder(any) func(string, []byte, any) interface{}
-
-	// Buffers() ([]string, []interface{}, [][]byte)
-	// KVs() ([]string, []interface{})
-	Clear()
-	Print()
-	CheckSum() [32]byte
-	Query(string, func(string, string) bool) ([]string, [][]byte, error)
-	// CacheRetrive(key string, valueTransformer func(interface{}) interface{}) (interface{}, error)
 }
 
 type Hasher func(Type) []byte

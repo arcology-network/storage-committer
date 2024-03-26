@@ -1,6 +1,7 @@
 package committertest
 
 import (
+	ethstg "github.com/arcology-network/storage-committer/ethstorage"
 	"github.com/arcology-network/storage-committer/interfaces"
 	storage "github.com/arcology-network/storage-committer/storage"
 	// trie "github.com/ethereum/go-ethereum/trie"
@@ -15,8 +16,8 @@ var (
 	// encoder = platform.Codec{}.Encode
 	// decoder = platform.Codec{}.Decode
 
-	encoder = storage.Rlp{}.Encode
-	decoder = storage.Rlp{}.Decode
+	encoder = ethstg.Rlp{}.Encode
+	decoder = ethstg.Rlp{}.Decode
 )
 
 func chooseDataStore() interfaces.Datastore {
