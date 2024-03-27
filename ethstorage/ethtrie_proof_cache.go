@@ -70,7 +70,7 @@ func (this *MerkleProofCache) GetProofProvider(rootHash [32]byte) (*ProofProvide
 			ratios := slice.Transform(merkles, func(_ int, v *ProofProvider) float64 { return float64(v.visits) / float64(v.totalVisits) })
 
 			// The entry has the lowest ratio of visits/totalVisits will be removed.
-			idx, _ := slice.Min(ratios, func(v0, v1 float64) bool { return v0 < v1 })
+			idx, _ := slice.Extreme(ratios, func(v0, v1 float64) bool { return v0 < v1 })
 			delete(this.merkleDict, keys[idx])
 		}
 	}
