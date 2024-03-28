@@ -1,4 +1,4 @@
-package storage
+package ethstorage
 
 import (
 	"github.com/arcology-network/storage-committer/interfaces"

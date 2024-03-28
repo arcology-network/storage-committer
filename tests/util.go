@@ -111,8 +111,8 @@ func NewWriteCacheWithAcounts(store interfaces.Datastore, accounts ...string) *c
 }
 
 func verifierEthMerkle(roothash [32]byte, acct string, key string, store interfaces.Datastore, t *testing.T) {
-	// roothash := store.(*storage.StoreRouter).EthStore().Root()                               // Get the proof provider by a root hash.
-	ethdb := store.(*storage.StoreRouter).EthStore().EthDB()                         // Get the proof provider by a root hash.
+	// roothash := store.(*storage.StoreProxy).EthStore().Root()                               // Get the proof provider by a root hash.
+	ethdb := store.(*storage.StoreProxy).EthStore().EthDB()                          // Get the proof provider by a root hash.
 	provider, err := ethstg.NewMerkleProofCache(2, ethdb).GetProofProvider(roothash) // Initiate the proof cache, maximum 2 blocks
 	if err != nil {
 		t.Fatal(err)

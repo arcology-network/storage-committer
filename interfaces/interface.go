@@ -10,10 +10,10 @@ type Platform interface { // value type
 	// Eth10Account() string
 }
 
-type Transition interface { // value type
-	Added() interface{}
-	Removed() interface{}
-}
+// type Transition interface { // value type
+// 	Added() interface{}
+// 	Removed() interface{}
+// }
 
 type Type interface { // value type
 	TypeID() uint8
@@ -65,6 +65,7 @@ type Type interface { // value type
 type ReadOnlyDataStore interface {
 	IfExists(string) bool
 	Retrive(string, any) (interface{}, error)
+	Preload([]byte) interface{}
 }
 
 type Datastore interface {

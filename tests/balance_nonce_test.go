@@ -297,7 +297,7 @@ func TestMultipleNonces(t *testing.T) {
 }
 
 func TestUint64Delta(t *testing.T) {
-	store := storage.NewHybirdStore()
+	store := storage.NewStoreProxy()
 	alice := AliceAccount()
 	committer := stgcommitter.NewStorageCommitter(store)
 

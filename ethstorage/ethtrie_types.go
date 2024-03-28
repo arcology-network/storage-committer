@@ -1,4 +1,4 @@
-package storage
+package ethstorage
 
 import (
 	"encoding/hex"

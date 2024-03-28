@@ -104,7 +104,7 @@ func TestAddAndDelete(t *testing.T) {
 
 func TestPathReadAndWriteBatchCache(b *testing.T) {
 	store := chooseDataStore()
-	store.(*storage.StoreRouter).EnableCache()
+	store.(*storage.StoreProxy).EnableCache()
 	writeCache := NewWriteCacheWithAcounts(store, AliceAccount(), BobAccount())
 
 	alice := AliceAccount()
@@ -133,7 +133,7 @@ func TestPathReadAndWriteBatchCache(b *testing.T) {
 	committer.Commit(0)
 
 	for i := 0; i < len(keys); i++ {
-		v, ok := store.(*storage.StoreRouter).Cache(nil).(*commoncache.ReadCache[string, interfaces.Type]).Get("blcc://eth1.0/account/" + alice + "/storage/container/ctrn-0/alice-elem-" + keys[i])
+		v, ok := store.(*storage.StoreProxy).Cache(nil).(*commoncache.ReadCache[string, interfaces.Type]).Get("blcc://eth1.0/account/" + alice + "/storage/container/ctrn-0/alice-elem-" + keys[i])
 		if typedv, _, _ := (*(v)).Get(); !ok || typedv != int64(i) {
 			b.Error("not found")
 		}
@@ -157,7 +157,7 @@ func TestPathReadAndWriteBatchCache(b *testing.T) {
 	committer.Commit(0)
 
 	for i := 0; i < len(keys); i++ {
-		v, ok := store.(*storage.StoreRouter).Cache(nil).(*commoncache.ReadCache[string, interfaces.Type]).Get("blcc://eth1.0/account/" + alice + "/storage/container/ctrn-0/alice-elem-" + keys[i])
+		v, ok := store.(*storage.StoreProxy).Cache(nil).(*commoncache.ReadCache[string, interfaces.Type]).Get("blcc://eth1.0/account/" + alice + "/storage/container/ctrn-0/alice-elem-" + keys[i])
 		if typedv, _, _ := (*(v)).Get(); !ok || typedv != int64(i+9999) {
 			b.Error("not found")
 		}

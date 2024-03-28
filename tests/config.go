@@ -22,8 +22,8 @@ var (
 
 func chooseDataStore() interfaces.Datastore {
 	// return storage.NewParallelEthMemDataStore() // Eth trie datastore
-	// return storage.NewHybirdStore() // Eth trie datastore
-	store := storage.NewHybirdStore()
+	// return storage.NewStoreProxy() // Eth trie datastore
+	store := storage.NewStoreProxy()
 	store.DisableCache()
 	return store
 	// return storage.NewLevelDBDataStore("/tmp")

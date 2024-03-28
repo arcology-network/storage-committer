@@ -24,21 +24,21 @@ import (
 
 type StoreSelector struct{}
 
-func (this *StoreRouter) GetStorage(key string) intf.Datastore {
+func (this *StoreProxy) GetStorage(key string) intf.Datastore {
 	if platform.IsEthPath(key) {
 		return this.ethDataStore
 	}
 	return this.ccDataStore
 }
 
-// func (this *StoreRouter) FilterLocalByType(vals *[]*univalue.Univalue) ([]*univalue.Univalue, []*univalue.Univalue) {
+// func (this *StoreProxy) FilterLocalByType(vals *[]*univalue.Univalue) ([]*univalue.Univalue, []*univalue.Univalue) {
 // 	localTrans := slice.MoveIf(vals, func(i int, v *univalue.Univalue) bool {
 // 		return v.TypeID() == commutative.PATH // Move all the path metadata to the local storage
 // 	})
 // 	return *vals, localTrans
 // }
 
-// func (this *StoreRouter) FilterLocalByPath(key *[]string, vals *[]any) ([]string, []any) {
+// func (this *StoreProxy) FilterLocalByPath(key *[]string, vals *[]any) ([]string, []any) {
 // 	localKeys, localVals := slice.MoveBothIf(key, vals, func(i int, str string, v any) bool {
 // 		return strings.Contains(str, "/container")
 // 	})

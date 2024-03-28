@@ -31,14 +31,14 @@ import (
 	platform "github.com/arcology-network/storage-committer/platform"
 )
 
-type StoreRouter struct {
+type StoreProxy struct {
 	objectCache  *cache.ReadCache[string, intf.Type] // Cache shared by all storage
 	ethDataStore *ethstg.EthDataStore
 	ccDataStore  *datastore.DataStore
 }
 
-func NewHybirdStore() *StoreRouter {
-	return &StoreRouter{
+func NewStoreProxy() *StoreProxy {
+	return &StoreProxy{
 		objectCache: cache.NewReadCache[string, intf.Type](
 			4096, // 4096 shards to avoid lock contention
 			func(v intf.Type) bool { return v == nil },
@@ -52,46 +52,46 @@ func NewHybirdStore() *StoreRouter {
 	}
 }
 
-func (this *StoreRouter) Cache(any) interface{}      { return this.objectCache }
-func (this *StoreRouter) EnableCache() *StoreRouter  { this.objectCache.Enable(); return this }
-func (this *StoreRouter) DisableCache() *StoreRouter { this.objectCache.Disable(); return this }
-func (this *StoreRouter) ClearCache()                { this.objectCache.Clear() }
+func (this *StoreProxy) Cache(any) interface{}     { return this.objectCache }
+func (this *StoreProxy) EnableCache() *StoreProxy  { this.objectCache.Enable(); return this }
+func (this *StoreProxy) DisableCache() *StoreProxy { this.objectCache.Disable(); return this }
+func (this *StoreProxy) ClearCache()               { this.objectCache.Clear() }
 
-func (this *StoreRouter) EthStore() *ethstg.EthDataStore { return this.ethDataStore } // Eth storage
-func (this *StoreRouter) CCStore() *datastore.DataStore  { return this.ccDataStore }  // Arcology storage
+func (this *StoreProxy) EthStore() *ethstg.EthDataStore { return this.ethDataStore } // Eth storage
+func (this *StoreProxy) CCStore() *datastore.DataStore  { return this.ccDataStore }  // Arcology storage
 
-func (this *StoreRouter) Precommit(args ...interface{}) [32]byte { return [32]byte{} }
+func (this *StoreProxy) Precommit(args ...interface{}) [32]byte { return [32]byte{} }
 
-func (this *StoreRouter) Preload(data []byte) interface{} {
+func (this *StoreProxy) Preload(data []byte) interface{} {
 	return this.ethDataStore.Preload(data)
 }
 
-func (this *StoreRouter) IfExists(key string) bool {
+func (this *StoreProxy) IfExists(key string) bool {
 	if _, ok := this.objectCache.Get(key); ok { // Check the cache first
 		return true
 	}
 	return this.GetStorage(key).IfExists(key)
 }
 
-func (this *StoreRouter) Inject(key string, v any) error {
+func (this *StoreProxy) Inject(key string, v any) error {
 	return this.GetStorage(key).Inject(key, v)
 }
 
-func (this *StoreRouter) Retrive(key string, v any) (interface{}, error) {
+func (this *StoreProxy) Retrive(key string, v any) (interface{}, error) {
 	if v, ok := this.objectCache.Get(key); ok { // Get from cache first
 		return *v, nil
 	}
 	return this.GetStorage(key).Retrive(key, v)
 }
 
-func (this *StoreRouter) Commit(blockNum uint64) error {
+func (this *StoreProxy) Commit(blockNum uint64) error {
 	err0 := this.ethDataStore.Commit(blockNum)
 	err1 := (this.ccDataStore.Commit(blockNum))
 	return errors.New(err0.Error() + err1.Error())
 }
 
 // Update the object cache.
-func (this *StoreRouter) RefreshCache(blockNum uint64, dirtyKeys []string, dirtyVals []intf.Type) {
+func (this *StoreProxy) RefreshCache(blockNum uint64, dirtyKeys []string, dirtyVals []intf.Type) {
 	for _, v := range dirtyVals {
 		if common.IsType[*commutative.Uint64](v) && v.(*commutative.Uint64).Delta().(uint64) != 0 {
 			panic("Error: Delta value should not be in the dirtyVals")

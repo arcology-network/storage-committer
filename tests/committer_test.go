@@ -108,9 +108,9 @@ func CommitterCache(store interfaces.Datastore, t *testing.T) {
 }
 
 func TestNewCommitterWithoutCache(t *testing.T) {
-	store := storage.NewHybirdStore().EnableCache()
-	CommitterCache(store, t)                                   // Use cache
-	CommitterCache(storage.NewHybirdStore().DisableCache(), t) // Don't use cache
+	store := storage.NewStoreProxy().EnableCache()
+	CommitterCache(store, t)                                  // Use cache
+	CommitterCache(storage.NewStoreProxy().DisableCache(), t) // Don't use cache
 }
 
 func TestSize(t *testing.T) {
@@ -165,8 +165,8 @@ func TestSize(t *testing.T) {
 
 func TestNativeStorageReadWrite(t *testing.T) {
 	store := chooseDataStore()
-	store.(*storage.StoreRouter).DisableCache()
-	store.(*storage.StoreRouter).EthStore().DisableAccountCache()
+	store.(*storage.StoreProxy).DisableCache()
+	store.(*storage.StoreProxy).EthStore().DisableAccountCache()
 
 	alice := AliceAccount()
 
@@ -259,7 +259,7 @@ func TestReadWriteAt(t *testing.T) {
 
 func TestAddThenDeletePath2(t *testing.T) {
 	store := chooseDataStore()
-	store.(*storage.StoreRouter).DisableCache()
+	store.(*storage.StoreProxy).DisableCache()
 
 	alice := AliceAccount()
 

@@ -57,10 +57,10 @@ func NewStorageCommitter(store interfaces.Datastore) *StateCommitter {
 		store:    store,
 		platform: plat, //[]stgcommcommon.FilteredTransitionsInterface{&importer.NonceFilter{}, &importer.BalanceFilter{}},
 
-		byPath: PathIndexer(store),     // By storage path
-		byTxID: TxIndexer(store),       // By tx ID
-		byEth:  EthIndexer(store),      // By eth account
-		byCtrn: []*univalue.Univalue{}, // This index records the transitions that are related to the concurrent containers
+		byPath: PathIndexer(store),       // By storage path
+		byTxID: TxIndexer(store),         // By tx ID
+		byEth:  ethstg.EthIndexer(store), // By eth account
+		byCtrn: []*univalue.Univalue{},   // This index records the transitions that are related to the concurrent containers
 	}
 }
 
@@ -127,16 +127,14 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 	common.ParallelExecute(
 		func() {
 			slice.RemoveIf(&this.byCtrn, func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil }) // Remove the transitions that are marked
-			keys := univalue.Univalues(this.byCtrn).Keys()                                                     // Get the keys
-			vals := slice.To[*univalue.Univalue, interface{}](this.byCtrn)                                     // Convert to interface{} for the storage
-			this.Store().(*storage.StoreRouter).CCStore().Precommit(keys, vals)                                // Container store
+			this.Store().(*storage.StoreProxy).CCStore().PrecommitV2(this.byCtrn)                              // Container store
 		},
 
 		func() {
 			this.byEth.ParallelForeachDo(func(_ [20]byte, v **associative.Pair[*ethstg.Account, []*univalue.Univalue]) {
 				slice.RemoveIf(&((**v).Second), func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil })
 			})
-			ethRootHash = this.Store().(*storage.StoreRouter).EthStore().Precommit(this.byEth.Values())
+			ethRootHash = this.Store().(*storage.StoreProxy).EthStore().Precommit(this.byEth.Values())
 		},
 	)
 	return ethRootHash // Write to the DB buffer
@@ -155,8 +153,8 @@ func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
 			})
 			this.CommitToCache(blockNum, trans)
 		},
-		func() { ccStgErr = this.Store().(*storage.StoreRouter).CCStore().Commit(blockNum) },   // To container store
-		func() { ethStgErr = this.Store().(*storage.StoreRouter).EthStore().Commit(blockNum) }, // To ETH store
+		func() { ccStgErr = this.Store().(*storage.StoreProxy).CCStore().Commit(blockNum) },   // To container store
+		func() { ethStgErr = this.Store().(*storage.StoreProxy).EthStore().Commit(blockNum) }, // To ETH store
 	)
 	this.Err = errors.Join(ethStgErr, ccStgErr)
 	this.Clear()
@@ -173,7 +171,7 @@ func (this *StateCommitter) CommitToCache(blockNum uint64, trans []*univalue.Uni
 		}
 		return nil // A deletion
 	})
-	this.Store().(*storage.StoreRouter).RefreshCache(blockNum, keys, typedVals) // Update the cache
+	this.Store().(*storage.StoreProxy).RefreshCache(blockNum, keys, typedVals) // Update the cache
 }
 
 // New creates a new StateCommitter instance.
