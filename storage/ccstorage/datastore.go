@@ -8,6 +8,7 @@ import (
 	addrcompressor "github.com/arcology-network/common-lib/addrcompressor"
 	codec "github.com/arcology-network/common-lib/codec"
 	common "github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/storage-committer/interfaces"
 	"github.com/arcology-network/storage-committer/univalue"
 	"github.com/cespare/xxhash/v2"
 
@@ -64,6 +65,14 @@ func NewDataStore[K comparable, V any](
 
 	dataStore.cachePolicy.Customize(dataStore.db)
 	return dataStore
+}
+
+// Pleaseholder only
+func (this *DataStore[K, V]) GetNewIndex(store interfaces.Datastore) interface {
+	Add([]*univalue.Univalue)
+	Clear()
+} {
+	return NewIndexer(store)
 }
 
 // Pleaseholder only

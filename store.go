@@ -15,18 +15,24 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package proxy
+package storagecommitter
 
 import (
 	intf "github.com/arcology-network/storage-committer/interfaces"
 	platform "github.com/arcology-network/storage-committer/platform"
+	writecache "github.com/arcology-network/storage-committer/storage/writecache"
 )
 
-type StoreSelector struct{}
+type StateStore struct {
+	*StateCommitter                       // Provide committable interface
+	*writecache.WriteCache                // Provide Readonly interface
+	store                  intf.Datastore // Backend storage for the write cache and committer.
+}
 
-func (this *StorageProxy) GetStorage(key string) intf.Datastore {
-	if platform.IsEthPath(key) {
-		return this.ethDataStore
+func NewStateStore(store intf.Datastore, platform *platform.Platform) *StateStore {
+	return &StateStore{
+		StateCommitter: NewStorageCommitter(store),
+		WriteCache:     writecache.NewWriteCache(store, 1, 1, platform),
+		store:          store,
 	}
-	return this.ccDataStore
 }

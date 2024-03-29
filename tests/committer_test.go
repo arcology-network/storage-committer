@@ -165,8 +165,8 @@ func TestSize(t *testing.T) {
 
 func TestNativeStorageReadWrite(t *testing.T) {
 	store := chooseDataStore()
-	store.(*stgproxy.StoreProxy).DisableCache()
-	store.(*stgproxy.StoreProxy).EthStore().DisableAccountCache()
+	store.(*stgproxy.StorageProxy).DisableCache()
+	store.(*stgproxy.StorageProxy).EthStore().DisableAccountCache()
 
 	alice := AliceAccount()
 
@@ -259,7 +259,7 @@ func TestReadWriteAt(t *testing.T) {
 
 func TestAddThenDeletePath2(t *testing.T) {
 	store := chooseDataStore()
-	store.(*stgproxy.StoreProxy).DisableCache()
+	store.(*stgproxy.StorageProxy).DisableCache()
 
 	alice := AliceAccount()
 

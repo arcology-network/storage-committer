@@ -127,7 +127,7 @@ func TestTrieUpdates(t *testing.T) {
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 
-	ds := committer.Store().(*storage.StoreProxy).EthStore()
+	ds := committer.Store().(*storage.StorageProxy).EthStore()
 	if (len(ds.AccountDict())) != 3 {
 		t.Error("Error: Cache() should be 3", len(ds.AccountDict()))
 	}

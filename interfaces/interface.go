@@ -76,4 +76,14 @@ type Datastore interface {
 	Commit(uint64) error
 }
 
+type CommittableStore[T any] interface {
+	GetNewIndex(Datastore) interface {
+		Add([]T)
+		Clear()
+	}
+	Preload([]byte) interface{}
+	Precommit(...interface{}) [32]byte //key gatter, value gatter,
+	Commit(uint64) error
+}
+
 type Hasher func(Type) []byte

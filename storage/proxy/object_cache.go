@@ -17,13 +17,17 @@
 
 package proxy
 
+import (
+	cache "github.com/arcology-network/common-lib/cache"
+	intf "github.com/arcology-network/storage-committer/interfaces"
+)
+
 // ReadCache is a read only cache that is used to store the read values from the storage.
 // The cache updates itself when the update is called. The implementation isn't thread safe.
 // So, it's the caller's responsibility to ensure that the cache is only accessed by one thread updating it.
 // Each entry in the cache holds two values, the first value is the old value, and the second value is the new value.
 // The new value will be set to the old value when the Finalize function is called.
-type ReadCache[K comparable, T any] struct {
-	isNil   func(T) bool
-	cache   map[K]*T
-	enabled bool
-}
+type ObjectCache cache.ReadCache[string, intf.Type]
+
+func (this *ObjectCache) Commit(placeholder uint64)     {}
+func (this *ObjectCache) Precommit(args ...interface{}) {}

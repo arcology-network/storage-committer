@@ -146,6 +146,13 @@ func (this *EthDataStore) Preload(addr []byte) interface{} {
 	return acct
 }
 
+func (this *EthDataStore) GetNewIndex(store interfaces.Datastore) interface {
+	Add([]*univalue.Univalue)
+	Clear()
+} {
+	return NewIndexer(store)
+}
+
 func (this *EthDataStore) AccountDict() map[ethcommon.Address]*Account { return this.accountCache }
 func (this *EthDataStore) DirtyAccounts() []*Account                   { return this.dirtyAccounts }
 func (this *EthDataStore) Clear()                                      {}
