@@ -15,7 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package storage
+package proxy
 
 import (
 	intf "github.com/arcology-network/storage-committer/interfaces"

@@ -1,20 +1,21 @@
-package storage
+package proxy
 
 import (
 	"fmt"
 	"net/http"
 
-	datastore "github.com/arcology-network/common-lib/storage/datastore"
+	intf "github.com/arcology-network/storage-committer/interfaces"
+	datastore "github.com/arcology-network/storage-committer/storage/ccstorage"
 )
 
 type ReadonlyServer struct {
 	addr      string
-	dataStore *datastore.DataStore
+	dataStore *datastore.DataStore[string, intf.Type]
 	encoder   func(interface{}) []byte
 	decoder   func([]byte) (interface{}, error)
 }
 
-func NewReadonlyServer(addr string, encoder func(interface{}) []byte, decoder func([]byte) (interface{}, error), dataStore *datastore.DataStore) *ReadonlyServer {
+func NewReadonlyServer(addr string, encoder func(interface{}) []byte, decoder func([]byte) (interface{}, error), dataStore *datastore.DataStore[string, intf.Type]) *ReadonlyServer {
 	return &ReadonlyServer{
 		addr:      addr,
 		dataStore: dataStore,

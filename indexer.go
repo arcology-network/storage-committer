@@ -65,29 +65,3 @@ func TxIndexer(store interfaces.Datastore) *indexer.UnorderedIndexer[uint32, *un
 		func(_ uint32, v *univalue.Univalue, vals *[]*univalue.Univalue) { *vals = append(*vals, v) },
 	)
 }
-
-// // An index by account address, transitions have the same Eth account address will be put together in a list
-// // This is for ETH storage, concurrent container related sub-paths won't be put into this index.
-// func EthIndexer(store interfaces.Datastore) *indexer.UnorderedIndexer[[20]byte, *univalue.Univalue, *associative.Pair[*ethstg.Account, []*univalue.Univalue]] {
-// 	return indexer.NewUnorderedIndexer(
-// 		nil,
-// 		func(v *univalue.Univalue) ([20]byte, bool) {
-// 			if !platform.IsEthPath(*v.GetPath()) {
-// 				return [20]byte{}, false
-// 			}
-// 			addr, _ := hexutil.Decode(platform.GetAccountAddr(*v.GetPath()))
-// 			return ethcommon.BytesToAddress(addr), platform.IsEthPath(*v.GetPath())
-// 		},
-
-// 		func(addr [20]byte, v *univalue.Univalue) *associative.Pair[*ethstg.Account, []*univalue.Univalue] {
-// 			return &associative.Pair[*ethstg.Account, []*univalue.Univalue]{
-// 				First:  store.Preload(addr[:]).(*ethstg.Account),
-// 				Second: []*univalue.Univalue{v},
-// 			}
-// 		},
-
-// 		func(_ [20]byte, v *univalue.Univalue, pair **associative.Pair[*ethstg.Account, []*univalue.Univalue]) {
-// 			(**pair).Second = append((**pair).Second, v)
-// 		},
-// 	)
-// }

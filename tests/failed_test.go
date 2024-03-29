@@ -31,7 +31,7 @@ import (
 
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 	platform "github.com/arcology-network/storage-committer/platform"
-	storage "github.com/arcology-network/storage-committer/storage"
+	storage "github.com/arcology-network/storage-committer/storage/proxy"
 	univalue "github.com/arcology-network/storage-committer/univalue"
 )
 

@@ -19,7 +19,7 @@ import (
 	"github.com/arcology-network/storage-committer/interfaces"
 	"github.com/arcology-network/storage-committer/noncommutative"
 	platform "github.com/arcology-network/storage-committer/platform"
-	storage "github.com/arcology-network/storage-committer/storage"
+	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
 	"github.com/arcology-network/storage-committer/univalue"
 	"github.com/holiman/uint256"
 )
@@ -95,7 +95,7 @@ func CommitterCache(store interfaces.Datastore, t *testing.T) {
 	committer.Commit(2).Clear()
 	writeCache.Clear()
 
-	// transientStore := storage.NewTransientDB(store)
+	// transientStore := stgproxy.NewTransientDB(store)
 	// writeCache = cache.NewWriteCache(transientStore, 1, 1, platform.NewPlatform())
 	// v, err, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(0), new(noncommutative.Bytes))
 	// if v == nil || !reflect.DeepEqual(v.([]byte), []byte{1, 2, 3}) {
@@ -108,9 +108,9 @@ func CommitterCache(store interfaces.Datastore, t *testing.T) {
 }
 
 func TestNewCommitterWithoutCache(t *testing.T) {
-	store := storage.NewStoreProxy().EnableCache()
-	CommitterCache(store, t)                                  // Use cache
-	CommitterCache(storage.NewStoreProxy().DisableCache(), t) // Don't use cache
+	store := stgproxy.NewStoreProxy().EnableCache()
+	CommitterCache(store, t)                                   // Use cache
+	CommitterCache(stgproxy.NewStoreProxy().DisableCache(), t) // Don't use cache
 }
 
 func TestSize(t *testing.T) {
@@ -165,8 +165,8 @@ func TestSize(t *testing.T) {
 
 func TestNativeStorageReadWrite(t *testing.T) {
 	store := chooseDataStore()
-	store.(*storage.StoreProxy).DisableCache()
-	store.(*storage.StoreProxy).EthStore().DisableAccountCache()
+	store.(*stgproxy.StoreProxy).DisableCache()
+	store.(*stgproxy.StoreProxy).EthStore().DisableAccountCache()
 
 	alice := AliceAccount()
 
@@ -259,7 +259,7 @@ func TestReadWriteAt(t *testing.T) {
 
 func TestAddThenDeletePath2(t *testing.T) {
 	store := chooseDataStore()
-	store.(*storage.StoreProxy).DisableCache()
+	store.(*stgproxy.StoreProxy).DisableCache()
 
 	alice := AliceAccount()
 
@@ -549,7 +549,7 @@ func TestCommitter(t *testing.T) {
 
 func TestCommitter2(t *testing.T) {
 	store := chooseDataStore()
-	// store := datastore.NewDataStore(nil, nil, nil, encoder, decoder)
+	// store := datastore.NewDataStore[string, intf.Type](nil, nil, nil, encoder, decoder)
 	committer := stgcommitter.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	alice := AliceAccount()
@@ -750,7 +750,7 @@ func TestTransientDBv2(t *testing.T) {
 
 func TestCustomCodec(t *testing.T) {
 	// policy := datastore.NewCachePolicy(0, 1)
-	// store := datastore.NewDataStore(nil, policy, memdb.NewMemoryDB(), storage.Rlp{}.Encode, storage.Rlp{}.Decode)
+	// store := datastore.NewDataStore[string, intf.Type](nil, policy, memdb.NewMemoryDB(), stgproxy.Rlp{}.Encode, stgproxy.Rlp{}.Decode)
 	store := chooseDataStore()
 	alice := AliceAccount()
 	committer := stgcommitter.NewStorageCommitter(store)

@@ -1,4 +1,4 @@
-package storage
+package proxy
 
 import (
 	"errors"
@@ -7,14 +7,15 @@ import (
 	"net/url"
 
 	addrcompressor "github.com/arcology-network/common-lib/addrcompressor"
-	datastore "github.com/arcology-network/common-lib/storage/datastore"
+	intf "github.com/arcology-network/storage-committer/interfaces"
+	datastore "github.com/arcology-network/storage-committer/storage/ccstorage"
 )
 
 type ReadonlyClient struct {
 	addr         string
 	path         string
 	uncompressor *addrcompressor.CompressionLut
-	localStore   *datastore.DataStore
+	localStore   *datastore.DataStore[string, intf.Type]
 }
 
 func NewReadonlyClient(addr string, path string, lut *addrcompressor.CompressionLut, args ...interface{}) *ReadonlyClient {
@@ -25,7 +26,7 @@ func NewReadonlyClient(addr string, path string, lut *addrcompressor.Compression
 	}
 
 	if len(args) > 0 && args[0] != nil {
-		readonlyClient.localStore = args[0].(*datastore.DataStore)
+		readonlyClient.localStore = args[0].(*datastore.DataStore[string, intf.Type])
 	}
 	return readonlyClient
 }

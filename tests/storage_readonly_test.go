@@ -8,7 +8,7 @@ package committertest
 
 // 	storage "github.com/arcology-network/common-lib/storage"
 // 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
-// 	storage "github.com/arcology-network/storage-committer/storage"
+// 	storage "github.com/arcology-network/storage-committer/storage/proxy"
 // 	univalue "github.com/arcology-network/storage-committer/univalue"
 // )
 

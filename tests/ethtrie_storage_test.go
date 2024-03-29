@@ -14,15 +14,16 @@ import (
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/common-lib/merkle"
-	datastore "github.com/arcology-network/common-lib/storage/datastore"
 	cache "github.com/arcology-network/eu/cache"
 	stgcommitter "github.com/arcology-network/storage-committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
 	importer "github.com/arcology-network/storage-committer/importer"
+	"github.com/arcology-network/storage-committer/interfaces"
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 	platform "github.com/arcology-network/storage-committer/platform"
-	storage "github.com/arcology-network/storage-committer/storage"
+	datastore "github.com/arcology-network/storage-committer/storage/ccstorage"
+	storage "github.com/arcology-network/storage-committer/storage/proxy"
 	univalue "github.com/arcology-network/storage-committer/univalue"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
@@ -371,7 +372,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 
 func BenchmarkMultipleAccountCommitDataStore(b *testing.B) {
 	// store := chooseDataStore() // Eth data store
-	store := datastore.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode) // Native data store
+	store := datastore.NewDataStore[string, interfaces.Type](nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode) // Native data store
 
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 

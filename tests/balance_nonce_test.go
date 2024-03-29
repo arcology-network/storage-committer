@@ -14,7 +14,7 @@ import (
 	importer "github.com/arcology-network/storage-committer/importer"
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 	platform "github.com/arcology-network/storage-committer/platform"
-	storage "github.com/arcology-network/storage-committer/storage"
+	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
 	univalue "github.com/arcology-network/storage-committer/univalue"
 	"github.com/holiman/uint256"
 )
@@ -297,7 +297,7 @@ func TestMultipleNonces(t *testing.T) {
 }
 
 func TestUint64Delta(t *testing.T) {
-	store := storage.NewStoreProxy()
+	store := stgproxy.NewStoreProxy()
 	alice := AliceAccount()
 	committer := stgcommitter.NewStorageCommitter(store)
 

@@ -10,7 +10,7 @@ package committertest
 // 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 // 	importer "github.com/arcology-network/storage-committer/importer"
 // 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
-// 	storage "github.com/arcology-network/storage-committer/storage"
+// 	storage "github.com/arcology-network/storage-committer/storage/proxy"
 // )
 
 // func TestPartialCache(t *testing.T) {

@@ -348,8 +348,27 @@ func (this *EthDataStore) Retrive(key string, T any) (interface{}, error) {
 
 // Precommit update the account state tries and the world state trie.
 // It returns the hash of the world state trie.
+// func (this *EthDataStore) Precommit(arg ...interface{}) [32]byte {
+// 	pairs := arg[0].([]*associative.Pair[*Account, []*univalue.Univalue])
+// 	this.dirtyAccounts = associative.Pairs[*Account, []*univalue.Univalue](pairs).Firsts()
+// 	if len(pairs) == 0 {
+// 		return this.worldStateTrie.Hash() // No updates
+// 	}
+
+// 	// Need to check if this is necessary or could be moved to the import phase
+// 	slice.Foreach(this.dirtyAccounts, func(_ int, pair **Account) {
+// 		this.accountCache[(**pair).Address()] = (*pair) // Add the account to the cache
+// 	})
+
+// 	slice.ParallelForeach(pairs, runtime.NumCPU(), func(i int, acctTrans **associative.Pair[*Account, []*univalue.Univalue]) {
+// 		keys, vals := univalue.Univalues((*acctTrans).Second).KVs() // Get all transitions under the same account
+// 		this.dirtyAccounts[i].UpdateAccountTrie(keys, vals)
+// 	})
+// 	return this.WriteWorldTrie(this.dirtyAccounts)
+// }
+
 func (this *EthDataStore) Precommit(arg ...interface{}) [32]byte {
-	pairs := arg[0].([]*associative.Pair[*Account, []*univalue.Univalue])
+	pairs := arg[0].(*EthIndexer).Get()
 	this.dirtyAccounts = associative.Pairs[*Account, []*univalue.Univalue](pairs).Firsts()
 	if len(pairs) == 0 {
 		return this.worldStateTrie.Hash() // No updates
@@ -362,7 +381,11 @@ func (this *EthDataStore) Precommit(arg ...interface{}) [32]byte {
 
 	slice.ParallelForeach(pairs, runtime.NumCPU(), func(i int, acctTrans **associative.Pair[*Account, []*univalue.Univalue]) {
 		keys, vals := univalue.Univalues((*acctTrans).Second).KVs() // Get all transitions under the same account
-		this.dirtyAccounts[i].UpdateAccountTrie(keys, vals)
+
+		err := this.dirtyAccounts[i].UpdateAccountTrie(keys, vals)
+		if err != nil {
+			this.dbErr = errors.Join(this.dbErr, err)
+		}
 	})
 	return this.WriteWorldTrie(this.dirtyAccounts)
 }

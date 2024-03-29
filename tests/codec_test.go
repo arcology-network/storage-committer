@@ -9,13 +9,15 @@ import (
 
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/exp/slice"
-	storage "github.com/arcology-network/common-lib/storage/datastore"
 	cache "github.com/arcology-network/eu/cache"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
+
 	commutative "github.com/arcology-network/storage-committer/commutative"
 	importer "github.com/arcology-network/storage-committer/importer"
+	intf "github.com/arcology-network/storage-committer/interfaces"
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 	platform "github.com/arcology-network/storage-committer/platform"
+	ccstorage "github.com/arcology-network/storage-committer/storage/ccstorage"
 	univalue "github.com/arcology-network/storage-committer/univalue"
 	rlp "github.com/ethereum/go-ethereum/rlp"
 )
@@ -67,7 +69,7 @@ func TestNoncommutativeCodec(t *testing.T) {
 }
 
 func TestUnivalueCodec(t *testing.T) {
-	store := storage.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
+	store := ccstorage.NewDataStore[string, intf.Type](nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
 	transitions := []*univalue.Univalue{}
 
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
@@ -90,7 +92,7 @@ func TestUnivalueCodec(t *testing.T) {
 }
 
 func TestUnivaluesCodec(t *testing.T) {
-	store := storage.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
+	store := ccstorage.NewDataStore[string, intf.Type](nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
 	transitions := []*univalue.Univalue{}
 	for i := 0; i < 10; i++ {
 		acct := RandomAccount()

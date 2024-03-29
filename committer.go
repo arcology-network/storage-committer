@@ -23,13 +23,13 @@ import (
 	"runtime"
 
 	indexer "github.com/arcology-network/common-lib/storage/indexer"
-	ethstg "github.com/arcology-network/storage-committer/ethstorage"
 	platform "github.com/arcology-network/storage-committer/platform"
-	"github.com/arcology-network/storage-committer/storage"
+	ccstg "github.com/arcology-network/storage-committer/storage/ccstorage"
+	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
+	proxy "github.com/arcology-network/storage-committer/storage/proxy"
 	"github.com/arcology-network/storage-committer/univalue"
 
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/common-lib/exp/associative"
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/slice"
 	importer "github.com/arcology-network/storage-committer/importer"
@@ -39,14 +39,22 @@ import (
 
 // StateCommitter represents a storage committer.
 type StateCommitter struct {
+	// backends Committable
 	store    interfaces.Datastore
 	platform *platform.Platform
 
 	byPath *indexer.UnorderedIndexer[string, *univalue.Univalue, []*univalue.Univalue]
 	byTxID *indexer.UnorderedIndexer[uint32, *univalue.Univalue, []*univalue.Univalue]
-	byEth  *indexer.UnorderedIndexer[[20]byte, *univalue.Univalue, *associative.Pair[*ethstg.Account, []*univalue.Univalue]]
-	byCtrn []*univalue.Univalue
-	Err    error
+
+	ethIndex interface {
+		Add([]*univalue.Univalue)
+		Clear()
+	}
+	ccIndex interface {
+		Add([]*univalue.Univalue)
+		Clear()
+	}
+	Err error
 }
 
 // NewStorageCommitter creates a new StateCommitter instance.
@@ -57,10 +65,11 @@ func NewStorageCommitter(store interfaces.Datastore) *StateCommitter {
 		store:    store,
 		platform: plat, //[]stgcommcommon.FilteredTransitionsInterface{&importer.NonceFilter{}, &importer.BalanceFilter{}},
 
-		byPath: PathIndexer(store),       // By storage path
-		byTxID: TxIndexer(store),         // By tx ID
-		byEth:  ethstg.EthIndexer(store), // By eth account
-		byCtrn: []*univalue.Univalue{},   // This index records the transitions that are related to the concurrent containers
+		byPath: PathIndexer(store), // By storage path
+		byTxID: TxIndexer(store),   // By tx ID
+
+		ethIndex: ethstg.NewIndexer(store), // By eth account
+		ccIndex:  ccstg.NewIndexer(store),  // By concurrent container
 	}
 }
 
@@ -81,14 +90,8 @@ func (this *StateCommitter) SetStore(store interfaces.Datastore) {
 func (this *StateCommitter) Import(transitions []*univalue.Univalue, args ...interface{}) *StateCommitter {
 	this.byPath.Add(transitions)
 	this.byTxID.Add(transitions)
-	this.byEth.Add(transitions)
-
-	// concurrent container related sub-paths only.
-	for _, v := range transitions {
-		if v.GetPath() != nil || !platform.IsEthPath(*v.GetPath()) {
-			this.byCtrn = append(this.byCtrn, v)
-		}
-	}
+	this.ethIndex.Add(transitions)
+	this.ccIndex.Add(transitions)
 	return this
 }
 
@@ -126,15 +129,11 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 	var ethRootHash [32]byte
 	common.ParallelExecute(
 		func() {
-			slice.RemoveIf(&this.byCtrn, func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil }) // Remove the transitions that are marked
-			this.Store().(*storage.StoreProxy).CCStore().PrecommitV2(this.byCtrn)                              // Container store
+			this.Store().(*proxy.StoreProxy).CCStore().Precommit(this.ccIndex) // Container store
 		},
 
 		func() {
-			this.byEth.ParallelForeachDo(func(_ [20]byte, v **associative.Pair[*ethstg.Account, []*univalue.Univalue]) {
-				slice.RemoveIf(&((**v).Second), func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil })
-			})
-			ethRootHash = this.Store().(*storage.StoreProxy).EthStore().Precommit(this.byEth.Values())
+			ethRootHash = this.Store().(*proxy.StoreProxy).EthStore().Precommit(this.ethIndex)
 		},
 	)
 	return ethRootHash // Write to the DB buffer
@@ -153,8 +152,8 @@ func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
 			})
 			this.CommitToCache(blockNum, trans)
 		},
-		func() { ccStgErr = this.Store().(*storage.StoreProxy).CCStore().Commit(blockNum) },   // To container store
-		func() { ethStgErr = this.Store().(*storage.StoreProxy).EthStore().Commit(blockNum) }, // To ETH store
+		func() { ccStgErr = this.Store().(*proxy.StoreProxy).CCStore().Commit(blockNum) },   // To container store
+		func() { ethStgErr = this.Store().(*proxy.StoreProxy).EthStore().Commit(blockNum) }, // To ETH store
 	)
 	this.Err = errors.Join(ethStgErr, ccStgErr)
 	this.Clear()
@@ -171,30 +170,14 @@ func (this *StateCommitter) CommitToCache(blockNum uint64, trans []*univalue.Uni
 		}
 		return nil // A deletion
 	})
-	this.Store().(*storage.StoreProxy).RefreshCache(blockNum, keys, typedVals) // Update the cache
-}
-
-// New creates a new StateCommitter instance.
-func (this *StateCommitter) ByPath() *indexer.UnorderedIndexer[string, *univalue.Univalue, []*univalue.Univalue] {
-	return this.byPath
-}
-
-func (this *StateCommitter) ByTxID() *indexer.UnorderedIndexer[uint32, *univalue.Univalue, []*univalue.Univalue] {
-	return this.byTxID
-}
-
-func (this *StateCommitter) ByEth() *indexer.UnorderedIndexer[[20]byte, *univalue.Univalue, *associative.Pair[*ethstg.Account, []*univalue.Univalue]] {
-	return this.byEth
-}
-
-func (this *StateCommitter) ByCtrn() []*univalue.Univalue {
-	return this.byCtrn
+	this.Store().(*proxy.StoreProxy).RefreshCache(blockNum, keys, typedVals) // Update the cache
 }
 
 // Clear clears the StateCommitter.
 func (this *StateCommitter) Clear() {
 	this.byPath.Clear()
 	this.byTxID.Clear()
-	this.byEth.Clear()
-	this.byCtrn = this.byCtrn[:0]
+
+	this.ethIndex.Clear()
+	this.ccIndex.Clear()
 }

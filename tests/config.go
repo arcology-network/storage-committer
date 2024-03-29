@@ -1,9 +1,9 @@
 package committertest
 
 import (
-	ethstg "github.com/arcology-network/storage-committer/ethstorage"
 	"github.com/arcology-network/storage-committer/interfaces"
-	storage "github.com/arcology-network/storage-committer/storage"
+	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
+	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
 	// trie "github.com/ethereum/go-ethereum/trie"
 )
 
@@ -23,10 +23,10 @@ var (
 func chooseDataStore() interfaces.Datastore {
 	// return storage.NewParallelEthMemDataStore() // Eth trie datastore
 	// return storage.NewStoreProxy() // Eth trie datastore
-	store := storage.NewStoreProxy()
+	store := stgproxy.NewStoreProxy()
 	store.DisableCache()
 	return store
 	// return storage.NewLevelDBDataStore("/tmp")
-	// return datastore.NewDataStore(nil, datastore.NewCachePolicy(1000000, 1), memdb.NewMemoryDB(), encoder, decoder)
+	// return datastore.NewDataStore[string, intf.Type](nil, datastore.NewCachePolicy(1000000, 1), memdb.NewMemoryDB(), encoder, decoder)
 	// return storage.NewDataStore(nil, storage.NewCachePolicy(0, 1), storage.NewMemoryDB(), encoder, decoder)
 }

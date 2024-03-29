@@ -15,26 +15,26 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package storage
+package proxy
 
 import (
 	"errors"
 
 	cache "github.com/arcology-network/common-lib/cache"
 	"github.com/arcology-network/common-lib/common"
-	datastore "github.com/arcology-network/common-lib/storage/datastore"
 	memdb "github.com/arcology-network/common-lib/storage/memdb"
 	policy "github.com/arcology-network/common-lib/storage/policy"
 	"github.com/arcology-network/storage-committer/commutative"
-	ethstg "github.com/arcology-network/storage-committer/ethstorage"
 	intf "github.com/arcology-network/storage-committer/interfaces"
 	platform "github.com/arcology-network/storage-committer/platform"
+	datastore "github.com/arcology-network/storage-committer/storage/ccstorage"
+	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
 )
 
 type StoreProxy struct {
 	objectCache  *cache.ReadCache[string, intf.Type] // Cache shared by all storage
 	ethDataStore *ethstg.EthDataStore
-	ccDataStore  *datastore.DataStore
+	ccDataStore  *datastore.DataStore[string, intf.Type]
 }
 
 func NewStoreProxy() *StoreProxy {
@@ -44,7 +44,7 @@ func NewStoreProxy() *StoreProxy {
 			func(v intf.Type) bool { return v == nil },
 		),
 		ethDataStore: ethstg.NewParallelEthMemDataStore(),
-		ccDataStore: datastore.NewDataStore(
+		ccDataStore: datastore.NewDataStore[string, intf.Type](
 			nil,
 			policy.NewCachePolicy(0, 1), // Don't cache anything in the underlying storage, the cache is managed by the router
 			memdb.NewMemoryDB(),
@@ -57,8 +57,8 @@ func (this *StoreProxy) EnableCache() *StoreProxy  { this.objectCache.Enable(); 
 func (this *StoreProxy) DisableCache() *StoreProxy { this.objectCache.Disable(); return this }
 func (this *StoreProxy) ClearCache()               { this.objectCache.Clear() }
 
-func (this *StoreProxy) EthStore() *ethstg.EthDataStore { return this.ethDataStore } // Eth storage
-func (this *StoreProxy) CCStore() *datastore.DataStore  { return this.ccDataStore }  // Arcology storage
+func (this *StoreProxy) EthStore() *ethstg.EthDataStore                   { return this.ethDataStore } // Eth storage
+func (this *StoreProxy) CCStore() *datastore.DataStore[string, intf.Type] { return this.ccDataStore }  // Arcology storage
 
 func (this *StoreProxy) Precommit(args ...interface{}) [32]byte { return [32]byte{} }
 

@@ -65,7 +65,6 @@ type Type interface { // value type
 type ReadOnlyDataStore interface {
 	IfExists(string) bool
 	Retrive(string, any) (interface{}, error)
-	Preload([]byte) interface{}
 }
 
 type Datastore interface {
