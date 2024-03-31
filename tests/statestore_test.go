@@ -61,7 +61,6 @@ func commitToStateStore(store interfaces.Datastore, t *testing.T) {
 	stateStore = statestore.NewStateStore(store)
 	stateStore.Import(acctTrans).Precommit([]uint32{1})
 	stateStore.Commit(2).Clear()
-	stateStore.Clear()
 
 	outV, _, _ := stateStore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(0), new(noncommutative.Bytes))
 	if outV == nil || !bytes.Equal(outV.([]byte), []byte{1, 2, 3}) {
@@ -92,6 +91,11 @@ func commitToStateStore(store interfaces.Datastore, t *testing.T) {
 		t.Error(err)
 	}
 
+	// Delete the entry
+	if _, err := stateStore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(77), noncommutative.NewBytes([]byte{77, 77})); err != nil {
+		t.Error(err)
+	}
+
 	outV, _, _ = stateStore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), new(noncommutative.Bytes))
 	if outV != nil {
 		t.Error("Error: The path should not exist", outV)
@@ -101,7 +105,16 @@ func commitToStateStore(store interfaces.Datastore, t *testing.T) {
 	// stateStore = statestore.NewStateStore(store)
 	stateStore.Import(acctTrans).Precommit([]uint32{1})
 	stateStore.Commit(2).Clear()
-	stateStore.Clear()
+
+	outV, _, _ = stateStore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), new(noncommutative.Bytes))
+	if outV != nil {
+		t.Error("Error: The path should not exist", outV)
+	}
+
+	outV, _, _ = stateStore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(77), new(noncommutative.Bytes))
+	if outV == nil || !bytes.Equal(outV.([]byte), []byte{77, 77}) {
+		t.Error("Error: The path should not exist", outV)
+	}
 }
 
 func TestCommitToStatStore(t *testing.T) {
