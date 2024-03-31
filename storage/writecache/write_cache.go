@@ -55,53 +55,11 @@ func NewWriteCache(store intf.ReadOnlyDataStore, perPage int, numPages int, args
 		kvDict:   make(map[string]*univalue.Univalue),
 		platform: platform.NewPlatform(),
 		buffer:   make([]*univalue.Univalue, 0, perPage*numPages),
+		uniPool: mempool.NewMempool[*univalue.Univalue](perPage, numPages, func() *univalue.Univalue {
+			return new(univalue.Univalue)
+		}, (&univalue.Univalue{}).Reset),
 	}
 }
-
-// CreateNewAccount creates a new account in the write cache.
-// It returns the transitions and an error, if any.
-// func (this *WriteCache) CreateNewAccount(tx uint32, acct string) ([]*univalue.Univalue, error) {
-// 	paths, typeids := platform.NewPlatform().GetBuiltins(acct)
-
-// 	transitions := []*univalue.Univalue{}
-// 	for i, path := range paths {
-// 		var v interface{}
-// 		switch typeids[i] {
-// 		case commutative.PATH: // Path
-// 			v = commutative.NewPath()
-
-// 		case uint8(reflect.Kind(noncommutative.STRING)): // delta big int
-// 			v = noncommutative.NewString("")
-
-// 		case uint8(reflect.Kind(commutative.UINT256)): // delta big int
-// 			v = commutative.NewUnboundedU256()
-
-// 		case uint8(reflect.Kind(commutative.UINT64)):
-// 			v = commutative.NewUnboundedUint64()
-
-// 		case uint8(reflect.Kind(noncommutative.INT64)):
-// 			v = new(noncommutative.Int64)
-
-// 		case uint8(reflect.Kind(noncommutative.BYTES)):
-// 			v = noncommutative.NewBytes([]byte{})
-// 		}
-
-// 		// fmt.Println(path)
-// 		if !this.IfExists(path) {
-// 			transitions = append(transitions, univalue.NewUnivalue(tx, path, 0, 1, 0, v, nil))
-
-// 			if _, err := this.Write(tx, path, v); err != nil { // root path
-// 				return nil, err
-// 			}
-
-// 			if !this.IfExists(path) {
-// 				_, err := this.Write(tx, path, v)
-// 				return transitions, err // root path
-// 			}
-// 		}
-// 	}
-// 	return transitions, nil
-// }
 
 func (this *WriteCache) SetReadOnlyDataStore(store intf.ReadOnlyDataStore) *WriteCache {
 	this.store = store
@@ -330,18 +288,3 @@ func (this *WriteCache) KVs() ([]string, []intf.Type) {
 
 // This function is used to write the cache to the data source directly to bypass all the intermediate steps,
 // including the conflict detection.
-//
-// // It's mainly used for TESTING purpose.
-// func (this *WriteCache) FlushToStore(store interfaces.Datastore) interfaces.Datastore {
-// 	acctTrans := univalue.Univalues(slice.Clone(this.Export(importer.Sorter))).To(importer.IPTransition{})
-// 	txs := slice.Transform(acctTrans, func(_ int, v *univalue.Univalue) uint32 {
-// 		return v.GetTx()
-// 	})
-
-// 	committer := stgcomm.NewStorageCommitter(store)
-// 	committer.Import(acctTrans)
-// 	committer.Precommit(txs) // Write all the transitions to the store
-// 	committer.Commit(0)
-// 	this.Clear()
-// 	return store
-// }

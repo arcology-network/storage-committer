@@ -20,7 +20,7 @@ package committertest
 // 		committer := stgcommitter.NewStorageCommitter(store)
 // writeCache := committer.WriteCache()
 // 	alice := AliceAccount()
-// 	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+// 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 // 		t.Error(err)
 // 	}
 
@@ -83,7 +83,7 @@ package committertest
 // 		committer := stgcommitter.NewStorageCommitter(store)
 // writeCache := committer.WriteCache()
 // 	alice := AliceAccount()
-// 	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+// 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 // 		t.Error(err)
 // 	}
 

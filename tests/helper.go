@@ -6,17 +6,16 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
-	cache "github.com/arcology-network/eu/cache"
 	commutative "github.com/arcology-network/storage-committer/commutative"
 	importer "github.com/arcology-network/storage-committer/importer"
 	"github.com/arcology-network/storage-committer/interfaces"
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 	platform "github.com/arcology-network/storage-committer/platform"
+	cache "github.com/arcology-network/storage-committer/storage/writecache"
 	"github.com/arcology-network/storage-committer/univalue"
 )
 
 func Create_Ctrn_0(account string, store interfaces.Datastore) ([]byte, []*univalue.Univalue, error) {
-
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	path := commutative.NewPath() // create a path

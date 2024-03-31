@@ -32,7 +32,6 @@ import (
 // This is for ETH storage, concurrent container related sub-paths won't be put into this index.
 type EthIndexer struct {
 	*indexer.UnorderedIndexer[[20]byte, *univalue.Univalue, *associative.Pair[*Account, []*univalue.Univalue]]
-	store interfaces.Datastore
 }
 
 func NewIndexer(store interfaces.Datastore) *EthIndexer {
@@ -59,24 +58,25 @@ func NewIndexer(store interfaces.Datastore) *EthIndexer {
 	))
 
 	return &EthIndexer{
-		idxer,
-		store,
+		UnorderedIndexer: idxer,
 	}
 }
 
 // An index by account address, transitions have the same Eth account address will be put together in a list
 // This is for ETH storage, concurrent container related sub-paths won't be put into this index.
-func (this EthIndexer) Add(v []*univalue.Univalue) {
-	this.UnorderedIndexer.Add(v)
+func (this *EthIndexer) Add(v []*univalue.Univalue) {
+	(*this).UnorderedIndexer.Add(v)
 }
 
-func (this EthIndexer) Get() []*associative.Pair[*Account, []*univalue.Univalue] {
+func (this *EthIndexer) Get() interface{} {
+	pairs := this.UnorderedIndexer.Values()
+	return slice.RemoveIf(&(pairs), func(_ int, v *associative.Pair[*Account, []*univalue.Univalue]) bool { return len(v.Second) == 0 })
+}
+
+func (this *EthIndexer) Finalize() {
 	this.ParallelForeachDo(func(_ [20]byte, v **associative.Pair[*Account, []*univalue.Univalue]) {
 		slice.RemoveIf(&((**v).Second), func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil })
 	})
-	return this.UnorderedIndexer.Values()
 }
 
-func (this *EthIndexer) Clear() {
-	this.UnorderedIndexer.Clear()
-}
+func (this *EthIndexer) Clear() { this.UnorderedIndexer.Clear() }

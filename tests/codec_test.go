@@ -9,8 +9,9 @@ import (
 
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/exp/slice"
-	cache "github.com/arcology-network/eu/cache"
+	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	cache "github.com/arcology-network/storage-committer/storage/writecache"
 
 	commutative "github.com/arcology-network/storage-committer/commutative"
 	importer "github.com/arcology-network/storage-committer/importer"
@@ -74,7 +75,7 @@ func TestUnivalueCodec(t *testing.T) {
 
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	// committer.NewAccount(stgcommcommon.SYSTEM, fmt.Sprint("rand.Int()"))
-	writeCache.CreateNewAccount(stgcommcommon.SYSTEM, fmt.Sprint("rand.Int()"))
+	adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, fmt.Sprint("rand.Int()"), writeCache)
 
 	transVec := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
 	transitions = append(transitions, transVec...)
@@ -100,7 +101,7 @@ func TestUnivaluesCodec(t *testing.T) {
 		writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 		// committer.NewAccount(stgcommcommon.SYSTEM, acct)
 
-		writeCache.CreateNewAccount(stgcommcommon.SYSTEM, acct)
+		adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, acct, writeCache)
 
 		transVec := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 		transitions = append(transitions, transVec...)

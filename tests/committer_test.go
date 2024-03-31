@@ -10,8 +10,7 @@ import (
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
-	cache "github.com/arcology-network/eu/cache"
-	eucache "github.com/arcology-network/eu/cache"
+	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	stgcommitter "github.com/arcology-network/storage-committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/commutative"
@@ -20,6 +19,8 @@ import (
 	"github.com/arcology-network/storage-committer/noncommutative"
 	platform "github.com/arcology-network/storage-committer/platform"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
+	cache "github.com/arcology-network/storage-committer/storage/writecache"
+	eucache "github.com/arcology-network/storage-committer/storage/writecache"
 	"github.com/arcology-network/storage-committer/univalue"
 	"github.com/holiman/uint256"
 )
@@ -29,7 +30,7 @@ func CommitterCache(store interfaces.Datastore, t *testing.T) {
 	committer := stgcommitter.NewStorageCommitter(store)
 
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
@@ -94,17 +95,6 @@ func CommitterCache(store interfaces.Datastore, t *testing.T) {
 	committer.Import(acctTrans).Precommit([]uint32{1})
 	committer.Commit(2).Clear()
 	writeCache.Clear()
-
-	// transientStore := stgproxy.NewTransientDB(store)
-	// writeCache = cache.NewWriteCache(transientStore, 1, 1, platform.NewPlatform())
-	// v, err, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(0), new(noncommutative.Bytes))
-	// if v == nil || !reflect.DeepEqual(v.([]byte), []byte{1, 2, 3}) {
-	// 	t.Error(err)
-	// }
-
-	// if v, err, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(1), new(noncommutative.Bytes)); v == nil {
-	// 	t.Error(err)
-	// }
 }
 
 func TestNewCommitterWithoutCache(t *testing.T) {
@@ -128,7 +118,7 @@ func TestSize(t *testing.T) {
 	committer.Commit(0)
 	writeCache.Clear()
 
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -171,7 +161,7 @@ func TestNativeStorageReadWrite(t *testing.T) {
 	alice := AliceAccount()
 
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	// _, trans := writeCache.Export(importer.Sorter)
@@ -220,7 +210,7 @@ func TestReadWriteAt(t *testing.T) {
 	alice := AliceAccount()
 
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -264,7 +254,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 	alice := AliceAccount()
 
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	// _, trans := writeCache.Export(importer.Sorter)
@@ -337,7 +327,7 @@ func TestBasic(t *testing.T) {
 	alice := AliceAccount()
 	committer := stgcommitter.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -463,7 +453,7 @@ func TestCommitter(t *testing.T) {
 	committer := stgcommitter.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -553,7 +543,7 @@ func TestCommitter2(t *testing.T) {
 	committer := stgcommitter.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -730,7 +720,7 @@ func TestTransientDBv2(t *testing.T) {
 
 	committer := stgcommitter.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -755,7 +745,7 @@ func TestCustomCodec(t *testing.T) {
 	alice := AliceAccount()
 	committer := stgcommitter.NewStorageCommitter(store)
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -1064,12 +1054,12 @@ func TestPathReadAndWritesPath(b *testing.T) {
 
 	writeCache := eucache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
 	bob := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, bob); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -1124,7 +1114,7 @@ func TestEthDataStoreAddDeleteRead(t *testing.T) {
 	// writeCache := committer.WriteCache()
 	writeCache := eucache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 

@@ -9,7 +9,7 @@ import (
 
 	addrcompressor "github.com/arcology-network/common-lib/addrcompressor"
 	"github.com/arcology-network/common-lib/exp/slice"
-	cache "github.com/arcology-network/eu/cache"
+	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	stgcommitter "github.com/arcology-network/storage-committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
@@ -18,6 +18,7 @@ import (
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 	platform "github.com/arcology-network/storage-committer/platform"
 	datastore "github.com/arcology-network/storage-committer/storage/ccstorage"
+	cache "github.com/arcology-network/storage-committer/storage/writecache"
 	univalue "github.com/arcology-network/storage-committer/univalue"
 	orderedmap "github.com/elliotchance/orderedmap"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
@@ -42,7 +43,7 @@ func BenchmarkAccountMerkleImportPerf(b *testing.B) {
 
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	for i := 0; i < 100000; i++ {
-		if _, err := writeCache.CreateNewAccount(0, fmt.Sprint(rand.Float64())); err != nil { // Preload account structure {
+		if _, err := adaptorcommon.CreateNewAccount(0, fmt.Sprint(rand.Float64()), writeCache); err != nil { // Preload account structure {
 			b.Error(err)
 		}
 	}
@@ -58,7 +59,7 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -97,7 +98,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -113,7 +114,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 		acct := hexutil.Encode(buf[:20])
 
 		// writeCache := committer.WriteCache()
-		if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, acct); err != nil { // NewAccount account structure {
+		if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, acct, writeCache); err != nil { // NewAccount account structure {
 			fmt.Println(err)
 		}
 
@@ -184,7 +185,7 @@ func BenchmarkAddThenDelete(b *testing.B) {
 	committer.Commit(0)
 
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -226,7 +227,7 @@ func BenchmarkAddThenPop(b *testing.B) {
 	committer.Commit(0)
 
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -339,7 +340,7 @@ func BenchmarkEncodeTransitions(b *testing.B) {
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	alice := AliceAccount()
-	writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice)
+	adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache)
 	// acctTrans := univalue.Univalues(slice.Clone(writeCache.Export())).To(importer.ITAccess{})
 
 	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITAccess{})
@@ -404,7 +405,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	for i := 0; i < 10; i++ {
 		acct := addrcompressor.RandomAccount()
-		if _, err := writeCache.CreateNewAccount(0, acct); err != nil { // Preload account structure {
+		if _, err := adaptorcommon.CreateNewAccount(0, acct, writeCache); err != nil { // Preload account structure {
 			b.Error(err)
 		}
 	}
@@ -628,7 +629,7 @@ func BenchmarkTransitionImport(b *testing.B) {
 	// writeCache := committer.WriteCache()
 	for i := 0; i < 150000; i++ {
 		acct := addrcompressor.RandomAccount()
-		if _, err := writeCache.CreateNewAccount(0, acct); err != nil { // Preload account structure {
+		if _, err := adaptorcommon.CreateNewAccount(0, acct, writeCache); err != nil { // Preload account structure {
 			b.Error(err)
 		}
 	}
@@ -659,7 +660,7 @@ func BenchmarkTransitionImport(b *testing.B) {
 // writeCache := committer.WriteCache()
 // 	for i := 0; i < 90000; i++ {
 // 		acct := addrcompressor.RandomAccount()
-// 		if _, err := writeCache.CreateNewAccount(0, acct);err != nil { // Preload account structure {
+// 		if _, err := adaptorcommon.CreateNewAccount(0, acct);err != nil { // Preload account structure {
 // 			b.Error(err)
 // 		}
 // 	}
@@ -690,7 +691,7 @@ func BenchmarkRandomAccountSort(t *testing.B) {
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	for i := 0; i < 100000; i++ {
 		acct := addrcompressor.RandomAccount()
-		if _, err := writeCache.CreateNewAccount(0, acct); err != nil { // Preload account structure {
+		if _, err := adaptorcommon.CreateNewAccount(0, acct, writeCache); err != nil { // Preload account structure {
 			// b.Error(err)
 		}
 	}

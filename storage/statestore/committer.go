@@ -16,14 +16,12 @@
  */
 
 // Package storagecommitter provides functionality for committing storage changes to url2a datastore.
-package storagecommitter
+package statestore
 
 import (
 	indexer "github.com/arcology-network/common-lib/storage/indexer"
 	intf "github.com/arcology-network/storage-committer/interfaces"
 	platform "github.com/arcology-network/storage-committer/platform"
-	ccstg "github.com/arcology-network/storage-committer/storage/ccstorage"
-	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
 	"github.com/arcology-network/storage-committer/univalue"
 
@@ -42,14 +40,14 @@ type StateCommitter struct {
 	byPath         *indexer.UnorderedIndexer[string, *univalue.Univalue, []*univalue.Univalue]
 	byTxID         *indexer.UnorderedIndexer[uint32, *univalue.Univalue, []*univalue.Univalue]
 
-	ethIndex interface {
-		Add([]*univalue.Univalue)
-		Clear()
-	}
-	ccIndex interface {
-		Add([]*univalue.Univalue)
-		Clear()
-	}
+	// ethIndex interface {
+	// 	Add([]*univalue.Univalue)
+	// 	Clear()
+	// }
+	// ccIndex interface {
+	// 	Add([]*univalue.Univalue)
+	// 	Clear()
+	// }
 	Err error
 }
 
@@ -57,7 +55,7 @@ type StateCommitter struct {
 // A Committable store is a pair of an index and a store. The index is used to index the input transitions as they are
 // received, and the store is used to commit the indexed transitions. Since multiple store can share the same index, each
 // WritableStore is an indexer and a list of Committable stores.
-func NewStorageCommitter(store intf.Datastore) *StateCommitter {
+func NewStateCommitter(store intf.Datastore) *StateCommitter {
 	return &StateCommitter{
 		store:          store,
 		platform:       platform.NewPlatform(),
@@ -66,8 +64,8 @@ func NewStorageCommitter(store intf.Datastore) *StateCommitter {
 		byPath: PathIndexer(store), // By storage path
 		byTxID: TxIndexer(store),   // By tx ID
 
-		ethIndex: ethstg.NewIndexer(store), // By eth account
-		ccIndex:  ccstg.NewIndexer(store),  // By concurrent container
+		// ethIndex: ethstg.NewIndexer(store), // By eth account
+		// ccIndex:  ccstg.NewIndexer(store),  // By concurrent container
 	}
 }
 
@@ -116,7 +114,8 @@ func (this *StateCommitter) Whitelist(txs []uint32) *StateCommitter {
 func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 	this.Whitelist(txs) // Mark the transitions that are not in the whitelist
 
-	// Finalize all the transitions for both the ETH storage and the concurrent container transitions
+	// Finalize all the transitions by merging the transitions
+	// for both the ETH storage and the concurrent container transitions
 	this.byPath.ParallelForeachDo(func(_ string, v *[]*univalue.Univalue) {
 		// Remove conflicting ones.
 		slice.RemoveIf(v, func(_ int, val *univalue.Univalue) bool { return val.GetPath() == nil })
@@ -135,6 +134,7 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 	return [32]byte{} // Write to the DB buffer
 }
 
+// Commit commits the transitions to different stores.
 func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
 	for _, pair := range this.WritableStores {
 		for _, store := range pair.Second {

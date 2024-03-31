@@ -375,7 +375,8 @@ func (this *EthDataStore) Retrive(key string, T any) (interface{}, error) {
 // }
 
 func (this *EthDataStore) Precommit(arg ...interface{}) [32]byte {
-	pairs := arg[0].(*EthIndexer).Get()
+	pairs := arg[0].(*EthIndexer).Get().([]*associative.Pair[*Account, []*univalue.Univalue])
+	// pairs := ([]*associative.Pair[*Account, []*univalue.Univalue])(idxer)
 	this.dirtyAccounts = associative.Pairs[*Account, []*univalue.Univalue](pairs).Firsts()
 	if len(pairs) == 0 {
 		return this.worldStateTrie.Hash() // No updates
@@ -387,8 +388,11 @@ func (this *EthDataStore) Precommit(arg ...interface{}) [32]byte {
 	})
 
 	slice.ParallelForeach(pairs, runtime.NumCPU(), func(i int, acctTrans **associative.Pair[*Account, []*univalue.Univalue]) {
-		keys, vals := univalue.Univalues((*acctTrans).Second).KVs() // Get all transitions under the same account
+		if len((*acctTrans).Second) == 0 {
+			return // All removed
+		}
 
+		keys, vals := univalue.Univalues((*acctTrans).Second).KVs() // Get all transitions under the same account
 		err := this.dirtyAccounts[i].UpdateAccountTrie(keys, vals)
 		if err != nil {
 			this.dbErr = errors.Join(this.dbErr, err)
@@ -433,13 +437,6 @@ func (this *EthDataStore) Commit(blockNum uint64) error {
 	this.dirtyVals = this.dirtyVals[:0]
 	return err
 }
-
-// Update the object cache.
-// func (this *EthDataStore) RefreshCache(blockNum uint64) {
-// 	if this.cacheActive {
-// 		this.cache.Commit(slice.Flatten(this.dirtyKeys), slice.Flatten(this.dirtyVals))
-// 	}
-// }
 
 func (this *EthDataStore) CommitToEthStorage(blockNum uint64) error {
 	slice.ParallelForeach(this.dirtyAccounts, runtime.NumCPU(), func(_ int, acct **Account) {

@@ -23,13 +23,14 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
-	cache "github.com/arcology-network/eu/cache"
+	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	stgcommitter "github.com/arcology-network/storage-committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
 	importer "github.com/arcology-network/storage-committer/importer"
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 	platform "github.com/arcology-network/storage-committer/platform"
+	cache "github.com/arcology-network/storage-committer/storage/writecache"
 	univalue "github.com/arcology-network/storage-committer/univalue"
 	"github.com/holiman/uint256"
 )
@@ -41,7 +42,7 @@ func TestEmptyNodeSet(t *testing.T) {
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -71,7 +72,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -144,7 +145,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
@@ -185,7 +186,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -260,7 +261,7 @@ func TestStateUpdate(t *testing.T) {
 
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	// _, initTrans := writeCache.Export(importer.Sorter)

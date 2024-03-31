@@ -14,7 +14,7 @@ import (
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/common-lib/merkle"
-	cache "github.com/arcology-network/eu/cache"
+	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	stgcommitter "github.com/arcology-network/storage-committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
@@ -24,6 +24,7 @@ import (
 	platform "github.com/arcology-network/storage-committer/platform"
 	datastore "github.com/arcology-network/storage-committer/storage/ccstorage"
 	storage "github.com/arcology-network/storage-committer/storage/proxy"
+	cache "github.com/arcology-network/storage-committer/storage/writecache"
 	univalue "github.com/arcology-network/storage-committer/univalue"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
@@ -41,12 +42,12 @@ func TestConcurrentDB(t *testing.T) {
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
 	bob := BobAccount()
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, bob); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -107,17 +108,17 @@ func TestTrieUpdates(t *testing.T) {
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
 	bob := BobAccount()
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, bob); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
 	carol := CarolAccount()
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, carol); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, carol, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -199,7 +200,7 @@ func TestEthStorageConnection(t *testing.T) {
 
 	// writeCache := committer.WriteCache()
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -241,7 +242,7 @@ func TestBasicAddRead(t *testing.T) {
 	// writeCache := committer.WriteCache()
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -314,7 +315,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 	alice := AliceAccount()
 
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -377,7 +378,7 @@ func BenchmarkMultipleAccountCommitDataStore(b *testing.B) {
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -389,7 +390,7 @@ func BenchmarkMultipleAccountCommitDataStore(b *testing.B) {
 	// t0 := time.Now()
 	for i := 0; i < 100000; i++ {
 		acct := fmt.Sprint(rand.Int())
-		if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, acct); err != nil { // NewAccount account structure {
+		if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, acct, writeCache); err != nil { // NewAccount account structure {
 			fmt.Println(err)
 		}
 

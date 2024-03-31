@@ -21,10 +21,20 @@ var (
 )
 
 func chooseDataStore() interfaces.Datastore {
+	// ethPair := associative.Pair[intf.Indexer[*univalue.Univalue], []intf.Datastore]{
+	// 	First:  ethstg.NewIndexer(store),
+	// 	Second: []intf.Datastore{store.(*stgproxy.StorageProxy).EthStore()},
+	// }
+
+	// ccPair := associative.Pair[intf.Indexer[*univalue.Univalue], []intf.Datastore]{
+	// 	First:  ccstg.NewIndexer(store),
+	// 	Second: []intf.Datastore{store.(*stgproxy.StorageProxy).CCStore()},
+	// }
+
 	// return storage.NewParallelEthMemDataStore() // Eth trie datastore
 	// return storage.NewStoreProxy() // Eth trie datastore
 	store := stgproxy.NewStoreProxy()
-	store.DisableCache()
+	// store.DisableCache()
 	return store
 	// return storage.NewLevelDBDataStore("/tmp")
 	// return datastore.NewDataStore[string, intf.Type](nil, datastore.NewCachePolicy(1000000, 1), memdb.NewMemoryDB(), encoder, decoder)

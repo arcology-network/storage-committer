@@ -26,13 +26,17 @@ import (
 	"time"
 
 	slice "github.com/arcology-network/common-lib/exp/slice"
-	cache "github.com/arcology-network/eu/cache"
+	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	importer "github.com/arcology-network/storage-committer/importer"
 	"github.com/arcology-network/storage-committer/interfaces"
 	opadapter "github.com/arcology-network/storage-committer/op"
 	platform "github.com/arcology-network/storage-committer/platform"
 	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
+	statestore "github.com/arcology-network/storage-committer/storage/statestore"
+	cache "github.com/arcology-network/storage-committer/storage/writecache"
+	"github.com/arcology-network/storage-committer/univalue"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	rlp "github.com/ethereum/go-ethereum/rlp"
@@ -103,7 +107,7 @@ func RandomKeys[T constraints.Integer](s0, s1 T) []string {
 func NewWriteCacheWithAcounts(store interfaces.Datastore, accounts ...string) *cache.WriteCache {
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	for i := range accounts {
-		if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, accounts[i]); err != nil { // NewAccount account structure {
+		if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, accounts[i], writeCache); err != nil { // NewAccount account structure {
 			fmt.Println(err)
 		}
 	}
@@ -129,4 +133,19 @@ func verifierEthMerkle(roothash [32]byte, acct string, key string, store interfa
 	if err := opProof.Verify(provider.Root()); err != nil {
 		t.Error(err)
 	}
+}
+
+// It's mainly used for TESTING purpose.
+func FlushToStore(this *cache.WriteCache, store interfaces.Datastore) interfaces.Datastore {
+	acctTrans := univalue.Univalues(slice.Clone(this.Export(importer.Sorter))).To(importer.IPTransition{})
+	txs := slice.Transform(acctTrans, func(_ int, v *univalue.Univalue) uint32 {
+		return v.GetTx()
+	})
+
+	committer := statestore.NewStateCommitter(store)
+	committer.Import(acctTrans)
+	committer.Precommit(txs) // Write all the transitions to the store
+	committer.Commit(0)
+	this.Clear()
+	return store
 }

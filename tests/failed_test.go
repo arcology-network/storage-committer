@@ -20,17 +20,17 @@ package committertest
 import (
 	"testing"
 
-	commoncache "github.com/arcology-network/common-lib/cache"
 	"github.com/arcology-network/common-lib/exp/slice"
-	cache "github.com/arcology-network/eu/cache"
+	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	stgcommitter "github.com/arcology-network/storage-committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
 	importer "github.com/arcology-network/storage-committer/importer"
-	"github.com/arcology-network/storage-committer/interfaces"
+	cache "github.com/arcology-network/storage-committer/storage/writecache"
 
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 	platform "github.com/arcology-network/storage-committer/platform"
+	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
 	storage "github.com/arcology-network/storage-committer/storage/proxy"
 	univalue "github.com/arcology-network/storage-committer/univalue"
 )
@@ -42,7 +42,7 @@ func TestAddAndDelete(t *testing.T) {
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -133,7 +133,7 @@ func TestPathReadAndWriteBatchCache(b *testing.T) {
 	committer.Commit(0)
 
 	for i := 0; i < len(keys); i++ {
-		v, ok := store.(*storage.StorageProxy).Cache(nil).(*commoncache.ReadCache[string, interfaces.Type]).Get("blcc://eth1.0/account/" + alice + "/storage/container/ctrn-0/alice-elem-" + keys[i])
+		v, ok := store.(*storage.StorageProxy).Cache(nil).(*stgproxy.ReadCache).Get("blcc://eth1.0/account/" + alice + "/storage/container/ctrn-0/alice-elem-" + keys[i])
 		if typedv, _, _ := (*(v)).Get(); !ok || typedv != int64(i) {
 			b.Error("not found")
 		}
@@ -157,7 +157,7 @@ func TestPathReadAndWriteBatchCache(b *testing.T) {
 	committer.Commit(0)
 
 	for i := 0; i < len(keys); i++ {
-		v, ok := store.(*storage.StorageProxy).Cache(nil).(*commoncache.ReadCache[string, interfaces.Type]).Get("blcc://eth1.0/account/" + alice + "/storage/container/ctrn-0/alice-elem-" + keys[i])
+		v, ok := store.(*storage.StorageProxy).Cache(nil).(*stgproxy.ReadCache).Get("blcc://eth1.0/account/" + alice + "/storage/container/ctrn-0/alice-elem-" + keys[i])
 		if typedv, _, _ := (*(v)).Get(); !ok || typedv != int64(i+9999) {
 			b.Error("not found")
 		}

@@ -8,7 +8,7 @@ import (
 
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/slice"
-	cache "github.com/arcology-network/eu/cache"
+	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	stgcommitter "github.com/arcology-network/storage-committer"
 	arbitrator "github.com/arcology-network/storage-committer/arbitrator"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
@@ -16,6 +16,7 @@ import (
 	importer "github.com/arcology-network/storage-committer/importer"
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 	platform "github.com/arcology-network/storage-committer/platform"
+	cache "github.com/arcology-network/storage-committer/storage/writecache"
 	univalue "github.com/arcology-network/storage-committer/univalue"
 )
 
@@ -36,7 +37,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	writeCache.Clear()
 
 	alice := AliceAccount()
-	if _, err := writeCache.CreateNewAccount(1, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(1, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -46,7 +47,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 
 	writeCache.Clear()
 	bob := BobAccount()
-	if _, err := writeCache.CreateNewAccount(2, bob); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(2, bob, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -81,8 +82,8 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	committer.SetStore(store)
 	alice := AliceAccount()
 
-	writeCache.Clear()                                               // = committer.WriteCache()
-	if _, err := writeCache.CreateNewAccount(1, alice); err != nil { // NewAccount account structure {
+	writeCache.Clear()                                                              // = committer.WriteCache()
+	if _, err := adaptorcommon.CreateNewAccount(1, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -91,13 +92,13 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	raw := writeCache.Export(importer.Sorter)
 	accesses1 := univalue.Univalues(slice.Clone(raw)).To(importer.IPTransition{})
 
-	writeCache.Clear()                                               // = committer.WriteCache()
-	if _, err := writeCache.CreateNewAccount(2, alice); err != nil { // NewAccount account structure {
+	writeCache.Clear()                                                              // = committer.WriteCache()
+	if _, err := adaptorcommon.CreateNewAccount(2, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	} // NewAccount account structure {
 
 	// writeCache = committer.WriteCache()
-	if _, err := writeCache.CreateNewAccount(1, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(1, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	path2 := commutative.NewPath() // create a path
@@ -126,7 +127,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	alice := AliceAccount()
 
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
-	if _, err := writeCache.CreateNewAccount(stgcommcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -142,7 +143,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 
 	// committer.NewAccount(1, alice)
 	writeCache.Clear()
-	if _, err := writeCache.CreateNewAccount(1, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(1, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -155,7 +156,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 
 	// writeCache = committer.WriteCache()
 	writeCache.Clear()
-	if _, err := writeCache.CreateNewAccount(2, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(2, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	} // NewAccount account structure {
 	path2 := commutative.NewPath() // create a path

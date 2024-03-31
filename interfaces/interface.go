@@ -10,11 +10,6 @@ type Platform interface { // value type
 	// Eth10Account() string
 }
 
-// type Transition interface { // value type
-// 	Added() interface{}
-// 	Removed() interface{}
-// }
-
 type Type interface { // value type
 	TypeID() uint8
 	Equal(interface{}) bool
@@ -62,28 +57,28 @@ type Type interface { // value type
 	Print()
 }
 
+type Indexer[T any] interface {
+	Add([]T)
+	Get() any
+	Finalize()
+	Clear()
+}
+
 type ReadOnlyDataStore interface {
 	IfExists(string) bool
 	Retrive(string, any) (interface{}, error)
 }
 
-type Datastore interface {
-	IfExists(string) bool
-	Inject(string, any) error
-	Retrive(string, any) (interface{}, error)
-	Preload([]byte) interface{}
+type WritableStore interface {
 	Precommit(...interface{}) [32]byte //key gatter, value gatter,
 	Commit(uint64) error
 }
 
-type CommittableStore[T any] interface {
-	GetNewIndex(Datastore) interface {
-		Add([]T)
-		Clear()
-	}
+type Datastore interface {
+	ReadOnlyDataStore
+	WritableStore
+	Inject(string, any) error
 	Preload([]byte) interface{}
-	Precommit(...interface{}) [32]byte //key gatter, value gatter,
-	Commit(uint64) error
 }
 
 type Hasher func(Type) []byte

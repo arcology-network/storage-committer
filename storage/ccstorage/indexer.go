@@ -18,8 +18,11 @@
 package ccstorage
 
 import (
+	"runtime"
+
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/storage-committer/interfaces"
+	intf "github.com/arcology-network/storage-committer/interfaces"
 	"github.com/arcology-network/storage-committer/platform"
 	"github.com/arcology-network/storage-committer/univalue"
 )
@@ -28,7 +31,7 @@ import (
 // This is for ETH storage, concurrent container related sub-paths won't be put into this index.
 type CCIndexer []*univalue.Univalue
 
-func NewIndexer(store interfaces.Datastore) *CCIndexer {
+func NewIndexer(store interfaces.Datastore) intf.Indexer[*univalue.Univalue] {
 	return (*CCIndexer)(&[]*univalue.Univalue{})
 }
 
@@ -42,8 +45,20 @@ func (this *CCIndexer) Add(transitions []*univalue.Univalue) {
 	}
 }
 
-func (this *CCIndexer) Get() []*univalue.Univalue {
-	return slice.RemoveIf((*[]*univalue.Univalue)(this), func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil }) // Remove the transitions that are marked
+func (this *CCIndexer) Get() interface{} {
+	keys := make([]string, len(*this))
+	tVals := slice.ParallelTransform(*this, runtime.NumCPU(), func(i int, v *univalue.Univalue) interface{} {
+		keys[i] = *v.GetPath()
+		if v.Value() != nil {
+			return v.Value().(intf.Type)
+		}
+		return nil // A deletion
+	})
+	return []interface{}{keys, tVals}
+}
+
+func (this *CCIndexer) Finalize() {
+	slice.RemoveIf((*[]*univalue.Univalue)(this), func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil }) // Remove the transitions that are marked
 }
 
 func (this *CCIndexer) Clear() {

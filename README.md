@@ -4,9 +4,9 @@ The concurrent Storage committer is a module responsible for merging and flushin
 
 <h2> What Is Concurrent Committer <img align="center" height="32" src="./img/question.svg"> </h2>
 
-The Ethereum Virtual Machine (EVM) relies on the stateDB for reading and writing state data. A notable limitation of the original design is its inability to manage concurrency. Attempts to have multiple EVMs share the same StateDB introduce thread safety problems.
+The Ethereum Virtual Machine (EVM) relies on the stateDB for reading and writing state data. A limitation of the original design is its inability to manage concurrency. Attempts to have multiple EVMs share the same StateDB introduce thread safety problems.
 
-Arcology Network is a blockchain that supports parallel processing, necessitating a storage layer that facilitates concurrency. This project is a key element of a comprehensive design to address this issue.
+Arcology Network is a blockchain that supports parallel processing, necessitating a storage layer that facilitates concurrency.
 
 <h2> Design <img align="center" height="32" src="./img/design.svg">  </h2>
 
@@ -16,7 +16,6 @@ The module is responsible for the following tasks.
 - Categorizing transitions based on their memory slot info.
 - Detecting potential access conflicts and reverting transitions related to the transaction causing them. 
 - Writing the transitions to the Ethereum stateDB in batch.
-
 
 <!-- <br /> -->
 ![](./img/types.png)

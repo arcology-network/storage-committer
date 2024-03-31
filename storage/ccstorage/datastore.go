@@ -8,19 +8,19 @@ import (
 	addrcompressor "github.com/arcology-network/common-lib/addrcompressor"
 	codec "github.com/arcology-network/common-lib/codec"
 	common "github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/storage-committer/interfaces"
+	intf "github.com/arcology-network/storage-committer/interfaces"
 	"github.com/arcology-network/storage-committer/univalue"
 	"github.com/cespare/xxhash/v2"
 
 	// expmap "github.com/arcology-network/common-lib/container/map"
 	expmap "github.com/arcology-network/common-lib/exp/map"
 	slice "github.com/arcology-network/common-lib/exp/slice"
-	intf "github.com/arcology-network/common-lib/storage/interface"
+	commonintf "github.com/arcology-network/common-lib/storage/interface"
 	policy "github.com/arcology-network/common-lib/storage/policy"
 )
 
 type DataStore[K comparable, V any] struct {
-	db   intf.PersistentStorage
+	db   commonintf.PersistentStorage
 	lock sync.RWMutex
 
 	keyCompressor    *addrcompressor.CompressionLut
@@ -46,7 +46,7 @@ type DataStore[K comparable, V any] struct {
 func NewDataStore[K comparable, V any](
 	keyCompressor *addrcompressor.CompressionLut,
 	cachePolicy *policy.CachePolicy,
-	db intf.PersistentStorage,
+	db commonintf.PersistentStorage,
 	encoder func(string, any) []byte,
 	decoder func(string, []byte, any) interface{},
 ) *DataStore[K, V] {
@@ -68,7 +68,7 @@ func NewDataStore[K comparable, V any](
 }
 
 // Pleaseholder only
-func (this *DataStore[K, V]) GetNewIndex(store interfaces.Datastore) interface {
+func (this *DataStore[K, V]) GetNewIndex(store intf.Datastore) interface {
 	Add([]*univalue.Univalue)
 	Clear()
 } {
@@ -265,15 +265,9 @@ func (this *DataStore[K, V]) Retrive(key string, T any) (interface{}, error) {
 		return v, nil
 	}
 
-	// if v == nil && this.cachePolicy != nil && !this.cachePolicy.InfinitCache() {
 	v, err := this.RetriveFromStorage(key, T)
 	if err == nil {
-		// if this.cachePolicy.CheckCapacity(key, v) { // need to check the cache status first
-		// if err = this.cache.Set(key, v); err != nil { // Save to the local cache
-		// 	return nil, err
-		// }
 		this.addToCache(key, v) //update to the local cache and add all the missing values to the cache
-		// }
 	}
 	return v, err
 }
@@ -342,9 +336,8 @@ func (this *DataStore[K, V]) Clear() {
 }
 
 func (this *DataStore[K, V]) Precommit(arg ...interface{}) [32]byte {
-	trans := arg[0].(*CCIndexer).Get()
-	keys := univalue.Univalues(trans).Keys()                   // Get the keys
-	values := slice.To[*univalue.Univalue, interface{}](trans) // Convert to interface{} for the storage
+	kvs := arg[0].(*CCIndexer).Get().([]interface{})
+	keys, values := kvs[0].([]string), kvs[1].([]interface{})
 
 	this.commitLock.Lock()               // Lock the process, only unlock after the final commit is done.
 	this.keyBuffer = common.IfThenDo1st( // Compress the keys if the keyCompressor is available
@@ -357,7 +350,7 @@ func (this *DataStore[K, V]) Precommit(arg ...interface{}) [32]byte {
 	this.encodedBuffer = make([][]byte, len(this.valueBuffer))
 	for i := 0; i < len(this.valueBuffer); i++ {
 		if this.valueBuffer[i] != nil {
-			this.valueBuffer[i] = this.valueBuffer[i].(interface{ Value() interface{} }).Value() // Strip access meta info
+			// this.valueBuffer[i] = this.valueBuffer[i].(interface{ Value() interface{} }).Value() // Strip access meta info
 			this.encodedBuffer[i] = this.encoder(keys[i], this.valueBuffer[i])
 		}
 	}

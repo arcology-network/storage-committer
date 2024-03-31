@@ -6,12 +6,13 @@ import (
 	// codec "github.com/arcology-network/common-lib/codec"
 
 	"github.com/arcology-network/common-lib/exp/slice"
-	cache "github.com/arcology-network/eu/cache"
+	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	stgcommitter "github.com/arcology-network/storage-committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
 	importer "github.com/arcology-network/storage-committer/importer"
 	platform "github.com/arcology-network/storage-committer/platform"
+	cache "github.com/arcology-network/storage-committer/storage/writecache"
 	univalue "github.com/arcology-network/storage-committer/univalue"
 )
 
@@ -26,7 +27,7 @@ func TestCacheMultiAccountCreation(t *testing.T) {
 	accounts := make([]string, 10)
 	for i := 0; i < len(accounts); i++ {
 		accounts[i] = RandomAccount()
-		if _, err := writeCache.CreateNewAccount(0, accounts[i]); err != nil { // NewAccount account structure {
+		if _, err := adaptorcommon.CreateNewAccount(0, accounts[i], writeCache); err != nil { // NewAccount account structure {
 			t.Error(err)
 		}
 	}
