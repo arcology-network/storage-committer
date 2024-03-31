@@ -40,14 +40,6 @@ type StateCommitter struct {
 	byPath         *indexer.UnorderedIndexer[string, *univalue.Univalue, []*univalue.Univalue]
 	byTxID         *indexer.UnorderedIndexer[uint32, *univalue.Univalue, []*univalue.Univalue]
 
-	// ethIndex interface {
-	// 	Add([]*univalue.Univalue)
-	// 	Clear()
-	// }
-	// ccIndex interface {
-	// 	Add([]*univalue.Univalue)
-	// 	Clear()
-	// }
 	Err error
 }
 
@@ -63,9 +55,6 @@ func NewStateCommitter(store intf.Datastore) *StateCommitter {
 
 		byPath: PathIndexer(store), // By storage path
 		byTxID: TxIndexer(store),   // By tx ID
-
-		// ethIndex: ethstg.NewIndexer(store), // By eth account
-		// ccIndex:  ccstg.NewIndexer(store),  // By concurrent container
 	}
 }
 
