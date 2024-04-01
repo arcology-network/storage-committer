@@ -31,13 +31,13 @@ import (
 type StorageProxy struct {
 	objectCache  *ReadCache // An object cache for the backend storage, only updated once at the end of the block.
 	ethDataStore *ethstg.EthDataStore
-	ccDataStore  *ccstg.DataStore[string, intf.Type]
+	ccDataStore  *ccstg.DataStore
 }
 
 func NewStoreProxy() *StorageProxy {
 	proxy := &StorageProxy{
 		ethDataStore: ethstg.NewParallelEthMemDataStore(),
-		ccDataStore: ccstg.NewDataStore[string, intf.Type](
+		ccDataStore: ccstg.NewDataStore(
 			nil,
 			policy.NewCachePolicy(0, 1), // Don't cache anything in the underlying storage, the cache is managed by the router
 			memdb.NewMemoryDB(),
@@ -47,13 +47,24 @@ func NewStoreProxy() *StorageProxy {
 	return proxy
 }
 
-func (this *StorageProxy) Cache(any) interface{}       { return this.objectCache }
-func (this *StorageProxy) EnableCache() *StorageProxy  { this.objectCache.Enable(); return this }
-func (this *StorageProxy) DisableCache() *StorageProxy { this.objectCache.Disable(); return this }
-func (this *StorageProxy) ClearCache()                 { this.objectCache.Clear() }
+func (this *StorageProxy) Cache(any) interface{} {
+	return this.objectCache
+}
 
-func (this *StorageProxy) EthStore() *ethstg.EthDataStore               { return this.ethDataStore } // Eth storage
-func (this *StorageProxy) CCStore() *ccstg.DataStore[string, intf.Type] { return this.ccDataStore }  // Arcology storage
+func (this *StorageProxy) EnableCache() *StorageProxy {
+	this.objectCache.Enable()
+	return this
+}
+
+func (this *StorageProxy) DisableCache() *StorageProxy {
+	this.objectCache.Disable()
+	return this
+}
+
+func (this *StorageProxy) ClearCache() { this.objectCache.Clear() }
+
+func (this *StorageProxy) EthStore() *ethstg.EthDataStore { return this.ethDataStore } // Eth storage
+func (this *StorageProxy) CCStore() *ccstg.DataStore      { return this.ccDataStore }  // Arcology storage
 
 func (this *StorageProxy) Preload(data []byte) interface{} {
 	return this.ethDataStore.Preload(data)
@@ -77,26 +88,8 @@ func (this *StorageProxy) Retrive(key string, v any) (interface{}, error) {
 	return this.GetStorage(key).Retrive(key, v)
 }
 
-func (this *StorageProxy) Precommit(args ...interface{}) [32]byte {
-	// trans := args[0].([]*univalue.Univalue)
-	// keys := make([]string, len(trans))
-	// typedVals := slice.ParallelTransform(trans, runtime.NumCPU(), func(i int, v *univalue.Univalue) intf.Type {
-	// 	keys[i] = *v.GetPath()
-	// 	if v.Value() != nil {
-	// 		return v.Value().(intf.Type)
-	// 	}
-	// 	return nil // A deletion
-	// })
-	// this.writeCache.Precommit(keys, typedVals)
-	return [32]byte{}
-}
-
-func (this *StorageProxy) Commit(blockNum uint64) error {
-	// err0 := this.ethDataStore.Commit(blockNum)
-	// err1 := (this.ccDataStore.Commit(blockNum))
-	// return errors.New(err0.Error() + err1.Error())
-	return nil
-}
+func (this *StorageProxy) Precommit(args ...interface{}) [32]byte { return [32]byte{} }
+func (this *StorageProxy) Commit(blockNum uint64) error           { return nil }
 
 // Get the stores that can be
 func (this *StorageProxy) Committable() []*associative.Pair[intf.Indexer[*univalue.Univalue], []intf.WritableStore] {

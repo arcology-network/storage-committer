@@ -4,18 +4,17 @@ import (
 	"fmt"
 	"net/http"
 
-	intf "github.com/arcology-network/storage-committer/interfaces"
 	datastore "github.com/arcology-network/storage-committer/storage/ccstorage"
 )
 
 type ReadonlyServer struct {
 	addr      string
-	dataStore *datastore.DataStore[string, intf.Type]
+	dataStore *datastore.DataStore
 	encoder   func(interface{}) []byte
 	decoder   func([]byte) (interface{}, error)
 }
 
-func NewReadonlyServer(addr string, encoder func(interface{}) []byte, decoder func([]byte) (interface{}, error), dataStore *datastore.DataStore[string, intf.Type]) *ReadonlyServer {
+func NewReadonlyServer(addr string, encoder func(interface{}) []byte, decoder func([]byte) (interface{}, error), dataStore *datastore.DataStore) *ReadonlyServer {
 	return &ReadonlyServer{
 		addr:      addr,
 		dataStore: dataStore,

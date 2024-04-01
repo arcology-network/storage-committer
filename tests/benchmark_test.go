@@ -14,7 +14,6 @@ import (
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
 	importer "github.com/arcology-network/storage-committer/importer"
-	intf "github.com/arcology-network/storage-committer/interfaces"
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 	platform "github.com/arcology-network/storage-committer/platform"
 	datastore "github.com/arcology-network/storage-committer/storage/ccstorage"
@@ -30,7 +29,7 @@ import (
 
 func BenchmarkAccountMerkleImportPerf(b *testing.B) {
 	// lut := addrcompressor.NewCompressionLut()
-	// store := datastore.NewDataStore[string, intf.Type](nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
+	// store := datastore.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
 	// fileDB, err := datastore.NewFileDB(ROOT_PATH, 8, 2)
 	// if err != nil {
 	// 	b.Error(err)
@@ -171,7 +170,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 }
 
 func BenchmarkAddThenDelete(b *testing.B) {
-	store := datastore.NewDataStore[string, intf.Type](nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
+	store := datastore.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
 
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	meta := commutative.NewPath()
@@ -211,7 +210,7 @@ func BenchmarkAddThenDelete(b *testing.B) {
 }
 
 func BenchmarkAddThenPop(b *testing.B) {
-	store := datastore.NewDataStore[string, intf.Type](nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
+	store := datastore.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
 
 	// writeCache := committer.WriteCache()
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
@@ -335,7 +334,7 @@ func BenchmarkShrinkSlice(b *testing.B) {
 }
 
 func BenchmarkEncodeTransitions(b *testing.B) {
-	store := datastore.NewDataStore[string, intf.Type](nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
+	store := datastore.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
 
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
@@ -397,7 +396,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	// 	return
 	// }
 	store := chooseDataStore()
-	// store := datastore.NewDataStore[string, intf.Type](nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
+	// store := datastore.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
 	store.Inject((stgcommcommon.ETH10_ACCOUNT_PREFIX), commutative.NewPath())
 
 	t0 := time.Now()
@@ -618,7 +617,7 @@ func (s String) Less(b btree.Item) bool {
 // }
 
 func BenchmarkTransitionImport(b *testing.B) {
-	store := datastore.NewDataStore[string, intf.Type](nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
+	store := datastore.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
 	meta := commutative.NewPath()
 	store.Inject((stgcommcommon.ETH10_ACCOUNT_PREFIX), meta)
 
@@ -651,7 +650,7 @@ func BenchmarkTransitionImport(b *testing.B) {
 }
 
 // func BenchmarkConcurrentTransitionImport(b *testing.B) {
-// 	store := datastore.NewDataStore[string, intf.Type](nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
+// 	store := datastore.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
 // 	meta := commutative.NewPath()
 // 	store.Inject((stgcommcommon.ETH10_ACCOUNT_PREFIX), meta)
 
@@ -682,7 +681,7 @@ func BenchmarkTransitionImport(b *testing.B) {
 // }
 
 func BenchmarkRandomAccountSort(t *testing.B) {
-	store := datastore.NewDataStore[string, intf.Type](nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
+	store := datastore.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
 	meta := commutative.NewPath()
 	store.Inject((stgcommcommon.ETH10_ACCOUNT_PREFIX), meta)
 

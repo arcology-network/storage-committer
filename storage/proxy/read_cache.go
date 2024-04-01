@@ -17,8 +17,10 @@
 package proxy
 
 import (
-	cache "github.com/arcology-network/common-lib/cache"
+	cache "github.com/arcology-network/common-lib/storage/cache"
+	policy "github.com/arcology-network/common-lib/storage/policy"
 	intf "github.com/arcology-network/storage-committer/interfaces"
+	"github.com/cespare/xxhash/v2"
 )
 
 // ReadCache is a wrapper around cache.ReadCache with some extra methods provided
@@ -30,14 +32,20 @@ type ReadCache struct {
 func NewReadCache(store intf.Datastore) *ReadCache {
 	return &ReadCache{cache.NewReadCache[string, intf.Type](
 		4096, // 4096 shards to avoid lock contention
-		func(v intf.Type) bool { return v == nil },
+		func(v intf.Type) bool {
+			return v == nil
+		},
+		func(k string) uint64 {
+			return uint64(xxhash.Sum64String(k))
+		},
+		policy.NewCachePolicy(0, 0),
 	)}
 }
 
 // Read cache does not have a precommit method equivalent to the write cache
 func (this *ReadCache) Precommit(args ...interface{}) [32]byte {
 	kvs := args[0].(*Buffer).Get().([]interface{})
-	this.ReadCache.Precommit(kvs[0].([]string), kvs[1].([]intf.Type))
+	this.ReadCache.Commit(kvs[0].([]string), kvs[1].([]intf.Type))
 	return [32]byte{}
 }
 

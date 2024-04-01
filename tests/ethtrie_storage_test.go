@@ -19,7 +19,6 @@ import (
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
 	importer "github.com/arcology-network/storage-committer/importer"
-	"github.com/arcology-network/storage-committer/interfaces"
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 	platform "github.com/arcology-network/storage-committer/platform"
 	datastore "github.com/arcology-network/storage-committer/storage/ccstorage"
@@ -373,7 +372,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 
 func BenchmarkMultipleAccountCommitDataStore(b *testing.B) {
 	// store := chooseDataStore() // Eth data store
-	store := datastore.NewDataStore[string, interfaces.Type](nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode) // Native data store
+	store := datastore.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode) // Native data store
 
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 

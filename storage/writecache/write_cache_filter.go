@@ -18,7 +18,6 @@ package cache
 
 import (
 	commonlibcommon "github.com/arcology-network/common-lib/common"
-	mapi "github.com/arcology-network/common-lib/exp/map"
 	slice "github.com/arcology-network/common-lib/exp/slice"
 	ccurlcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/univalue"
@@ -40,7 +39,8 @@ func NewWriteCacheFilter(writeCache interface{}) *WriteCacheFilter {
 }
 
 func (this *WriteCacheFilter) ToBuffer() []*univalue.Univalue {
-	return mapi.Values(*this.WriteCache.Cache())
+	return this.WriteCache.Cache().Values()
+	// return mapi.Values(*this.WriteCache.Cache())
 }
 
 func (this *WriteCacheFilter) RemoveByAddress(addr string) {

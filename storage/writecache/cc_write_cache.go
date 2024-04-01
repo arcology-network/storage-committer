@@ -1,18 +1,18 @@
 /*
- *   Copyright (c) 2023 Arcology Network
- *   All rights reserved.
+ *   Copyright (c) 2024 Arcology Network
 
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
 
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
 
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 package cache
@@ -30,6 +30,7 @@ import (
 	slice "github.com/arcology-network/common-lib/exp/slice"
 	committercommon "github.com/arcology-network/storage-committer/common"
 	platform "github.com/arcology-network/storage-committer/platform"
+	"github.com/cespare/xxhash/v2"
 
 	"github.com/arcology-network/storage-committer/commutative"
 	importer "github.com/arcology-network/storage-committer/importer"
@@ -38,12 +39,19 @@ import (
 	univalue "github.com/arcology-network/storage-committer/univalue"
 )
 
+type CacheInterface interface {
+	Get(string) (*univalue.Univalue, bool)
+	Set(string, *univalue.Univalue)
+	Clear()
+	Values() []*univalue.Univalue
+}
+
 // WriteCache is a read-only data store used for caching.
 type WriteCache struct {
 	store    intf.ReadOnlyDataStore
+	cache    *mapi.ConcurrentMap[string, *univalue.Univalue]
 	kvDict   map[string]*univalue.Univalue // Local KV lookup
 	platform intf.Platform
-	buffer   []*univalue.Univalue // Transition + access record buffer
 	uniPool  *mempool.Mempool[*univalue.Univalue]
 }
 
@@ -51,11 +59,17 @@ type WriteCache struct {
 // resulting in a cascading-like structure.
 func NewWriteCache(store intf.ReadOnlyDataStore, perPage int, numPages int, args ...interface{}) *WriteCache {
 	return &WriteCache{
+		cache: mapi.NewConcurrentMap(int(16),
+			func(v *univalue.Univalue) bool {
+				return v == nil
+			},
+			func(k string) uint64 {
+				return xxhash.Sum64String(k)
+			}),
 		store:    store,
 		kvDict:   make(map[string]*univalue.Univalue),
 		platform: platform.NewPlatform(),
-		buffer:   make([]*univalue.Univalue, 0, perPage*numPages),
-		uniPool: mempool.NewMempool[*univalue.Univalue](perPage, numPages, func() *univalue.Univalue {
+		uniPool: mempool.NewMempool(perPage, numPages, func() *univalue.Univalue {
 			return new(univalue.Univalue)
 		}, (&univalue.Univalue{}).Reset),
 	}
@@ -66,14 +80,15 @@ func (this *WriteCache) SetReadOnlyDataStore(store intf.ReadOnlyDataStore) *Writ
 	return this
 }
 
-func (this *WriteCache) ReadOnlyDataStore() intf.ReadOnlyDataStore { return this.store }
-func (this *WriteCache) Cache() *map[string]*univalue.Univalue     { return &this.kvDict }
-func (this *WriteCache) MinSize() int                              { return this.uniPool.MinSize() }
-func (this *WriteCache) NewUnivalue() *univalue.Univalue           { return this.uniPool.New() }
+func (this *WriteCache) ReadOnlyDataStore() intf.ReadOnlyDataStore              { return this.store }
+func (this *WriteCache) Cache() *mapi.ConcurrentMap[string, *univalue.Univalue] { return this.cache }
+func (this *WriteCache) MinSize() int                                           { return this.uniPool.MinSize() }
+func (this *WriteCache) NewUnivalue() *univalue.Univalue                        { return this.uniPool.New() }
 
 // If the access has been recorded
 func (this *WriteCache) GetOrNew(tx uint32, path string, T any) (*univalue.Univalue, bool) {
-	unival, inCache := this.kvDict[path]
+	unival, inCache := this.cache.Get(path)
+	// unival, inCache := this.kvDict[path]
 	if unival == nil { // Not in the kvDict, check the datastore
 		var typedv interface{}
 		if store := this.ReadOnlyDataStore(); store != nil {
@@ -81,7 +96,8 @@ func (this *WriteCache) GetOrNew(tx uint32, path string, T any) (*univalue.Univa
 		}
 
 		unival = this.NewUnivalue().Init(tx, path, 0, 0, 0, typedv, this)
-		this.kvDict[path] = unival // Adding to kvDict
+		// this.kvDict[path] = unival // Adding to kvDict
+		this.cache.Set(path, unival)
 	}
 	return unival, inCache // From cache
 }
@@ -132,13 +148,14 @@ func (this *WriteCache) ReadCommitted(tx uint32, key string, T any) (interface{}
 
 // Get the raw value directly, skip the access counting at the univalue level
 func (this *WriteCache) InCache(path string) (interface{}, bool) {
-	univ, ok := this.kvDict[path]
+	univ, ok := this.cache.Get(path)
+	// univ, ok := this.kvDict[path]
 	return univ, ok
 }
 
 // Get the raw value directly, put it in an empty univalue without recording the access at the univalue level.
 func (this *WriteCache) Find(tx uint32, path string, T any) (interface{}, interface{}) {
-	if univ, ok := this.kvDict[path]; ok {
+	if univ, ok := this.cache.Get(path); ok {
 		return univ.Value(), univ
 	}
 
@@ -167,7 +184,7 @@ func (this *WriteCache) IfExists(path string) bool {
 		return true
 	}
 
-	if v := this.kvDict[path]; v != nil {
+	if v, _ := this.cache.Get(path); v != nil {
 		return v.Value() != nil // If value == nil means either it's been deleted or never existed.
 	}
 
@@ -218,21 +235,24 @@ func (this *WriteCache) Precommit(args ...interface{}) [32]byte {
 
 // Reset the writecache to the initial state for the next round of processing.
 func (this *WriteCache) Clear() *WriteCache {
-	if clear(this.buffer); cap(this.buffer) > 3*this.uniPool.MinSize() {
-		this.buffer = make([]*univalue.Univalue, 0, this.uniPool.MinSize())
-	}
+	// if clear(this.buffer); cap(this.buffer) > 3*this.uniPool.MinSize() {
+	// 	this.buffer = make([]*univalue.Univalue, 0, this.uniPool.MinSize())
+	// }
+	// this.buffer = this.buffer[:0]
 	this.uniPool.Reset()
-	clear(this.kvDict)
+	// clear(this.kvDict)
+	this.cache.Clear()
 	return this
 }
 
 func (this *WriteCache) Equal(other *WriteCache) bool {
-	thisBuffer := mapi.Values(this.kvDict)
+	thisBuffer := this.cache.Values()
+	// thisBuffer := mapi.Values(this.kvDict)
 	sort.SliceStable(thisBuffer, func(i, j int) bool {
 		return *thisBuffer[i].GetPath() < *thisBuffer[j].GetPath()
 	})
 
-	otherBuffer := mapi.Values(other.kvDict)
+	otherBuffer := other.cache.Values()
 	sort.SliceStable(otherBuffer, func(i, j int) bool {
 		return *otherBuffer[i].GetPath() < *otherBuffer[j].GetPath()
 	})
@@ -242,16 +262,16 @@ func (this *WriteCache) Equal(other *WriteCache) bool {
 }
 
 func (this *WriteCache) Export(preprocessors ...func([]*univalue.Univalue) []*univalue.Univalue) []*univalue.Univalue {
-	this.buffer = mapi.Values(this.kvDict) //this.buffer[:0]
+	buffer := this.cache.Values()
 
 	for _, processor := range preprocessors {
-		this.buffer = common.IfThenDo1st(processor != nil, func() []*univalue.Univalue {
-			return processor(this.buffer)
-		}, this.buffer)
+		buffer = common.IfThenDo1st(processor != nil, func() []*univalue.Univalue {
+			return processor(buffer)
+		}, buffer)
 	}
 
-	slice.RemoveIf(&this.buffer, func(_ int, v *univalue.Univalue) bool { return v.Reads() == 0 && v.IsReadOnly() }) // Remove peeks
-	return this.buffer
+	slice.RemoveIf(&buffer, func(_ int, v *univalue.Univalue) bool { return v.Reads() == 0 && v.IsReadOnly() }) // Remove peeks
+	return buffer
 }
 
 func (this *WriteCache) ExportAll(preprocessors ...func([]*univalue.Univalue) []*univalue.Univalue) ([]*univalue.Univalue, []*univalue.Univalue) {
@@ -264,7 +284,9 @@ func (this *WriteCache) ExportAll(preprocessors ...func([]*univalue.Univalue) []
 }
 
 func (this *WriteCache) Print() {
-	values := mapi.Values(this.kvDict)
+	// values := mapi.Values(this.kvDict)
+	values := this.cache.Values()
+
 	sort.SliceStable(values, func(i, j int) bool {
 		return *values[i].GetPath() < *values[j].GetPath()
 	})

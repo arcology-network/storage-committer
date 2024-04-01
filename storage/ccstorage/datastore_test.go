@@ -25,14 +25,17 @@ func TestDatastoreBasic(t *testing.T) {
 	values := [][]byte{{1, 2, 3}, {4, 5, 6}, {5, 5, 5}}
 
 	//policy := policy.NewCachePolicy(1234, 1.0)
-	encoder := func(_ string, v interface{}) []byte { return codec.Bytes(v.([]byte)).Encode() }
+	encoder := func(k string, v interface{}) []byte {
+		return codec.Bytes(v.([]byte)).Encode()
+	}
+
 	decoder := func(_ string, data []byte, _ any) interface{} {
 		return []byte(codec.Bytes("").Decode(data).(codec.Bytes))
 	}
 
 	// fileDB.BatchSet(keys, values)
 	policy := policy.NewCachePolicy(0, 0)
-	store := NewDataStore[string, []byte](nil, policy, fileDB, encoder, decoder)
+	store := NewDataStore(nil, policy, fileDB, encoder, decoder)
 
 	vs := make([]interface{}, len(values))
 	for i := 0; i < len(values); i++ {
@@ -73,7 +76,7 @@ func TestDatastorePersistentStorage(t *testing.T) {
 
 	// fileDB.BatchSet(keys, values)
 	policy := policy.NewCachePolicy(math.MaxUint64, 1)
-	store := NewDataStore[string, []byte](nil, policy, fileDB, encoder, decoder)
+	store := NewDataStore(nil, policy, fileDB, encoder, decoder)
 
 	vs := make([]interface{}, len(values))
 	for i := 0; i < len(values); i++ {
@@ -125,7 +128,7 @@ func TestDatastorePrefetch(t *testing.T) {
 	// }
 
 	policy := policy.NewCachePolicy(math.MaxUint64, 1)
-	store := NewDataStore[string, []byte](nil, policy, fileDB, encoder, decoder)
+	store := NewDataStore(nil, policy, fileDB, encoder, decoder)
 
 	vs := make([]interface{}, len(values))
 	for i := 0; i < len(values); i++ {

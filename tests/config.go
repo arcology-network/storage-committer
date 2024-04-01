@@ -37,6 +37,6 @@ func chooseDataStore() interfaces.Datastore {
 	// store.DisableCache()
 	return store
 	// return storage.NewLevelDBDataStore("/tmp")
-	// return datastore.NewDataStore[string, intf.Type](nil, datastore.NewCachePolicy(1000000, 1), memdb.NewMemoryDB(), encoder, decoder)
+	// return datastore.NewDataStore(nil, datastore.NewCachePolicy(1000000, 1), memdb.NewMemoryDB(), encoder, decoder)
 	// return storage.NewDataStore(nil, storage.NewCachePolicy(0, 1), storage.NewMemoryDB(), encoder, decoder)
 }

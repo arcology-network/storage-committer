@@ -18,7 +18,7 @@
 package proxy
 
 import (
-	cache "github.com/arcology-network/common-lib/cache"
+	cache "github.com/arcology-network/common-lib/storage/cache"
 	intf "github.com/arcology-network/storage-committer/interfaces"
 )
 

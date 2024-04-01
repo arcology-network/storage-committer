@@ -44,7 +44,6 @@ func commitToStateStore(store interfaces.Datastore, t *testing.T) {
 	stateStore.Import(acctTrans).Precommit([]uint32{stgcomm.SYSTEM})
 	stateStore.Commit(stgcomm.SYSTEM)
 	stateStore.Clear()
-	stateStore.Clear()
 
 	if _, err := stateStore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(0), noncommutative.NewBytes([]byte{1, 2, 3})); err != nil {
 		t.Error(err)
