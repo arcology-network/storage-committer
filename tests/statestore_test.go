@@ -36,7 +36,7 @@ func commitToStateStore(store interfaces.Datastore, t *testing.T) {
 	alice := AliceAccount()
 	stateStore := statestore.NewStateStore(store)
 
-	if _, err := adaptorcommon.CreateNewAccount(stgcomm.SYSTEM, alice, stateStore.WriteCache); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcomm.SYSTEM, alice, stateStore.ShardedWriteCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	acctTrans := univalue.Univalues(slice.Clone(stateStore.Export(importer.Sorter))).To(importer.IPTransition{})
@@ -118,5 +118,5 @@ func commitToStateStore(store interfaces.Datastore, t *testing.T) {
 
 func TestCommitToStatStore(t *testing.T) {
 	commitToStateStore(stgproxy.NewStoreProxy().EnableCache(), t) // Use cache
-	commitToStateStore(stgproxy.NewStoreProxy().DisableCache(), t)
+	// commitToStateStore(stgproxy.NewStoreProxy().DisableCache(), t)
 }

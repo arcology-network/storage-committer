@@ -96,6 +96,18 @@ func (this Univalues) SortByKey() Univalues {
 	return this
 }
 
+func (this Univalues) SortByDepth() Univalues {
+	depths := make([]int, len(this))
+	for i, v := range this {
+		depths[i] = strings.Count(*v.GetPath(), "/")
+	}
+
+	slice.SortBy1st(depths, ([]*Univalue)(this), func(i, j int) bool {
+		return depths[i] < depths[j]
+	})
+	return this
+}
+
 func (this Univalues) Sort(groupIDs []uint32) Univalues {
 	sortees := make([]struct {
 		groupID uint32

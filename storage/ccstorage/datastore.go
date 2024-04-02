@@ -121,7 +121,7 @@ func (this *DataStore) BatchInject(keys []string, values []interface{}) error {
 		this.keyCompressor.Commit()
 	}
 
-	this.batchAddToCache(this.GetParitions(keys), keys, values)
+	this.batchAddToCache(this.GetPartitions(keys), keys, values)
 	encoded := make([][]byte, len(keys))
 	for i := 0; i < len(keys); i++ {
 		encoded[i] = this.encoder(keys[i], values[i])
@@ -227,7 +227,7 @@ func (this *DataStore) BatchRetrive(keys []string, T []any) []interface{} {
 				}
 			}
 		}
-		this.batchAddToCache(this.GetParitions(keys), keys, values) //update to the local cache and add all the missing values to the cache
+		this.batchAddToCache(this.GetPartitions(keys), keys, values) //update to the local cache and add all the missing values to the cache
 	}
 	return values
 }
@@ -258,7 +258,7 @@ func (this *DataStore) Precommit(arg ...interface{}) [32]byte {
 		}
 	}
 
-	this.partitionIDs = append(this.partitionIDs, this.GetParitions(keys)...)
+	this.partitionIDs = append(this.partitionIDs, this.GetPartitions(keys)...)
 	this.keyBuffer = append(this.keyBuffer, compressedKeys...)
 	this.valueBuffer = append(this.valueBuffer, values...)
 	this.encodedBuffer = append(this.encodedBuffer, encodedBuffer...)
@@ -266,7 +266,7 @@ func (this *DataStore) Precommit(arg ...interface{}) [32]byte {
 }
 
 // The function calculates the partition id for each key
-func (this *DataStore) GetParitions(keys []string) []uint64 {
+func (this *DataStore) GetPartitions(keys []string) []uint64 {
 	return slice.ParallelTransform(keys, 4, func(i int, k string) uint64 {
 		return this.cccache.Hash(k)
 	})

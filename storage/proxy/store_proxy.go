@@ -88,27 +88,27 @@ func (this *StorageProxy) Retrive(key string, v any) (interface{}, error) {
 	return this.GetStorage(key).Retrive(key, v)
 }
 
-func (this *StorageProxy) Precommit(args ...interface{}) [32]byte { return [32]byte{} }
+func (this *StorageProxy) Precommit(args ...interface{}) [32]byte { return this.ethDataStore.Root() }
 func (this *StorageProxy) Commit(blockNum uint64) error           { return nil }
 
 // Get the stores that can be
-func (this *StorageProxy) Committable() []*associative.Pair[intf.Indexer[*univalue.Univalue], []intf.WritableStore] {
-	bufferPair := &associative.Pair[intf.Indexer[*univalue.Univalue], []intf.WritableStore]{
+func (this *StorageProxy) Committable() []*associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore] {
+	bufferPair := &associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore]{
 		First: NewIndexer(this),
-		Second: []intf.WritableStore{
+		Second: []intf.CommittableStore{
 			this.objectCache,
 		}}
 
-	ethPair := &associative.Pair[intf.Indexer[*univalue.Univalue], []intf.WritableStore]{
+	ethPair := &associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore]{
 		First:  ethstg.NewIndexer(this),
-		Second: []intf.WritableStore{this.EthStore()},
+		Second: []intf.CommittableStore{this.EthStore()},
 	}
-	ccPair := &associative.Pair[intf.Indexer[*univalue.Univalue], []intf.WritableStore]{
+	ccPair := &associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore]{
 		First:  ccstg.NewIndexer(this),
-		Second: []intf.WritableStore{this.CCStore()},
+		Second: []intf.CommittableStore{this.CCStore()},
 	}
 
-	return []*associative.Pair[intf.Indexer[*univalue.Univalue], []intf.WritableStore]{
+	return []*associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore]{
 		bufferPair,
 		ethPair,
 		ccPair,

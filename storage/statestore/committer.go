@@ -34,24 +34,24 @@ import (
 // StateCommitter represents a storage committer.
 // The main purpose of the StateCommitter is to commit the transitions to the different stores.
 type StateCommitter struct {
-	store          intf.Datastore
-	platform       *platform.Platform
-	WritableStores []*associative.Pair[intf.Indexer[*univalue.Univalue], []intf.WritableStore] // backends Committable
-	byPath         *indexer.UnorderedIndexer[string, *univalue.Univalue, []*univalue.Univalue]
-	byTxID         *indexer.UnorderedIndexer[uint32, *univalue.Univalue, []*univalue.Univalue]
+	store             intf.Datastore
+	platform          *platform.Platform
+	CommittableStores []*associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore] // backends Committable
+	byPath            *indexer.UnorderedIndexer[string, *univalue.Univalue, []*univalue.Univalue]
+	byTxID            *indexer.UnorderedIndexer[uint32, *univalue.Univalue, []*univalue.Univalue]
 
 	Err error
 }
 
-// NewStorageCommitter creates a new StateCommitter instance. The WritableStores are the stores that can be committed.
+// NewStorageCommitter creates a new StateCommitter instance. The CommittableStores are the stores that can be committed.
 // A Committable store is a pair of an index and a store. The index is used to index the input transitions as they are
 // received, and the store is used to commit the indexed transitions. Since multiple store can share the same index, each
-// WritableStore is an indexer and a list of Committable stores.
+// CommittableStore is an indexer and a list of Committable stores.
 func NewStateCommitter(store intf.Datastore) *StateCommitter {
 	return &StateCommitter{
-		store:          store,
-		platform:       platform.NewPlatform(),
-		WritableStores: store.(*stgproxy.StorageProxy).Committable(),
+		store:             store,
+		platform:          platform.NewPlatform(),
+		CommittableStores: store.(*stgproxy.StorageProxy).Committable(),
 
 		byPath: PathIndexer(store), // By storage path
 		byTxID: TxIndexer(store),   // By tx ID
@@ -76,7 +76,7 @@ func (this *StateCommitter) Import(transitions []*univalue.Univalue, args ...int
 	this.byPath.Add(transitions)
 	this.byTxID.Add(transitions)
 
-	for _, pair := range this.WritableStores {
+	for _, pair := range this.CommittableStores {
 		pair.First.Add(transitions)
 	}
 	return this
@@ -114,7 +114,7 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 	})
 
 	// Commit the transitions to different stores
-	for _, pair := range this.WritableStores {
+	for _, pair := range this.CommittableStores {
 		for _, store := range pair.Second {
 			pair.First.Finalize()       // Remove the excluded transitions
 			store.Precommit(pair.First) // Commit the transitions
@@ -125,7 +125,7 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 
 // Commit commits the transitions to different stores.
 func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
-	for _, pair := range this.WritableStores {
+	for _, pair := range this.CommittableStores {
 		for _, store := range pair.Second {
 			store.Commit(blockNum)
 		}
@@ -138,7 +138,7 @@ func (this *StateCommitter) Clear() {
 	this.byPath.Clear()
 	this.byTxID.Clear()
 
-	for _, pair := range this.WritableStores {
+	for _, pair := range this.CommittableStores {
 		pair.First.Clear()
 	}
 }
