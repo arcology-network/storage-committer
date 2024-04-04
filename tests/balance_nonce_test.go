@@ -8,10 +8,10 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/slice"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
-	stgcommitter "github.com/arcology-network/storage-committer"
+	stgcommitter "github.com/arcology-network/storage-committer/committer"
+	importer "github.com/arcology-network/storage-committer/committer/importer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
-	importer "github.com/arcology-network/storage-committer/importer"
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 	platform "github.com/arcology-network/storage-committer/platform"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
@@ -23,7 +23,7 @@ import (
 func TestSimpleBalance(t *testing.T) {
 	store := chooseDataStore()
 
-	committer := stgcommitter.NewStorageCommitter(store)
+	committer := stgcommitter.NewStateCommitter(store)
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	alice := AliceAccount()
@@ -208,7 +208,7 @@ func TestNonce(t *testing.T) {
 
 	trans := univalue.Univalues((writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
-	committer := stgcommitter.NewStorageCommitter(store)
+	committer := stgcommitter.NewStateCommitter(store)
 	committer.Import(trans)
 
 	committer.Precommit([]uint32{0})
@@ -269,7 +269,7 @@ func TestMultipleNonces(t *testing.T) {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
 	}
 
-	committer := stgcommitter.NewStorageCommitter(store)
+	committer := stgcommitter.NewStateCommitter(store)
 	committer.Import(trans0)
 	committer.Import(trans1)
 
@@ -279,7 +279,7 @@ func TestMultipleNonces(t *testing.T) {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be 2", " actual: ", bobNonce)
 	}
 
-	committer = stgcommitter.NewStorageCommitter(store)
+	committer = stgcommitter.NewStateCommitter(store)
 
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
@@ -300,7 +300,7 @@ func TestMultipleNonces(t *testing.T) {
 func TestUint64Delta(t *testing.T) {
 	store := stgproxy.NewStoreProxy()
 	alice := AliceAccount()
-	committer := stgcommitter.NewStorageCommitter(store)
+	committer := stgcommitter.NewStateCommitter(store)
 
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
@@ -331,7 +331,7 @@ func TestUint64Delta(t *testing.T) {
 	fmt.Println("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 	acctTrans1.Print()
 
-	committer = stgcommitter.NewStorageCommitter(store)
+	committer = stgcommitter.NewStateCommitter(store)
 	committer.Import(acctTrans0)
 	committer.Import(acctTrans1)
 	committer.Precommit([]uint32{1, 2})

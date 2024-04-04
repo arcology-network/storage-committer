@@ -7,10 +7,10 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/slice"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
-	stgcommitter "github.com/arcology-network/storage-committer"
+	stgcommitter "github.com/arcology-network/storage-committer/committer"
+	importer "github.com/arcology-network/storage-committer/committer/importer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
-	importer "github.com/arcology-network/storage-committer/importer"
 	platform "github.com/arcology-network/storage-committer/platform"
 	cache "github.com/arcology-network/storage-committer/storage/writecache"
 	univalue "github.com/arcology-network/storage-committer/univalue"
@@ -39,7 +39,7 @@ func TestCacheMultiAccountCreation(t *testing.T) {
 		t.Error("Error: Transition counts don't match up")
 	}
 
-	committer := stgcommitter.NewStorageCommitter(store)
+	committer := stgcommitter.NewStateCommitter(store)
 	committer.Import(acctTrans)
 
 	committer.Precommit([]uint32{0})

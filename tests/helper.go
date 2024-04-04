@@ -6,8 +6,8 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
+	importer "github.com/arcology-network/storage-committer/committer/importer"
 	commutative "github.com/arcology-network/storage-committer/commutative"
-	importer "github.com/arcology-network/storage-committer/importer"
 	"github.com/arcology-network/storage-committer/interfaces"
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 	platform "github.com/arcology-network/storage-committer/platform"

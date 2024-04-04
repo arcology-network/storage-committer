@@ -3,7 +3,9 @@ package ccstorage
 import (
 	"crypto/sha256"
 	"errors"
+	"fmt"
 	"sync"
+	"time"
 
 	addrcompressor "github.com/arcology-network/common-lib/addrcompressor"
 	codec "github.com/arcology-network/common-lib/codec"
@@ -26,9 +28,9 @@ type DataStore struct {
 
 	keyCompressor *addrcompressor.CompressionLut
 	cccache       *cache.ReadCache[string, any]
-
-	encoder func(string, interface{}) []byte
-	decoder func(string, []byte, any) interface{}
+	queue         chan *CCIndexer
+	encoder       func(string, interface{}) []byte
+	decoder       func(string, []byte, any) interface{}
 
 	partitionIDs []uint64
 
@@ -59,8 +61,9 @@ func NewDataStore(
 			},
 			cachePolicy,
 		),
+		queue:         make(chan *CCIndexer, 64),
 		keyCompressor: keyCompressor,
-		// cachePolicy:   cachePolicy,
+
 		db:      db,
 		encoder: encoder,
 		decoder: decoder,
@@ -274,6 +277,11 @@ func (this *DataStore) GetPartitions(keys []string) []uint64 {
 
 // Commit the changes to the local cache and the persistent storage
 func (this *DataStore) Commit(_ uint64) error {
+	for len(this.queue) != 0 {
+		fmt.Println("Waiting for the job queue to be empty")
+		time.Sleep(100 * time.Millisecond)
+	}
+
 	defer this.commitLock.Unlock()                                            // Unlock the process after the final commit is done.
 	this.batchAddToCache(this.partitionIDs, this.keyBuffer, this.valueBuffer) // update the local cache
 

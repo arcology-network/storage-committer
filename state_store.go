@@ -18,6 +18,7 @@
 package statestore
 
 import (
+	stgcomm "github.com/arcology-network/storage-committer/committer"
 	intf "github.com/arcology-network/storage-committer/interfaces"
 	writecache "github.com/arcology-network/storage-committer/storage/writecache"
 	"github.com/arcology-network/storage-committer/univalue"
@@ -27,12 +28,12 @@ import (
 // Buffer is simpliest  of indexers. It does not index anything, just stores the transitions.
 type StateStore struct {
 	*writecache.ShardedWriteCache
-	store     intf.Datastore
-	committer *StateCommitter
+	store     intf.ReadOnlyDataStore
+	committer *stgcomm.StateCommitter
 }
 
 // New creates a new StateCommitter instance.
-func NewStateStore(store intf.Datastore) *StateStore {
+func NewStateStore(store intf.ReadOnlyDataStore) *StateStore {
 	return &StateStore{
 		store: store,
 		ShardedWriteCache: writecache.NewShardedWriteCache(
@@ -43,12 +44,17 @@ func NewStateStore(store intf.Datastore) *StateStore {
 				return xxhash.Sum64String(k)
 			},
 		),
-		committer: NewStateCommitter(store),
+		committer: stgcomm.NewStateCommitter(store),
 	}
 }
 
-func (this *StateStore) Store() intf.Datastore      { return this.store }
-func (this *StateStore) Committer() *StateCommitter { return this.committer }
+func (this *StateStore) Store() intf.ReadOnlyDataStore      { return this.store }
+func (this *StateStore) Committer() *stgcomm.StateCommitter { return this.committer }
+
+// The committer will commit the transactions to different stores registered with the committer.
+func (this *StateStore) Precommit(tx []uint32) [32]byte {
+	return this.committer.Precommit(tx)
+}
 
 func (this *StateStore) Commit(blockNum uint64) *StateStore {
 	this.committer.Commit(blockNum)

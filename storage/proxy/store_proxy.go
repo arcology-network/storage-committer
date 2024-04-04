@@ -89,7 +89,10 @@ func (this *StorageProxy) Retrive(key string, v any) (interface{}, error) {
 }
 
 func (this *StorageProxy) Precommit(args ...interface{}) [32]byte { return this.ethDataStore.Root() }
-func (this *StorageProxy) Commit(blockNum uint64) error           { return nil }
+func (this *StorageProxy) Commit(blockNum uint64) error {
+	// for len(this.qu)
+	return nil
+}
 
 // Get the stores that can be
 func (this *StorageProxy) Committable() []*associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore] {

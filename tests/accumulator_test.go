@@ -7,9 +7,9 @@ import (
 	"github.com/arcology-network/common-lib/exp/slice"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	arbitrator "github.com/arcology-network/storage-committer/arbitrator"
+	importer "github.com/arcology-network/storage-committer/committer/importer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
-	importer "github.com/arcology-network/storage-committer/importer"
 	platform "github.com/arcology-network/storage-committer/platform"
 	cache "github.com/arcology-network/storage-committer/storage/writecache"
 	univalue "github.com/arcology-network/storage-committer/univalue"
@@ -63,7 +63,7 @@ func TestAccumulatorLowerLimit(t *testing.T) {
 	store := chooseDataStore()
 
 	alice := AliceAccount()
-	// url := stgcommitter.NewStorageCommitter(store)
+	// url := stgcommitter.NewStateCommitter(store)
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)

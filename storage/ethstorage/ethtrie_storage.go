@@ -2,8 +2,10 @@ package ethstorage
 
 import (
 	"errors"
+	"fmt"
 	"runtime"
 	"sync"
+	"time"
 
 	"github.com/VictoriaMetrics/fastcache"
 	common "github.com/arcology-network/common-lib/common"
@@ -44,8 +46,7 @@ type EthDataStore struct {
 
 	ethdb   *ethmpt.Database
 	diskdbs [16]ethdb.Database
-	// cache       *cache.ReadCache[string, intf.Type]
-	// cacheActive bool
+	queue   chan *EthIndexer
 
 	encoder func(string, interface{}) []byte
 	decoder func(string, []byte, any) interface{}
@@ -75,17 +76,11 @@ func LoadEthDataStore(triedb *ethmpt.Database, root [32]byte) (*EthDataStore, er
 func NewEthDataStore(trie *ethmpt.Trie, triedb *ethmpt.Database, diskdb [16]ethdb.Database) *EthDataStore {
 	trieDbConfig := &hashdb.Config{CleanCacheSize: 1024 * 1024 * 100} // 100MB of the shared cache
 	return &EthDataStore{
-		ethdb:        triedb,
-		diskdbs:      diskdb,
-		trieDbConfig: trieDbConfig,
-		encodedCache: fastcache.New(trieDbConfig.CleanCacheSize),
-		accountCache: map[ethcommon.Address]*Account{},
-		// cache: cache.NewReadCache[string, intf.Type](
-		// 	4096, // 4096 shards to avoid lock contention
-		// 	// func(k string) uint64 { return xxhash.Sum64String(k) },
-		// 	func(v intf.Type) bool { return v == nil },
-		// ),
-		// cacheActive:    true,
+		ethdb:          triedb,
+		diskdbs:        diskdb,
+		trieDbConfig:   trieDbConfig,
+		encodedCache:   fastcache.New(trieDbConfig.CleanCacheSize),
+		accountCache:   map[ethcommon.Address]*Account{},
 		worldStateTrie: trie,
 		encoder:        Rlp{}.Encode,
 		decoder:        Rlp{}.Decode,
@@ -353,30 +348,8 @@ func (this *EthDataStore) Retrive(key string, T any) (interface{}, error) {
 	return nil, err
 }
 
-// Precommit update the account state tries and the world state trie.
-// It returns the hash of the world state trie.
-// func (this *EthDataStore) Precommit(arg ...interface{}) [32]byte {
-// 	pairs := arg[0].([]*associative.Pair[*Account, []*univalue.Univalue])
-// 	this.dirtyAccounts = associative.Pairs[*Account, []*univalue.Univalue](pairs).Firsts()
-// 	if len(pairs) == 0 {
-// 		return this.worldStateTrie.Hash() // No updates
-// 	}
-
-// 	// Need to check if this is necessary or could be moved to the import phase
-// 	slice.Foreach(this.dirtyAccounts, func(_ int, pair **Account) {
-// 		this.accountCache[(**pair).Address()] = (*pair) // Add the account to the cache
-// 	})
-
-// 	slice.ParallelForeach(pairs, runtime.NumCPU(), func(i int, acctTrans **associative.Pair[*Account, []*univalue.Univalue]) {
-// 		keys, vals := univalue.Univalues((*acctTrans).Second).KVs() // Get all transitions under the same account
-// 		this.dirtyAccounts[i].UpdateAccountTrie(keys, vals)
-// 	})
-// 	return this.WriteWorldTrie(this.dirtyAccounts)
-// }
-
 func (this *EthDataStore) Precommit(arg ...interface{}) [32]byte {
 	pairs := arg[0].(*EthIndexer).Get().([]*associative.Pair[*Account, []*univalue.Univalue])
-	// pairs := ([]*associative.Pair[*Account, []*univalue.Univalue])(idxer)
 	this.dirtyAccounts = associative.Pairs[*Account, []*univalue.Univalue](pairs).Firsts()
 	if len(pairs) == 0 {
 		return this.worldStateTrie.Hash() // No updates
@@ -424,14 +397,19 @@ func (this *EthDataStore) WriteWorldTrie(dirtyAccounts []*Account) [32]byte {
 }
 
 func (this *EthDataStore) Commit(blockNum uint64) error {
-	var err error
-	common.ParallelExecute(
-		func() {
-			// this.RefreshCache(blockNum)
-		},
-		func() { err = this.CommitToEthStorage(blockNum) },
-	)
+	// var err error
+	// common.ParallelExecute(
+	// 	func() {
+	// 		// this.RefreshCache(blockNum)
+	// 	},
+	// 	func() { err = this.CommitToEthStorage(blockNum) },
+	// )
+	for len(this.queue) != 0 {
+		fmt.Println("Waiting for the job queue to be empty")
+		time.Sleep(100 * time.Millisecond)
+	}
 
+	err := this.CommitToEthStorage(blockNum)
 	this.dirtyAccounts = this.dirtyAccounts[:0]
 	this.dirtyKeys = this.dirtyKeys[:0] // Reset the dirties buffer
 	this.dirtyVals = this.dirtyVals[:0]

@@ -10,10 +10,10 @@ import (
 	addrcompressor "github.com/arcology-network/common-lib/addrcompressor"
 	"github.com/arcology-network/common-lib/exp/slice"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
-	stgcommitter "github.com/arcology-network/storage-committer"
+	stgcommitter "github.com/arcology-network/storage-committer/committer"
+	importer "github.com/arcology-network/storage-committer/committer/importer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
-	importer "github.com/arcology-network/storage-committer/importer"
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 	platform "github.com/arcology-network/storage-committer/platform"
 	datastore "github.com/arcology-network/storage-committer/storage/ccstorage"
@@ -84,7 +84,7 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 
 	t0 := time.Now()
 
-	committer := stgcommitter.NewStorageCommitter(store)
+	committer := stgcommitter.NewStateCommitter(store)
 	committer.Import(transitions)
 
 	committer.Precommit([]uint32{0})
@@ -138,7 +138,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	trans = univalue.Univalues(trans).To(importer.IPTransition{})
 	fmt.Println("To(importer.ITTransition{}):", len(trans), "in ", time.Since(t0))
 
-	committer := stgcommitter.NewStorageCommitter(store)
+	committer := stgcommitter.NewStateCommitter(store)
 	t0 = time.Now()
 	committer.Import(trans)
 	fmt.Println("Import: ", len(trans), " in: ", time.Since(t0))
@@ -177,7 +177,7 @@ func BenchmarkAddThenDelete(b *testing.B) {
 	writeCache.Write(stgcommcommon.SYSTEM, stgcommcommon.ETH10_ACCOUNT_PREFIX, meta)
 	trans := univalue.Univalues(slice.Clone(writeCache.Export())).To(importer.ITTransition{})
 
-	committer := stgcommitter.NewStorageCommitter(store)
+	committer := stgcommitter.NewStateCommitter(store)
 	committer.Import(trans)
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
@@ -219,7 +219,7 @@ func BenchmarkAddThenPop(b *testing.B) {
 
 	trans := univalue.Univalues(slice.Clone(writeCache.Export())).To(importer.ITTransition{})
 
-	committer := stgcommitter.NewStorageCommitter(store)
+	committer := stgcommitter.NewStateCommitter(store)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
@@ -344,7 +344,7 @@ func BenchmarkEncodeTransitions(b *testing.B) {
 
 	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITAccess{})
 
-	committer := stgcommitter.NewStorageCommitter(store)
+	committer := stgcommitter.NewStateCommitter(store)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
@@ -418,7 +418,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	t0 = time.Now()
 
 	// transitions := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues)
-	committer := stgcommitter.NewStorageCommitter(store)
+	committer := stgcommitter.NewStateCommitter(store)
 	committer.Import(acctTrans)
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
@@ -643,7 +643,7 @@ func BenchmarkTransitionImport(b *testing.B) {
 
 	fmt.Println("-------------")
 	t0 = time.Now()
-	committer := stgcommitter.NewStorageCommitter(store)
+	committer := stgcommitter.NewStateCommitter(store)
 	committer.Import(acctTrans)
 	// accountMerkle.Import(acctTrans)
 	fmt.Println("committer + accountMerkle Import "+fmt.Sprint(150000*9), time.Since(t0))
@@ -655,7 +655,7 @@ func BenchmarkTransitionImport(b *testing.B) {
 // 	store.Inject((stgcommcommon.ETH10_ACCOUNT_PREFIX), meta)
 
 // 	t0 := time.Now()
-// 		committer := stgcommitter.NewStorageCommitter(store)
+// 		committer := stgcommitter.NewStateCommitter(store)
 // writeCache := committer.WriteCache()
 // 	for i := 0; i < 90000; i++ {
 // 		acct := addrcompressor.RandomAccount()

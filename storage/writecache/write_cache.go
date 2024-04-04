@@ -31,8 +31,8 @@ import (
 	committercommon "github.com/arcology-network/storage-committer/common"
 	platform "github.com/arcology-network/storage-committer/platform"
 
+	importer "github.com/arcology-network/storage-committer/committer/importer"
 	"github.com/arcology-network/storage-committer/commutative"
-	importer "github.com/arcology-network/storage-committer/importer"
 	"github.com/arcology-network/storage-committer/interfaces"
 	intf "github.com/arcology-network/storage-committer/interfaces"
 	univalue "github.com/arcology-network/storage-committer/univalue"
@@ -53,7 +53,7 @@ func NewWriteCache(backend intf.ReadOnlyDataStore, perPage int, numPages int, ar
 		backend:  backend,
 		kvDict:   make(map[string]*univalue.Univalue),
 		platform: platform.NewPlatform(),
-		pool: mempool.NewMempool[*univalue.Univalue](perPage, numPages, func() *univalue.Univalue {
+		pool: mempool.NewMempool(perPage, numPages, func() *univalue.Univalue {
 			return new(univalue.Univalue)
 		}, (&univalue.Univalue{}).Reset),
 	}

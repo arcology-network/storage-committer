@@ -27,14 +27,14 @@ import (
 
 	slice "github.com/arcology-network/common-lib/exp/slice"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
+	stgcommitter "github.com/arcology-network/storage-committer/committer"
+	importer "github.com/arcology-network/storage-committer/committer/importer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
-	importer "github.com/arcology-network/storage-committer/importer"
 	"github.com/arcology-network/storage-committer/interfaces"
 	opadapter "github.com/arcology-network/storage-committer/op"
 	platform "github.com/arcology-network/storage-committer/platform"
 	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
-	statestore "github.com/arcology-network/storage-committer/storage/statestore"
 	cache "github.com/arcology-network/storage-committer/storage/writecache"
 	"github.com/arcology-network/storage-committer/univalue"
 	ethcommon "github.com/ethereum/go-ethereum/common"
@@ -142,7 +142,7 @@ func FlushToStore(this *cache.WriteCache, store interfaces.Datastore) interfaces
 		return v.GetTx()
 	})
 
-	committer := statestore.NewStateCommitter(store)
+	committer := stgcommitter.NewStateCommitter(store)
 	committer.Import(acctTrans)
 	committer.Precommit(txs) // Write all the transitions to the store
 	committer.Commit(0)

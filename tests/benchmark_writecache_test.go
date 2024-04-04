@@ -26,10 +26,10 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/slice"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
-	stgcommitter "github.com/arcology-network/storage-committer"
+	stgcommitter "github.com/arcology-network/storage-committer/committer"
+	importer "github.com/arcology-network/storage-committer/committer/importer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
-	importer "github.com/arcology-network/storage-committer/importer"
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 	platform "github.com/arcology-network/storage-committer/platform"
 	cache "github.com/arcology-network/storage-committer/storage/writecache"
@@ -66,7 +66,7 @@ func TestWriteWithNewWriteCacheSlowWrite(b *testing.T) {
 	}
 	fmt.Println("First Write time:", len(keys)*2, "keys in", time.Since(t0))
 
-	committer := stgcommitter.NewStorageCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
+	committer := stgcommitter.NewStateCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
 	fmt.Println("Commit time:", time.Since(t0))
@@ -117,7 +117,7 @@ func TestWriteWithNewWriteCache(b *testing.T) {
 	fmt.Println("First Write time:", len(keys)*2, "keys in", time.Since(t0))
 
 	t0 = time.Now()
-	committer := stgcommitter.NewStorageCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
+	committer := stgcommitter.NewStateCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
 	fmt.Println("New committer + Import:", time.Since(t0))
 
 	t0 = time.Now()
@@ -170,7 +170,7 @@ func BenchmarkWriteAfterLargeCommitUint64(b *testing.B) {
 	fmt.Println("First Write time:", len(keys)*2, "keys in", time.Since(t0))
 
 	t0 = time.Now()
-	committer := stgcommitter.NewStorageCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
+	committer := stgcommitter.NewStateCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
 	fmt.Println("Commit time:", time.Since(t0))
@@ -202,7 +202,7 @@ func BenchmarkWriteAfterLargeCommitUint64(b *testing.B) {
 	fmt.Println("Second Write time:", len(keys)*2, "keys in", time.Since(t0))
 
 	t0 = time.Now()
-	committer = stgcommitter.NewStorageCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
+	committer = stgcommitter.NewStateCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
 	fmt.Println("2.Commit time:", time.Since(t0))
@@ -251,7 +251,7 @@ func BenchmarkWriteAfterLargeCommitUint256(b *testing.B) {
 	fmt.Println("First Write time:", len(keys)*2, "keys in", time.Since(t0))
 
 	t0 = time.Now()
-	committer := stgcommitter.NewStorageCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
+	committer := stgcommitter.NewStateCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
 	fmt.Println("Commit time:", time.Since(t0))
@@ -283,7 +283,7 @@ func BenchmarkWriteAfterLargeCommitUint256(b *testing.B) {
 	fmt.Println("Second Write time:", len(keys)*2, "keys in", time.Since(t0))
 
 	t0 = time.Now()
-	committer = stgcommitter.NewStorageCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
+	committer = stgcommitter.NewStateCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{}))
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
 	fmt.Println("2.Commit time:", time.Since(t0))
@@ -336,7 +336,7 @@ func BenchmarkPathReadAndWrites(b *testing.B) {
 	fmt.Println("Inserted ", len(keys), "Keys in:", time.Since(t0))
 
 	t0 = time.Now()
-	committer := stgcommitter.NewStorageCommitter(store).Import(writeCache.Export())
+	committer := stgcommitter.NewStateCommitter(store).Import(writeCache.Export())
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(0)
 	fmt.Println("committer ", len(keys), "Keys in:", time.Since(t0))

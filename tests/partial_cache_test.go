@@ -8,7 +8,7 @@ package committertest
 // 	"github.com/arcology-network/common-lib/common"
 // 	stgcomm "github.com/arcology-network/storage-committer"
 // 	stgcommcommon "github.com/arcology-network/storage-committer/common"
-// 	importer "github.com/arcology-network/storage-committer/importer"
+// 	importer "github.com/arcology-network/storage-committer/committer/importer"
 // 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 // 	storage "github.com/arcology-network/storage-committer/storage/proxy"
 // )
@@ -17,7 +17,7 @@ package committertest
 // 	memDB := storage.NewMemoryDB()
 // 	policy := storage.NewCachePolicy(10000000, 1.0)
 // 	store := storage.NewDataStore(nil, policy, memDB, platform.Codec{}.Encode, platform.Codec{}.Decode)
-// 		committer := stgcommitter.NewStorageCommitter(store)
+// 		committer := stgcommitter.NewStateCommitter(store)
 // writeCache := committer.WriteCache()
 // 	alice := AliceAccount()
 // 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
@@ -80,7 +80,7 @@ package committertest
 // 	}
 
 // 	store := storage.NewDataStore(nil, policy, memDB, platform.Codec{}.Encode, platform.Codec{}.Decode, excludeMemDB)
-// 		committer := stgcommitter.NewStorageCommitter(store)
+// 		committer := stgcommitter.NewStateCommitter(store)
 // writeCache := committer.WriteCache()
 // 	alice := AliceAccount()
 // 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
@@ -100,7 +100,7 @@ package committertest
 
 // 	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
 
-// 	// 	committer := stgcommitter.NewStorageCommitter(store)
+// 	// 	committer := stgcommitter.NewStateCommitter(store)
 // writeCache := committer.WriteCache()
 
 // 	committer.WriteCache().Clear()

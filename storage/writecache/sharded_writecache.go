@@ -38,6 +38,7 @@ type ShardedWriteCache struct {
 	backend intf.ReadOnlyDataStore
 	caches  [NUM_SHARDS]*WriteCache
 	hasher  func(string) uint64
+	queue   chan *[]*univalue.Univalue
 }
 
 func NewShardedWriteCache(backend intf.ReadOnlyDataStore, perPage int, numPages int, hasher func(string) uint64, args ...interface{}) *ShardedWriteCache {
@@ -49,6 +50,7 @@ func NewShardedWriteCache(backend intf.ReadOnlyDataStore, perPage int, numPages 
 	for i := 0; i < len(writeCache.caches); i++ {
 		writeCache.caches[i] = NewWriteCache(backend, perPage, numPages, args...)
 	}
+	writeCache.queue = make(chan *[]*univalue.Univalue, 64)
 	return writeCache
 }
 
@@ -107,9 +109,9 @@ func (this *ShardedWriteCache) Insert(transitions []*univalue.Univalue) *Sharded
 }
 
 // Reset the writecache to the initial state for the next round of processing.
-func (this *ShardedWriteCache) Precommit(args ...interface{}) [NUM_SHARDS]byte {
+func (this *ShardedWriteCache) Precommit(args ...interface{}) [32]byte {
 	this.Insert(args[0].([]*univalue.Univalue))
-	return [NUM_SHARDS]byte{}
+	return [32]byte{}
 }
 
 func (this *ShardedWriteCache) Clear() *ShardedWriteCache {

@@ -17,6 +17,10 @@
 package proxy
 
 import (
+	"fmt"
+	"time"
+
+	"github.com/arcology-network/common-lib/exp/associative"
 	cache "github.com/arcology-network/common-lib/storage/cache"
 	policy "github.com/arcology-network/common-lib/storage/policy"
 	intf "github.com/arcology-network/storage-committer/interfaces"
@@ -27,19 +31,23 @@ import (
 // by the intf.Datastore interface to work with the storage-committer.
 type ReadCache struct {
 	*cache.ReadCache[string, intf.Type] // Provide Readonly interface
+	queue                               chan *associative.Pair[[]string, []intf.Type]
 }
 
 func NewReadCache(store intf.Datastore) *ReadCache {
-	return &ReadCache{cache.NewReadCache[string, intf.Type](
-		4096, // 4096 shards to avoid lock contention
-		func(v intf.Type) bool {
-			return v == nil
-		},
-		func(k string) uint64 {
-			return uint64(xxhash.Sum64String(k))
-		},
-		policy.NewCachePolicy(0, 0),
-	)}
+	return &ReadCache{
+		cache.NewReadCache[string, intf.Type](
+			4096, // 4096 shards to avoid lock contention
+			func(v intf.Type) bool {
+				return v == nil
+			},
+			func(k string) uint64 {
+				return uint64(xxhash.Sum64String(k))
+			},
+			policy.NewCachePolicy(0, 0),
+		),
+		make(chan *associative.Pair[[]string, []intf.Type], 16),
+	}
 }
 
 // Read cache does not have a precommit method equivalent to the write cache
@@ -49,4 +57,11 @@ func (this *ReadCache) Precommit(args ...interface{}) [32]byte {
 	return [32]byte{}
 }
 
-func (this *ReadCache) Commit(placeHolder uint64) error { return nil }
+// Changes have been committed to the cache in Precommit, so we can return nil
+func (this *ReadCache) Commit(placeHolder uint64) error {
+	for len(this.queue) != 0 {
+		fmt.Println("Waiting for the job queue to be empty")
+		time.Sleep(50 * time.Millisecond)
+	}
+	return nil
+}
