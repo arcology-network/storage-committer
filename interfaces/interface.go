@@ -65,7 +65,7 @@ type WritableCacheInterface interface {
 type Indexer[T any] interface {
 	Add([]T)
 	Get() any
-	Finalize()
+	Finalize(CommittableStore)
 	Clear()
 }
 

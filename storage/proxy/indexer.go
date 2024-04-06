@@ -48,7 +48,7 @@ func (this *Buffer) Get() interface{} {
 	return []interface{}{keys, tVals}
 }
 
-func (this *Buffer) Finalize() {
+func (this *Buffer) Finalize(_ intf.CommittableStore) {
 	slice.RemoveIf((*[]*univalue.Univalue)(this), func(i int, v *univalue.Univalue) bool { return v.GetPath() == nil })
 }
 func (this *Buffer) Clear() { *this = (*this)[:0] }

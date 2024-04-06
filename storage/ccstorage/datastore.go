@@ -23,16 +23,17 @@ import (
 )
 
 type DataStore struct {
-	db   commonintf.PersistentStorage
-	lock sync.RWMutex
+	db      commonintf.PersistentStorage
+	cccache *cache.ReadCache[string, any]
 
 	keyCompressor *addrcompressor.CompressionLut
-	cccache       *cache.ReadCache[string, any]
-	queue         chan *CCIndexer
-	encoder       func(string, interface{}) []byte
-	decoder       func(string, []byte, any) interface{}
 
-	partitionIDs  []uint64
+	lock        sync.RWMutex
+	queue       chan *CCIndexer
+	commitQueue chan *CCIndexer
+	encoder     func(string, interface{}) []byte
+	decoder     func(string, []byte, any) interface{}
+
 	keyBuffer     []string
 	valueBuffer   []interface{}
 	encodedBuffer [][]byte //The encoded buffer contains the encoded values
@@ -49,7 +50,6 @@ func NewDataStore(
 	decoder func(string, []byte, any) interface{},
 ) *DataStore {
 	dataStore := &DataStore{
-		partitionIDs: make([]uint64, 0, 65536),
 		cccache: cache.NewReadCache(
 			16,
 			func(T any) bool {
@@ -61,6 +61,7 @@ func NewDataStore(
 			cachePolicy,
 		),
 		queue:         make(chan *CCIndexer, 64),
+		commitQueue:   make(chan *CCIndexer, 64),
 		keyCompressor: keyCompressor,
 
 		db:      db,
@@ -112,8 +113,8 @@ func (this *DataStore) Inject(key string, v interface{}) error {
 		this.keyCompressor.Commit()
 	}
 
-	this.addToCache(key, v)
-	return this.batchWritePersistentStorage([]string{key}, [][]byte{this.encoder(key, v)})
+	this.cccache.Set(key, v)
+	return this.db.BatchSet([]string{key}, [][]byte{this.encoder(key, v)})
 }
 
 // Inject directly to the local cache.
@@ -129,7 +130,7 @@ func (this *DataStore) BatchInject(keys []string, values []interface{}) error {
 	for i := 0; i < len(keys); i++ {
 		encoded[i] = this.encoder(keys[i], values[i])
 	}
-	return this.batchWritePersistentStorage(keys, encoded)
+	return this.db.BatchSet(keys, encoded)
 }
 
 func (this *DataStore) RetriveFromStorage(key string, T any) (interface{}, error) {
@@ -150,35 +151,6 @@ func (this *DataStore) RetriveFromStorage(key string, T any) (interface{}, error
 	return nil, err
 }
 
-func (this *DataStore) batchFetchPersistentStorage(keys []string) ([][]byte, error) {
-	if this.db == nil {
-		return nil, errors.New("Error: DB not found")
-	}
-
-	this.lock.RLock()
-	defer this.lock.RUnlock()
-	return this.db.BatchGet(keys) // Get from the cache
-}
-
-func (this *DataStore) batchWritePersistentStorage(keys []string, encodedValues [][]byte) error {
-	if this.db == nil {
-		return errors.New("Error: DB not found")
-	}
-
-	this.lock.Lock()
-	defer this.lock.Unlock()
-	return this.db.BatchSet(keys, encodedValues)
-}
-
-func (this *DataStore) addToCache(key string, value interface{}) {
-	this.cccache.Set(key, value)
-}
-
-// func (this *DataStore) batchAddToCache(keys []string, values []interface{}) {
-// 	// this.GetPartitions(keys)
-// 	this.cccache.BatchGet(keys, values)
-// }
-
 func (this *DataStore) Buffers() ([]string, []interface{}, [][]byte) {
 	return this.keyBuffer, this.valueBuffer, this.encodedBuffer
 }
@@ -195,7 +167,7 @@ func (this *DataStore) Retrive(key string, T any) (interface{}, error) {
 
 	v, err := this.RetriveFromStorage(key, T)
 	if err == nil && T != nil {
-		this.addToCache(key, v) //update to the local cache and add all the missing values to the cache
+		this.cccache.Set(key, v) //update to the local cache and add all the missing values to the cache
 	}
 	return v, err
 }
@@ -221,7 +193,7 @@ func (this *DataStore) BatchRetrive(keys []string, T []any) []interface{} {
 		}
 	}
 
-	if data, err := this.batchFetchPersistentStorage(queryKeys); err == nil { // search for the values that aren't in the cache
+	if data, err := this.db.BatchGet(queryKeys); err == nil { // search for the values that aren't in the cache
 		for i, idx := range queryIdxes {
 			if data[i] != nil {
 				if len(T) > 0 {
@@ -243,8 +215,8 @@ func (this *DataStore) Clear() {
 }
 
 func (this *DataStore) Precommit(arg ...interface{}) [32]byte {
-	kvs := arg[0].(*CCIndexer).Get().([]interface{})
-	keys, values := kvs[0].([]string), kvs[1].([]interface{})
+	kvs := arg[0].(*CCIndexer).Get().(*CCIndexer)
+	keys, values := kvs.keyBuffer, kvs.valueBuffer
 
 	this.commitLock.Lock() // Lock the process, only unlock after the final commit is done.
 	defer this.commitLock.Unlock()
@@ -268,15 +240,34 @@ func (this *DataStore) Precommit(arg ...interface{}) [32]byte {
 	return [32]byte{}
 }
 
-// The function calculates the partition id for each key
-// func (this *DataStore) GetPartitions(keys []string) []uint64 {
-// 	return slice.ParallelTransform(keys, 4, func(i int, k string) uint64 {
-// 		return this.cccache.Hash(k)
-// 	})
-// }
-
 // Commit the changes to the local cache and the persistent storage
 func (this *DataStore) Commit(_ uint64) error {
+	for len(this.queue) != 0 {
+		fmt.Println("Waiting for the job queue to be emptied")
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	this.commitLock.Lock()
+	defer this.commitLock.Unlock() // Unlock the process after the final commit is done.
+	// this.batchAddToCache(this.partitionIDs, this.keyBuffer, this.valueBuffer) // update the local cache
+
+	var err error
+	if this.keyCompressor != nil {
+		common.ParallelExecute(
+			// return this.db.BatchSet(keys, encodedValues)
+			func() { err = this.db.BatchSet(this.keyBuffer, this.encodedBuffer) }, // Write data back
+			func() { this.keyCompressor.Commit() })
+
+	} else {
+		err = this.db.BatchSet(this.keyBuffer, this.encodedBuffer)
+	}
+
+	this.cccache.BatchSet(this.keyBuffer, this.valueBuffer) // update the local cache
+	this.Clear()
+	return err
+}
+
+func (this *DataStore) CommitV2(idx *CCIndexer) error {
 	for len(this.queue) != 0 {
 		fmt.Println("Waiting for the job queue to be emptied")
 		time.Sleep(100 * time.Millisecond)

@@ -17,15 +17,30 @@
 
 package ccstorage
 
+func (this *DataStore) Start() {
+	go func() {
+		for {
+			idxer := <-this.queue
+			this.Precommit(idxer)
+		}
+	}()
+
+	go func() {
+		for {
+			idxer := <-this.commitQueue
+			this.CommitV2(idxer)
+		}
+	}()
+}
+
 func (this *DataStore) AsyncPrecommit(args ...interface{}) {
 	idxer := args[0].(*CCIndexer)
 	// this.queue <- idxer
 	this.Precommit(idxer)
 }
 
-func (this *DataStore) Start() {
-	// for {
-	// 	idxer := <-this.queue
-	// 	this.Precommit(idxer)
-	// }
+func (this *DataStore) AsyncCommit(args ...interface{}) {
+	idxer := args[0].(*CCIndexer)
+	this.queue <- idxer
+	this.CommitV2(idxer)
 }
