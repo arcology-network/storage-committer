@@ -117,8 +117,8 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 	// Commit the transitions to different stores
 	for _, pair := range this.committableStores {
 		for _, store := range pair.Second {
-			pair.First.Finalize()       // Remove the excluded transitions
-			store.Precommit(pair.First) // Commit the transitions
+			pair.First.Finalize()            // Remove the excluded transitions
+			store.AsyncPrecommit(pair.First) // Commit the transitions
 		}
 	}
 	return [32]byte{} // Write to the DB buffer

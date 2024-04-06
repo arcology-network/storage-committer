@@ -17,9 +17,6 @@
 package proxy
 
 import (
-	"fmt"
-	"time"
-
 	"github.com/arcology-network/common-lib/exp/associative"
 	cache "github.com/arcology-network/common-lib/storage/cache"
 	policy "github.com/arcology-network/common-lib/storage/policy"
@@ -52,16 +49,16 @@ func NewReadCache(store intf.Datastore) *ReadCache {
 
 // Read cache does not have a precommit method equivalent to the write cache
 func (this *ReadCache) Precommit(args ...interface{}) [32]byte {
-	kvs := args[0].(*Buffer).Get().([]interface{})
-	this.ReadCache.Commit(kvs[0].([]string), kvs[1].([]intf.Type))
+	pair := args[0].(*associative.Pair[[]string, []intf.Type])
+	this.ReadCache.Commit(pair.First, pair.Second)
 	return [32]byte{}
 }
 
 // Changes have been committed to the cache in Precommit, so we can return nil
 func (this *ReadCache) Commit(placeHolder uint64) error {
-	for len(this.queue) != 0 {
-		fmt.Println("Waiting for the job queue to be empty")
-		time.Sleep(50 * time.Millisecond)
-	}
+	// for len(this.queue) != 0 {
+	// 	fmt.Println("ReadCache: Waiting for the job queue to be emptied")
+	// 	time.Sleep(50 * time.Millisecond)
+	// }
 	return nil
 }

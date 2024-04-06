@@ -19,12 +19,12 @@ package ethstorage
 
 func (this *EthDataStore) AsyncPrecommit(args ...interface{}) {
 	v := args[0].(*EthIndexer)
-	this.queue <- v
+	this.Precommit(v)
+	// this.queue <- v
 }
 
 func (this *EthDataStore) Start() {
-	for {
-		trans := <-this.queue
-		this.Precommit(*trans)
-	}
+	// for {
+	// 	this.Precommit(<-this.queue)
+	// }
 }

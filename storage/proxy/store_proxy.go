@@ -44,6 +44,11 @@ func NewStoreProxy() *StorageProxy {
 			platform.Codec{}.Encode, platform.Codec{}.Decode),
 	}
 	proxy.objectCache = NewReadCache(proxy)
+
+	// Start the listeners
+	// go proxy.objectCache.Start()
+	// go proxy.ethDataStore.Start()
+	// go proxy.ccDataStore.Start()
 	return proxy
 }
 
@@ -88,11 +93,10 @@ func (this *StorageProxy) Retrive(key string, v any) (interface{}, error) {
 	return this.GetStorage(key).Retrive(key, v)
 }
 
+// Placeholders for the storage interface
+func (this *StorageProxy) AsyncPrecommit(...interface{})          {}
 func (this *StorageProxy) Precommit(args ...interface{}) [32]byte { return this.ethDataStore.Root() }
-func (this *StorageProxy) Commit(blockNum uint64) error {
-	// for len(this.qu)
-	return nil
-}
+func (this *StorageProxy) Commit(blockNum uint64) error           { return nil }
 
 // Get the stores that can be
 func (this *StorageProxy) Committable() []*associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore] {
@@ -106,6 +110,7 @@ func (this *StorageProxy) Committable() []*associative.Pair[intf.Indexer[*unival
 		First:  ethstg.NewIndexer(this),
 		Second: []intf.CommittableStore{this.EthStore()},
 	}
+
 	ccPair := &associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore]{
 		First:  ccstg.NewIndexer(this),
 		Second: []intf.CommittableStore{this.CCStore()},

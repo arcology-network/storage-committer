@@ -75,6 +75,7 @@ type ReadOnlyDataStore interface {
 }
 
 type CommittableStore interface {
+	AsyncPrecommit(...interface{})
 	Precommit(...interface{}) [32]byte //key gatter, value gatter,
 	Commit(uint64) error
 }

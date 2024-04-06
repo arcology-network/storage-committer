@@ -84,6 +84,7 @@ func NewEthDataStore(trie *ethmpt.Trie, triedb *ethmpt.Database, diskdb [16]ethd
 		worldStateTrie: trie,
 		encoder:        Rlp{}.Encode,
 		decoder:        Rlp{}.Decode,
+		queue:          make(chan *EthIndexer, 16),
 	}
 }
 
@@ -397,15 +398,8 @@ func (this *EthDataStore) WriteWorldTrie(dirtyAccounts []*Account) [32]byte {
 }
 
 func (this *EthDataStore) Commit(blockNum uint64) error {
-	// var err error
-	// common.ParallelExecute(
-	// 	func() {
-	// 		// this.RefreshCache(blockNum)
-	// 	},
-	// 	func() { err = this.CommitToEthStorage(blockNum) },
-	// )
 	for len(this.queue) != 0 {
-		fmt.Println("Waiting for the job queue to be empty")
+		fmt.Println("Eth Storage: Waiting for the job queue to be emptied")
 		time.Sleep(100 * time.Millisecond)
 	}
 

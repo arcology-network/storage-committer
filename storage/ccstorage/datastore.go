@@ -32,8 +32,7 @@ type DataStore struct {
 	encoder       func(string, interface{}) []byte
 	decoder       func(string, []byte, any) interface{}
 
-	partitionIDs []uint64
-
+	partitionIDs  []uint64
 	keyBuffer     []string
 	valueBuffer   []interface{}
 	encodedBuffer [][]byte //The encoded buffer contains the encoded values
@@ -124,7 +123,8 @@ func (this *DataStore) BatchInject(keys []string, values []interface{}) error {
 		this.keyCompressor.Commit()
 	}
 
-	this.batchAddToCache(this.GetPartitions(keys), keys, values)
+	// this.batchAddToCache(this.GetPartitions(keys), keys, values)
+	this.cccache.BatchSet(this.keyBuffer, this.valueBuffer) // update the local cache
 	encoded := make([][]byte, len(keys))
 	for i := 0; i < len(keys); i++ {
 		encoded[i] = this.encoder(keys[i], values[i])
@@ -174,9 +174,10 @@ func (this *DataStore) addToCache(key string, value interface{}) {
 	this.cccache.Set(key, value)
 }
 
-func (this *DataStore) batchAddToCache(ids []uint64, keys []string, values []interface{}) {
-	this.cccache.BatchGet(keys, values)
-}
+// func (this *DataStore) batchAddToCache(keys []string, values []interface{}) {
+// 	// this.GetPartitions(keys)
+// 	this.cccache.BatchGet(keys, values)
+// }
 
 func (this *DataStore) Buffers() ([]string, []interface{}, [][]byte) {
 	return this.keyBuffer, this.valueBuffer, this.encodedBuffer
@@ -230,13 +231,12 @@ func (this *DataStore) BatchRetrive(keys []string, T []any) []interface{} {
 				}
 			}
 		}
-		this.batchAddToCache(this.GetPartitions(keys), keys, values) //update to the local cache and add all the missing values to the cache
+		this.cccache.BatchSet(keys, values) //update to the local cache and add all the missing values to the cache
 	}
 	return values
 }
 
 func (this *DataStore) Clear() {
-	this.partitionIDs = this.partitionIDs[:0]
 	this.keyBuffer = this.keyBuffer[:0]
 	this.valueBuffer = this.valueBuffer[:0]
 	this.encodedBuffer = this.encodedBuffer[:0]
@@ -246,7 +246,8 @@ func (this *DataStore) Precommit(arg ...interface{}) [32]byte {
 	kvs := arg[0].(*CCIndexer).Get().([]interface{})
 	keys, values := kvs[0].([]string), kvs[1].([]interface{})
 
-	this.commitLock.Lock()                // Lock the process, only unlock after the final commit is done.
+	this.commitLock.Lock() // Lock the process, only unlock after the final commit is done.
+	defer this.commitLock.Unlock()
 	compressedKeys := common.IfThenDo1st( // Compress the keys if the keyCompressor is available
 		this.keyCompressor != nil,
 		func() []string { return this.keyCompressor.CompressOnTemp(codec.Strings(keys).Clone()) },
@@ -261,7 +262,6 @@ func (this *DataStore) Precommit(arg ...interface{}) [32]byte {
 		}
 	}
 
-	this.partitionIDs = append(this.partitionIDs, this.GetPartitions(keys)...)
 	this.keyBuffer = append(this.keyBuffer, compressedKeys...)
 	this.valueBuffer = append(this.valueBuffer, values...)
 	this.encodedBuffer = append(this.encodedBuffer, encodedBuffer...)
@@ -269,30 +269,32 @@ func (this *DataStore) Precommit(arg ...interface{}) [32]byte {
 }
 
 // The function calculates the partition id for each key
-func (this *DataStore) GetPartitions(keys []string) []uint64 {
-	return slice.ParallelTransform(keys, 4, func(i int, k string) uint64 {
-		return this.cccache.Hash(k)
-	})
-}
+// func (this *DataStore) GetPartitions(keys []string) []uint64 {
+// 	return slice.ParallelTransform(keys, 4, func(i int, k string) uint64 {
+// 		return this.cccache.Hash(k)
+// 	})
+// }
 
 // Commit the changes to the local cache and the persistent storage
 func (this *DataStore) Commit(_ uint64) error {
 	for len(this.queue) != 0 {
-		fmt.Println("Waiting for the job queue to be empty")
+		fmt.Println("Waiting for the job queue to be emptied")
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	defer this.commitLock.Unlock()                                            // Unlock the process after the final commit is done.
-	this.batchAddToCache(this.partitionIDs, this.keyBuffer, this.valueBuffer) // update the local cache
+	this.commitLock.Lock()
+	defer this.commitLock.Unlock() // Unlock the process after the final commit is done.
+	// this.batchAddToCache(this.partitionIDs, this.keyBuffer, this.valueBuffer) // update the local cache
 
 	var err error
 	if this.keyCompressor != nil {
 		common.ParallelExecute(
-			func() { err = this.batchWritePersistentStorage(this.keyBuffer, this.encodedBuffer) }, // Write data back
+			// return this.db.BatchSet(keys, encodedValues)
+			func() { err = this.db.BatchSet(this.keyBuffer, this.encodedBuffer) }, // Write data back
 			func() { this.keyCompressor.Commit() })
 
 	} else {
-		err = this.batchWritePersistentStorage(this.keyBuffer, this.encodedBuffer)
+		err = this.db.BatchSet(this.keyBuffer, this.encodedBuffer)
 	}
 
 	this.cccache.BatchSet(this.keyBuffer, this.valueBuffer) // update the local cache

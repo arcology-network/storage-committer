@@ -22,13 +22,14 @@ import (
 )
 
 func (this *ShardedWriteCache) AsyncPrecommit(args ...interface{}) {
-	trans := args[0].([]*univalue.Univalue)
-	this.queue <- &trans
+	idxer := args[0].([]*univalue.Univalue)
+	// this.queue <- &idxer
+	this.Precommit(idxer)
 }
 
 func (this *ShardedWriteCache) Start() {
-	for {
-		trans := <-this.queue
-		this.Precommit(trans)
-	}
+	// for {
+	// idxer := <-this.queue
+	// this.Precommit(idxer)
+	// }
 }
