@@ -25,12 +25,13 @@ import (
 func (this *ReadCache) AsyncPrecommit(args ...interface{}) {
 	kvs := args[0].(*Buffer).Get().([]interface{})
 	pair := associative.Pair[[]string, []intf.Type]{First: kvs[0].([]string), Second: kvs[1].([]intf.Type)}
-	this.queue <- &pair
+	this.Precommit(&pair)
+	// this.queue <- &pair
 }
 
 func (this *ReadCache) Start() {
-	for {
-		trans := <-this.queue
-		this.Precommit(trans)
-	}
+	// for {
+	// 	trans := <-this.queue
+	// 	this.Precommit(trans)
+	// }
 }

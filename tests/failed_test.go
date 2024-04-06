@@ -30,6 +30,7 @@ import (
 
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 	platform "github.com/arcology-network/storage-committer/platform"
+	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
 	storage "github.com/arcology-network/storage-committer/storage/proxy"
 	univalue "github.com/arcology-network/storage-committer/univalue"
 )
@@ -131,12 +132,12 @@ func TestPathReadAndWriteBatchCache(b *testing.T) {
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
 
-	// for i := 0; i < len(keys); i++ {
-	// 	v, ok := store.(*storage.StorageProxy).Cache(nil).(*stgproxy.ReadCache).Get("blcc://eth1.0/account/" + alice + "/storage/container/ctrn-0/alice-elem-" + keys[i])
-	// 	if typedv, _, _ := (*(v)).Get(); !ok || typedv != int64(i) {
-	// 		b.Error("not found")
-	// 	}
-	// }
+	for i := 0; i < len(keys); i++ {
+		v, ok := store.(*storage.StorageProxy).Cache(nil).(*stgproxy.ReadCache).Get("blcc://eth1.0/account/" + alice + "/storage/container/ctrn-0/alice-elem-" + keys[i])
+		if typedv, _, _ := (*(v)).Get(); !ok || typedv != int64(i) {
+			b.Error("not found")
+		}
+	}
 
 	// Rewrite the same keys
 	writeCache = NewWriteCacheWithAcounts(store)
@@ -155,10 +156,10 @@ func TestPathReadAndWriteBatchCache(b *testing.T) {
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
 
-	// for i := 0; i < len(keys); i++ {
-	// 	v, ok := store.(*storage.StorageProxy).Cache(nil).(*stgproxy.ReadCache).Get("blcc://eth1.0/account/" + alice + "/storage/container/ctrn-0/alice-elem-" + keys[i])
-	// 	if typedv, _, _ := (*(v)).Get(); !ok || typedv != int64(i+9999) {
-	// 		b.Error("not found")
-	// 	}
-	// }
+	for i := 0; i < len(keys); i++ {
+		v, ok := store.(*storage.StorageProxy).Cache(nil).(*stgproxy.ReadCache).Get("blcc://eth1.0/account/" + alice + "/storage/container/ctrn-0/alice-elem-" + keys[i])
+		if typedv, _, _ := (*(v)).Get(); !ok || typedv != int64(i+9999) {
+			b.Error("not found")
+		}
+	}
 }
