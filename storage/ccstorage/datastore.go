@@ -34,10 +34,6 @@ type DataStore struct {
 	encoder     func(string, interface{}) []byte
 	decoder     func(string, []byte, any) interface{}
 
-	keyBuffer     []string
-	valueBuffer   []interface{}
-	encodedBuffer [][]byte //The encoded buffer contains the encoded values
-
 	commitLock sync.RWMutex
 }
 
@@ -125,7 +121,7 @@ func (this *DataStore) BatchInject(keys []string, values []interface{}) error {
 	}
 
 	// this.batchAddToCache(this.GetPartitions(keys), keys, values)
-	this.cccache.BatchSet(this.keyBuffer, this.valueBuffer) // update the local cache
+	this.cccache.BatchSet(keys, values) // update the local cache
 	encoded := make([][]byte, len(keys))
 	for i := 0; i < len(keys); i++ {
 		encoded[i] = this.encoder(keys[i], values[i])
@@ -149,10 +145,6 @@ func (this *DataStore) RetriveFromStorage(key string, T any) (interface{}, error
 		return this.decoder(key, bytes, T), nil
 	}
 	return nil, err
-}
-
-func (this *DataStore) Buffers() ([]string, []interface{}, [][]byte) {
-	return this.keyBuffer, this.valueBuffer, this.encodedBuffer
 }
 
 func (this *DataStore) Retrive(key string, T any) (interface{}, error) {
@@ -208,87 +200,35 @@ func (this *DataStore) BatchRetrive(keys []string, T []any) []interface{} {
 	return values
 }
 
-func (this *DataStore) Clear() {
-	this.keyBuffer = this.keyBuffer[:0]
-	this.valueBuffer = this.valueBuffer[:0]
-	this.encodedBuffer = this.encodedBuffer[:0]
-}
+func (this *DataStore) Clear() {}
 
 func (this *DataStore) Precommit(arg ...interface{}) [32]byte {
-	kvs := arg[0].(*CCIndexer).Get().(*CCIndexer)
-	keys, values := kvs.keyBuffer, kvs.valueBuffer
-
-	this.commitLock.Lock() // Lock the process, only unlock after the final commit is done.
-	defer this.commitLock.Unlock()
-	compressedKeys := common.IfThenDo1st( // Compress the keys if the keyCompressor is available
-		this.keyCompressor != nil,
-		func() []string { return this.keyCompressor.CompressOnTemp(codec.Strings(keys).Clone()) },
-		keys,
-	)
-
-	// Encode the keys and values to the buffer so that they can be written to calcualte the root hash.
-	encodedBuffer := make([][]byte, len(values))
-	for i := 0; i < len(values); i++ {
-		if values[i] != nil {
-			encodedBuffer[i] = this.encoder(keys[i], values[i])
-		}
-	}
-
-	this.keyBuffer = append(this.keyBuffer, compressedKeys...)
-	this.valueBuffer = append(this.valueBuffer, values...)
-	this.encodedBuffer = append(this.encodedBuffer, encodedBuffer...)
+	arg[0].(*CCIndexer).Get() // To remove some empty transitions
 	return [32]byte{}
 }
 
 // Commit the changes to the local cache and the persistent storage
 func (this *DataStore) Commit(_ uint64) error {
-	for len(this.queue) != 0 {
-		fmt.Println("Waiting for the job queue to be emptied")
+	for len(this.commitQueue) != 0 {
+		fmt.Println("Waiting for the commit job queue to be emptied")
 		time.Sleep(100 * time.Millisecond)
 	}
-
-	this.commitLock.Lock()
-	defer this.commitLock.Unlock() // Unlock the process after the final commit is done.
-	// this.batchAddToCache(this.partitionIDs, this.keyBuffer, this.valueBuffer) // update the local cache
-
-	var err error
-	if this.keyCompressor != nil {
-		common.ParallelExecute(
-			// return this.db.BatchSet(keys, encodedValues)
-			func() { err = this.db.BatchSet(this.keyBuffer, this.encodedBuffer) }, // Write data back
-			func() { this.keyCompressor.Commit() })
-
-	} else {
-		err = this.db.BatchSet(this.keyBuffer, this.encodedBuffer)
-	}
-
-	this.cccache.BatchSet(this.keyBuffer, this.valueBuffer) // update the local cache
-	this.Clear()
-	return err
+	return nil
 }
 
 func (this *DataStore) CommitV2(idx *CCIndexer) error {
-	for len(this.queue) != 0 {
-		fmt.Println("Waiting for the job queue to be emptied")
-		time.Sleep(100 * time.Millisecond)
-	}
-
-	this.commitLock.Lock()
-	defer this.commitLock.Unlock() // Unlock the process after the final commit is done.
-	// this.batchAddToCache(this.partitionIDs, this.keyBuffer, this.valueBuffer) // update the local cache
-
 	var err error
 	if this.keyCompressor != nil {
 		common.ParallelExecute(
 			// return this.db.BatchSet(keys, encodedValues)
-			func() { err = this.db.BatchSet(this.keyBuffer, this.encodedBuffer) }, // Write data back
+			func() { err = this.db.BatchSet(idx.keyBuffer, idx.encodedBuffer) }, // Write data back
 			func() { this.keyCompressor.Commit() })
 
 	} else {
-		err = this.db.BatchSet(this.keyBuffer, this.encodedBuffer)
+		err = this.db.BatchSet(idx.keyBuffer, idx.encodedBuffer)
 	}
 
-	this.cccache.BatchSet(this.keyBuffer, this.valueBuffer) // update the local cache
+	this.cccache.BatchSet(idx.keyBuffer, idx.valueBuffer) // update the local cache
 	this.Clear()
 	return err
 }

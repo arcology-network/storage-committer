@@ -22,6 +22,7 @@ func (this *DataStore) Start() {
 		for {
 			idxer := <-this.queue
 			this.Precommit(idxer)
+			this.commitQueue <- idxer
 		}
 	}()
 
@@ -35,12 +36,7 @@ func (this *DataStore) Start() {
 
 func (this *DataStore) AsyncPrecommit(args ...interface{}) {
 	idxer := args[0].(*CCIndexer)
-	// this.queue <- idxer
-	this.Precommit(idxer)
-}
-
-func (this *DataStore) AsyncCommit(args ...interface{}) {
-	idxer := args[0].(*CCIndexer)
 	this.queue <- idxer
+	this.Precommit(idxer)
 	this.CommitV2(idxer)
 }

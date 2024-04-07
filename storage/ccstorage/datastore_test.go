@@ -83,7 +83,7 @@ func TestDatastorePersistentStorage(t *testing.T) {
 		vs[i] = values[i]
 	}
 
-	if err := store.batchWritePersistentStorage(keys, values); err != nil {
+	if err := store.db.BatchSet(keys, values); err != nil {
 		t.Error(err)
 	}
 
@@ -134,7 +134,7 @@ func TestDatastorePrefetch(t *testing.T) {
 	for i := 0; i < len(values); i++ {
 		vs[i] = values[i]
 	}
-	store.batchWritePersistentStorage(keys, values)
+	store.db.BatchSet(keys, values)
 	store.BatchInject(keys, vs)
 
 	v, _ := store.Retrive(keys[0], nil)
