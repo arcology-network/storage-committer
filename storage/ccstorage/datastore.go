@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
-	"sync"
 	"time"
 
 	addrcompressor "github.com/arcology-network/common-lib/addrcompressor"
@@ -28,13 +27,10 @@ type DataStore struct {
 
 	keyCompressor *addrcompressor.CompressionLut
 
-	lock        sync.RWMutex
 	queue       chan *CCIndexer
 	commitQueue chan *CCIndexer
 	encoder     func(string, interface{}) []byte
 	decoder     func(string, []byte, any) interface{}
-
-	commitLock sync.RWMutex
 }
 
 // numShards uint64, isNil func(V) bool, hasher func(K) uint64, cachePolicy *policy.CachePolicy
@@ -92,8 +88,6 @@ func (this *DataStore) Checksum() [32]byte {
 }
 
 func (this *DataStore) Query(pattern string, condition func(string, string) bool) ([]string, [][]byte, error) {
-	this.lock.RLock()
-	defer this.lock.RUnlock()
 	return this.db.Query(pattern, condition)
 }
 
@@ -134,10 +128,7 @@ func (this *DataStore) RetriveFromStorage(key string, T any) (interface{}, error
 		return nil, errors.New("Error: DB not found")
 	}
 
-	this.lock.RLock()
 	bytes, err := this.db.Get(key) // Get from the underlying storage
-	this.lock.RUnlock()
-
 	if len(bytes) > 0 && err == nil {
 		if T == nil {
 			return bytes, nil
@@ -165,8 +156,6 @@ func (this *DataStore) Retrive(key string, T any) (interface{}, error) {
 }
 
 func (this *DataStore) BatchRetrive(keys []string, T []any) []interface{} {
-	this.commitLock.RLock()
-	defer this.commitLock.RUnlock()
 	if this.keyCompressor != nil {
 		keys = this.keyCompressor.TryBatchCompress(keys)
 	}
@@ -200,8 +189,6 @@ func (this *DataStore) BatchRetrive(keys []string, T []any) []interface{} {
 	return values
 }
 
-func (this *DataStore) Clear() {}
-
 func (this *DataStore) Precommit(arg ...interface{}) [32]byte {
 	arg[0].(*CCIndexer).Get() // To remove some empty transitions
 	return [32]byte{}
@@ -220,7 +207,6 @@ func (this *DataStore) CommitV2(idx *CCIndexer) error {
 	var err error
 	if this.keyCompressor != nil {
 		common.ParallelExecute(
-			// return this.db.BatchSet(keys, encodedValues)
 			func() { err = this.db.BatchSet(idx.keyBuffer, idx.encodedBuffer) }, // Write data back
 			func() { this.keyCompressor.Commit() })
 
@@ -229,7 +215,6 @@ func (this *DataStore) CommitV2(idx *CCIndexer) error {
 	}
 
 	this.cccache.BatchSet(idx.keyBuffer, idx.valueBuffer) // update the local cache
-	this.Clear()
 	return err
 }
 
