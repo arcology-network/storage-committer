@@ -31,7 +31,7 @@ import (
 	committercommon "github.com/arcology-network/storage-committer/common"
 	platform "github.com/arcology-network/storage-committer/platform"
 
-	importer "github.com/arcology-network/storage-committer/committer/importer"
+	importer "github.com/arcology-network/storage-committer/committer"
 	"github.com/arcology-network/storage-committer/commutative"
 	"github.com/arcology-network/storage-committer/interfaces"
 	intf "github.com/arcology-network/storage-committer/interfaces"

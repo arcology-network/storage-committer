@@ -27,8 +27,8 @@ import (
 
 	slice "github.com/arcology-network/common-lib/exp/slice"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
+	importer "github.com/arcology-network/storage-committer/committer"
 	stgcommitter "github.com/arcology-network/storage-committer/committer"
-	importer "github.com/arcology-network/storage-committer/committer/importer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/interfaces"
 	opadapter "github.com/arcology-network/storage-committer/op"

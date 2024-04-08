@@ -6,7 +6,7 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
-	importer "github.com/arcology-network/storage-committer/committer/importer"
+	importer "github.com/arcology-network/storage-committer/committer"
 	commutative "github.com/arcology-network/storage-committer/commutative"
 	"github.com/arcology-network/storage-committer/interfaces"
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"

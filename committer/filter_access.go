@@ -15,7 +15,7 @@
  *   limitations under the License.
  */
 
-package importer
+package statestore
 
 import (
 	"github.com/arcology-network/common-lib/common"

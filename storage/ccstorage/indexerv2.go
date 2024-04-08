@@ -22,6 +22,7 @@ import (
 	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/storage-committer/interfaces"
+	intf "github.com/arcology-network/storage-committer/interfaces"
 	"github.com/arcology-network/storage-committer/platform"
 	"github.com/arcology-network/storage-committer/univalue"
 )
@@ -41,7 +42,7 @@ type CCIndexerV2 struct {
 func NewCCIndexerV2(store interfaces.Datastore) *CCIndexerV2 {
 	return &CCIndexerV2{
 		buffer:  []*univalue.Univalue{},
-		ccstore: store.(interface{ CCStore() *DataStore }).CCStore(),
+		ccstore: store.(*DataStore),
 	}
 }
 
@@ -59,7 +60,7 @@ func (this *CCIndexerV2) Get() interface{} {
 	return []interface{}{this.keyBuffer, this.encodedBuffer}
 }
 
-func (this *CCIndexerV2) Finalize() {
+func (this *CCIndexerV2) Finalize(_ intf.CommittableStore) {
 	slice.RemoveIf(&this.buffer, func(_ int, v *univalue.Univalue) bool {
 		return v.GetPath() == nil
 	}) // Remove the transitions that are marked

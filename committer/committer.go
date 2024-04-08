@@ -22,36 +22,39 @@ import (
 	indexer "github.com/arcology-network/common-lib/storage/indexer"
 	intf "github.com/arcology-network/storage-committer/interfaces"
 	platform "github.com/arcology-network/storage-committer/platform"
+	"github.com/arcology-network/storage-committer/storage/ccstorage"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
 	"github.com/arcology-network/storage-committer/univalue"
 
 	"github.com/arcology-network/common-lib/exp/associative"
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/slice"
-	importer "github.com/arcology-network/storage-committer/committer/importer"
 )
 
 // StateCommitter represents a storage committer.
 // The main purpose of the StateCommitter is to commit the transitions to the different stores.
 type StateCommitter struct {
-	readonlyStore     intf.ReadOnlyDataStore
-	platform          *platform.Platform
-	committableStores []*associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore] // backends Committable
-	byPath            *indexer.UnorderedIndexer[string, *univalue.Univalue, []*univalue.Univalue]
-	byTxID            *indexer.UnorderedIndexer[uint32, *univalue.Univalue, []*univalue.Univalue]
-	queue             chan *[]*univalue.Univalue
-	Err               error
+	readonlyStore intf.ReadOnlyDataStore
+	platform      *platform.Platform
+	piplines      *ccstorage.AsyncCommitter
+
+	stores []*associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore] // backends Committable
+	byPath *indexer.UnorderedIndexer[string, *univalue.Univalue, []*univalue.Univalue]
+	byTxID *indexer.UnorderedIndexer[uint32, *univalue.Univalue, []*univalue.Univalue]
+	queue  chan *[]*univalue.Univalue
+	Err    error
 }
 
-// NewStateCommitter creates a new StateCommitter instance. The committableStores are the stores that can be committed.
+// NewStateCommitter creates a new StateCommitter instance. The stores are the stores that can be committed.
 // A Committable store is a pair of an index and a store. The index is used to index the input transitions as they are
 // received, and the store is used to commit the indexed transitions. Since multiple store can share the same index, each
 // CommittableStore is an indexer and a list of Committable stores.
 func NewStateCommitter(readonlyStore intf.ReadOnlyDataStore) *StateCommitter {
 	return &StateCommitter{
-		readonlyStore:     readonlyStore,
-		platform:          platform.NewPlatform(),
-		committableStores: readonlyStore.(*stgproxy.StorageProxy).Committable(),
+		readonlyStore: readonlyStore,
+		platform:      platform.NewPlatform(),
+		stores:        readonlyStore.(*stgproxy.StorageProxy).Committable(),
+		piplines:      ccstorage.NewAsyncCommitter(readonlyStore.(*stgproxy.StorageProxy).CCStore()),
 
 		byPath: PathIndexer(readonlyStore), // By storage path
 		byTxID: TxIndexer(readonlyStore),   // By tx ID
@@ -77,7 +80,7 @@ func (this *StateCommitter) Import(transitions []*univalue.Univalue, args ...int
 	this.byPath.Add(transitions)
 	this.byTxID.Add(transitions)
 
-	for _, pair := range this.committableStores {
+	for _, pair := range this.stores {
 		pair.First.Add(transitions)
 	}
 	return this
@@ -110,12 +113,12 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 		// Remove conflicting ones.
 		slice.RemoveIf(v, func(_ int, val *univalue.Univalue) bool { return val.GetPath() == nil })
 		if len(*v) > 0 {
-			importer.DeltaSequence(*v).Finalize(this.readonlyStore) // Finalize the transitions and flag the merged ones.
+			DeltaSequence(*v).Finalize(this.readonlyStore) // Finalize the transitions and flag the merged ones.
 		}
 	})
 
 	// Commit the transitions to different stores
-	for _, pair := range this.committableStores {
+	for _, pair := range this.stores {
 		for _, store := range pair.Second {
 			pair.First.Finalize(store)       // Remove the excluded transitions and finalize the transitions
 			store.AsyncPrecommit(pair.First) // Commit the transitions
@@ -126,7 +129,7 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 
 // Commit commits the transitions to different stores.
 func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
-	for _, pair := range this.committableStores {
+	for _, pair := range this.stores {
 		for _, store := range pair.Second {
 			store.Commit(blockNum)
 		}
@@ -139,7 +142,7 @@ func (this *StateCommitter) Clear() {
 	this.byPath.Clear()
 	this.byTxID.Clear()
 
-	for _, pair := range this.committableStores {
+	for _, pair := range this.stores {
 		pair.First.Clear()
 	}
 }

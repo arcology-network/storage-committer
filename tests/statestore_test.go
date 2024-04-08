@@ -25,7 +25,7 @@ import (
 	"github.com/arcology-network/storage-committer/interfaces"
 
 	statestore "github.com/arcology-network/storage-committer"
-	importer "github.com/arcology-network/storage-committer/committer/importer"
+	importer "github.com/arcology-network/storage-committer/committer"
 	stgcomm "github.com/arcology-network/storage-committer/common"
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"

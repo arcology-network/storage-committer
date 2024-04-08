@@ -13,7 +13,7 @@ import (
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	cache "github.com/arcology-network/storage-committer/storage/writecache"
 
-	importer "github.com/arcology-network/storage-committer/committer/importer"
+	importer "github.com/arcology-network/storage-committer/committer"
 	commutative "github.com/arcology-network/storage-committer/commutative"
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 	platform "github.com/arcology-network/storage-committer/platform"

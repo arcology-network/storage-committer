@@ -1,4 +1,4 @@
-package importer
+package statestore
 
 import (
 	common "github.com/arcology-network/common-lib/common"
