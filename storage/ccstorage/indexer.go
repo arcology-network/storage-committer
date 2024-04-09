@@ -23,7 +23,6 @@ import (
 	codec "github.com/arcology-network/common-lib/codec"
 	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/slice"
-	"github.com/arcology-network/storage-committer/interfaces"
 	intf "github.com/arcology-network/storage-committer/interfaces"
 	"github.com/arcology-network/storage-committer/platform"
 	"github.com/arcology-network/storage-committer/univalue"
@@ -32,70 +31,69 @@ import (
 // An index by account address, transitions have the same Eth account address will be put together in a list
 // This is for ETH storage, concurrent container related sub-paths won't be put into this index.
 type CCIndexer struct {
-	blockNum uint64
-	trans    []*univalue.Univalue
+	buffer  []*univalue.Univalue
+	ccstore *DataStore
 
+	partitionIDs  []uint64
 	keyBuffer     []string
 	valueBuffer   []interface{}
 	encodedBuffer [][]byte //The encoded buffer contains the encoded values
 }
 
-func NewIndexer(store interfaces.Datastore) *CCIndexer {
+func NewCCIndexer(ccstore *DataStore) *CCIndexer {
 	return &CCIndexer{
-		blockNum:      0,
-		trans:         []*univalue.Univalue{},
+		buffer:  []*univalue.Univalue{},
+		ccstore: ccstore,
+
+		partitionIDs:  []uint64{},
 		keyBuffer:     []string{},
 		valueBuffer:   []interface{}{},
-		encodedBuffer: [][]byte{}, //The encoded buffer contains the encoded values
+		encodedBuffer: [][]byte{},
 	}
 }
-
-func (this *CCIndexer) SetID(blockNum uint64) { this.blockNum = blockNum }
 
 // An index by account address, transitions have the same Eth account address will be put together in a list
 // This is for ETH storage, concurrent container related sub-paths won't be put into this index.
 func (this *CCIndexer) Add(transitions []*univalue.Univalue) {
 	for _, v := range transitions {
 		if v.GetPath() != nil || !platform.IsEthPath(*v.GetPath()) {
-			this.trans = append(this.trans, v)
+			this.buffer = append(this.buffer, v)
 		}
 	}
 }
 
-func (this *CCIndexer) Get() interface{} {
-	this.keyBuffer = make([]string, len(this.trans))
-	this.valueBuffer = slice.ParallelTransform(this.trans, runtime.NumCPU(), func(i int, v *univalue.Univalue) interface{} {
+func (this *CCIndexer) Finalize(_ intf.CommittableStore) {
+	slice.RemoveIf(&this.buffer, func(_ int, v *univalue.Univalue) bool {
+		return v.GetPath() == nil
+	}) // Remove the transitions that are marked
+
+	// Extract the keys and values from the buffer
+	this.keyBuffer = make([]string, len(this.buffer))
+	this.valueBuffer = slice.ParallelTransform(this.buffer, runtime.NumCPU(), func(i int, v *univalue.Univalue) interface{} {
 		this.keyBuffer[i] = *v.GetPath()
-		if v.Value() != nil {
-			return v.Value().(intf.Type)
-		}
-		return nil // A deletion
+		return v.Value()
 	})
-	// return []interface{}{keys, tVals}
-	return this
-}
 
-func (this *CCIndexer) Finalize(committable intf.CommittableStore) {
-	slice.RemoveIf(&this.trans, func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil }) // Remove the transitions that are marked
-
-	store := committable.(*DataStore)
-	this.keyBuffer = common.IfThenDo1st( // Compress the keys if the keyCompressor is available
-		store.keyCompressor != nil,
-		func() []string { return store.keyCompressor.CompressOnTemp(codec.Strings(this.keyBuffer).Clone()) },
+	// Compress the keys if the keyCompressor is available
+	this.keyBuffer = common.IfThenDo1st(
+		this.ccstore.keyCompressor != nil,
+		func() []string {
+			return this.ccstore.keyCompressor.CompressOnTemp(codec.Strings(this.keyBuffer).Clone())
+		},
 		this.keyBuffer,
 	)
 
 	// Encode the keys and values to the buffer so that they can be written to calcualte the root hash.
-	encodedBuffer := make([][]byte, len(this.valueBuffer))
+	this.encodedBuffer = make([][]byte, len(this.valueBuffer))
 	for i := 0; i < len(this.valueBuffer); i++ {
 		if this.valueBuffer[i] != nil {
-			encodedBuffer[i] = store.encoder(this.keyBuffer[i], this.valueBuffer[i])
+			this.encodedBuffer[i] = this.ccstore.encoder(this.keyBuffer[i], this.valueBuffer[i])
 		}
 	}
 }
 
 func (this *CCIndexer) Clear() {
-	this.trans = this.trans[:0]
+	this.partitionIDs = this.partitionIDs[:0]
 	this.keyBuffer = this.keyBuffer[:0]
 	this.valueBuffer = this.valueBuffer[:0]
 	this.encodedBuffer = this.encodedBuffer[:0]

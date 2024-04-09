@@ -57,14 +57,13 @@ type Type interface { // value type
 	Print()
 }
 
-type WritableCacheInterface interface {
-	IfExists(string) bool
-	Write(uint32, string, interface{}) (int64, error)
-}
+// type WritableCacheInterface interface {
+// 	IfExists(string) bool
+// 	Write(uint32, string, interface{}) (int64, error)
+// }
 
 type Indexer[T any] interface {
 	Add([]T)
-	Get() any
 	Finalize(CommittableStore)
 	Clear()
 }

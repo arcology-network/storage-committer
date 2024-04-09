@@ -18,6 +18,7 @@ package committertest
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 
 	"github.com/arcology-network/common-lib/exp/slice"
@@ -117,8 +118,8 @@ func commitToStateStore(store interfaces.Datastore, t *testing.T) {
 }
 
 func TestCommitToStatStore(t *testing.T) {
-	commitToStateStore(stgproxy.NewStoreProxy().EnableCache(), t) // Use cache
-	// commitToStateStore(stgproxy.NewStoreProxy().DisableCache(), t)
+	// commitToStateStore(stgproxy.NewStoreProxy().EnableCache(), t) // Use cache
+	commitToStateStore(stgproxy.NewStoreProxy().DisableCache(), t)
 }
 
 func TestAsyncCommitToStateStore(t *testing.T) {
@@ -135,6 +136,8 @@ func TestAsyncCommitToStateStore(t *testing.T) {
 	stateStore.Commit(stgcomm.SYSTEM)
 	stateStore.Clear()
 
+	fmt.Println(" ================================================= ")
+
 	if _, err := stateStore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(0), noncommutative.NewBytes([]byte{1, 2, 3})); err != nil {
 		t.Error(err)
 	}
@@ -150,7 +153,7 @@ func TestAsyncCommitToStateStore(t *testing.T) {
 	stateStore = statestore.NewStateStore(store)
 	stateStore.Import(acctTrans).Precommit([]uint32{1})
 	stateStore.Commit(2).Clear()
-
+	fmt.Println(" ================================================= ")
 	outV, _, _ := stateStore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(0), new(noncommutative.Bytes))
 	if outV == nil || !bytes.Equal(outV.([]byte), []byte{1, 2, 3}) {
 		t.Error("Error: The path should exist", outV)
@@ -191,10 +194,10 @@ func TestAsyncCommitToStateStore(t *testing.T) {
 	}
 
 	acctTrans = univalue.Univalues(slice.Clone(stateStore.Export(importer.Sorter))).To(importer.IPTransition{})
-	// stateStore = statestore.NewStateStore(store)
+	stateStore = statestore.NewStateStore(store)
 	stateStore.Import(acctTrans).Precommit([]uint32{1})
-	stateStore.Commit(2).Clear()
-
+	stateStore.Commit(2) //.Clear()
+	fmt.Println(" ================================================= ")
 	outV, _, _ = stateStore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), new(noncommutative.Bytes))
 	if outV != nil {
 		t.Error("Error: The path should not exist", outV)

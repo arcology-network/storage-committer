@@ -15,28 +15,10 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package ccstorage
+package ethstorage
 
-func (this *DataStore) Start() {
-	go func() {
-		for {
-			idxer := <-this.queue
-			this.Precommit(idxer)
-			this.commitQueue <- idxer
-		}
-	}()
-
-	go func() {
-		for {
-			idxer := <-this.commitQueue
-			this.CommitV2(idxer)
-		}
-	}()
-}
-
-func (this *DataStore) AsyncPrecommit(args ...interface{}) {
-	idxer := args[0].(*CCIndexer)
-	this.queue <- idxer
-	this.Precommit(idxer)
-	this.CommitV2(idxer)
+func (this *EthDataStore) AsyncPrecommit(args ...interface{}) {
+	v := args[0].(*EthIndexer)
+	this.Precommit(v)
+	this.Commit(0)
 }

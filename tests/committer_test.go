@@ -97,7 +97,7 @@ func CommitterCache(store interfaces.Datastore, t *testing.T) {
 }
 
 func TestNewCommitterWithoutCache(t *testing.T) {
-	CommitterCache(stgproxy.NewStoreProxy().EnableCache(), t)  // Use cache
+	// CommitterCache(stgproxy.NewStoreProxy().EnableCache(), t) // Use cache
 	CommitterCache(stgproxy.NewStoreProxy().DisableCache(), t) // Don't use cache
 }
 

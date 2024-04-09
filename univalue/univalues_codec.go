@@ -105,6 +105,7 @@ func (this *Univalues) GobDecode(data []byte) error {
 	return nil
 }
 
+// Print the univalues if the satisfied the existing condition
 func (this Univalues) Print(condition ...func(v *Univalue) bool) {
 	sorted := slice.Clone(this)
 	sort.Slice(sorted, func(i, j int) bool {

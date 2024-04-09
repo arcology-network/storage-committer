@@ -36,13 +36,13 @@ import (
 type StateCommitter struct {
 	readonlyStore intf.ReadOnlyDataStore
 	platform      *platform.Platform
-	piplines      *ccstorage.AsyncCommitter
+	asyncWriter   *ccstorage.AsyncWriter
 
 	stores []*associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore] // backends Committable
 	byPath *indexer.UnorderedIndexer[string, *univalue.Univalue, []*univalue.Univalue]
 	byTxID *indexer.UnorderedIndexer[uint32, *univalue.Univalue, []*univalue.Univalue]
-	queue  chan *[]*univalue.Univalue
-	Err    error
+
+	Err error
 }
 
 // NewStateCommitter creates a new StateCommitter instance. The stores are the stores that can be committed.
@@ -50,16 +50,17 @@ type StateCommitter struct {
 // received, and the store is used to commit the indexed transitions. Since multiple store can share the same index, each
 // CommittableStore is an indexer and a list of Committable stores.
 func NewStateCommitter(readonlyStore intf.ReadOnlyDataStore) *StateCommitter {
-	return &StateCommitter{
+	committer := &StateCommitter{
 		readonlyStore: readonlyStore,
 		platform:      platform.NewPlatform(),
 		stores:        readonlyStore.(*stgproxy.StorageProxy).Committable(),
-		piplines:      ccstorage.NewAsyncCommitter(readonlyStore.(*stgproxy.StorageProxy).CCStore()),
+		asyncWriter:   ccstorage.NewAsyncWriter(readonlyStore.(*stgproxy.StorageProxy).CCStore()),
 
 		byPath: PathIndexer(readonlyStore), // By storage path
 		byTxID: TxIndexer(readonlyStore),   // By tx ID
-		queue:  make(chan *[]*univalue.Univalue, 64),
 	}
+	committer.asyncWriter.Start()
+	return committer
 }
 
 // New creates a new StateCommitter instance.
@@ -83,6 +84,7 @@ func (this *StateCommitter) Import(transitions []*univalue.Univalue, args ...int
 	for _, pair := range this.stores {
 		pair.First.Add(transitions)
 	}
+	this.asyncWriter.Add(transitions)
 	return this
 }
 
@@ -110,8 +112,7 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 	// Finalize all the transitions by merging the transitions
 	// for both the ETH storage and the concurrent container transitions
 	this.byPath.ParallelForeachDo(func(_ string, v *[]*univalue.Univalue) {
-		// Remove conflicting ones.
-		slice.RemoveIf(v, func(_ int, val *univalue.Univalue) bool { return val.GetPath() == nil })
+		slice.RemoveIf(v, func(_ int, val *univalue.Univalue) bool { return val.GetPath() == nil }) // Remove conflicting ones.
 		if len(*v) > 0 {
 			DeltaSequence(*v).Finalize(this.readonlyStore) // Finalize the transitions and flag the merged ones.
 		}
@@ -120,20 +121,21 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 	// Commit the transitions to different stores
 	for _, pair := range this.stores {
 		for _, store := range pair.Second {
+			// if common.IsType[*ccstorage.DataStore](store) {
+			// 	this.asyncWriter.Add(nil).Await()
+			// }
+
 			pair.First.Finalize(store)       // Remove the excluded transitions and finalize the transitions
 			store.AsyncPrecommit(pair.First) // Commit the transitions
 		}
 	}
-	return [32]byte{} // Write to the DB buffer
+	this.asyncWriter.Add(nil) // Commit the concurrent container transitions
+	return [32]byte{}         // Write to the DB buffer
 }
 
 // Commit commits the transitions to different stores.
 func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
-	for _, pair := range this.stores {
-		for _, store := range pair.Second {
-			store.Commit(blockNum)
-		}
-	}
+	this.asyncWriter.Await() // Wait for the concurrent container to finish committing the transitions
 	return this
 }
 

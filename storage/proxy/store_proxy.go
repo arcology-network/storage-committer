@@ -112,7 +112,7 @@ func (this *StorageProxy) Committable() []*associative.Pair[intf.Indexer[*unival
 	}
 
 	ccPair := &associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore]{
-		First:  ccstg.NewIndexer(this),
+		First:  ccstg.NewCCIndexer(this.CCStore()),
 		Second: []intf.CommittableStore{this.CCStore()},
 	}
 

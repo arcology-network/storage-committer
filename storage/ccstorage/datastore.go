@@ -3,8 +3,6 @@ package ccstorage
 import (
 	"crypto/sha256"
 	"errors"
-	"fmt"
-	"time"
 
 	addrcompressor "github.com/arcology-network/common-lib/addrcompressor"
 	codec "github.com/arcology-network/common-lib/codec"
@@ -26,11 +24,8 @@ type DataStore struct {
 	cccache *cache.ReadCache[string, any]
 
 	keyCompressor *addrcompressor.CompressionLut
-
-	queue       chan *CCIndexer
-	commitQueue chan *CCIndexer
-	encoder     func(string, interface{}) []byte
-	decoder     func(string, []byte, any) interface{}
+	encoder       func(string, interface{}) []byte
+	decoder       func(string, []byte, any) interface{}
 }
 
 // numShards uint64, isNil func(V) bool, hasher func(K) uint64, cachePolicy *policy.CachePolicy
@@ -52,8 +47,7 @@ func NewDataStore(
 			},
 			cachePolicy,
 		),
-		queue:         make(chan *CCIndexer, 64),
-		commitQueue:   make(chan *CCIndexer, 64),
+
 		keyCompressor: keyCompressor,
 
 		db:      db,
@@ -69,16 +63,16 @@ func (this *DataStore) GetNewIndex(store intf.Datastore) interface {
 	Add([]*univalue.Univalue)
 	Clear()
 } {
-	return NewIndexer(store)
+	return NewCCIndexer(this)
 }
 
-// Pleaseholder only
-func (this *DataStore) Preload(data []byte) interface{}                   { return nil }
+// Placeholder only
+func (this *DataStore) Preload(data []byte) interface{} { return nil }
+
 func (this *DataStore) Cache(any) interface{}                             { return this.cccache }
 func (this *DataStore) Encoder(any) func(string, interface{}) []byte      { return this.encoder }
 func (this *DataStore) Decoder(any) func(string, []byte, any) interface{} { return this.decoder }
-
-func (this *DataStore) Size() uint64 { return uint64(this.cccache.Length()) }
+func (this *DataStore) Size() uint64                                      { return uint64(this.cccache.Length()) }
 
 func (this *DataStore) Checksum() [32]byte {
 	return this.cccache.Checksum(
@@ -189,42 +183,18 @@ func (this *DataStore) BatchRetrive(keys []string, T []any) []interface{} {
 	return values
 }
 
-func (this *DataStore) Precommit(arg ...interface{}) [32]byte {
-	arg[0].(*CCIndexer).Get() // To remove some empty transitions
-	return [32]byte{}
-}
+// Placeholders
+func (this *DataStore) Precommit(arg ...interface{}) [32]byte { return [32]byte{} }
+func (this *DataStore) Commit(_ uint64) error                 { return nil } // Commit the changes to the local cache and the persistent storage
+func (this *DataStore) AsyncPrecommit(args ...interface{})    {}
 
-// Commit the changes to the local cache and the persistent storage
-func (this *DataStore) Commit(_ uint64) error {
-	for len(this.commitQueue) != 0 {
-		fmt.Println("Waiting for the commit job queue to be emptied")
-		time.Sleep(100 * time.Millisecond)
-	}
-	return nil
-}
-
-func (this *DataStore) CommitV2(idx *CCIndexer) error {
-	var err error
-	if this.keyCompressor != nil {
-		common.ParallelExecute(
-			func() { err = this.db.BatchSet(idx.keyBuffer, idx.encodedBuffer) }, // Write data back
-			func() { this.keyCompressor.Commit() })
-
-	} else {
-		err = this.db.BatchSet(idx.keyBuffer, idx.encodedBuffer)
-	}
-
-	this.cccache.BatchSet(idx.keyBuffer, idx.valueBuffer) // update the local cache
-	return err
-}
+func (this *DataStore) NewWriter(blockNum uint64) interface{} { return NewAsyncWriter(this) }
 
 func (this *DataStore) RefreshCache(blockNum uint64) (uint64, uint64) {
-	return this.CachePolicy().Refresh(this.Cache(nil).(*mapi.ConcurrentMap[string, any]))
+	return this.cccache.Policy().Refresh(this.Cache(nil).(*mapi.ConcurrentMap[string, any]))
 }
 
-func (this *DataStore) Print() {
-	this.cccache.Print()
-}
+func (this *DataStore) Print() { this.cccache.Print() }
 
 func (this *DataStore) CheckSum() [32]byte {
 	k, vs := this.KVs()
@@ -241,6 +211,6 @@ func (this *DataStore) KVs() ([]string, []interface{}) {
 	return this.cccache.KVs()
 }
 
-func (this *DataStore) CachePolicy() *policy.CachePolicy {
-	return this.cccache.Policy()
-}
+// func (this *DataStore) CachePolicy() *policy.CachePolicy {
+// 	return this.cccache.Policy()
+// }
