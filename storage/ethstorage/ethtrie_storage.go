@@ -2,15 +2,12 @@ package ethstorage
 
 import (
 	"errors"
-	"fmt"
 	"runtime"
 	"sync"
-	"time"
 
 	"github.com/VictoriaMetrics/fastcache"
 	common "github.com/arcology-network/common-lib/common"
 
-	"github.com/arcology-network/common-lib/exp/associative"
 	"github.com/arcology-network/common-lib/exp/slice"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/interfaces"
@@ -38,15 +35,12 @@ type EthDataStore struct {
 	accountCacheEnabled bool
 	accountCache        map[ethcommon.Address]*Account // Account cache holds the accountCache that are being accessed in the current cycle.
 
-	// dirties       []*AccountUpdate // Dirty accountCache are the accountCache that have been updated in the current cycle.
 	dirtyAccounts []*Account
-
-	dirtyVals [][]interfaces.Type // Dirty accountCache are the accountCache that have been updated in the current cycle.
-	dirtyKeys [][]string          // Dirty accountCache are the accountCache that have been updated in the current cycle.
+	dirtyVals     [][]interfaces.Type // Dirty accountCache are the accountCache that have been updated in the current cycle.
+	dirtyKeys     [][]string          // Dirty accountCache are the accountCache that have been updated in the current cycle.
 
 	ethdb   *ethmpt.Database
 	diskdbs [16]ethdb.Database
-	queue   chan *EthIndexer
 
 	encoder func(string, interface{}) []byte
 	decoder func(string, []byte, any) interface{}
@@ -84,7 +78,6 @@ func NewEthDataStore(trie *ethmpt.Trie, triedb *ethmpt.Database, diskdb [16]ethd
 		worldStateTrie: trie,
 		encoder:        Rlp{}.Encode,
 		decoder:        Rlp{}.Decode,
-		queue:          make(chan *EthIndexer, 16),
 	}
 }
 
@@ -123,9 +116,6 @@ func NewLevelDBDataStore(dir string) *EthDataStore {
 func (this *EthDataStore) EnableAccountCache()  { this.accountCacheEnabled = true }
 func (this *EthDataStore) DisableAccountCache() { this.accountCacheEnabled = false }
 
-// func (this *EthDataStore) EnableCache(active bool) { this.cacheActive = active }
-// func (this *EthDataStore) ClearCache()             { this.cache.Clear() }
-
 // Preload loads an existing account from the trie and the disk db.
 // If the account is not found, it creates a new account with default account state and shared cache.
 func (this *EthDataStore) Preload(addr []byte) interface{} {
@@ -142,11 +132,11 @@ func (this *EthDataStore) Preload(addr []byte) interface{} {
 	return acct
 }
 
-func (this *EthDataStore) GetNewIndex(store interfaces.Datastore) interface {
+func (this *EthDataStore) GetNewIndex() interface {
 	Add([]*univalue.Univalue)
 	Clear()
 } {
-	return NewIndexer(store)
+	return NewEthIndexer(this)
 }
 
 func (this *EthDataStore) AccountDict() map[ethcommon.Address]*Account { return this.accountCache }
@@ -211,7 +201,6 @@ func (this *EthDataStore) IfExists(key string) bool {
 	}
 
 	address := ethcommon.BytesToAddress(acctBytes)
-	// address := ethcommon.BytesToAddress([]byte(accountKey))
 	if v := this.accountCache[address]; v != nil {
 		return len(key) == stgcommcommon.ETH10_ACCOUNT_FULL_LENGTH+1 || v.Has(key) // If the account has the key
 	}
@@ -249,22 +238,12 @@ func (this *EthDataStore) BatchInject(keys []string, values []interface{}) error
 		}
 
 		address := ethcommon.BytesToAddress(hexutil.MustDecode(acctKey))
-		// address := ethcommon.BytesToAddress([]byte(acctKey))
 		account, ok := this.accountCache[address]
-		// if account != nil {
-		// 	account = account.(*Account)
-		// }
-
-		// if v := common.FilterFirst(this.accountCache[address]); v != nil {
-		// 	account = this.accountCache[address]
-		// }
-
 		if !ok {
 			account = NewAccount(address, this.diskdbs, EmptyAccountState()) // empty account
 			this.accountCache[address] = account
 		}
 
-		// v := values[i]
 		if values[i] == nil {
 			account.UpdateAccountTrie([]string{keys[i]}, []interfaces.Type{nil})
 		} else {
@@ -350,29 +329,30 @@ func (this *EthDataStore) Retrive(key string, T any) (interface{}, error) {
 }
 
 func (this *EthDataStore) Precommit(arg ...interface{}) [32]byte {
-	pairs := arg[0].(*EthIndexer).Get().([]*associative.Pair[*Account, []*univalue.Univalue])
-	this.dirtyAccounts = associative.Pairs[*Account, []*univalue.Univalue](pairs).Firsts()
-	if len(pairs) == 0 {
-		return this.worldStateTrie.Hash() // No updates
-	}
+	// pairs := arg[0].(*EthIndexer).Get().([]*associative.Pair[*Account, []*univalue.Univalue])
+	// this.dirtyAccounts = associative.Pairs[*Account, []*univalue.Univalue](pairs).Firsts()
+	// if len(pairs) == 0 {
+	// 	return this.worldStateTrie.Hash() // No updates
+	// }
 
-	// Need to check if this is necessary or could be moved to the import phase
-	slice.Foreach(this.dirtyAccounts, func(_ int, pair **Account) {
-		this.accountCache[(**pair).Address()] = (*pair) // Add the account to the cache
-	})
+	// // Need to check if this is necessary or could be moved to the import phase
+	// slice.Foreach(this.dirtyAccounts, func(_ int, pair **Account) {
+	// 	this.accountCache[(**pair).Address()] = (*pair) // Add the account to the cache
+	// })
 
-	slice.ParallelForeach(pairs, runtime.NumCPU(), func(i int, acctTrans **associative.Pair[*Account, []*univalue.Univalue]) {
-		if len((*acctTrans).Second) == 0 {
-			return // All removed
-		}
+	// slice.ParallelForeach(pairs, runtime.NumCPU(), func(i int, acctTrans **associative.Pair[*Account, []*univalue.Univalue]) {
+	// 	if len((*acctTrans).Second) == 0 {
+	// 		return // All removed
+	// 	}
 
-		keys, vals := univalue.Univalues((*acctTrans).Second).KVs() // Get all transitions under the same account
-		err := this.dirtyAccounts[i].UpdateAccountTrie(keys, vals)
-		if err != nil {
-			this.dbErr = errors.Join(this.dbErr, err)
-		}
-	})
-	return this.WriteWorldTrie(this.dirtyAccounts)
+	// 	keys, vals := univalue.Univalues((*acctTrans).Second).KVs() // Get all transitions under the same account
+	// 	err := this.dirtyAccounts[i].UpdateAccountTrie(keys, vals)
+	// 	if err != nil {
+	// 		this.dbErr = errors.Join(this.dbErr, err)
+	// 	}
+	// })
+	// return this.WriteWorldTrie(this.dirtyAccounts)
+	return [32]byte{}
 }
 
 // The WriteWorldTrie writes the updated accounts to the world trie.
@@ -398,12 +378,8 @@ func (this *EthDataStore) WriteWorldTrie(dirtyAccounts []*Account) [32]byte {
 }
 
 func (this *EthDataStore) Commit(blockNum uint64) error {
-	for len(this.queue) != 0 {
-		fmt.Println("Eth Storage: Waiting for the job queue to be emptied")
-		time.Sleep(100 * time.Millisecond)
-	}
-
 	err := this.CommitToEthStorage(blockNum)
+
 	this.dirtyAccounts = this.dirtyAccounts[:0]
 	this.dirtyKeys = this.dirtyKeys[:0] // Reset the dirties buffer
 	this.dirtyVals = this.dirtyVals[:0]

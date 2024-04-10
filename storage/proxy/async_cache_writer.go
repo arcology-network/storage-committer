@@ -15,66 +15,55 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package ccstorage
+package proxy
 
 import (
 	async "github.com/arcology-network/common-lib/async"
-	common "github.com/arcology-network/common-lib/common"
 	intf "github.com/arcology-network/storage-committer/interfaces"
 	"github.com/arcology-network/storage-committer/univalue"
 )
 
-type AsyncWriter struct {
+type AsyncCacheWriter struct {
 	*async.Pipeline[intf.Indexer[*univalue.Univalue]]
-	*CCIndexer
-	store    *DataStore
+	*CacheIndexer
 	blockNum uint64
 }
 
-func NewAsyncWriter(store *DataStore) *AsyncWriter {
+func NewAsyncWriter(cache *ReadCache) *AsyncCacheWriter {
 	blockNum := uint64(0) // TODO: get the block number from the block header
-	idxer := NewCCIndexer(store)
+	idxer := NewCacheIndexer(cache)
 	pipe := async.NewPipeline(
 		4,
 		10,
-		// Precommitter
-		func(idxer intf.Indexer[*univalue.Univalue]) (intf.Indexer[*univalue.Univalue], bool) {
-			idxer.Finalize(store)
-			return idxer, true
-		},
+		// // Precommitter
+		// func(idxer intf.Indexer[*univalue.Univalue]) (intf.Indexer[*univalue.Univalue], bool) {
+		// 	idxer.Finalize(cache)
+		// 	return idxer, true
+		// },
 
 		// db and cache writer
 		func(idxer intf.Indexer[*univalue.Univalue]) (intf.Indexer[*univalue.Univalue], bool) {
 			var err error
-			idx := idxer.(*CCIndexer)
-			if store.keyCompressor != nil {
-				common.ParallelExecute(
-					func() { err = store.db.BatchSet(idx.keyBuffer, idx.encodedBuffer) }, // Write data back
-					func() { store.keyCompressor.Commit() })
+			idx := idxer.(*CacheIndexer)
 
-			} else {
-				err = store.db.BatchSet(idx.keyBuffer, idx.encodedBuffer)
-			}
-
-			store.cccache.BatchSet(idx.keyBuffer, idx.valueBuffer) // update the local cache
+			cache.BatchSet(idx.keys, idx.values) // update the local cache
 			return nil, err == nil
 		},
 	)
 
-	return &AsyncWriter{
-		Pipeline:  pipe.Start(),
-		CCIndexer: idxer,
-		store:     store,
-		blockNum:  blockNum,
+	return &AsyncCacheWriter{
+		Pipeline:     pipe.Start(),
+		CacheIndexer: idxer,
+		blockNum:     blockNum,
 	}
 }
 
-func (this *AsyncWriter) Add(univ []*univalue.Univalue) *AsyncWriter {
+func (this *AsyncCacheWriter) Add(univ []*univalue.Univalue) *AsyncCacheWriter {
 	if len(univ) == 0 {
-		this.CCIndexer.Finalize(nil)
-		this.Pipeline.Push(this.CCIndexer) // push the indexer to the processor stream
+		this.CacheIndexer.Finalize(nil)
+		this.Pipeline.Push(this.CacheIndexer) // push the indexer to the processor stream
 	} else {
-		this.CCIndexer.Add(univ)
+		this.CacheIndexer.Add(univ)
 	}
 	return this
 }

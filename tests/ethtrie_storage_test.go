@@ -126,12 +126,12 @@ func TestTrieUpdates(t *testing.T) {
 	committer.Import(univalue.Univalues(slice.Clone(trans)).To(importer.IPTransition{}))
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
+	committer.Commit(0)
 
 	ds := committer.Store().(*storage.StorageProxy).EthStore()
 	if (len(ds.AccountDict())) != 3 {
 		t.Error("Error: Cache() should be 3", len(ds.AccountDict()))
 	}
-	committer.Commit(0)
 
 	committer.SetStore(store)
 	writeCache.Clear()

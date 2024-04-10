@@ -23,10 +23,10 @@ import (
 	intf "github.com/arcology-network/storage-committer/interfaces"
 	platform "github.com/arcology-network/storage-committer/platform"
 	"github.com/arcology-network/storage-committer/storage/ccstorage"
-	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
+	"github.com/arcology-network/storage-committer/storage/ethstorage"
+	"github.com/arcology-network/storage-committer/storage/proxy"
 	"github.com/arcology-network/storage-committer/univalue"
 
-	"github.com/arcology-network/common-lib/exp/associative"
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/slice"
 )
@@ -36,9 +36,12 @@ import (
 type StateCommitter struct {
 	readonlyStore intf.ReadOnlyDataStore
 	platform      *platform.Platform
-	asyncWriter   *ccstorage.AsyncWriter
 
-	stores []*associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore] // backends Committable
+	cacheAsyncWritter *proxy.AsyncCacheWriter
+	ethAsyncWriter    *ethstorage.EthAsyncWriter
+	ccAsyncWriter     *ccstorage.AsyncWriter
+
+	// stores []*associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore] // backends Committable
 	byPath *indexer.UnorderedIndexer[string, *univalue.Univalue, []*univalue.Univalue]
 	byTxID *indexer.UnorderedIndexer[uint32, *univalue.Univalue, []*univalue.Univalue]
 
@@ -50,17 +53,18 @@ type StateCommitter struct {
 // received, and the store is used to commit the indexed transitions. Since multiple store can share the same index, each
 // CommittableStore is an indexer and a list of Committable stores.
 func NewStateCommitter(readonlyStore intf.ReadOnlyDataStore) *StateCommitter {
-	committer := &StateCommitter{
+	return &StateCommitter{
 		readonlyStore: readonlyStore,
 		platform:      platform.NewPlatform(),
-		stores:        readonlyStore.(*stgproxy.StorageProxy).Committable(),
-		asyncWriter:   ccstorage.NewAsyncWriter(readonlyStore.(*stgproxy.StorageProxy).CCStore()),
+		// stores:        readonlyStore.(*stgproxy.StorageProxy).Committable(),
+
+		cacheAsyncWritter: proxy.NewAsyncWriter(readonlyStore.(*proxy.StorageProxy).Cache(nil).(*proxy.ReadCache)),
+		ethAsyncWriter:    ethstorage.NewAsyncWriter(readonlyStore.(*proxy.StorageProxy).EthStore()),
+		ccAsyncWriter:     ccstorage.NewAsyncWriter(readonlyStore.(*proxy.StorageProxy).CCStore()),
 
 		byPath: PathIndexer(readonlyStore), // By storage path
 		byTxID: TxIndexer(readonlyStore),   // By tx ID
 	}
-	committer.asyncWriter.Start()
-	return committer
 }
 
 // New creates a new StateCommitter instance.
@@ -81,10 +85,9 @@ func (this *StateCommitter) Import(transitions []*univalue.Univalue, args ...int
 	this.byPath.Add(transitions)
 	this.byTxID.Add(transitions)
 
-	for _, pair := range this.stores {
-		pair.First.Add(transitions)
-	}
-	this.asyncWriter.Add(transitions)
+	this.cacheAsyncWritter.Add(transitions)
+	this.ethAsyncWriter.Add(transitions)
+	this.ccAsyncWriter.Add(transitions)
 	return this
 }
 
@@ -118,24 +121,17 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 		}
 	})
 
-	// Commit the transitions to different stores
-	for _, pair := range this.stores {
-		for _, store := range pair.Second {
-			// if common.IsType[*ccstorage.DataStore](store) {
-			// 	this.asyncWriter.Add(nil).Await()
-			// }
-
-			pair.First.Finalize(store)       // Remove the excluded transitions and finalize the transitions
-			store.AsyncPrecommit(pair.First) // Commit the transitions
-		}
-	}
-	this.asyncWriter.Add(nil) // Commit the concurrent container transitions
-	return [32]byte{}         // Write to the DB buffer
+	// Signal the async writers that all transitions are pushed and finalized.
+	this.cacheAsyncWritter.Add(nil).Await()
+	this.ethAsyncWriter.Add(nil)
+	this.ccAsyncWriter.Add(nil)
+	return [32]byte{}
 }
 
 // Commit commits the transitions to different stores.
 func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
-	this.asyncWriter.Await() // Wait for the concurrent container to finish committing the transitions
+	this.ethAsyncWriter.Await() // Wait for the eth DB to finish committing the transitions
+	this.ccAsyncWriter.Await()  // Wait for the concurrent db DB finish committing the transitions
 	return this
 }
 
@@ -144,7 +140,10 @@ func (this *StateCommitter) Clear() {
 	this.byPath.Clear()
 	this.byTxID.Clear()
 
-	for _, pair := range this.stores {
-		pair.First.Clear()
-	}
+	// for _, pair := range this.stores {
+	// 	pair.First.Clear()
+	// }
+
+	this.ethAsyncWriter.Clear()
+	this.ccAsyncWriter.Clear()
 }

@@ -54,8 +54,8 @@ func NewCCIndexer(ccstore *DataStore) *CCIndexer {
 
 // An index by account address, transitions have the same Eth account address will be put together in a list
 // This is for ETH storage, concurrent container related sub-paths won't be put into this index.
-func (this *CCIndexer) Add(transitions []*univalue.Univalue) {
-	for _, v := range transitions {
+func (this *CCIndexer) Add(trans []*univalue.Univalue) {
+	for _, v := range trans {
 		if v.GetPath() != nil || !platform.IsEthPath(*v.GetPath()) {
 			this.buffer = append(this.buffer, v)
 		}

@@ -287,30 +287,6 @@ func (this *Account) ApplyChanges(transitions [][]*univalue.Univalue, getter fun
 	return keys, typedVals
 }
 
-// // Write the account changes to theirs Eth Trie
-// func (this *Account) PrecommitAcctStorage(updates *AccountUpdate) ([]string, []interfaces.Type) {
-// 	keys, typedVals := make([]string, len(updates.Seqs)), make([]interfaces.Type, len(updates.Seqs))
-// 	slice.Foreach(updates.Seqs, func(i int, seq **importer.DeltaSequence) {
-// 		keys[i] = *((*seq).Finalized.GetPath())
-// 		if v := (*seq).Finalized.Value(); v != nil {
-// 			typedVals[i] = v.(interfaces.Type)
-// 		}
-// 	})
-
-// 	this.err = this.UpdateAccountTrie(keys, typedVals)
-// 	return keys, typedVals
-// }
-
-// func (this *Account) Precommit(keys []string, values []interface{}) {
-// 	this.err = this.UpdateAccount(keys, slice.Transform(values,
-// 		func(_ int, v interface{}) interfaces.Type {
-// 			if v.(*univalue.Univalue).Value() != nil {
-// 				return v.(*univalue.Univalue).Value().(interfaces.Type)
-// 			}
-// 			return nil
-// 		}))
-// }
-
 func (this *Account) Encode() []byte {
 	encoded, _ := rlp.EncodeToBytes(&this.StateAccount)
 	return encoded

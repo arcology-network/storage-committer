@@ -148,6 +148,10 @@ func TestGetProofAPI(t *testing.T) {
 	// Verify Bob's storage for a big int value.
 	bobAddr := ethcommon.BytesToAddress([]byte(hexutil.MustDecode(bob)))
 	accountResult, err := provider.GetProof(bobAddr, []string{string("0x0000000000000000000000000000000000000000000000000000000000000001")})
+	if accountResult == nil {
+		t.Fatal("Error: Account result is nil")
+	}
+
 	if err := accountResult.Validate(provider.Root()); err != nil {
 		t.Error(err)
 	}
@@ -222,6 +226,11 @@ func TestProofCacheBigInt(t *testing.T) {
 
 	aliceAddr := ethcommon.BytesToAddress([]byte(hexutil.MustDecode(alice)))
 	accountResult, err := provider.GetProof(aliceAddr, []string{string("0x0000000000000000000000000000000000000000000000000000000000000003")}) // String
+
+	if accountResult == nil {
+		t.Fatal("Error: Account result is nil")
+	}
+
 	if err := accountResult.Validate(provider.Root()); err != nil {
 		t.Error(err)
 	}
@@ -364,6 +373,10 @@ func TestProofCache(t *testing.T) {
 
 	bobAddr := ethcommon.BytesToAddress([]byte(hexutil.MustDecode(bob)))
 	accountResult, err := provider.GetProof(bobAddr, []string{})
+	if accountResult == nil {
+		t.Fatal("Error: Account result is nil")
+	}
+
 	if err := accountResult.Validate(provider.Root()); err != nil {
 		t.Error(err)
 	}
