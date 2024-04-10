@@ -103,7 +103,7 @@ func (this Univalues) SortByDepth() Univalues {
 	}
 
 	slice.SortBy1st(depths, ([]*Univalue)(this), func(i, j int) bool {
-		return depths[i] < depths[j]
+		return i < j
 	})
 	return this
 }
@@ -183,3 +183,12 @@ func (this Univalues) Sort(groupIDs []uint32) Univalues {
 // 		this[i].SetPath(&newKey)
 // 	}
 // }
+
+func Sorter(univals []*Univalue) []*Univalue {
+	sort.SliceStable(univals, func(i, j int) bool {
+		lhs := (*(univals[i].GetPath()))
+		rhs := (*(univals[j].GetPath()))
+		return bytes.Compare([]byte(lhs)[:], []byte(rhs)[:]) < 0
+	})
+	return univals
+}

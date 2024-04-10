@@ -31,7 +31,7 @@ func TestCacheMultiAccountCreation(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	raw := writeCache.Export(importer.Sorter)
+	raw := writeCache.Export(univalue.Sorter)
 	acctTrans := univalue.Univalues(slice.Clone(raw)).To(importer.ITTransition{})
 
 	paths := platform.NewPlatform().GetSysPaths()

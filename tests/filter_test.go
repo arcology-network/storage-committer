@@ -37,7 +37,7 @@ func TestTransitionFilters(t *testing.T) {
 		t.Error(err)
 	}
 
-	raw := writeCache.Export(importer.Sorter)
+	raw := writeCache.Export(univalue.Sorter)
 
 	acctTrans := univalue.Univalues(slice.Clone(raw)).To(importer.IPTransition{})
 
@@ -124,7 +124,7 @@ func TestAccessFilters(t *testing.T) {
 		t.Error(err)
 	}
 
-	raw := writeCache.Export(importer.Sorter)
+	raw := writeCache.Export(univalue.Sorter)
 
 	raw[0].Value().(*commutative.Path).SetSubPaths([]string{"k0", "k1"})
 	raw[0].Value().(*commutative.Path).SetAdded([]string{"123", "456"})

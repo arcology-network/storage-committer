@@ -76,7 +76,7 @@ func TestUnivalueCodec(t *testing.T) {
 	// committer.NewAccount(stgcommcommon.SYSTEM, fmt.Sprint("rand.Int()"))
 	adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, fmt.Sprint("rand.Int()"), writeCache)
 
-	transVec := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.IPTransition{})
+	transVec := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{})
 	transitions = append(transitions, transVec...)
 
 	for i := 0; i < len(transitions); i++ {
@@ -102,7 +102,7 @@ func TestUnivaluesCodec(t *testing.T) {
 
 		adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, acct, writeCache)
 
-		transVec := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+		transVec := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITTransition{})
 		transitions = append(transitions, transVec...)
 	}
 	t0 := time.Now()

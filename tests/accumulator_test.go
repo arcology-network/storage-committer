@@ -27,7 +27,7 @@ func TestAccumulatorUpperLimit(t *testing.T) {
 	}
 
 	itc := importer.ITTransition{}
-	trans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(itc)
+	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(itc)
 	transV := []*univalue.Univalue(trans)
 	balanceDeltas := slice.CopyIf(transV, func(v *univalue.Univalue) bool { return strings.LastIndex(*v.GetPath(), "/balance") > 0 })
 
@@ -69,7 +69,7 @@ func TestAccumulatorLowerLimit(t *testing.T) {
 		t.Error(err)
 	}
 
-	trans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITTransition{})
+	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITTransition{})
 	transV := []*univalue.Univalue(trans)
 	balanceDeltas := slice.CopyIf(transV, func(v *univalue.Univalue) bool { return strings.LastIndex(*v.GetPath(), "/balance") > 0 })
 

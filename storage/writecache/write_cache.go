@@ -205,7 +205,7 @@ func (this *WriteCache) Insert(transitions []*univalue.Univalue) *WriteCache {
 
 	// Not necessary to sort the path creations at the moment,
 	// but it is good for the future if multiple level containers are available
-	newPathCreations = univalue.Univalues(importer.Sorter(newPathCreations))
+	newPathCreations = univalue.Univalues(univalue.Sorter(newPathCreations))
 	slice.Foreach(newPathCreations, func(_ int, v **univalue.Univalue) {
 		(*v).CopyTo(this) // Write back to the parent writecache
 	})
@@ -271,7 +271,7 @@ func (this *WriteCache) Export(preprocs ...func([]*univalue.Univalue) []*univalu
 }
 
 func (this *WriteCache) ExportAll(preprocs ...func([]*univalue.Univalue) []*univalue.Univalue) ([]*univalue.Univalue, []*univalue.Univalue) {
-	all := this.Export(importer.Sorter)
+	all := this.Export(univalue.Sorter)
 	// univalue.Univalues(all).Print()
 
 	accesses := univalue.Univalues(slice.Clone(all)).To(importer.ITAccess{})
@@ -280,7 +280,7 @@ func (this *WriteCache) ExportAll(preprocs ...func([]*univalue.Univalue) []*univ
 }
 
 func (this *WriteCache) KVs() ([]string, []intf.Type) {
-	transitions := univalue.Univalues(slice.Clone(this.Export(importer.Sorter))).To(importer.ITTransition{})
+	transitions := univalue.Univalues(slice.Clone(this.Export(univalue.Sorter))).To(importer.ITTransition{})
 
 	values := make([]intf.Type, len(transitions))
 	keys := slice.ParallelTransform(transitions, 4, func(i int, v *univalue.Univalue) string {

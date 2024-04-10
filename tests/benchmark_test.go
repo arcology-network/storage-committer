@@ -46,7 +46,7 @@ func BenchmarkAccountMerkleImportPerf(b *testing.B) {
 			b.Error(err)
 		}
 	}
-	acct := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITAccess{})
+	acct := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITAccess{})
 
 	t0 := time.Now()
 	univalue.Univalues(acct).Encode()
@@ -342,7 +342,7 @@ func BenchmarkEncodeTransitions(b *testing.B) {
 	adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache)
 	// acctTrans := univalue.Univalues(slice.Clone(writeCache.Export())).To(importer.ITAccess{})
 
-	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITAccess{})
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITAccess{})
 
 	committer := stgcommitter.NewStateCommitter(store)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
@@ -359,7 +359,7 @@ func BenchmarkEncodeTransitions(b *testing.B) {
 	}
 	fmt.Println("Write "+fmt.Sprint(10000), time.Since(t0))
 
-	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(importer.Sorter))).To(importer.ITAccess{})
+	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITAccess{})
 
 	t0 = time.Now()
 	univalue.Univalues(acctTrans).Encode()

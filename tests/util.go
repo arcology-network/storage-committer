@@ -137,7 +137,7 @@ func verifierEthMerkle(roothash [32]byte, acct string, key string, store interfa
 
 // It's mainly used for TESTING purpose.
 func FlushToStore(this *cache.WriteCache, store interfaces.Datastore) interfaces.Datastore {
-	acctTrans := univalue.Univalues(slice.Clone(this.Export(importer.Sorter))).To(importer.IPTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(this.Export(univalue.Sorter))).To(importer.IPTransition{})
 	txs := slice.Transform(acctTrans, func(_ int, v *univalue.Univalue) uint32 {
 		return v.GetTx()
 	})
