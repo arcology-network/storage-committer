@@ -72,6 +72,8 @@ func NewAsyncWriter(store *DataStore) *AsyncWriter {
 	}
 }
 
+// Add adds a list of transitions to the indexer. If the list is empty, the indexer is finalized and pushed to the processor stream.
+// The processor stream is a list of functions that will be executed in order, consuming the output of the previous function.
 func (this *AsyncWriter) Add(univ []*univalue.Univalue) *AsyncWriter {
 	if len(univ) == 0 {
 		this.CCIndexer.Finalize(nil)

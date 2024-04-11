@@ -41,7 +41,6 @@ type StateCommitter struct {
 	ethAsyncWriter    *ethstorage.EthAsyncWriter
 	ccAsyncWriter     *ccstorage.AsyncWriter
 
-	// stores []*associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore] // backends Committable
 	byPath *indexer.UnorderedIndexer[string, *univalue.Univalue, []*univalue.Univalue]
 	byTxID *indexer.UnorderedIndexer[uint32, *univalue.Univalue, []*univalue.Univalue]
 
@@ -56,7 +55,6 @@ func NewStateCommitter(readonlyStore intf.ReadOnlyDataStore) *StateCommitter {
 	return &StateCommitter{
 		readonlyStore: readonlyStore,
 		platform:      platform.NewPlatform(),
-		// stores:        readonlyStore.(*stgproxy.StorageProxy).Committable(),
 
 		cacheAsyncWritter: proxy.NewAsyncWriter(readonlyStore.(*proxy.StorageProxy).Cache(nil).(*proxy.ReadCache)),
 		ethAsyncWriter:    ethstorage.NewAsyncWriter(readonlyStore.(*proxy.StorageProxy).EthStore()),

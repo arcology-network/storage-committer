@@ -23,6 +23,9 @@ import (
 	"github.com/arcology-network/storage-committer/univalue"
 )
 
+// AsyncWriter is a struct that contains data strucuture and methods for writing data to cache asynchronously.
+// It contains a pipeline that has a list of functions executing in order. Each function consumes the output of the previous function.
+// The indexer is used to index the input transitions as they are received, in a way that they can be committed efficiently later.
 type AsyncCacheWriter struct {
 	*async.Pipeline[intf.Indexer[*univalue.Univalue]]
 	*CacheIndexer
@@ -35,13 +38,8 @@ func NewAsyncWriter(cache *ReadCache) *AsyncCacheWriter {
 	pipe := async.NewPipeline(
 		4,
 		10,
-		// // Precommitter
-		// func(idxer intf.Indexer[*univalue.Univalue]) (intf.Indexer[*univalue.Univalue], bool) {
-		// 	idxer.Finalize(cache)
-		// 	return idxer, true
-		// },
 
-		// db and cache writer
+		// db writer
 		func(idxer intf.Indexer[*univalue.Univalue]) (intf.Indexer[*univalue.Univalue], bool) {
 			var err error
 			idx := idxer.(*CacheIndexer)
@@ -58,6 +56,8 @@ func NewAsyncWriter(cache *ReadCache) *AsyncCacheWriter {
 	}
 }
 
+// Add adds a list of transitions to the indexer. If the list is empty, the indexer is finalized and pushed to the processor stream.
+// The processor stream is a list of functions that will be executed in order, consuming the output of the previous function.
 func (this *AsyncCacheWriter) Add(univ []*univalue.Univalue) *AsyncCacheWriter {
 	if len(univ) == 0 {
 		this.CacheIndexer.Finalize(nil)

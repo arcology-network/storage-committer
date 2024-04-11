@@ -89,17 +89,16 @@ func (this *StorageProxy) Retrive(key string, v any) (interface{}, error) {
 }
 
 // Placeholders for the storage interface
-func (this *StorageProxy) AsyncPrecommit(...interface{})          {}
 func (this *StorageProxy) Precommit(args ...interface{}) [32]byte { return this.ethDataStore.Root() }
 func (this *StorageProxy) Commit(blockNum uint64) error           { return nil }
 
 // Get the stores that can be
-func (this *StorageProxy) Committable() []*associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore] {
-	bufferPair := &associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore]{
-		First: NewCacheIndexer(this.objectCache),
-		Second: []intf.CommittableStore{
-			this.objectCache,
-		}}
+func (this *StorageProxy) Committables() []*associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore] {
+	// bufferPair := &associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore]{
+	// 	First: NewCacheIndexer(this.objectCache),
+	// 	Second: []intf.CommittableStore{
+	// 		this.objectCache,
+	// 	}}
 
 	ethPair := &associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore]{
 		First:  ethstg.NewEthIndexer(this.EthStore()),
@@ -112,7 +111,7 @@ func (this *StorageProxy) Committable() []*associative.Pair[intf.Indexer[*unival
 	}
 
 	return []*associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore]{
-		bufferPair,
+		// bufferPair,
 		ethPair,
 		ccPair,
 	}

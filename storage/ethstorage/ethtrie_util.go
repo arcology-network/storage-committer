@@ -13,7 +13,7 @@ import (
 
 // ethapi "github.com/ethereum/go-ethereum/internal/ethapi"
 
-func commitToDB(trie *ethmpt.Trie, ethdb *ethmpt.Database, block uint64) (*ethmpt.Trie, error) {
+func commitToEthDB(trie *ethmpt.Trie, ethdb *ethmpt.Database, block uint64) (*ethmpt.Trie, error) {
 	root, nodes, err := trie.Commit(false) // Finalized the trie
 	if err != nil {
 		return nil, err
@@ -31,7 +31,7 @@ func commitToDB(trie *ethmpt.Trie, ethdb *ethmpt.Database, block uint64) (*ethmp
 	return ethmpt.NewParallel(ethmpt.TrieID(root), ethdb)
 }
 
-func parallelCommitToDB(trie *ethmpt.Trie, ethdb *ethmpt.Database, block uint64) (*ethmpt.Trie, error) {
+func parallelcommitToEthDB(trie *ethmpt.Trie, ethdb *ethmpt.Database, block uint64) (*ethmpt.Trie, error) {
 	root, nodes, err := trie.Commit(false) // Finalized the trie
 	if err != nil {
 		return nil, err

@@ -57,6 +57,8 @@ func (this *CacheIndexer) Finalize(_ intf.CommittableStore) {
 		return nil // A deletion
 	})
 }
+
+// Get the transitions by account address
 func (this *CacheIndexer) Clear() {
 	this.buffer = this.buffer[:0]
 	this.keys = this.keys[:0]

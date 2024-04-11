@@ -78,15 +78,15 @@ func TestEthWorldTrieProof(t *testing.T) {
 
 	/* Get Account Proofs */
 	dstore := store.(*stgproxy.StorageProxy).EthStore()
-	if _, err := dstore.IsAccountProvable(alice); err != nil {
+	if _, err := ethstg.IsAccountProvable(alice, dstore.Root(), dstore.Trie()); err != nil {
 		t.Error(err)
 	}
 
-	if d, err := dstore.IsAccountProvable(bob); err != nil || len(d) == 0 {
+	if d, err := ethstg.IsAccountProvable(bob, dstore.Root(), dstore.Trie()); err != nil || len(d) == 0 {
 		t.Error(err)
 	}
 
-	if _, err := dstore.IsAccountProvable(CarolAccount()); err == nil {
+	if _, err := ethstg.IsAccountProvable(CarolAccount(), dstore.Root(), dstore.Trie()); err == nil {
 		t.Error("Error: Should've flagged an error")
 	}
 

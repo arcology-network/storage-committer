@@ -1,9 +1,12 @@
 package ethstorage
 
 import (
+	"errors"
+
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/ethereum/go-ethereum/rlp"
 	ethmpt "github.com/ethereum/go-ethereum/trie"
 	// ethapi "github.com/ethereum/go-ethereum/internal/ethapi"
@@ -114,4 +117,24 @@ func (this *ProofProvider) GetProof(acctAddr ethcommon.Address, storageKeys []st
 		StorageHash:  storageHash,
 		StorageProof: storageProof,
 	}, nil // state.Error()
+}
+
+func IsAccountProvable(addr string, acctRoot [32]byte, worldTrie *ethmpt.Trie) ([]byte, error) {
+	addrBytes, _ := hexutil.Decode(addr) // Decode to remove the 0x prefix
+	keyHash := crypto.Keccak256(addrBytes)
+
+	proofs := memorydb.New()
+	if trie, _ := worldTrie.Get(keyHash); len(trie) > 0 {
+		if err := worldTrie.Prove(keyHash, proofs); err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, errors.New("Failed to find the proof")
+	}
+
+	v, err := ethmpt.VerifyProof(acctRoot, keyHash, proofs)
+	if err != nil || len(v) == 0 {
+		return v, errors.New("Failed to find the proof")
+	}
+	return v, nil
 }

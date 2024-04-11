@@ -114,7 +114,7 @@ func NewWriteCacheWithAcounts(store interfaces.Datastore, accounts ...string) *c
 	return writeCache
 }
 
-func verifierEthMerkle(roothash [32]byte, acct string, key string, store interfaces.Datastore, t *testing.T) {
+func verifierEthMerkle(roothash [32]byte, acct string, key string, store interfaces.ReadOnlyDataStore, t *testing.T) {
 	// roothash := store.(*stgproxy.StorageProxy).EthStore().Root()                               // Get the proof provider by a root hash.
 	ethdb := store.(*stgproxy.StorageProxy).EthStore().EthDB()                       // Get the proof provider by a root hash.
 	provider, err := ethstg.NewMerkleProofCache(2, ethdb).GetProofProvider(roothash) // Initiate the proof cache, maximum 2 blocks

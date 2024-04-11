@@ -302,7 +302,7 @@ func (*Account) Decode(buffer []byte) *Account {
 func (this *Account) Commit(block uint64) error {
 	var err error
 	if this.StorageDirty {
-		this.storageTrie, err = commitToDB(this.storageTrie, this.ethdb, block) // Commit the change to the storage trie.
+		this.storageTrie, err = commitToEthDB(this.storageTrie, this.ethdb, block) // Commit the change to the storage trie.
 		this.StorageDirty = false
 	}
 	return err // Write to DB

@@ -31,7 +31,7 @@ type ReadCache struct {
 	queue                               chan *associative.Pair[[]string, []intf.Type]
 }
 
-func NewReadCache(store intf.Datastore) *ReadCache {
+func NewReadCache(store intf.ReadOnlyDataStore) *ReadCache {
 	return &ReadCache{
 		cache.NewReadCache[string, intf.Type](
 			4096, // 4096 shards to avoid lock contention
@@ -45,20 +45,4 @@ func NewReadCache(store intf.Datastore) *ReadCache {
 		),
 		make(chan *associative.Pair[[]string, []intf.Type], 16),
 	}
-}
-
-// Read cache does not have a precommit method equivalent to the write cache
-func (this *ReadCache) Precommit(args ...interface{}) [32]byte {
-	pair := args[0].(*associative.Pair[[]string, []intf.Type])
-	this.ReadCache.Commit(pair.First, pair.Second)
-	return [32]byte{}
-}
-
-// Changes have been committed to the cache in Precommit, so we can return nil
-func (this *ReadCache) Commit(placeHolder uint64) error {
-	// for len(this.queue) != 0 {
-	// 	fmt.Println("ReadCache: Waiting for the job queue to be emptied")
-	// 	time.Sleep(50 * time.Millisecond)
-	// }
-	return nil
 }
