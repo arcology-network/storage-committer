@@ -140,10 +140,7 @@ func (this *StateCommitter) Clear() {
 	this.byPath.Clear()
 	this.byTxID.Clear()
 
-	// for _, pair := range this.stores {
-	// 	pair.First.Clear()
-	// }
-
+	this.cacheAsyncWritter.Clear()
 	this.ethAsyncWriter.Clear()
 	this.ccAsyncWriter.Clear()
 }

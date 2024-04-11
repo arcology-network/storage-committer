@@ -35,9 +35,9 @@ type EthDataStore struct {
 	accountCacheEnabled bool
 	accountCache        map[ethcommon.Address]*Account // Account cache holds the accountCache that are being accessed in the current cycle.
 
-	dirtyAccounts []*Account
-	dirtyVals     [][]interfaces.Type // Dirty accountCache are the accountCache that have been updated in the current cycle.
-	dirtyKeys     [][]string          // Dirty accountCache are the accountCache that have been updated in the current cycle.
+	// dirtyAccounts []*Account
+	// dirtyVals     [][]interfaces.Type // Dirty accountCache are the accountCache that have been updated in the current cycle.
+	// dirtyKeys     [][]string          // Dirty accountCache are the accountCache that have been updated in the current cycle.
 
 	ethdb   *ethmpt.Database
 	diskdbs [16]ethdb.Database
@@ -140,8 +140,9 @@ func (this *EthDataStore) GetNewIndex() interface {
 }
 
 func (this *EthDataStore) AccountDict() map[ethcommon.Address]*Account { return this.accountCache }
-func (this *EthDataStore) DirtyAccounts() []*Account                   { return this.dirtyAccounts }
-func (this *EthDataStore) Clear()                                      {}
+
+// func (this *EthDataStore) DirtyAccounts() []*Account                   { return this.dirtyAccounts }
+func (this *EthDataStore) Clear() {}
 
 func (this *EthDataStore) Hash(key string) []byte {
 	hasher := sha3.NewLegacyKeccak256()
@@ -263,7 +264,7 @@ func (this *EthDataStore) BatchInject(keys []string, values []interface{}) error
 // Get the account from the cache first, if not found, get it from the trie.
 func (this *EthDataStore) GetAccount(address ethcommon.Address, accesses *ethmpt.AccessListCache) (*Account, error) {
 	if len(address) > 0 {
-		if v, _ := this.accountCache[address]; v != nil { // Lookup in the cache first
+		if v := this.accountCache[address]; v != nil { // Lookup in the cache first
 			return v, nil
 		}
 		return this.GetAccountFromTrie(address, accesses)
@@ -378,16 +379,16 @@ func (this *EthDataStore) WriteWorldTrie(dirtyAccounts []*Account) [32]byte {
 }
 
 func (this *EthDataStore) Commit(blockNum uint64) error {
-	err := this.CommitToEthStorage(blockNum)
+	// err := this.WriteToEthStorage(blockNum)
 
-	this.dirtyAccounts = this.dirtyAccounts[:0]
-	this.dirtyKeys = this.dirtyKeys[:0] // Reset the dirties buffer
-	this.dirtyVals = this.dirtyVals[:0]
-	return err
+	// this.dirtyAccounts = this.dirtyAccounts[:0]
+	// this.dirtyKeys = this.dirtyKeys[:0] // Reset the dirties buffer
+	// this.dirtyVals = this.dirtyVals[:0]
+	return nil
 }
 
-func (this *EthDataStore) CommitToEthStorage(blockNum uint64) error {
-	slice.ParallelForeach(this.dirtyAccounts, runtime.NumCPU(), func(_ int, acct **Account) {
+func (this *EthDataStore) WriteToEthStorage(blockNum uint64, dirtyAccounts []*Account) error {
+	slice.ParallelForeach(dirtyAccounts, runtime.NumCPU(), func(_ int, acct **Account) {
 		if err := (**acct).Commit(blockNum); err != nil {
 			panic(err)
 		}

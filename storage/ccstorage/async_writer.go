@@ -24,6 +24,9 @@ import (
 	"github.com/arcology-network/storage-committer/univalue"
 )
 
+// AsyncWriter is a struct that contains data strucuture and methods for writing data to concurrent storage asynchronously.
+// It contains a pipeline that has a list of functions executing in order. Each function consumes the output of the previous function.
+// The indexer is used to index the input transitions as they are received, in a way that they can be committed efficiently later.
 type AsyncWriter struct {
 	*async.Pipeline[intf.Indexer[*univalue.Univalue]]
 	*CCIndexer

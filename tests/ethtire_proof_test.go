@@ -26,8 +26,6 @@ import (
 
 func TestEthWorldTrieProof(t *testing.T) {
 	store := chooseDataStore()
-	// store := storage.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
-
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
 	alice := AliceAccount()
@@ -104,22 +102,6 @@ func TestEthWorldTrieProof(t *testing.T) {
 	if _, _, err := aliceCache.IsStorageProvable("0x0000000000000000000000000000000000000000000000000000000000000009"); err != nil {
 		t.Error(err)
 	}
-
-	// Through the provider
-
-	// roothash := store.(*stgproxy.StorageProxy).EthStore().Root()                               // Get the proof provider by a root hash.
-	// ethdb := dstore.EthDB()                                                                  // Get the proof provider by a root hash.
-	// provider, err := stgcommstorage.NewMerkleProofCache(2, ethdb).GetProofProvider(roothash) // Initiate the proof cache, maximum 2 blocks
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
-
-	// // Verify Bob's storage for a big int value.
-	// bobAddr = ethcommon.BytesToAddress([]byte(hexutil.MustDecode(bob)))
-	// baccountResult, _ := provider.GetProof(bobAddr, []string{string("0x0000000000000000000000000000000000000000000000000000000000000000")})
-	// if err := baccountResult.Validate(provider.Root()); err != nil {
-	// 	t.Error(err)
-	// }
 }
 
 func TestGetProofAPI(t *testing.T) {

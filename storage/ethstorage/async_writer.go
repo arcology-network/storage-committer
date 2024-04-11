@@ -28,17 +28,12 @@ import (
 	"github.com/arcology-network/storage-committer/univalue"
 )
 
-func (this *EthDataStore) AsyncPrecommit(args ...interface{}) {
-	v := args[0].(*EthIndexer)
-	this.Precommit(v)
-	this.Commit(0)
-}
-
 type EthAsyncWriter struct {
 	*async.Pipeline[intf.Indexer[*univalue.Univalue]]
 	*EthIndexer
 	ethStore *EthDataStore
 	blockNum uint64
+	Err      error
 }
 
 func NewAsyncWriter(ethStore *EthDataStore) *EthAsyncWriter {
@@ -97,6 +92,6 @@ func (this *EthAsyncWriter) Add(univ []*univalue.Univalue) *EthAsyncWriter {
 
 func (this *EthAsyncWriter) Await() {
 	this.Pipeline.Await()
-	this.ethStore.CommitToEthStorage(0) // Write to the db
+	this.Err = this.ethStore.WriteToEthStorage(0, this.EthIndexer.dirtyAccounts) // Write to the db
 	this.EthIndexer.Clear()
 }
