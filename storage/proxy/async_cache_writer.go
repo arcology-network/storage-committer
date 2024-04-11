@@ -26,13 +26,13 @@ import (
 // AsyncWriter is a struct that contains data strucuture and methods for writing data to cache asynchronously.
 // It contains a pipeline that has a list of functions executing in order. Each function consumes the output of the previous function.
 // The indexer is used to index the input transitions as they are received, in a way that they can be committed efficiently later.
-type AsyncCacheWriter struct {
+type AsyncWriter struct {
 	*async.Pipeline[intf.Indexer[*univalue.Univalue]]
 	*CacheIndexer
 	blockNum uint64
 }
 
-func NewAsyncWriter(cache *ReadCache) *AsyncCacheWriter {
+func NewAsyncWriter(cache *ReadCache) *AsyncWriter {
 	blockNum := uint64(0) // TODO: get the block number from the block header
 	idxer := NewCacheIndexer(cache)
 	pipe := async.NewPipeline(
@@ -49,7 +49,7 @@ func NewAsyncWriter(cache *ReadCache) *AsyncCacheWriter {
 		},
 	)
 
-	return &AsyncCacheWriter{
+	return &AsyncWriter{
 		Pipeline:     pipe.Start(),
 		CacheIndexer: idxer,
 		blockNum:     blockNum,
@@ -58,7 +58,7 @@ func NewAsyncWriter(cache *ReadCache) *AsyncCacheWriter {
 
 // Add adds a list of transitions to the indexer. If the list is empty, the indexer is finalized and pushed to the processor stream.
 // The processor stream is a list of functions that will be executed in order, consuming the output of the previous function.
-func (this *AsyncCacheWriter) Add(univ []*univalue.Univalue) *AsyncCacheWriter {
+func (this *AsyncWriter) Add(univ []*univalue.Univalue) *AsyncWriter {
 	if len(univ) == 0 {
 		this.CacheIndexer.Finalize()
 		this.Pipeline.Push(this.CacheIndexer) // push the indexer to the processor stream
@@ -67,3 +67,5 @@ func (this *AsyncCacheWriter) Add(univ []*univalue.Univalue) *AsyncCacheWriter {
 	}
 	return this
 }
+
+func (this *AsyncWriter) WriteToDB() { this.Await() }

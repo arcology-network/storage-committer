@@ -37,8 +37,8 @@ type StateCommitter struct {
 	readonlyStore intf.ReadOnlyDataStore
 	platform      *platform.Platform
 
-	cacheAsyncWritter *proxy.AsyncCacheWriter
-	ethAsyncWriter    *ethstorage.EthAsyncWriter
+	cacheAsyncWritter *proxy.AsyncWriter
+	ethAsyncWriter    *ethstorage.AsyncWriter
 	ccAsyncWriter     *ccstorage.AsyncWriter
 
 	byPath *indexer.UnorderedIndexer[string, *univalue.Univalue, []*univalue.Univalue]
@@ -121,15 +121,16 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 
 	// Signal the async writers that all transitions are pushed and finalized.
 	this.cacheAsyncWritter.Add(nil).Await()
-	this.ccAsyncWriter.Add(nil)
-	this.ethAsyncWriter.Add(nil)
+	this.ccAsyncWriter.Add(nil)  // Wait for the concurrent db DB finish committing the transitions
+	this.ethAsyncWriter.Add(nil) // Wait for the eth DB to finish committing the transitions
 	return [32]byte{}
 }
 
 // Commit commits the transitions to different stores.
 func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
-	this.ethAsyncWriter.Await() // Wait for the eth DB to finish committing the transitions
-	this.ccAsyncWriter.Await()  // Wait for the concurrent db DB finish committing the transitions
+	this.cacheAsyncWritter.WriteToDB()
+	this.ethAsyncWriter.WriteToDB()
+	this.ccAsyncWriter.WriteToDB()
 	return this
 }
 

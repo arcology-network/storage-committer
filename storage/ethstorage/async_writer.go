@@ -28,7 +28,7 @@ import (
 	"github.com/arcology-network/storage-committer/univalue"
 )
 
-type EthAsyncWriter struct {
+type AsyncWriter struct {
 	*async.Pipeline[intf.Indexer[*univalue.Univalue]]
 	*EthIndexer
 	ethStore *EthDataStore
@@ -36,7 +36,7 @@ type EthAsyncWriter struct {
 	Err      error
 }
 
-func NewAsyncWriter(ethStore *EthDataStore) *EthAsyncWriter {
+func NewAsyncWriter(ethStore *EthDataStore) *AsyncWriter {
 	blockNum := uint64(0) // TODO: get the block number from the block header
 	idxer := NewEthIndexer(ethStore)
 	pipe := async.NewPipeline(
@@ -71,7 +71,7 @@ func NewAsyncWriter(ethStore *EthDataStore) *EthAsyncWriter {
 		},
 	)
 
-	return &EthAsyncWriter{
+	return &AsyncWriter{
 		Pipeline:   pipe.Start(),
 		EthIndexer: idxer,
 		ethStore:   ethStore,
@@ -80,7 +80,7 @@ func NewAsyncWriter(ethStore *EthDataStore) *EthAsyncWriter {
 }
 
 // // Add a batch of univalues to the indexer of the async writer
-func (this *EthAsyncWriter) Add(univ []*univalue.Univalue) *EthAsyncWriter {
+func (this *AsyncWriter) Add(univ []*univalue.Univalue) *AsyncWriter {
 	if len(univ) == 0 {
 		this.EthIndexer.Finalize()
 		this.Pipeline.Push(this.EthIndexer) // push the indexer to the processor stream
@@ -90,7 +90,7 @@ func (this *EthAsyncWriter) Add(univ []*univalue.Univalue) *EthAsyncWriter {
 	return this
 }
 
-func (this *EthAsyncWriter) Await() {
+func (this *AsyncWriter) WriteToDB() {
 	this.Pipeline.Await()
 	this.Err = this.ethStore.WriteToEthStorage(0, this.EthIndexer.dirtyAccounts) // Write to the db
 	this.EthIndexer.Clear()

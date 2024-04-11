@@ -84,3 +84,7 @@ func (this *AsyncWriter) Add(univ []*univalue.Univalue) *AsyncWriter {
 	}
 	return this
 }
+
+func (this *AsyncWriter) WriteToDB() {
+	this.Await()
+}
