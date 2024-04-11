@@ -22,7 +22,6 @@ import (
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/common-lib/storage/indexer"
 	"github.com/arcology-network/storage-committer/interfaces"
-	intf "github.com/arcology-network/storage-committer/interfaces"
 	platform "github.com/arcology-network/storage-committer/platform"
 	"github.com/arcology-network/storage-committer/univalue"
 	ethcommon "github.com/ethereum/go-ethereum/common"
@@ -71,7 +70,7 @@ func NewEthIndexer(store *EthDataStore) *EthIndexer {
 // This is for ETH storage, concurrent container related sub-paths won't be put into this index.
 func (this *EthIndexer) Add(v []*univalue.Univalue) { this.UnorderedIndexer.Add(v) }
 
-func (this *EthIndexer) Finalize(_ intf.CommittableStore) {
+func (this *EthIndexer) Finalize() {
 	this.ParallelForeachDo(func(_ [20]byte, v **associative.Pair[*Account, []*univalue.Univalue]) {
 		slice.RemoveIf(&((**v).Second), func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil })
 	})

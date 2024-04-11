@@ -18,14 +18,11 @@
 package proxy
 
 import (
-	"github.com/arcology-network/common-lib/exp/associative"
 	memdb "github.com/arcology-network/common-lib/storage/memdb"
 	policy "github.com/arcology-network/common-lib/storage/policy"
-	intf "github.com/arcology-network/storage-committer/interfaces"
 	platform "github.com/arcology-network/storage-committer/platform"
 	ccstg "github.com/arcology-network/storage-committer/storage/ccstorage"
 	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
-	"github.com/arcology-network/storage-committer/univalue"
 )
 
 type StorageProxy struct {
@@ -77,8 +74,9 @@ func (this *StorageProxy) IfExists(key string) bool {
 	return this.GetStorage(key).IfExists(key)
 }
 
+// Directly inject the value into the storage, on for the concurrent container storage
 func (this *StorageProxy) Inject(key string, v any) error {
-	return this.GetStorage(key).Inject(key, v)
+	return this.GetStorage(key).(*ccstg.DataStore).Inject(key, v)
 }
 
 func (this *StorageProxy) Retrive(key string, v any) (interface{}, error) {
@@ -93,26 +91,26 @@ func (this *StorageProxy) Precommit(args ...interface{}) [32]byte { return this.
 func (this *StorageProxy) Commit(blockNum uint64) error           { return nil }
 
 // Get the stores that can be
-func (this *StorageProxy) Committables() []*associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore] {
-	// bufferPair := &associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore]{
-	// 	First: NewCacheIndexer(this.objectCache),
-	// 	Second: []intf.CommittableStore{
-	// 		this.objectCache,
-	// 	}}
+// func (this *StorageProxy) Committables() []*associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore] {
+// 	// bufferPair := &associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore]{
+// 	// 	First: NewCacheIndexer(this.objectCache),
+// 	// 	Second: []intf.CommittableStore{
+// 	// 		this.objectCache,
+// 	// 	}}
 
-	ethPair := &associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore]{
-		First:  ethstg.NewEthIndexer(this.EthStore()),
-		Second: []intf.CommittableStore{this.EthStore()},
-	}
+// 	ethPair := &associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore]{
+// 		First:  ethstg.NewEthIndexer(this.EthStore()),
+// 		Second: []intf.CommittableStore{this.EthStore()},
+// 	}
 
-	ccPair := &associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore]{
-		First:  ccstg.NewCCIndexer(this.CCStore()),
-		Second: []intf.CommittableStore{this.CCStore()},
-	}
+// 	ccPair := &associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore]{
+// 		First:  ccstg.NewCCIndexer(this.CCStore()),
+// 		Second: []intf.CommittableStore{this.CCStore()},
+// 	}
 
-	return []*associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore]{
-		// bufferPair,
-		ethPair,
-		ccPair,
-	}
-}
+// 	return []*associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore]{
+// 		// bufferPair,
+// 		ethPair,
+// 		ccPair,
+// 	}
+// }

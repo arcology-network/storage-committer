@@ -117,7 +117,7 @@ func (this *DataStore) BatchInject(keys []string, values []interface{}) error {
 	return this.db.BatchSet(keys, encoded)
 }
 
-func (this *DataStore) RetriveFromStorage(key string, T any) (interface{}, error) {
+func (this *DataStore) retriveFromStorage(key string, T any) (interface{}, error) {
 	if this.db == nil {
 		return nil, errors.New("Error: DB not found")
 	}
@@ -142,7 +142,7 @@ func (this *DataStore) Retrive(key string, T any) (interface{}, error) {
 		return *v, nil
 	}
 
-	v, err := this.RetriveFromStorage(key, T)
+	v, err := this.retriveFromStorage(key, T)
 	if err == nil && T != nil {
 		this.cccache.Set(key, v) //update to the local cache and add all the missing values to the cache
 	}
@@ -184,9 +184,9 @@ func (this *DataStore) BatchRetrive(keys []string, T []any) []interface{} {
 }
 
 // Placeholders
-func (this *DataStore) Precommit(arg ...interface{}) [32]byte { return [32]byte{} }
-func (this *DataStore) Commit(_ uint64) error                 { return nil } // Commit the changes to the local cache and the persistent storage
-func (this *DataStore) AsyncPrecommit(args ...interface{})    {}
+// func (this *DataStore) Precommit(arg ...interface{}) [32]byte { return [32]byte{} }
+// func (this *DataStore) Commit(_ uint64) error                 { return nil } // Commit the changes to the local cache and the persistent storage
+// func (this *DataStore) AsyncPrecommit(args ...interface{})    {}
 
 func (this *DataStore) NewWriter(blockNum uint64) interface{} { return NewAsyncWriter(this) }
 

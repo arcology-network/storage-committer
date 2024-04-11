@@ -45,7 +45,7 @@ func NewAsyncWriter(ethStore *EthDataStore) *EthAsyncWriter {
 		// Precommitter
 		func(indexer intf.Indexer[*univalue.Univalue]) (intf.Indexer[*univalue.Univalue], bool) {
 			idxer := indexer.(*EthIndexer)
-			idxer.Finalize(ethStore)
+			idxer.Finalize()
 
 			pairs := idxer.UnorderedIndexer.Values()
 			idxer.dirtyAccounts = associative.Pairs[*Account, []*univalue.Univalue](pairs).Firsts()
@@ -82,7 +82,7 @@ func NewAsyncWriter(ethStore *EthDataStore) *EthAsyncWriter {
 // // Add a batch of univalues to the indexer of the async writer
 func (this *EthAsyncWriter) Add(univ []*univalue.Univalue) *EthAsyncWriter {
 	if len(univ) == 0 {
-		this.EthIndexer.Finalize(nil)
+		this.EthIndexer.Finalize()
 		this.Pipeline.Push(this.EthIndexer) // push the indexer to the processor stream
 	} else {
 		this.EthIndexer.Add(univ)

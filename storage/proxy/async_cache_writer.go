@@ -60,7 +60,7 @@ func NewAsyncWriter(cache *ReadCache) *AsyncCacheWriter {
 // The processor stream is a list of functions that will be executed in order, consuming the output of the previous function.
 func (this *AsyncCacheWriter) Add(univ []*univalue.Univalue) *AsyncCacheWriter {
 	if len(univ) == 0 {
-		this.CacheIndexer.Finalize(nil)
+		this.CacheIndexer.Finalize()
 		this.Pipeline.Push(this.CacheIndexer) // push the indexer to the processor stream
 	} else {
 		this.CacheIndexer.Add(univ)

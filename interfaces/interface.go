@@ -59,7 +59,7 @@ type Type interface { // value type
 
 type Indexer[T any] interface {
 	Add([]T)
-	Finalize(CommittableStore)
+	Finalize()
 	Clear()
 }
 
@@ -69,6 +69,7 @@ type ReadOnlyDataStore interface {
 }
 
 type CommittableStore interface {
+	Inject(string, any) error
 	Precommit(...interface{}) [32]byte //key gatter, value gatter,
 	Commit(uint64) error
 }
@@ -76,7 +77,6 @@ type CommittableStore interface {
 type Datastore interface {
 	ReadOnlyDataStore
 	CommittableStore
-	Inject(string, any) error
 	Preload([]byte) interface{}
 }
 

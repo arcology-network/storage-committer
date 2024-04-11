@@ -121,8 +121,8 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 
 	// Signal the async writers that all transitions are pushed and finalized.
 	this.cacheAsyncWritter.Add(nil).Await()
-	this.ethAsyncWriter.Add(nil)
 	this.ccAsyncWriter.Add(nil)
+	this.ethAsyncWriter.Add(nil)
 	return [32]byte{}
 }
 

@@ -81,10 +81,6 @@ func (this *ShardedWriteCache) Retrive(path string, T any) (interface{}, error) 
 	return this.caches[this.hasher(path)%NUM_SHARDS].Retrive(path, T)
 }
 
-func (this *ShardedWriteCache) RetriveFromStorage(path string, T any) (interface{}, error) {
-	return this.caches[this.hasher(path)%NUM_SHARDS].RetriveFromStorage(path, T)
-}
-
 func (this *ShardedWriteCache) IfExists(path string) bool {
 	return this.caches[this.hasher(path)%NUM_SHARDS].IfExists(path)
 }

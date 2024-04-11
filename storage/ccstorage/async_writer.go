@@ -34,7 +34,8 @@ type AsyncWriter struct {
 	blockNum uint64
 }
 
-func NewAsyncWriter(store *DataStore) *AsyncWriter {
+func NewAsyncWriter(reader intf.ReadOnlyDataStore) *AsyncWriter {
+	store := reader.(*DataStore)
 	blockNum := uint64(0) // TODO: get the block number from the block header
 	idxer := NewCCIndexer(store)
 	pipe := async.NewPipeline(
@@ -42,7 +43,7 @@ func NewAsyncWriter(store *DataStore) *AsyncWriter {
 		10,
 		// Precommitter
 		func(idxer intf.Indexer[*univalue.Univalue]) (intf.Indexer[*univalue.Univalue], bool) {
-			idxer.Finalize(store)
+			idxer.Finalize()
 			return idxer, true
 		},
 
@@ -76,7 +77,7 @@ func NewAsyncWriter(store *DataStore) *AsyncWriter {
 // The processor stream is a list of functions that will be executed in order, consuming the output of the previous function.
 func (this *AsyncWriter) Add(univ []*univalue.Univalue) *AsyncWriter {
 	if len(univ) == 0 {
-		this.CCIndexer.Finalize(nil)
+		this.CCIndexer.Finalize()
 		this.Pipeline.Push(this.CCIndexer) // push the indexer to the processor stream
 	} else {
 		this.CCIndexer.Add(univ)

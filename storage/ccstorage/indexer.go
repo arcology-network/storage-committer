@@ -40,10 +40,10 @@ type CCIndexer struct {
 	encodedBuffer [][]byte //The encoded buffer contains the encoded values
 }
 
-func NewCCIndexer(ccstore *DataStore) *CCIndexer {
+func NewCCIndexer(ccstore intf.ReadOnlyDataStore) *CCIndexer {
 	return &CCIndexer{
 		buffer:  []*univalue.Univalue{},
-		ccstore: ccstore,
+		ccstore: ccstore.(*DataStore),
 
 		partitionIDs:  []uint64{},
 		keyBuffer:     []string{},
@@ -62,7 +62,7 @@ func (this *CCIndexer) Add(trans []*univalue.Univalue) {
 	}
 }
 
-func (this *CCIndexer) Finalize(_ intf.CommittableStore) {
+func (this *CCIndexer) Finalize() {
 	slice.RemoveIf(&this.buffer, func(_ int, v *univalue.Univalue) bool {
 		return v.GetPath() == nil
 	}) // Remove the transitions that are marked

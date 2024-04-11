@@ -157,10 +157,6 @@ func (this *WriteCache) Retrive(path string, T any) (interface{}, error) {
 	return typedv.(intf.Type).New(rawv, nil, nil, typedv.(intf.Type).Min(), typedv.(intf.Type).Max()), nil // Return in a new univalue
 }
 
-func (this *WriteCache) RetriveFromStorage(path string, T any) (interface{}, error) {
-	return this.ReadOnlyDataStore().Retrive(path, T)
-}
-
 func (this *WriteCache) IfExists(path string) bool {
 	if committercommon.ETH10_ACCOUNT_PREFIX_LENGTH == len(path) {
 		return true

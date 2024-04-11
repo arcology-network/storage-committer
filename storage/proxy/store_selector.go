@@ -24,7 +24,7 @@ import (
 
 type StoreSelector struct{}
 
-func (this *StorageProxy) GetStorage(key string) intf.Datastore {
+func (this *StorageProxy) GetStorage(key string) intf.ReadOnlyDataStore {
 	if platform.IsEthPath(key) {
 		return this.ethDataStore
 	}

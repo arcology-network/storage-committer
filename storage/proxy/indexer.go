@@ -45,7 +45,7 @@ func (this *CacheIndexer) Add(transitions []*univalue.Univalue) {
 	this.buffer = append(this.buffer, transitions...)
 }
 
-func (this *CacheIndexer) Finalize(_ intf.CommittableStore) {
+func (this *CacheIndexer) Finalize() {
 	slice.RemoveIf((*[]*univalue.Univalue)(&this.buffer), func(i int, v *univalue.Univalue) bool { return v.GetPath() == nil })
 
 	this.keys = make([]string, len(this.buffer))
