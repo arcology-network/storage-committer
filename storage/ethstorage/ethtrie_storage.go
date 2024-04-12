@@ -10,7 +10,6 @@ import (
 	"github.com/arcology-network/common-lib/exp/slice"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	platform "github.com/arcology-network/storage-committer/platform"
-	"github.com/arcology-network/storage-committer/univalue"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/rawdb"
@@ -121,12 +120,12 @@ func (this *EthDataStore) Preload(addr []byte) interface{} {
 	return acct
 }
 
-func (this *EthDataStore) GetNewIndex() interface {
-	Add([]*univalue.Univalue)
-	Clear()
-} {
-	return NewEthIndexer(this)
-}
+// func (this *EthDataStore) GetNewIndex() interface {
+// 	Add([]*univalue.Univalue)
+// 	Clear()
+// } {
+// 	return NewEthIndexer(this, 0)
+// }
 
 func (this *EthDataStore) Hash(key string) []byte {
 	hasher := sha3.NewLegacyKeccak256()

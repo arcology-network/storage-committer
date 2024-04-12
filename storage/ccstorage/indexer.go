@@ -34,13 +34,14 @@ type CCIndexer struct {
 	buffer  []*univalue.Univalue
 	ccstore *DataStore
 
+	version       uint64
 	partitionIDs  []uint64
 	keyBuffer     []string
 	valueBuffer   []interface{}
 	encodedBuffer [][]byte //The encoded buffer contains the encoded values
 }
 
-func NewCCIndexer(ccstore intf.ReadOnlyDataStore) *CCIndexer {
+func NewCCIndexer(ccstore intf.ReadOnlyDataStore, version uint64) *CCIndexer {
 	return &CCIndexer{
 		buffer:  []*univalue.Univalue{},
 		ccstore: ccstore.(*DataStore),
@@ -51,6 +52,8 @@ func NewCCIndexer(ccstore intf.ReadOnlyDataStore) *CCIndexer {
 		encodedBuffer: [][]byte{},
 	}
 }
+
+func (this *CCIndexer) SetVersion(version uint64) { this.version = version }
 
 // An index by account address, transitions have the same Eth account address will be put together in a list
 // This is for ETH storage, concurrent container related sub-paths won't be put into this index.
@@ -97,4 +100,6 @@ func (this *CCIndexer) Clear() {
 	this.keyBuffer = this.keyBuffer[:0]
 	this.valueBuffer = this.valueBuffer[:0]
 	this.encodedBuffer = this.encodedBuffer[:0]
+
+	this.version++
 }

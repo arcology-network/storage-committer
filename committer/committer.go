@@ -24,7 +24,7 @@ import (
 	platform "github.com/arcology-network/storage-committer/platform"
 	"github.com/arcology-network/storage-committer/storage/ccstorage"
 	"github.com/arcology-network/storage-committer/storage/ethstorage"
-	"github.com/arcology-network/storage-committer/storage/proxy"
+	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
 	"github.com/arcology-network/storage-committer/univalue"
 
 	mapi "github.com/arcology-network/common-lib/exp/map"
@@ -37,7 +37,7 @@ type StateCommitter struct {
 	readonlyStore intf.ReadOnlyDataStore
 	platform      *platform.Platform
 
-	cacheAsyncWritter *proxy.AsyncWriter
+	cacheAsyncWritter *stgproxy.AsyncWriter
 	ethAsyncWriter    *ethstorage.AsyncWriter
 	ccAsyncWriter     *ccstorage.AsyncWriter
 
@@ -56,9 +56,9 @@ func NewStateCommitter(readonlyStore intf.ReadOnlyDataStore) *StateCommitter {
 		readonlyStore: readonlyStore,
 		platform:      platform.NewPlatform(),
 
-		cacheAsyncWritter: proxy.NewAsyncWriter(readonlyStore.(*proxy.StorageProxy).Cache(nil).(*proxy.ReadCache)),
-		ethAsyncWriter:    ethstorage.NewAsyncWriter(readonlyStore.(*proxy.StorageProxy).EthStore()),
-		ccAsyncWriter:     ccstorage.NewAsyncWriter(readonlyStore.(*proxy.StorageProxy).CCStore()),
+		cacheAsyncWritter: stgproxy.NewAsyncWriter(readonlyStore.(*stgproxy.StorageProxy).Cache().(*stgproxy.ReadCache)),
+		ethAsyncWriter:    ethstorage.NewAsyncWriter(readonlyStore.(*stgproxy.StorageProxy).EthStore()),
+		ccAsyncWriter:     ccstorage.NewAsyncWriter(readonlyStore.(*stgproxy.StorageProxy).CCStore()),
 
 		byPath: PathIndexer(readonlyStore), // By storage path
 		byTxID: TxIndexer(readonlyStore),   // By tx ID
@@ -128,9 +128,9 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 
 // Commit commits the transitions to different stores.
 func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
-	this.cacheAsyncWritter.WriteToDB()
-	this.ethAsyncWriter.WriteToDB()
-	this.ccAsyncWriter.WriteToDB()
+	this.cacheAsyncWritter.Await()
+	this.ethAsyncWriter.Await()
+	this.ccAsyncWriter.Await()
 	return this
 }
 

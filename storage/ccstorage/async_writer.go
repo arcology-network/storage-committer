@@ -37,7 +37,7 @@ type AsyncWriter struct {
 func NewAsyncWriter(reader intf.ReadOnlyDataStore) *AsyncWriter {
 	store := reader.(*DataStore)
 	blockNum := uint64(0) // TODO: get the block number from the block header
-	idxer := NewCCIndexer(store)
+	idxer := NewCCIndexer(store, 0)
 	pipe := async.NewPipeline(
 		4,
 		10,
@@ -85,6 +85,4 @@ func (this *AsyncWriter) Add(univ []*univalue.Univalue) *AsyncWriter {
 	return this
 }
 
-func (this *AsyncWriter) WriteToDB() {
-	this.Await()
-}
+func (this *AsyncWriter) Await() { this.Pipeline.Await() }

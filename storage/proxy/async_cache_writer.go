@@ -34,7 +34,7 @@ type AsyncWriter struct {
 
 func NewAsyncWriter(cache *ReadCache) *AsyncWriter {
 	blockNum := uint64(0) // TODO: get the block number from the block header
-	idxer := NewCacheIndexer(cache)
+	idxer := NewCacheIndexer(cache, 0)
 	pipe := async.NewPipeline(
 		4,
 		10,
@@ -68,4 +68,4 @@ func (this *AsyncWriter) Add(univ []*univalue.Univalue) *AsyncWriter {
 	return this
 }
 
-func (this *AsyncWriter) WriteToDB() { this.Await() }
+func (this *AsyncWriter) Await() { this.Pipeline.Await() }

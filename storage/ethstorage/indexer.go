@@ -33,12 +33,15 @@ import (
 type EthIndexer struct {
 	*indexer.UnorderedIndexer[[20]byte, *univalue.Univalue, *associative.Pair[*Account, []*univalue.Univalue]]
 
+	version       uint64 // Block number of the last update
 	dirtyAccounts []*Account
 	dirtyVals     [][]interfaces.Type // Dirty accountCache are the accountCache that have been updated in the current cycle.
 	dirtyKeys     [][]string          // Dirty accountCache are the accountCache that have been updated in the current cycle.
+
+	err error
 }
 
-func NewEthIndexer(store *EthDataStore) *EthIndexer {
+func NewEthIndexer(store *EthDataStore, version uint64) *EthIndexer {
 	idxer := (indexer.NewUnorderedIndexer(
 		nil,
 		func(v *univalue.Univalue) ([20]byte, bool) {
@@ -62,9 +65,12 @@ func NewEthIndexer(store *EthDataStore) *EthIndexer {
 	))
 
 	return &EthIndexer{
+		version:          version,
 		UnorderedIndexer: idxer,
 	}
 }
+
+func (this *EthIndexer) SetVersion(version uint64) { this.version = version }
 
 // An index by account address, transitions have the same Eth account address will be put together in a list
 // This is for ETH storage, concurrent container related sub-paths won't be put into this index.
@@ -85,4 +91,6 @@ func (this *EthIndexer) Clear() {
 	this.dirtyAccounts = this.dirtyAccounts[:0]
 	this.dirtyKeys = this.dirtyKeys[:0] // Reset the dirties buffer
 	this.dirtyVals = this.dirtyVals[:0]
+
+	this.version++
 }

@@ -32,26 +32,26 @@ type AsyncWriter struct {
 	*async.Pipeline[intf.Indexer[*univalue.Univalue]]
 	*EthIndexer
 	ethStore *EthDataStore
-	blockNum uint64
 	Err      error
 }
 
 func NewAsyncWriter(ethStore *EthDataStore) *AsyncWriter {
-	blockNum := uint64(0) // TODO: get the block number from the block header
-	idxer := NewEthIndexer(ethStore)
+	// version := uint64(0) // TODO: get the block number from the block header
+	ethIdxer := NewEthIndexer(ethStore, 0)
+
 	pipe := async.NewPipeline(
 		4,
 		10,
-		// Precommitter
+		// The function updates and storage tries and the world trie without writing to the db.
 		func(indexer intf.Indexer[*univalue.Univalue]) (intf.Indexer[*univalue.Univalue], bool) {
-			idxer := indexer.(*EthIndexer)
-			idxer.Finalize()
+			ethIdxer := indexer.(*EthIndexer)
+			ethIdxer.Finalize()
 
-			pairs := idxer.UnorderedIndexer.Values()
-			idxer.dirtyAccounts = associative.Pairs[*Account, []*univalue.Univalue](pairs).Firsts()
+			pairs := ethIdxer.UnorderedIndexer.Values()
+			ethIdxer.dirtyAccounts = associative.Pairs[*Account, []*univalue.Univalue](pairs).Firsts()
 
 			// Need to check if this is necessary or could be moved to the import phase
-			slice.Foreach(idxer.dirtyAccounts, func(_ int, pair **Account) {
+			slice.Foreach(ethIdxer.dirtyAccounts, func(_ int, pair **Account) {
 				ethStore.accountCache[(**pair).Address()] = (*pair) // Add the account to the cache
 			})
 
@@ -61,21 +61,28 @@ func NewAsyncWriter(ethStore *EthDataStore) *AsyncWriter {
 				}
 
 				keys, vals := univalue.Univalues((*acctTrans).Second).KVs() // Get all transitions under the same account
-				err := idxer.dirtyAccounts[i].UpdateAccountTrie(keys, vals)
+				err := ethIdxer.dirtyAccounts[i].UpdateAccountTrie(keys, vals)
 				if err != nil {
 					ethStore.dbErr = errors.Join(ethStore.dbErr, err)
 				}
 			})
-			ethStore.WriteWorldTrie(idxer.dirtyAccounts) // Update the world trie
-			return idxer, true
+			ethStore.WriteWorldTrie(ethIdxer.dirtyAccounts) // Update the world trie
+			return ethIdxer, true
+		},
+
+		// This function actually writes the data to the db
+		func(indexer intf.Indexer[*univalue.Univalue]) (intf.Indexer[*univalue.Univalue], bool) {
+			ethIdxer := indexer.(*EthIndexer)
+			ethIdxer.err = ethStore.WriteToEthStorage(ethIdxer.version, ethIdxer.dirtyAccounts) // Write to the db
+			return indexer, true
 		},
 	)
 
 	return &AsyncWriter{
 		Pipeline:   pipe.Start(),
-		EthIndexer: idxer,
+		EthIndexer: ethIdxer,
 		ethStore:   ethStore,
-		blockNum:   blockNum,
+		Err:        ethIdxer.err,
 	}
 }
 
@@ -90,8 +97,4 @@ func (this *AsyncWriter) Add(univ []*univalue.Univalue) *AsyncWriter {
 	return this
 }
 
-func (this *AsyncWriter) WriteToDB() {
-	this.Pipeline.Await()
-	this.Err = this.ethStore.WriteToEthStorage(0, this.EthIndexer.dirtyAccounts) // Write to the db
-	this.EthIndexer.Clear()
-}
+func (this *AsyncWriter) Await() { this.Pipeline.Await() }

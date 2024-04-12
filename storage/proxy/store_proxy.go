@@ -44,7 +44,7 @@ func NewStoreProxy() *StorageProxy {
 	return proxy
 }
 
-func (this *StorageProxy) Cache(any) interface{} {
+func (this *StorageProxy) Cache() interface{} {
 	return this.objectCache
 }
 

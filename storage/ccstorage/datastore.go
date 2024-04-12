@@ -63,7 +63,7 @@ func (this *DataStore) GetNewIndex(store intf.Datastore) interface {
 	Add([]*univalue.Univalue)
 	Clear()
 } {
-	return NewCCIndexer(this)
+	return NewCCIndexer(this, 0)
 }
 
 // Placeholder only
