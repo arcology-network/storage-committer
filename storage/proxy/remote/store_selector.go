@@ -15,18 +15,6 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package proxy
-
-import (
-	intf "github.com/arcology-network/storage-committer/interfaces"
-	platform "github.com/arcology-network/storage-committer/platform"
-)
+package remote
 
 type StoreSelector struct{}
-
-func (this *StorageProxy) GetStorage(key string) intf.ReadOnlyDataStore {
-	if platform.IsEthPath(key) {
-		return this.ethDataStore
-	}
-	return this.ccDataStore
-}

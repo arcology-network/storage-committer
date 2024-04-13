@@ -107,6 +107,8 @@ func (this *StateCommitter) Whitelist(txs []uint32) *StateCommitter {
 }
 
 // Commit commits the transitions in the StateCommitter.
+// 1. For the block write cache, it commits the transitions to the cache.
+// 2. For the eth storage, it updates the tries without committing the transitions to the DB
 func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 	this.Whitelist(txs) // Mark the transitions that are not in the whitelist
 
@@ -128,7 +130,7 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 
 // Commit commits the transitions to different stores.
 func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
-	this.cacheAsyncWritter.Await()
+	// this.cacheAsyncWritter.Await()
 	this.ethAsyncWriter.Await()
 	this.ccAsyncWriter.Await()
 	return this
@@ -141,5 +143,5 @@ func (this *StateCommitter) Clear() {
 
 	this.cacheAsyncWritter.Clear()
 	this.ethAsyncWriter.Clear()
-	this.ccAsyncWriter.Clear()
+	// this.ccAsyncWriter.Clear()
 }

@@ -122,6 +122,7 @@ func GetPathUnder(key, prefix string) string {
 
 // Get ths builtin paths
 func IsEthPath(path string) bool {
+	return true
 	return !strings.Contains(path, "container/") &&
 		len(path) > stgcommcommon.ETH10_ACCOUNT_PREFIX_LENGTH
 }

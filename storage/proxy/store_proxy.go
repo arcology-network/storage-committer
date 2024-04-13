@@ -71,19 +71,22 @@ func (this *StorageProxy) IfExists(key string) bool {
 	if _, ok := this.objectCache.Get(key); ok { // Check the cache first
 		return true
 	}
-	return this.GetStorage(key).IfExists(key)
+	return this.ccDataStore.IfExists(key)
 }
 
 // Directly inject the value into the storage, on for the concurrent container storage
 func (this *StorageProxy) Inject(key string, v any) error {
-	return this.GetStorage(key).(*ccstg.DataStore).Inject(key, v)
+	// if common.IsType[*ccstg.DataStore](store) {
+	return this.ethDataStore.Inject(key, v)
+	// }
+	// return nil
 }
 
 func (this *StorageProxy) Retrive(key string, v any) (interface{}, error) {
 	if v, ok := this.objectCache.Get(key); ok { // Get from cache first
 		return *v, nil
 	}
-	return this.GetStorage(key).Retrive(key, v)
+	return this.ccDataStore.Retrive(key, v)
 }
 
 // Placeholders for the storage interface

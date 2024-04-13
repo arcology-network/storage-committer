@@ -18,6 +18,8 @@
 package ccstorage
 
 import (
+	"fmt"
+
 	async "github.com/arcology-network/common-lib/async"
 	common "github.com/arcology-network/common-lib/common"
 	intf "github.com/arcology-network/storage-committer/interfaces"
@@ -29,7 +31,7 @@ import (
 // The indexer is used to index the input transitions as they are received, in a way that they can be committed efficiently later.
 type AsyncWriter struct {
 	*async.Pipeline[intf.Indexer[*univalue.Univalue]]
-	*CCIndexer
+	buffer   []*CCIndexer
 	store    *DataStore
 	blockNum uint64
 }
@@ -37,20 +39,31 @@ type AsyncWriter struct {
 func NewAsyncWriter(reader intf.ReadOnlyDataStore) *AsyncWriter {
 	store := reader.(*DataStore)
 	blockNum := uint64(0) // TODO: get the block number from the block header
-	idxer := NewCCIndexer(store, 0)
+	// idxer := NewCCIndexer(store, 0)
+	// buffer:=   []*CCIndexer{}
 	pipe := async.NewPipeline(
 		4,
 		10,
+		func(v intf.Indexer[*univalue.Univalue]) bool { return v == nil },
 		// Precommitter
 		func(idxer intf.Indexer[*univalue.Univalue]) (intf.Indexer[*univalue.Univalue], bool) {
+			if idxer == nil {
+				return nil, true
+			}
+
 			idxer.Finalize()
 			return idxer, true
 		},
 
 		// db and cache writer
 		func(idxer intf.Indexer[*univalue.Univalue]) (intf.Indexer[*univalue.Univalue], bool) {
-			var err error
+			if idxer == nil {
+				return nil, true
+			}
+
+			fmt.Println("db and cache writer ==============")
 			idx := idxer.(*CCIndexer)
+			var err error
 			if store.keyCompressor != nil {
 				common.ParallelExecute(
 					func() { err = store.db.BatchSet(idx.keyBuffer, idx.encodedBuffer) }, // Write data back
@@ -60,16 +73,16 @@ func NewAsyncWriter(reader intf.ReadOnlyDataStore) *AsyncWriter {
 				err = store.db.BatchSet(idx.keyBuffer, idx.encodedBuffer)
 			}
 
-			store.cccache.BatchSet(idx.keyBuffer, idx.valueBuffer) // update the local cache
+			store.cache.BatchSet(idx.keyBuffer, idx.valueBuffer) // update the local cache
 			return nil, err == nil
 		},
 	)
 
 	return &AsyncWriter{
-		Pipeline:  pipe.Start(),
-		CCIndexer: idxer,
-		store:     store,
-		blockNum:  blockNum,
+		Pipeline: pipe.Start(),
+		buffer:   []*CCIndexer{NewCCIndexer(store, 0)},
+		store:    store,
+		blockNum: blockNum,
 	}
 }
 
@@ -77,12 +90,15 @@ func NewAsyncWriter(reader intf.ReadOnlyDataStore) *AsyncWriter {
 // The processor stream is a list of functions that will be executed in order, consuming the output of the previous function.
 func (this *AsyncWriter) Add(univ []*univalue.Univalue) *AsyncWriter {
 	if len(univ) == 0 {
-		this.CCIndexer.Finalize()
-		this.Pipeline.Push(this.CCIndexer) // push the indexer to the processor stream
+		this.buffer[len(this.buffer)-1].Finalize()
+		this.Pipeline.Push(this.buffer[len(this.buffer)-1]) // push the indexer to the processor stream
 	} else {
-		this.CCIndexer.Add(univ)
+		this.buffer[len(this.buffer)-1].Add(univ)
 	}
 	return this
 }
 
-func (this *AsyncWriter) Await() { this.Pipeline.Await() }
+func (this *AsyncWriter) Await() {
+	this.Pipeline.Push(nil) // commit all th indexers to the state db
+	this.Pipeline.Await()
+}

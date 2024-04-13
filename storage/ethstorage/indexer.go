@@ -45,11 +45,11 @@ func NewEthIndexer(store *EthDataStore, version uint64) *EthIndexer {
 	idxer := (indexer.NewUnorderedIndexer(
 		nil,
 		func(v *univalue.Univalue) ([20]byte, bool) {
-			if !platform.IsEthPath(*v.GetPath()) {
-				return [20]byte{}, false
-			}
+			// if !platform.IsEthPath(*v.GetPath()) {
+			// 	return [20]byte{}, false
+			// }
 			addr, _ := hexutil.Decode(platform.GetAccountAddr(*v.GetPath()))
-			return ethcommon.BytesToAddress(addr), platform.IsEthPath(*v.GetPath())
+			return ethcommon.BytesToAddress(addr), true //platform.IsEthPath(*v.GetPath())
 		},
 
 		func(addr [20]byte, v *univalue.Univalue) *associative.Pair[*Account, []*univalue.Univalue] {

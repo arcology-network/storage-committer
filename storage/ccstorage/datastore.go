@@ -20,8 +20,8 @@ import (
 )
 
 type DataStore struct {
-	db      commonintf.PersistentStorage
-	cccache *cache.ReadCache[string, any]
+	db    commonintf.PersistentStorage
+	cache *cache.ReadCache[string, any]
 
 	keyCompressor *addrcompressor.CompressionLut
 	encoder       func(string, interface{}) []byte
@@ -37,7 +37,7 @@ func NewDataStore(
 	decoder func(string, []byte, any) interface{},
 ) *DataStore {
 	dataStore := &DataStore{
-		cccache: cache.NewReadCache(
+		cache: cache.NewReadCache(
 			16,
 			func(T any) bool {
 				return T == nil
@@ -69,13 +69,13 @@ func (this *DataStore) GetNewIndex(store intf.Datastore) interface {
 // Placeholder only
 func (this *DataStore) Preload(data []byte) interface{} { return nil }
 
-func (this *DataStore) Cache(any) interface{}                             { return this.cccache }
+func (this *DataStore) Cache(any) interface{}                             { return this.cache }
 func (this *DataStore) Encoder(any) func(string, interface{}) []byte      { return this.encoder }
 func (this *DataStore) Decoder(any) func(string, []byte, any) interface{} { return this.decoder }
-func (this *DataStore) Size() uint64                                      { return uint64(this.cccache.Length()) }
+func (this *DataStore) Size() uint64                                      { return uint64(this.cache.Length()) }
 
 func (this *DataStore) Checksum() [32]byte {
-	return this.cccache.Checksum(
+	return this.cache.Checksum(
 		func(k0 string, k1 string) bool { return k0 < k1 },
 		func(k string, v any) ([]byte, []byte) { return []byte(k), this.encoder(k, v) },
 	)
@@ -97,7 +97,7 @@ func (this *DataStore) Inject(key string, v interface{}) error {
 		this.keyCompressor.Commit()
 	}
 
-	this.cccache.Set(key, v)
+	this.cache.Set(key, v)
 	return this.db.BatchSet([]string{key}, [][]byte{this.encoder(key, v)})
 }
 
@@ -109,7 +109,7 @@ func (this *DataStore) BatchInject(keys []string, values []interface{}) error {
 	}
 
 	// this.batchAddToCache(this.GetPartitions(keys), keys, values)
-	this.cccache.BatchSet(keys, values) // update the local cache
+	this.cache.BatchSet(keys, values) // update the local cache
 	encoded := make([][]byte, len(keys))
 	for i := 0; i < len(keys); i++ {
 		encoded[i] = this.encoder(keys[i], values[i])
@@ -138,13 +138,13 @@ func (this *DataStore) Retrive(key string, T any) (interface{}, error) {
 	}
 
 	// Read from the local cache first
-	if v, _ := this.cccache.Get(key); v != nil {
+	if v, _ := this.cache.Get(key); v != nil {
 		return *v, nil
 	}
 
 	v, err := this.retriveFromStorage(key, T)
 	if err == nil && T != nil {
-		this.cccache.Set(key, v) //update to the local cache and add all the missing values to the cache
+		this.cache.Set(key, v) //update to the local cache and add all the missing values to the cache
 	}
 	return v, err
 }
@@ -154,8 +154,8 @@ func (this *DataStore) BatchRetrive(keys []string, T []any) []interface{} {
 		keys = this.keyCompressor.TryBatchCompress(keys)
 	}
 
-	values := common.FilterFirst(this.cccache.BatchGet(keys)) // From the local cache first
-	if slice.Count[any, int](values, nil) == 0 {              // All found
+	values := common.FilterFirst(this.cache.BatchGet(keys)) // From the local cache first
+	if slice.Count[any, int](values, nil) == 0 {            // All found
 		return values
 	}
 
@@ -178,7 +178,7 @@ func (this *DataStore) BatchRetrive(keys []string, T []any) []interface{} {
 				}
 			}
 		}
-		this.cccache.BatchSet(keys, values) //update to the local cache and add all the missing values to the cache
+		this.cache.BatchSet(keys, values) //update to the local cache and add all the missing values to the cache
 	}
 	return values
 }
@@ -191,10 +191,10 @@ func (this *DataStore) BatchRetrive(keys []string, T []any) []interface{} {
 func (this *DataStore) NewWriter(blockNum uint64) interface{} { return NewAsyncWriter(this) }
 
 func (this *DataStore) RefreshCache(blockNum uint64) (uint64, uint64) {
-	return this.cccache.Policy().Refresh(this.Cache(nil).(*mapi.ConcurrentMap[string, any]))
+	return this.cache.Policy().Refresh(this.Cache(nil).(*mapi.ConcurrentMap[string, any]))
 }
 
-func (this *DataStore) Print() { this.cccache.Print() }
+func (this *DataStore) Print() { this.cache.Print() }
 
 func (this *DataStore) CheckSum() [32]byte {
 	k, vs := this.KVs()
@@ -208,9 +208,9 @@ func (this *DataStore) CheckSum() [32]byte {
 }
 
 func (this *DataStore) KVs() ([]string, []interface{}) {
-	return this.cccache.KVs()
+	return this.cache.KVs()
 }
 
 // func (this *DataStore) CachePolicy() *policy.CachePolicy {
-// 	return this.cccache.Policy()
+// 	return this.cache.Policy()
 // }

@@ -38,7 +38,7 @@ func NewAsyncWriter(cache *ReadCache) *AsyncWriter {
 	pipe := async.NewPipeline(
 		4,
 		10,
-
+		func(idxer intf.Indexer[*univalue.Univalue]) bool { return idxer == nil },
 		// db writer
 		func(idxer intf.Indexer[*univalue.Univalue]) (intf.Indexer[*univalue.Univalue], bool) {
 			var err error

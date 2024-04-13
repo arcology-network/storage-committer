@@ -314,13 +314,13 @@ func TestUint64Delta(t *testing.T) {
 	writeCache.Clear()
 
 	deltav1 := commutative.NewUint64Delta(11)
-	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/nonce", deltav1); err != nil {
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/nonce", deltav1); err != nil {
 		t.Error(err)
 	}
 
 	writeCache2 := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	deltav2 := commutative.NewUint64Delta(21)
-	if _, err := writeCache2.Write(2, "blcc://eth1.0/account/"+alice+"/storage/native/nonce", deltav2); err != nil {
+	if _, err := writeCache2.Write(2, "blcc://eth1.0/account/"+alice+"/nonce", deltav2); err != nil {
 		t.Error(err)
 	}
 

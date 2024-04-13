@@ -42,6 +42,7 @@ func NewAsyncWriter(ethStore *EthDataStore) *AsyncWriter {
 	pipe := async.NewPipeline(
 		4,
 		10,
+		func(v intf.Indexer[*univalue.Univalue]) bool { return v == nil },
 		// The function updates and storage tries and the world trie without writing to the db.
 		func(indexer intf.Indexer[*univalue.Univalue]) (intf.Indexer[*univalue.Univalue], bool) {
 			ethIdxer := indexer.(*EthIndexer)
