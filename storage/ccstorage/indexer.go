@@ -95,11 +95,11 @@ func (this *CCIndexer) Finalize() {
 	}
 }
 
-func (this *CCIndexer) Clear() {
-	this.partitionIDs = this.partitionIDs[:0]
-	this.keyBuffer = this.keyBuffer[:0]
-	this.valueBuffer = this.valueBuffer[:0]
-	this.encodedBuffer = this.encodedBuffer[:0]
+// func (this *CCIndexer) Clear() {
+// 	this.partitionIDs = this.partitionIDs[:0]
+// 	this.keyBuffer = this.keyBuffer[:0]
+// 	this.valueBuffer = this.valueBuffer[:0]
+// 	this.encodedBuffer = this.encodedBuffer[:0]
 
-	this.version++
-}
+// 	this.version++
+// }

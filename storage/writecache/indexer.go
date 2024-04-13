@@ -14,48 +14,36 @@
 *   You should have received a copy of the GNU General Public License
 *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package proxy
+package cache
 
 import (
-	"runtime"
-
 	"github.com/arcology-network/common-lib/exp/slice"
 	intf "github.com/arcology-network/storage-committer/interfaces"
 	"github.com/arcology-network/storage-committer/univalue"
 )
 
-// CacheIndexer is simpliest  of indexers. It does not index anything, just stores the transitions.
-type CacheIndexer struct {
+// WriteCacheIndexer is simpliest  of indexers. It does not index anything, just stores the transitions.
+type WriteCacheIndexer struct {
 	version uint64
 	buffer  []*univalue.Univalue
-	keys    []string
-	values  []intf.Type
 }
 
-func NewCacheIndexer(store *ReadCache, version uint64) *CacheIndexer {
-	return &CacheIndexer{
+func NewWriteCacheIndexer(_ *intf.ReadOnlyDataStore, version uint64) *WriteCacheIndexer {
+	return &WriteCacheIndexer{
 		version: version,
 		buffer:  []*univalue.Univalue{},
-		keys:    []string{},
-		values:  []intf.Type{},
 	}
 }
 
+func (this *WriteCacheIndexer) SetVersion(version uint64) { this.version = version }
+
 // An index by account address, transitions have the same Eth account address will be put together in a list
 // This is for ETH storage, concurrent container related sub-paths won't be put into this index.
-func (this *CacheIndexer) Add(transitions []*univalue.Univalue) {
+func (this *WriteCacheIndexer) Add(transitions []*univalue.Univalue) {
 	this.buffer = append(this.buffer, transitions...)
 }
 
-func (this *CacheIndexer) Finalize() {
+// Remove nil transitions due to conflicts.
+func (this *WriteCacheIndexer) Finalize() {
 	slice.RemoveIf((*[]*univalue.Univalue)(&this.buffer), func(i int, v *univalue.Univalue) bool { return v.GetPath() == nil })
-
-	this.keys = make([]string, len(this.buffer))
-	this.values = slice.ParallelTransform(this.buffer, runtime.NumCPU(), func(i int, v *univalue.Univalue) intf.Type {
-		this.keys[i] = *v.GetPath()
-		if v.Value() != nil {
-			return v.Value().(intf.Type)
-		}
-		return nil // A deletion
-	})
 }

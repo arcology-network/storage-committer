@@ -76,10 +76,7 @@ func (this *StorageProxy) IfExists(key string) bool {
 
 // Directly inject the value into the storage, on for the concurrent container storage
 func (this *StorageProxy) Inject(key string, v any) error {
-	// if common.IsType[*ccstg.DataStore](store) {
-	return this.ethDataStore.Inject(key, v)
-	// }
-	// return nil
+	return this.ccDataStore.Inject(key, v)
 }
 
 func (this *StorageProxy) Retrive(key string, v any) (interface{}, error) {

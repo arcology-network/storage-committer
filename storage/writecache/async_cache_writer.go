@@ -15,11 +15,10 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package proxy
+package cache
 
 import (
 	async "github.com/arcology-network/common-lib/async"
-	intf "github.com/arcology-network/storage-committer/interfaces"
 	"github.com/arcology-network/storage-committer/univalue"
 )
 
@@ -27,32 +26,26 @@ import (
 // It contains a pipeline that has a list of functions executing in order. Each function consumes the output of the previous function.
 // The indexer is used to index the input transitions as they are received, in a way that they can be committed efficiently later.
 type AsyncWriter struct {
-	*async.Pipeline[intf.Indexer[*univalue.Univalue]]
-	*CacheIndexer
-	blockNum uint64
+	*async.Pipeline[*WriteCacheIndexer]
+	*WriteCacheIndexer
+	cache *WriteCache
 }
 
-func NewAsyncWriter(cache *ReadCache) *AsyncWriter {
-	blockNum := uint64(0) // TODO: get the block number from the block header
-	idxer := NewCacheIndexer(cache, 0)
+func NewAsyncWriter(cache *WriteCache, version uint64) *AsyncWriter {
 	pipe := async.NewPipeline(
 		4,
 		10,
-		func(idxer intf.Indexer[*univalue.Univalue]) bool { return idxer == nil },
 		// db writer
-		func(idxer intf.Indexer[*univalue.Univalue]) (intf.Indexer[*univalue.Univalue], bool) {
-			var err error
-			idx := idxer.(*CacheIndexer)
-
-			cache.BatchSet(idx.keys, idx.values) // update the local cache
-			return nil, err == nil
+		func(idxers ...*WriteCacheIndexer) (*WriteCacheIndexer, bool) {
+			cache.Insert(idxers[0].buffer) // update the write cache right away as soon as the indexer is received
+			return nil, true
 		},
 	)
 
 	return &AsyncWriter{
-		Pipeline:     pipe.Start(),
-		CacheIndexer: idxer,
-		blockNum:     blockNum,
+		Pipeline:          pipe.Start(),
+		WriteCacheIndexer: NewWriteCacheIndexer(nil, version),
+		cache:             cache,
 	}
 }
 
@@ -60,12 +53,19 @@ func NewAsyncWriter(cache *ReadCache) *AsyncWriter {
 // The processor stream is a list of functions that will be executed in order, consuming the output of the previous function.
 func (this *AsyncWriter) Add(univ []*univalue.Univalue) *AsyncWriter {
 	if len(univ) == 0 {
-		this.CacheIndexer.Finalize()
-		this.Pipeline.Push(this.CacheIndexer) // push the indexer to the processor stream
+		this.WriteCacheIndexer.Finalize()          // Remove the nil transitions because of conflict.
+		this.Pipeline.Push(this.WriteCacheIndexer) // Send the indexer to the streamed processors.
 	} else {
-		this.CacheIndexer.Add(univ)
+		this.WriteCacheIndexer.Add(univ) // Not all have been imported yet. Add them to the indexer
 	}
 	return this
 }
 
-func (this *AsyncWriter) Await() { this.Pipeline.Await() }
+// Called after each precommit to update the cache.
+func (this *AsyncWriter) Feed() {
+	this.WriteCacheIndexer.Finalize()          // Remove the nil transitions
+	this.Pipeline.Push(this.WriteCacheIndexer) // push the indexer to the processor stream
+}
+
+// write cache updates itself every generation. It doesn't need to write to the database.
+func (this *AsyncWriter) WriteToDB() {}

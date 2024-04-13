@@ -18,87 +18,73 @@
 package ccstorage
 
 import (
-	"fmt"
-
 	async "github.com/arcology-network/common-lib/async"
 	common "github.com/arcology-network/common-lib/common"
 	intf "github.com/arcology-network/storage-committer/interfaces"
-	"github.com/arcology-network/storage-committer/univalue"
 )
 
 // AsyncWriter is a struct that contains data strucuture and methods for writing data to concurrent storage asynchronously.
 // It contains a pipeline that has a list of functions executing in order. Each function consumes the output of the previous function.
 // The indexer is used to index the input transitions as they are received, in a way that they can be committed efficiently later.
 type AsyncWriter struct {
-	*async.Pipeline[intf.Indexer[*univalue.Univalue]]
-	buffer   []*CCIndexer
-	store    *DataStore
-	blockNum uint64
+	*async.Pipeline[*CCIndexer]
+	*CCIndexer
+	store   *DataStore
+	version uint64
 }
 
 func NewAsyncWriter(reader intf.ReadOnlyDataStore) *AsyncWriter {
 	store := reader.(*DataStore)
-	blockNum := uint64(0) // TODO: get the block number from the block header
-	// idxer := NewCCIndexer(store, 0)
-	// buffer:=   []*CCIndexer{}
+	version := uint64(0) // TODO: get the block number from the block header
+
 	pipe := async.NewPipeline(
 		4,
 		10,
-		func(v intf.Indexer[*univalue.Univalue]) bool { return v == nil },
 		// Precommitter
-		func(idxer intf.Indexer[*univalue.Univalue]) (intf.Indexer[*univalue.Univalue], bool) {
-			if idxer == nil {
-				return nil, true
-			}
-
-			idxer.Finalize()
-			return idxer, true
+		func(indexers ...*CCIndexer) (*CCIndexer, bool) {
+			return indexers[0], indexers[0] == nil // Buffer the indexer until an empty indexer is received
 		},
 
 		// db and cache writer
-		func(idxer intf.Indexer[*univalue.Univalue]) (intf.Indexer[*univalue.Univalue], bool) {
-			if idxer == nil {
+		func(indexers ...*CCIndexer) (*CCIndexer, bool) {
+			if len(indexers) == 0 || indexers[0] == nil {
 				return nil, true
 			}
 
-			fmt.Println("db and cache writer ==============")
-			idx := idxer.(*CCIndexer)
 			var err error
 			if store.keyCompressor != nil {
 				common.ParallelExecute(
-					func() { err = store.db.BatchSet(idx.keyBuffer, idx.encodedBuffer) }, // Write data back
+					func() { err = store.db.BatchSet(indexers[0].keyBuffer, indexers[0].encodedBuffer) }, // Write data back
 					func() { store.keyCompressor.Commit() })
 
 			} else {
-				err = store.db.BatchSet(idx.keyBuffer, idx.encodedBuffer)
+				err = store.db.BatchSet(indexers[0].keyBuffer, indexers[0].encodedBuffer)
 			}
 
-			store.cache.BatchSet(idx.keyBuffer, idx.valueBuffer) // update the local cache
+			store.cache.BatchSet(indexers[0].keyBuffer, indexers[0].valueBuffer) // update the local cache
 			return nil, err == nil
 		},
 	)
 
 	return &AsyncWriter{
-		Pipeline: pipe.Start(),
-		buffer:   []*CCIndexer{NewCCIndexer(store, 0)},
-		store:    store,
-		blockNum: blockNum,
+		Pipeline:  pipe.Start(),
+		CCIndexer: NewCCIndexer(store, 0),
+		store:     store,
+		version:   version,
 	}
 }
 
-// Add adds a list of transitions to the indexer. If the list is empty, the indexer is finalized and pushed to the processor stream.
-// The processor stream is a list of functions that will be executed in order, consuming the output of the previous function.
-func (this *AsyncWriter) Add(univ []*univalue.Univalue) *AsyncWriter {
-	if len(univ) == 0 {
-		this.buffer[len(this.buffer)-1].Finalize()
-		this.Pipeline.Push(this.buffer[len(this.buffer)-1]) // push the indexer to the processor stream
-	} else {
-		this.buffer[len(this.buffer)-1].Add(univ)
-	}
-	return this
+// Send the data to the downstream processor. This can be called multiple times
+// before calling Await to commit the data to the state db.
+func (this *AsyncWriter) Feed() {
+	this.CCIndexer.Finalize()          // Remove the nil transitions
+	this.Pipeline.Push(this.CCIndexer) // push the indexer to the processor stream
+	this.CCIndexer = NewCCIndexer(this.store, this.version)
 }
 
-func (this *AsyncWriter) Await() {
+// Await commits the data to the state db.
+func (this *AsyncWriter) WriteToDB() {
 	this.Pipeline.Push(nil) // commit all th indexers to the state db
 	this.Pipeline.Await()
+	this.version++
 }

@@ -123,16 +123,16 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 
 	// Signal the async writers that all transitions are pushed and finalized.
 	this.cacheAsyncWritter.Add(nil).Await()
-	this.ccAsyncWriter.Add(nil)  // Wait for the concurrent db DB finish committing the transitions
-	this.ethAsyncWriter.Add(nil) // Wait for the eth DB to finish committing the transitions
+	this.ccAsyncWriter.Feed() // Wait for the concurrent db DB finish committing the transitions
+	this.ethAsyncWriter.Feed()
 	return [32]byte{}
 }
 
 // Commit commits the transitions to different stores.
 func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
-	// this.cacheAsyncWritter.Await()
-	this.ethAsyncWriter.Await()
-	this.ccAsyncWriter.Await()
+	this.cacheAsyncWritter.WriteToDB()
+	this.ethAsyncWriter.WriteToDB()
+	this.ccAsyncWriter.WriteToDB()
 	return this
 }
 
@@ -141,7 +141,7 @@ func (this *StateCommitter) Clear() {
 	this.byPath.Clear()
 	this.byTxID.Clear()
 
-	this.cacheAsyncWritter.Clear()
-	this.ethAsyncWriter.Clear()
-	// this.ccAsyncWriter.Clear()
+	this.cacheAsyncWritter = stgproxy.NewAsyncWriter(this.readonlyStore.(*stgproxy.StorageProxy).Cache().(*stgproxy.ReadCache))
+	this.ethAsyncWriter = ethstorage.NewAsyncWriter(this.readonlyStore.(*stgproxy.StorageProxy).EthStore())
+	this.ccAsyncWriter = ccstorage.NewAsyncWriter(this.readonlyStore.(*stgproxy.StorageProxy).CCStore())
 }

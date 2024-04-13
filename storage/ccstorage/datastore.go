@@ -7,8 +7,6 @@ import (
 	addrcompressor "github.com/arcology-network/common-lib/addrcompressor"
 	codec "github.com/arcology-network/common-lib/codec"
 	common "github.com/arcology-network/common-lib/common"
-	intf "github.com/arcology-network/storage-committer/interfaces"
-	"github.com/arcology-network/storage-committer/univalue"
 	"github.com/cespare/xxhash/v2"
 
 	// mapi "github.com/arcology-network/common-lib/container/map"
@@ -59,12 +57,12 @@ func NewDataStore(
 }
 
 // Pleaseholder only
-func (this *DataStore) GetNewIndex(store intf.Datastore) interface {
-	Add([]*univalue.Univalue)
-	Clear()
-} {
-	return NewCCIndexer(this, 0)
-}
+// func (this *DataStore) GetNewIndex(store intf.Datastore) interface {
+// 	Add([]*univalue.Univalue)
+// 	Clear()
+// } {
+// 	return NewCCIndexer(this, 0)
+// }
 
 // Placeholder only
 func (this *DataStore) Preload(data []byte) interface{} { return nil }

@@ -24,29 +24,26 @@ import (
 	async "github.com/arcology-network/common-lib/async"
 	"github.com/arcology-network/common-lib/exp/associative"
 	"github.com/arcology-network/common-lib/exp/slice"
-	intf "github.com/arcology-network/storage-committer/interfaces"
 	"github.com/arcology-network/storage-committer/univalue"
 )
 
 type AsyncWriter struct {
-	*async.Pipeline[intf.Indexer[*univalue.Univalue]]
+	*async.Pipeline[*EthIndexer]
 	*EthIndexer
 	ethStore *EthDataStore
 	Err      error
 }
 
 func NewAsyncWriter(ethStore *EthDataStore) *AsyncWriter {
-	// version := uint64(0) // TODO: get the block number from the block header
-	ethIdxer := NewEthIndexer(ethStore, 0)
-
 	pipe := async.NewPipeline(
 		4,
 		10,
-		func(v intf.Indexer[*univalue.Univalue]) bool { return v == nil },
 		// The function updates and storage tries and the world trie without writing to the db.
-		func(indexer intf.Indexer[*univalue.Univalue]) (intf.Indexer[*univalue.Univalue], bool) {
-			ethIdxer := indexer.(*EthIndexer)
-			ethIdxer.Finalize()
+		func(indexers ...*EthIndexer) (*EthIndexer, bool) {
+			if len(indexers) == 0 || indexers[0] == nil {
+				return nil, true // Forwards the nil indexer to the next function
+			}
+			ethIdxer := indexers[0]
 
 			pairs := ethIdxer.UnorderedIndexer.Values()
 			ethIdxer.dirtyAccounts = associative.Pairs[*Account, []*univalue.Univalue](pairs).Firsts()
@@ -68,34 +65,39 @@ func NewAsyncWriter(ethStore *EthDataStore) *AsyncWriter {
 				}
 			})
 			ethStore.WriteWorldTrie(ethIdxer.dirtyAccounts) // Update the world trie
-			return ethIdxer, true
+			return ethIdxer, false                          // False means the data is only cached in the buffer provided by the Pipeliner for now.
 		},
 
 		// This function actually writes the data to the db
-		func(indexer intf.Indexer[*univalue.Univalue]) (intf.Indexer[*univalue.Univalue], bool) {
-			ethIdxer := indexer.(*EthIndexer)
-			ethIdxer.err = ethStore.WriteToEthStorage(ethIdxer.version, ethIdxer.dirtyAccounts) // Write to the db
-			return indexer, true
+		func(indexers ...*EthIndexer) (*EthIndexer, bool) {
+			if len(indexers) == 0 || indexers[0] == nil {
+				return nil, true // Forwards the nil indexer to the next function
+			}
+
+			// this needs to be blocked until all the dirty accounts are received.
+			indexers[0].err = ethStore.WriteToEthStorage(indexers[0].version, indexers[0].dirtyAccounts) // Write to the db
+			return indexers[0], true
 		},
 	)
 
 	return &AsyncWriter{
 		Pipeline:   pipe.Start(),
-		EthIndexer: ethIdxer,
+		EthIndexer: NewEthIndexer(ethStore, 0),
 		ethStore:   ethStore,
-		Err:        ethIdxer.err,
 	}
 }
 
-// // Add a batch of univalues to the indexer of the async writer
-func (this *AsyncWriter) Add(univ []*univalue.Univalue) *AsyncWriter {
-	if len(univ) == 0 {
-		this.EthIndexer.Finalize()
-		this.Pipeline.Push(this.EthIndexer) // push the indexer to the processor stream
-	} else {
-		this.EthIndexer.Add(univ)
-	}
-	return this
+// Send the data to the downstream processor, this is called for each generation.
+// If there are multiple generations, this can be called multiple times before Await.
+// Each generation
+func (this *AsyncWriter) Feed() {
+	this.EthIndexer.Finalize()          // Remove the nil transitions
+	this.Pipeline.Push(this.EthIndexer) // push the indexer to the processor stream
+	this.EthIndexer = NewEthIndexer(this.ethStore, this.EthIndexer.version)
 }
 
-func (this *AsyncWriter) Await() { this.Pipeline.Await() }
+// Signals a block is completed, time to write to the db.
+func (this *AsyncWriter) WriteToDB() {
+	this.Pipeline.Push(nil)
+	this.Pipeline.Await()
+}

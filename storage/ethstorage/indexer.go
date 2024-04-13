@@ -74,7 +74,9 @@ func (this *EthIndexer) SetVersion(version uint64) { this.version = version }
 
 // An index by account address, transitions have the same Eth account address will be put together in a list
 // This is for ETH storage, concurrent container related sub-paths won't be put into this index.
-func (this *EthIndexer) Add(v []*univalue.Univalue) { this.UnorderedIndexer.Add(v) }
+func (this *EthIndexer) Add(v []*univalue.Univalue) {
+	this.UnorderedIndexer.Add(v)
+}
 
 func (this *EthIndexer) Finalize() {
 	this.ParallelForeachDo(func(_ [20]byte, v **associative.Pair[*Account, []*univalue.Univalue]) {
@@ -84,13 +86,4 @@ func (this *EthIndexer) Finalize() {
 	// Remove accounts that have no transitions left after cleanning up
 	pairs := this.UnorderedIndexer.Values()
 	slice.RemoveIf(&(pairs), func(_ int, v *associative.Pair[*Account, []*univalue.Univalue]) bool { return len(v.Second) == 0 })
-}
-
-func (this *EthIndexer) Clear() {
-	this.UnorderedIndexer.Clear()
-	this.dirtyAccounts = this.dirtyAccounts[:0]
-	this.dirtyKeys = this.dirtyKeys[:0] // Reset the dirties buffer
-	this.dirtyVals = this.dirtyVals[:0]
-
-	this.version++
 }

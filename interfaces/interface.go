@@ -60,7 +60,7 @@ type Type interface { // value type
 type Indexer[T any] interface {
 	Add([]T)
 	Finalize()
-	Clear()
+	// Clear()
 }
 
 type ReadOnlyDataStore interface {
