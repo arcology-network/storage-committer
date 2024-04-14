@@ -95,11 +95,25 @@ func (this *CCIndexer) Finalize() {
 	}
 }
 
-// func (this *CCIndexer) Clear() {
-// 	this.partitionIDs = this.partitionIDs[:0]
-// 	this.keyBuffer = this.keyBuffer[:0]
-// 	this.valueBuffer = this.valueBuffer[:0]
-// 	this.encodedBuffer = this.encodedBuffer[:0]
+// Merge indexers so they can be updated at once.
+func (this *CCIndexer) Merge(idxers []*CCIndexer) *CCIndexer {
+	slice.Remove(&idxers, nil)
 
-// 	this.version++
-// }
+	this.partitionIDs = slice.ConcateDo(idxers,
+		func(idxer *CCIndexer) uint64 { return uint64(len(idxer.partitionIDs)) },
+		func(idxer *CCIndexer) []uint64 { return idxer.partitionIDs })
+
+	this.keyBuffer = slice.ConcateDo(idxers,
+		func(idxer *CCIndexer) uint64 { return uint64(len(idxer.keyBuffer)) },
+		func(idxer *CCIndexer) []string { return idxer.keyBuffer })
+
+	this.valueBuffer = slice.ConcateDo(idxers,
+		func(idxer *CCIndexer) uint64 { return uint64(len(idxer.valueBuffer)) },
+		func(idxer *CCIndexer) []interface{} { return idxer.valueBuffer })
+
+	this.encodedBuffer = slice.ConcateDo(idxers,
+		func(idxer *CCIndexer) uint64 { return uint64(len(idxer.encodedBuffer)) },
+		func(idxer *CCIndexer) [][]byte { return idxer.encodedBuffer })
+
+	return this
+}

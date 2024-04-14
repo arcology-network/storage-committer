@@ -70,13 +70,11 @@ func NewAsyncWriter(ethStore *EthDataStore) *AsyncWriter {
 
 		// This function actually writes the data to the db
 		func(indexers ...*EthIndexer) (*EthIndexer, bool) {
-			if len(indexers) == 0 || indexers[0] == nil {
-				return nil, true // Forwards the nil indexer to the next function
-			}
+			mergedIdxer := new(EthIndexer).Merge(indexers) // Merge all the indexers together to commit to the db at once.
 
-			// this needs to be blocked until all the dirty accounts are received.
-			indexers[0].err = ethStore.WriteToEthStorage(indexers[0].version, indexers[0].dirtyAccounts) // Write to the db
-			return indexers[0], true
+			// Write to the db
+			mergedIdxer.err = ethStore.WriteToEthStorage(mergedIdxer.version, mergedIdxer.dirtyAccounts)
+			return mergedIdxer, true
 		},
 	)
 
@@ -91,13 +89,13 @@ func NewAsyncWriter(ethStore *EthDataStore) *AsyncWriter {
 // If there are multiple generations, this can be called multiple times before Await.
 // Each generation
 func (this *AsyncWriter) Feed() {
-	this.EthIndexer.Finalize()          // Remove the nil transitions
-	this.Pipeline.Push(this.EthIndexer) // push the indexer to the processor stream
-	this.EthIndexer = NewEthIndexer(this.ethStore, this.EthIndexer.version)
+	this.EthIndexer.Finalize()                                              // Remove the nil transitions
+	this.Pipeline.Push(this.EthIndexer)                                     // push the indexer to the processor stream
+	this.EthIndexer = NewEthIndexer(this.ethStore, this.EthIndexer.version) // Reset the indexer
 }
 
 // Signals a block is completed, time to write to the db.
-func (this *AsyncWriter) WriteToDB() {
+func (this *AsyncWriter) Write() {
 	this.Pipeline.Push(nil)
 	this.Pipeline.Await()
 }

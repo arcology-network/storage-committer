@@ -21,7 +21,6 @@ import (
 	"github.com/arcology-network/common-lib/exp/associative"
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/common-lib/storage/indexer"
-	"github.com/arcology-network/storage-committer/interfaces"
 	platform "github.com/arcology-network/storage-committer/platform"
 	"github.com/arcology-network/storage-committer/univalue"
 	ethcommon "github.com/ethereum/go-ethereum/common"
@@ -35,9 +34,8 @@ type EthIndexer struct {
 
 	version       uint64 // Block number of the last update
 	dirtyAccounts []*Account
-	dirtyVals     [][]interfaces.Type // Dirty accountCache are the accountCache that have been updated in the current cycle.
-	dirtyKeys     [][]string          // Dirty accountCache are the accountCache that have been updated in the current cycle.
-
+	// dirtyVals     [][]interfaces.Type // Dirty accountCache are the accountCache that have been updated in the current cycle.
+	// dirtyKeys     [][]string          // Dirty accountCache are the accountCache that have been updated in the current cycle.
 	err error
 }
 
@@ -70,14 +68,11 @@ func NewEthIndexer(store *EthDataStore, version uint64) *EthIndexer {
 	}
 }
 
-func (this *EthIndexer) SetVersion(version uint64) { this.version = version }
-
-// An index by account address, transitions have the same Eth account address will be put together in a list
-// This is for ETH storage, concurrent container related sub-paths won't be put into this index.
 func (this *EthIndexer) Add(v []*univalue.Univalue) {
 	this.UnorderedIndexer.Add(v)
 }
 
+// Remove the nil transitions from the index, because they are set by
 func (this *EthIndexer) Finalize() {
 	this.ParallelForeachDo(func(_ [20]byte, v **associative.Pair[*Account, []*univalue.Univalue]) {
 		slice.RemoveIf(&((**v).Second), func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil })
@@ -86,4 +81,23 @@ func (this *EthIndexer) Finalize() {
 	// Remove accounts that have no transitions left after cleanning up
 	pairs := this.UnorderedIndexer.Values()
 	slice.RemoveIf(&(pairs), func(_ int, v *associative.Pair[*Account, []*univalue.Univalue]) bool { return len(v.Second) == 0 })
+}
+
+// Merge indexers so they can be updated at once.
+func (this *EthIndexer) Merge(idxers []*EthIndexer) *EthIndexer {
+	slice.Remove(&idxers, nil) // Remove the nil elements
+
+	this.dirtyAccounts = slice.ConcateDo(idxers,
+		func(idxer *EthIndexer) uint64 { return uint64(len(idxer.dirtyAccounts)) },
+		func(idxer *EthIndexer) []*Account { return idxer.dirtyAccounts })
+
+	// this.dirtyVals = slice.ConcateDo(idxers,
+	// 	func(idxer *EthIndexer) uint64 { return uint64(len(idxer.dirtyVals)) },
+	// 	func(idxer *EthIndexer) [][]interfaces.Type { return idxer.dirtyVals })
+
+	// this.dirtyKeys = slice.ConcateDo(idxers,
+	// 	func(idxer *EthIndexer) uint64 { return uint64(len(idxer.dirtyKeys)) },
+	// 	func(idxer *EthIndexer) [][]string { return idxer.dirtyKeys })
+
+	return this
 }

@@ -68,4 +68,4 @@ func (this *AsyncWriter) Feed() {
 }
 
 // write cache updates itself every generation. It doesn't need to write to the database.
-func (this *AsyncWriter) WriteToDB() {}
+func (this *AsyncWriter) Write() {}

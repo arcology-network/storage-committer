@@ -122,7 +122,7 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 	})
 
 	// Signal the async writers that all transitions are pushed and finalized.
-	this.cacheAsyncWritter.Add(nil).Await()
+	this.cacheAsyncWritter.Feed().Write()
 	this.ccAsyncWriter.Feed() // Wait for the concurrent db DB finish committing the transitions
 	this.ethAsyncWriter.Feed()
 	return [32]byte{}
@@ -130,9 +130,9 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 
 // Commit commits the transitions to different stores.
 func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
-	this.cacheAsyncWritter.WriteToDB()
-	this.ethAsyncWriter.WriteToDB()
-	this.ccAsyncWriter.WriteToDB()
+	this.cacheAsyncWritter.Write()
+	this.ethAsyncWriter.Write()
+	this.ccAsyncWriter.Write()
 	return this
 }
 

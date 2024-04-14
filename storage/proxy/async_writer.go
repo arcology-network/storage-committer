@@ -19,7 +19,6 @@ package proxy
 
 import (
 	async "github.com/arcology-network/common-lib/async"
-	"github.com/arcology-network/storage-committer/univalue"
 )
 
 // AsyncWriter is a struct that contains data strucuture and methods for writing data to cache asynchronously.
@@ -28,6 +27,7 @@ import (
 type AsyncWriter struct {
 	*async.Pipeline[*CacheIndexer]
 	*CacheIndexer
+	store   *ReadCache
 	version uint64
 }
 
@@ -37,10 +37,16 @@ func NewAsyncWriter(cache *ReadCache) *AsyncWriter {
 	pipe := async.NewPipeline(
 		4,
 		10,
-		// Cache writer, update the cache as the indexers are received. This needs to be fixed
-		// once the write cache is in use
 		func(idxers ...*CacheIndexer) (*CacheIndexer, bool) {
-			cache.BatchSet(idxers[0].keys, idxers[0].values) // update the local cache with the new values in the indexer
+			if len(idxers) == 0 || idxers[0] == nil {
+				return nil, true
+			}
+			return idxers[0], false // Buffer the indexers until the final indexer is received
+		},
+		// Merge the indexers and update the cache at once.
+		func(idxers ...*CacheIndexer) (*CacheIndexer, bool) {
+			mergedIdxer := new(CacheIndexer).Merge(idxers)       // Merge indexers
+			cache.BatchSet(mergedIdxer.keys, mergedIdxer.values) // update the local cache with the new values in the indexer
 			return nil, true
 		},
 	)
@@ -48,22 +54,36 @@ func NewAsyncWriter(cache *ReadCache) *AsyncWriter {
 	return &AsyncWriter{
 		Pipeline:     pipe.Start(),
 		CacheIndexer: idxer,
+		store:        cache,
 		version:      version,
 	}
 }
 
 // Add adds a list of transitions to the indexer. If the list is empty, the indexer is finalized and pushed to the processor stream.
 // The processor stream is a list of functions that will be executed in order, consuming the output of the previous function.
-func (this *AsyncWriter) Add(univ []*univalue.Univalue) *AsyncWriter {
-	if len(univ) == 0 {
-		this.CacheIndexer.Finalize()
-		this.Pipeline.Push(this.CacheIndexer) // push the indexer to the processor stream
-	} else {
-		this.CacheIndexer.Add(univ)
-	}
+// func (this *AsyncWriter) Add(univ []*univalue.Univalue) *AsyncWriter {
+// 	if len(univ) == 0 {
+// 		this.CacheIndexer.Finalize()
+// 		this.Pipeline.Push(this.CacheIndexer) // push the indexer to the processor stream
+// 	} else {
+// 		this.CacheIndexer.Add(univ)
+// 	}
+// 	return this
+// }
+
+// Send the data to the downstream processor, this is called for each generation.
+// If there are multiple generations, this can be called multiple times before Await.
+// Each generation
+func (this *AsyncWriter) Feed() *AsyncWriter {
+	this.CacheIndexer.Finalize()                                  // Remove the nil transitions
+	this.Pipeline.Push(this.CacheIndexer)                         // push the indexer to the processor stream
+	this.CacheIndexer = NewCacheIndexer(this.store, this.version) // Reset the indexer
 	return this
 }
 
-func (this *AsyncWriter) WriteToDB() {
+// Triggered by the block commit.
+func (this *AsyncWriter) Write() {
+	this.Pipeline.Push(nil) // commit all the indexers to the state db
 	this.Pipeline.Await()
+	this.version++
 }

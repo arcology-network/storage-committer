@@ -59,3 +59,22 @@ func (this *CacheIndexer) Finalize() {
 		return nil // A deletion
 	})
 }
+
+// Merge indexers so they can be updated at once.
+func (this *CacheIndexer) Merge(idxers []*CacheIndexer) *CacheIndexer {
+	slice.Remove(&idxers, nil)
+
+	this.buffer = slice.ConcateDo(idxers,
+		func(idxer *CacheIndexer) uint64 { return uint64(len(idxer.buffer)) },
+		func(idxer *CacheIndexer) []*univalue.Univalue { return idxer.buffer })
+
+	this.keys = slice.ConcateDo(idxers,
+		func(idxer *CacheIndexer) uint64 { return uint64(len(idxer.keys)) },
+		func(idxer *CacheIndexer) []string { return idxer.keys })
+
+	this.values = slice.ConcateDo(idxers,
+		func(idxer *CacheIndexer) uint64 { return uint64(len(idxer.values)) },
+		func(idxer *CacheIndexer) []intf.Type { return idxer.values })
+
+	return this
+}

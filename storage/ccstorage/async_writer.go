@@ -40,28 +40,25 @@ func NewAsyncWriter(reader intf.ReadOnlyDataStore) *AsyncWriter {
 	pipe := async.NewPipeline(
 		4,
 		10,
-		// Precommitter
+		// Buffer the indexers in the pipeline, until an empty indexer is received.
 		func(indexers ...*CCIndexer) (*CCIndexer, bool) {
-			return indexers[0], indexers[0] == nil // Buffer the indexer until an empty indexer is received
+			return indexers[0], indexers[0] == nil
 		},
 
 		// db and cache writer
 		func(indexers ...*CCIndexer) (*CCIndexer, bool) {
-			if len(indexers) == 0 || indexers[0] == nil {
-				return nil, true
-			}
+			mergedIdxer := new(CCIndexer).Merge(indexers)
 
 			var err error
 			if store.keyCompressor != nil {
 				common.ParallelExecute(
-					func() { err = store.db.BatchSet(indexers[0].keyBuffer, indexers[0].encodedBuffer) }, // Write data back
+					func() { err = store.db.BatchSet(mergedIdxer.keyBuffer, mergedIdxer.encodedBuffer) }, // Write data back
 					func() { store.keyCompressor.Commit() })
-
 			} else {
-				err = store.db.BatchSet(indexers[0].keyBuffer, indexers[0].encodedBuffer)
+				err = store.db.BatchSet(mergedIdxer.keyBuffer, mergedIdxer.encodedBuffer)
 			}
 
-			store.cache.BatchSet(indexers[0].keyBuffer, indexers[0].valueBuffer) // update the local cache
+			store.cache.BatchSet(mergedIdxer.keyBuffer, mergedIdxer.valueBuffer) // update the local cache
 			return nil, err == nil
 		},
 	)
@@ -83,7 +80,7 @@ func (this *AsyncWriter) Feed() {
 }
 
 // Await commits the data to the state db.
-func (this *AsyncWriter) WriteToDB() {
+func (this *AsyncWriter) Write() {
 	this.Pipeline.Push(nil) // commit all th indexers to the state db
 	this.Pipeline.Await()
 	this.version++
