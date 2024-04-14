@@ -10,7 +10,6 @@ import (
 	"github.com/arcology-network/common-lib/exp/slice"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	arbitrator "github.com/arcology-network/storage-committer/arbitrator"
-	importer "github.com/arcology-network/storage-committer/committer"
 	stgcommitter "github.com/arcology-network/storage-committer/committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
@@ -27,7 +26,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 
 	meta := commutative.NewPath()
 	writeCache.Write(stgcommcommon.SYSTEM, stgcommcommon.ETH10_ACCOUNT_PREFIX, meta)
-	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITTransition{})
+	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
 	committer := stgcommitter.NewStateCommitter(store)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
@@ -42,8 +41,8 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	}
 
 	// accesses1, transitions1 := writeCache.Export(univalue.Sorter)
-	accesses1 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITAccess{})
-	univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITTransition{})
+	accesses1 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITAccess{})
+	univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
 	writeCache.Clear()
 	bob := BobAccount()
@@ -51,8 +50,8 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 		t.Error(err)
 	}
 
-	accesses2 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITAccess{})
-	univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITTransition{})
+	accesses2 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITAccess{})
+	univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
 	arib := (&arbitrator.Arbitrator{})
 
@@ -71,7 +70,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	meta := commutative.NewPath()
 	writeCache.Write(stgcommcommon.SYSTEM, stgcommcommon.ETH10_ACCOUNT_PREFIX, meta)
-	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITTransition{})
+	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
 	committer := stgcommitter.NewStateCommitter(store)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
@@ -90,7 +89,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	path1 := commutative.NewPath()                                                // create a path
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path1) // create a path
 	raw := writeCache.Export(univalue.Sorter)
-	accesses1 := univalue.Univalues(slice.Clone(raw)).To(importer.IPTransition{})
+	accesses1 := univalue.Univalues(slice.Clone(raw)).To(univalue.IPTransition{})
 
 	writeCache.Clear()                                                              // = committer.WriteCache()
 	if _, err := adaptorcommon.CreateNewAccount(2, alice, writeCache); err != nil { // NewAccount account structure {
@@ -106,7 +105,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	// committer.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-2"))
 	// committer.Write(2, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-2"))
 	// accesses2, _ := committer.WriteCache().Export(univalue.Sorter)
-	accesses2 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITAccess{})
+	accesses2 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITAccess{})
 
 	// accesses1.Print()
 	// fmt.Print(" ++++++++++++++++++++++++++++++++++++++++++++++++ ")
@@ -132,7 +131,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	}
 
 	// writeCache.Write(stgcommcommon.SYSTEM, stgcommcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
-	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
 	committer := stgcommitter.NewStateCommitter(store)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
@@ -151,8 +150,8 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("value-1-by-tx-1"))
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-1"))
 	// accesses1, transitions1 := writeCache.Export(univalue.Sorter)
-	accesses1 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITAccess{})
-	transitions1 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITTransition{})
+	accesses1 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITAccess{})
+	transitions1 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
 	// writeCache = committer.WriteCache()
 	writeCache.Clear()
@@ -166,8 +165,8 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	writeCache.Write(2, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("value-2-by-tx-2"))
 
 	// accesses2, transitions2 := committer.WriteCache().Export(univalue.Sorter)
-	accesses2 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITAccess{})
-	transitions2 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITTransition{})
+	accesses2 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITAccess{})
+	transitions2 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
 	IDVec := append(slice.Fill(make([]uint32, len(accesses1)), 0), slice.Fill(make([]uint32, len(accesses2)), 1)...)
 	ids := (&arbitrator.Arbitrator{}).Detect(IDVec, append(accesses1, accesses2...))
@@ -196,8 +195,8 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	}
 
 	// accesses3, transitions3 := committer.Export(univalue.Sorter)
-	accesses3 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITAccess{})
-	transitions3 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{})
+	accesses3 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITAccess{})
+	transitions3 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
 	writeCache.Clear()
 	// url4 := stgcommitter.NewStateCommitter(store)
@@ -205,8 +204,8 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 		t.Error(err)
 	}
 	// accesses4, transitions4 := url4.Export(univalue.Sorter)
-	accesses4 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITAccess{})
-	transitions4 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITTransition{})
+	accesses4 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITAccess{})
+	transitions4 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
 	IDVec = append(slice.Fill(make([]uint32, len(accesses3)), 0), slice.Fill(make([]uint32, len(accesses4)), 1)...)
 	ids = (&arbitrator.Arbitrator{}).Detect(IDVec, append(accesses3, accesses4...))

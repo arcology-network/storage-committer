@@ -19,7 +19,6 @@ package cache
 
 import (
 	async "github.com/arcology-network/common-lib/async"
-	"github.com/arcology-network/storage-committer/univalue"
 )
 
 // AsyncWriter is a struct that contains data strucuture and methods for writing data to cache asynchronously.
@@ -28,7 +27,8 @@ import (
 type AsyncWriter struct {
 	*async.Pipeline[*WriteCacheIndexer]
 	*WriteCacheIndexer
-	cache *WriteCache
+	*WriteCache
+	version uint64
 }
 
 func NewAsyncWriter(cache *WriteCache, version uint64) *AsyncWriter {
@@ -45,27 +45,19 @@ func NewAsyncWriter(cache *WriteCache, version uint64) *AsyncWriter {
 	return &AsyncWriter{
 		Pipeline:          pipe.Start(),
 		WriteCacheIndexer: NewWriteCacheIndexer(nil, version),
-		cache:             cache,
+		version:           version,
 	}
-}
-
-// Add adds a list of transitions to the indexer. If the list is empty, the indexer is finalized and pushed to the processor stream.
-// The processor stream is a list of functions that will be executed in order, consuming the output of the previous function.
-func (this *AsyncWriter) Add(univ []*univalue.Univalue) *AsyncWriter {
-	if len(univ) == 0 {
-		this.WriteCacheIndexer.Finalize()          // Remove the nil transitions because of conflict.
-		this.Pipeline.Push(this.WriteCacheIndexer) // Send the indexer to the streamed processors.
-	} else {
-		this.WriteCacheIndexer.Add(univ) // Not all have been imported yet. Add them to the indexer
-	}
-	return this
 }
 
 // Called after each precommit to update the cache.
 func (this *AsyncWriter) Feed() {
 	this.WriteCacheIndexer.Finalize()          // Remove the nil transitions
 	this.Pipeline.Push(this.WriteCacheIndexer) // push the indexer to the processor stream
+	this.Pipeline.Await()
+	this.WriteCacheIndexer = NewWriteCacheIndexer(nil, this.version)
 }
 
 // write cache updates itself every generation. It doesn't need to write to the database.
-func (this *AsyncWriter) Write() {}
+func (this *AsyncWriter) Write() {
+
+}

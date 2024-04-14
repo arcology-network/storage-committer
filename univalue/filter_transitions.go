@@ -1,20 +1,19 @@
-package statestore
+package univalue
 
 import (
 	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/storage-committer/commutative"
 	"github.com/arcology-network/storage-committer/interfaces"
-	univalue "github.com/arcology-network/storage-committer/univalue"
 )
 
 // IPTransition stands for intra-process transition. It is used to filter out the fields that are not needed in inter-thread transitions to save
 // time spent on encoding and decoding.
 type IPTransition struct {
-	*univalue.Univalue
+	*Univalue
 	Err error
 }
 
-func (this IPTransition) From(v *univalue.Univalue) *univalue.Univalue {
+func (this IPTransition) From(v *Univalue) *Univalue {
 	if v == nil ||
 		v.IsReadOnly() ||
 		(v.Value() == nil && !v.Preexist()) { // Deletion of an non-existing entry or a read-only entry
@@ -54,14 +53,14 @@ type ITTransition struct {
 	Err error
 }
 
-func (this ITTransition) From(v *univalue.Univalue) *univalue.Univalue {
+func (this ITTransition) From(v *Univalue) *Univalue {
 	unival := IPTransition{Err: this.Err}.From(v)
 
 	// if unival == nil { // Entry deletion
 	// 	return unival
 	// }
 
-	// converted := common.IfThenDo1st(value != nil, func() *univalue.Univalue { return value.(*univalue.Univalue) }, nil)
+	// converted := common.IfThenDo1st(value != nil, func() *Univalue { return value.(*Univalue) }, nil)
 	// if converted == nil {
 	// 	return nil
 	// }

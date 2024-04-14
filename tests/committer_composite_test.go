@@ -7,7 +7,6 @@ import (
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
-	importer "github.com/arcology-network/storage-committer/committer"
 	stgcommitter "github.com/arcology-network/storage-committer/committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
@@ -29,7 +28,7 @@ func TestAuxTrans(t *testing.T) {
 	}
 
 	// _, trans00 := writeCache.Export(univalue.Sorter)
-	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
@@ -86,7 +85,7 @@ func TestAuxTrans(t *testing.T) {
 		}
 	}
 
-	transitions := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITTransition{})
+	transitions := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 	if len(transitions) == 0 || !reflect.DeepEqual(transitions[0].Value().(interfaces.Type).Delta().(*deltaset.DeltaSet[string]).Updated().Elements(), []string{"elem-000"}) {
 		t.Error("keys don't match")
 	}
@@ -122,7 +121,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	}
 
 	// _, trans00 := writeCache.Export(univalue.Sorter)
-	trans00 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITTransition{})
+	trans00 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
 	committer = stgcommitter.NewStateCommitter(store)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans00).Encode()).(univalue.Univalues))
@@ -137,7 +136,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	}
 
 	// _, trans10 := writeCache.Export(univalue.Sorter)
-	trans10 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITTransition{})
+	trans10 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
 	committer = stgcommitter.NewStateCommitter(store)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans10).Encode()).(univalue.Univalues))

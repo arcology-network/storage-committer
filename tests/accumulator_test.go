@@ -7,7 +7,6 @@ import (
 	"github.com/arcology-network/common-lib/exp/slice"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	arbitrator "github.com/arcology-network/storage-committer/arbitrator"
-	importer "github.com/arcology-network/storage-committer/committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
 	platform "github.com/arcology-network/storage-committer/platform"
@@ -26,7 +25,7 @@ func TestAccumulatorUpperLimit(t *testing.T) {
 		t.Error(err)
 	}
 
-	itc := importer.ITTransition{}
+	itc := univalue.ITTransition{}
 	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(itc)
 	transV := []*univalue.Univalue(trans)
 	balanceDeltas := slice.CopyIf(transV, func(v *univalue.Univalue) bool { return strings.LastIndex(*v.GetPath(), "/balance") > 0 })
@@ -69,7 +68,7 @@ func TestAccumulatorLowerLimit(t *testing.T) {
 		t.Error(err)
 	}
 
-	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITTransition{})
+	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 	transV := []*univalue.Univalue(trans)
 	balanceDeltas := slice.CopyIf(transV, func(v *univalue.Univalue) bool { return strings.LastIndex(*v.GetPath(), "/balance") > 0 })
 

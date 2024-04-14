@@ -25,7 +25,7 @@ package committertest
 // 	}
 
 // 	committer.Write(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
-// 	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITTransition{})
+// 	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 // 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 //
 // 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
@@ -38,7 +38,7 @@ package committertest
 // 	}
 
 // 	committer.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999"))
-// 	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITTransition{})
+// 	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 // 	committer.Importer().Store().(*storage.DataStore).Cache().Clear()
 // 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues), true, excludeMemDB) // The changes will be discarded.
 //
@@ -88,7 +88,7 @@ package committertest
 // 	}
 
 // 	committer.Write(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
-// 	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITTransition{})
+// 	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 // 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 //
 // 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
@@ -98,7 +98,7 @@ package committertest
 // 		t.Error(err)
 // 	}
 
-// 	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITTransition{})
+// 	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
 // 	// 	committer := stgcommitter.NewStateCommitter(store)
 // writeCache := committer.WriteCache()

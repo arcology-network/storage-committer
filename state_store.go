@@ -68,5 +68,4 @@ func (this *StateStore) Import(trans univalue.Univalues) *StateStore {
 
 func (this *StateStore) Clear() {
 	this.ShardedWriteCache.Clear()
-	this.committer.Clear()
 }

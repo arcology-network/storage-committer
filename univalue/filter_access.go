@@ -15,20 +15,19 @@
  *   limitations under the License.
  */
 
-package statestore
+package univalue
 
 import (
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/storage-committer/interfaces"
-	univalue "github.com/arcology-network/storage-committer/univalue"
 )
 
 type IPAccess struct {
-	*univalue.Univalue
+	*Univalue
 	Err error
 }
 
-func (this IPAccess) From(v *univalue.Univalue) *univalue.Univalue {
+func (this IPAccess) From(v *Univalue) *Univalue {
 	if this.Err != nil || v.Persistent() {
 		return nil
 	}
@@ -47,9 +46,9 @@ func (this IPAccess) From(v *univalue.Univalue) *univalue.Univalue {
 
 type ITAccess struct{ IPAccess }
 
-func (this ITAccess) From(v *univalue.Univalue) *univalue.Univalue {
+func (this ITAccess) From(v *Univalue) *Univalue {
 	value := this.IPAccess.From(v)
-	// converted := common.IfThenDo1st(value != nil, func() *univalue.Univalue { return value.(*univalue.Univalue) }, nil)
+	// converted := common.IfThenDo1st(value != nil, func() *Univalue { return value.(*Univalue) }, nil)
 	if value == nil {
 		return nil
 	}

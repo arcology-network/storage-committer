@@ -11,7 +11,6 @@ import (
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
-	importer "github.com/arcology-network/storage-committer/committer"
 	stgcommitter "github.com/arcology-network/storage-committer/committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/commutative"
@@ -33,11 +32,10 @@ func CommitterCache(store interfaces.Datastore, t *testing.T) {
 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
-	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
 	committer.Import(acctTrans).Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(stgcommcommon.SYSTEM)
-	committer.Clear()
 
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(0), noncommutative.NewBytes([]byte{1, 2, 3})); err != nil {
 		t.Error(err)
@@ -48,12 +46,12 @@ func CommitterCache(store interfaces.Datastore, t *testing.T) {
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), noncommutative.NewBytes([]byte{199, 45, 67})); err != nil {
 		t.Error(err)
 	}
-	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{})
+	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
 	// committer.Import(acctTrans)
 	committer = stgcommitter.NewStateCommitter(store)
 	committer.Import(acctTrans).Precommit([]uint32{1})
-	committer.Commit(2).Clear()
+	committer.Commit(2)
 	writeCache.Clear()
 
 	outV, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(0), new(noncommutative.Bytes))
@@ -89,10 +87,10 @@ func CommitterCache(store interfaces.Datastore, t *testing.T) {
 		t.Error("Error: The path should not exist", outV)
 	}
 
-	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{})
+	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 	committer = stgcommitter.NewStateCommitter(store)
 	committer.Import(acctTrans).Precommit([]uint32{1})
-	committer.Commit(2).Clear()
+	committer.Commit(2)
 	writeCache.Clear()
 }
 
@@ -109,7 +107,7 @@ func TestSize(t *testing.T) {
 	alice := AliceAccount()
 	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
-	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 	committer := stgcommitter.NewStateCommitter(store)
 	committer.Import(acctTrans)
 	committer.Precommit([]uint32{1})
@@ -138,7 +136,7 @@ func TestSize(t *testing.T) {
 		t.Error("Error: The path should exist")
 	}
 
-	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{})
+	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 	committer = stgcommitter.NewStateCommitter(store)
 	committer.Import(acctTrans)
 	committer.Precommit([]uint32{1})
@@ -163,7 +161,7 @@ func TestNativeStorageReadWrite(t *testing.T) {
 		t.Error(err)
 	}
 	// _, trans := writeCache.Export(univalue.Sorter)
-	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{})
+	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 	acctTrans := (&univalue.Univalues{}).Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues)
 
 	//values := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).([]*univalue.Univalue)
@@ -185,7 +183,7 @@ func TestNativeStorageReadWrite(t *testing.T) {
 	}
 
 	committer = stgcommitter.NewStateCommitter(store)
-	transitions := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{})
+	transitions := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 	committer.Import(transitions)
 	committer.Precommit([]uint32{1})
 	committer.Commit(0)
@@ -256,7 +254,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 		t.Error(err)
 	}
 	// _, trans := writeCache.Export(univalue.Sorter)
-	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{})
+	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 	acctTrans := (&univalue.Univalues{}).Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues)
 
 	//values := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).([]*univalue.Univalue)
@@ -280,7 +278,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 	// 	t.Error(err)
 	// }
 
-	transitions := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{})
+	transitions := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 	newTrans := (&univalue.Univalues{}).Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues)
 	committer = stgcommitter.NewStateCommitter(store)
 	committer.Import(newTrans)
@@ -299,7 +297,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 	// 	t.Error(err)
 	// }
 
-	// trans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{})
+	// trans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
 	// committer = stgcommitter.NewStateCommitter(store)
 	// committer.Import((&univalue.Univalues{}).Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
@@ -327,7 +325,7 @@ func TestBasic(t *testing.T) {
 		t.Error(err)
 	}
 
-	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
@@ -405,7 +403,7 @@ func TestBasic(t *testing.T) {
 	}
 
 	trans := slice.Clone(writeCache.Export(univalue.Sorter))
-	transitions := univalue.Univalues(trans).To(importer.ITTransition{})
+	transitions := univalue.Univalues(trans).To(univalue.ITTransition{})
 
 	if !reflect.DeepEqual(transitions[0].Value().(interfaces.Type).Delta().(*deltaset.DeltaSet[string]).Updated().Elements(), []string{"elem-000", "elem-111"}) {
 		t.Error("Error: keys are missing from the Updated buffer!", transitions[0].Value().(interfaces.Type).Delta().(*deltaset.DeltaSet[string]).Updated())
@@ -421,9 +419,9 @@ func TestBasic(t *testing.T) {
 		t.Error("Error: The variable has been cleared !")
 	}
 
-	// data := univalue.Univalues(transitions).To(importer.IPTransition{})
+	// data := univalue.Univalues(transitions).To(univalue.IPTransition{})
 
-	buffer := univalue.Univalues(univalue.Univalues(transitions).To(importer.IPTransition{})).Encode()
+	buffer := univalue.Univalues(univalue.Univalues(transitions).To(univalue.IPTransition{})).Encode()
 	committer = stgcommitter.NewStateCommitter(store)
 	committer.Import(univalue.Univalues{}.Decode(buffer).(univalue.Univalues))
 	// committer.Import(committer.Decode(univalue.Univalues(transitions).Encode()))
@@ -454,8 +452,8 @@ func TestCommitter(t *testing.T) {
 	}
 
 	raw := writeCache.Export(univalue.Sorter)
-	acctTrans := univalue.Univalues(slice.Clone(raw)).To(importer.ITTransition{})
-	// accesses := univalue.Univalues(slice.Clone(this.buffer)).To(importer.ITAccess{})
+	acctTrans := univalue.Univalues(slice.Clone(raw)).To(univalue.ITTransition{})
+	// accesses := univalue.Univalues(slice.Clone(this.buffer)).To(univalue.ITAccess{})
 
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
@@ -517,7 +515,7 @@ func TestCommitter(t *testing.T) {
 	}
 
 	// Export all access records and state transitions
-	transitions := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.ITTransition{})
+	transitions := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 	// v, _, _ := transitions[0].Value().(interfaces.Type).Get()
 	// if (*transitions[0].Value().(*noncommutative.String)) != "ctrn-0" {
 	// 	t.Error("Error: keys don't match")
@@ -543,7 +541,7 @@ func TestCommitter2(t *testing.T) {
 		t.Error(err)
 	}
 
-	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(0)
@@ -674,8 +672,8 @@ func TestCommitter2(t *testing.T) {
 
 	/*  Export all */
 	// accessRecords, transitions := writeCache.Export(univalue.Sorter)
-	accessRecords := univalue.Univalues(slice.Clone(writeCache.Export())).To(importer.ITAccess{})
-	transitions := univalue.Univalues(slice.Clone(writeCache.Export())).To(importer.ITTransition{})
+	accessRecords := univalue.Univalues(slice.Clone(writeCache.Export())).To(univalue.ITAccess{})
+	transitions := univalue.Univalues(slice.Clone(writeCache.Export())).To(univalue.ITTransition{})
 
 	// 3 writes + 1 affiliated write
 	value := univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/elem-000", 3, 4, 0, nil, nil)
@@ -721,7 +719,7 @@ func TestTransientDBv2(t *testing.T) {
 	}
 
 	raw := writeCache.Export(univalue.Sorter)
-	acctTrans := univalue.Univalues(slice.Clone(raw)).To(importer.IPTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(raw)).To(univalue.IPTransition{})
 
 	univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode())
 	committer.Import(acctTrans)
@@ -746,7 +744,7 @@ func TestCustomCodec(t *testing.T) {
 	}
 
 	raw := writeCache.Export(univalue.Sorter)
-	acctTrans := univalue.Univalues(slice.Clone(raw)).To(importer.IPTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(raw)).To(univalue.IPTransition{})
 
 	buffer := univalue.Univalues(acctTrans).Encode()
 	univalue.Univalues{}.Decode(buffer)
@@ -781,7 +779,7 @@ func TestPathReadAndWriteCommutatives(b *testing.T) {
 		b.Error(err)
 	}
 
-	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{})
+	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 	committer := stgcommitter.NewStateCommitter(store).Import(trans)
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
@@ -792,7 +790,7 @@ func TestPathReadAndWriteCommutatives(b *testing.T) {
 		b.Error(err)
 	}
 
-	trans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{})
+	trans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 	committer = stgcommitter.NewStateCommitter(store).Import(trans)
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
@@ -813,7 +811,7 @@ func TestPathReadAndWriteCommutatives(b *testing.T) {
 		b.Error(err)
 	}
 
-	trans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{})
+	trans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 	committer = stgcommitter.NewStateCommitter(store).Import(trans)
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
@@ -842,7 +840,7 @@ func TestPathReadAndWriteBatchCache2(b *testing.T) {
 		b.Error(err)
 	}
 
-	committer := stgcommitter.NewStateCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{}))
+	committer := stgcommitter.NewStateCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
 
@@ -856,7 +854,7 @@ func TestPathReadAndWriteBatchCache2(b *testing.T) {
 		b.Error(err)
 	}
 
-	committer = stgcommitter.NewStateCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{}))
+	committer = stgcommitter.NewStateCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
 
@@ -920,7 +918,7 @@ func TestPathReadAndWriteBatch(b *testing.T) {
 	fmt.Println("1. New Path Write time:", time.Since(t0))
 
 	t0 = time.Now()
-	committer := stgcommitter.NewStateCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{}))
+	committer := stgcommitter.NewStateCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
 	fmt.Println("Commit time:", time.Since(t0))
@@ -1005,7 +1003,7 @@ func TestPathReadAndWrites(b *testing.T) {
 		}
 	}
 
-	committer := stgcommitter.NewStateCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{}))
+	committer := stgcommitter.NewStateCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
 
@@ -1073,7 +1071,7 @@ func TestPathReadAndWritesPath(b *testing.T) {
 		b.Error(err)
 	}
 
-	committer := stgcommitter.NewStateCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{}))
+	committer := stgcommitter.NewStateCommitter(store).Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
 
@@ -1114,7 +1112,7 @@ func TestEthDataStoreAddDeleteRead(t *testing.T) {
 		fmt.Println(err)
 	}
 
-	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
 	committer := stgcommitter.NewStateCommitter(store)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
@@ -1159,7 +1157,7 @@ func TestPathMultiBatch(b *testing.T) {
 	// bob := BobAccount()
 
 	writeCache := NewWriteCacheWithAcounts(store, AliceAccount(), BobAccount())
-	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
 	committer := stgcommitter.NewStateCommitter(store)
 	committer.Import(acctTrans)
@@ -1174,7 +1172,7 @@ func TestPathMultiBatch(b *testing.T) {
 		}
 	}
 
-	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{})
+	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 	committer = stgcommitter.NewStateCommitter(store)
 	committer.Import(acctTrans)
 	committer.Precommit([]uint32{0})
@@ -1200,7 +1198,7 @@ func TestPathMultiBatch(b *testing.T) {
 		}
 	}
 
-	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{})
+	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 	committer = stgcommitter.NewStateCommitter(store)
 	committer.Import(acctTrans)
 	committer.Precommit([]uint32{0})

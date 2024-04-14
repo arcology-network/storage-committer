@@ -25,7 +25,9 @@ import (
 	"github.com/arcology-network/storage-committer/storage/ccstorage"
 	"github.com/arcology-network/storage-committer/storage/ethstorage"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
-	"github.com/arcology-network/storage-committer/univalue"
+	univalue "github.com/arcology-network/storage-committer/univalue"
+
+	writecache "github.com/arcology-network/storage-committer/storage/writecache"
 
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/slice"
@@ -37,9 +39,10 @@ type StateCommitter struct {
 	readonlyStore intf.ReadOnlyDataStore
 	platform      *platform.Platform
 
-	cacheAsyncWritter *stgproxy.AsyncWriter
-	ethAsyncWriter    *ethstorage.AsyncWriter
-	ccAsyncWriter     *ccstorage.AsyncWriter
+	writeCacheWriter    *writecache.AsyncWriter
+	objCacheAsyncWriter *stgproxy.AsyncWriter
+	ethAsyncWriter      *ethstorage.AsyncWriter
+	ccAsyncWriter       *ccstorage.AsyncWriter
 
 	byPath *indexer.UnorderedIndexer[string, *univalue.Univalue, []*univalue.Univalue]
 	byTxID *indexer.UnorderedIndexer[uint32, *univalue.Univalue, []*univalue.Univalue]
@@ -56,9 +59,10 @@ func NewStateCommitter(readonlyStore intf.ReadOnlyDataStore) *StateCommitter {
 		readonlyStore: readonlyStore,
 		platform:      platform.NewPlatform(),
 
-		cacheAsyncWritter: stgproxy.NewAsyncWriter(readonlyStore.(*stgproxy.StorageProxy).Cache().(*stgproxy.ReadCache)),
-		ethAsyncWriter:    ethstorage.NewAsyncWriter(readonlyStore.(*stgproxy.StorageProxy).EthStore()),
-		ccAsyncWriter:     ccstorage.NewAsyncWriter(readonlyStore.(*stgproxy.StorageProxy).CCStore()),
+		// writeCacheWriter:    writecache.NewAsyncWriter(readonlyStore, 0),
+		objCacheAsyncWriter: stgproxy.NewAsyncWriter(readonlyStore.(*stgproxy.StorageProxy).Cache().(*stgproxy.ReadCache), 0),
+		ethAsyncWriter:      ethstorage.NewAsyncWriter(readonlyStore.(*stgproxy.StorageProxy).EthStore(), 0),
+		ccAsyncWriter:       ccstorage.NewAsyncWriter(readonlyStore.(*stgproxy.StorageProxy).CCStore(), 0),
 
 		byPath: PathIndexer(readonlyStore), // By storage path
 		byTxID: TxIndexer(readonlyStore),   // By tx ID
@@ -83,7 +87,9 @@ func (this *StateCommitter) Import(transitions []*univalue.Univalue, args ...int
 	this.byPath.Add(transitions)
 	this.byTxID.Add(transitions)
 
-	this.cacheAsyncWritter.Add(transitions)
+	// this
+	// this.writeCacheWriter.Add(transitions)
+	this.objCacheAsyncWriter.Add(transitions)
 	this.ethAsyncWriter.Add(transitions)
 	this.ccAsyncWriter.Add(transitions)
 	return this
@@ -122,7 +128,7 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 	})
 
 	// Signal the async writers that all transitions are pushed and finalized.
-	this.cacheAsyncWritter.Feed().Write()
+	this.objCacheAsyncWriter.Feed().Write()
 	this.ccAsyncWriter.Feed() // Wait for the concurrent db DB finish committing the transitions
 	this.ethAsyncWriter.Feed()
 	return [32]byte{}
@@ -130,18 +136,26 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 
 // Commit commits the transitions to different stores.
 func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
-	this.cacheAsyncWritter.Write()
+	this.objCacheAsyncWriter.Write()
 	this.ethAsyncWriter.Write()
 	this.ccAsyncWriter.Write()
-	return this
-}
 
-// Clear clears the StateCommitter.
-func (this *StateCommitter) Clear() {
 	this.byPath.Clear()
 	this.byTxID.Clear()
 
-	this.cacheAsyncWritter = stgproxy.NewAsyncWriter(this.readonlyStore.(*stgproxy.StorageProxy).Cache().(*stgproxy.ReadCache))
-	this.ethAsyncWriter = ethstorage.NewAsyncWriter(this.readonlyStore.(*stgproxy.StorageProxy).EthStore())
-	this.ccAsyncWriter = ccstorage.NewAsyncWriter(this.readonlyStore.(*stgproxy.StorageProxy).CCStore())
+	this.objCacheAsyncWriter = stgproxy.NewAsyncWriter(this.readonlyStore.(*stgproxy.StorageProxy).Cache().(*stgproxy.ReadCache), blockNum)
+	this.ethAsyncWriter = ethstorage.NewAsyncWriter(this.readonlyStore.(*stgproxy.StorageProxy).EthStore(), blockNum)
+	this.ccAsyncWriter = ccstorage.NewAsyncWriter(this.readonlyStore.(*stgproxy.StorageProxy).CCStore(), blockNum)
+
+	return this
 }
+
+// // Clear clears the StateCommitter.
+// func (this *StateCommitter) Clear() {
+// 	this.byPath.Clear()
+// 	this.byTxID.Clear()
+
+// 	this.objCacheAsyncWriter = stgproxy.NewAsyncWriter(this.readonlyStore.(*stgproxy.StorageProxy).Cache().(*stgproxy.ReadCache), this.objCacheAsyncWriter.Version())
+// 	this.ethAsyncWriter = ethstorage.NewAsyncWriter(this.readonlyStore.(*stgproxy.StorageProxy).EthStore())
+// 	this.ccAsyncWriter = ccstorage.NewAsyncWriter(this.readonlyStore.(*stgproxy.StorageProxy).CCStore())
+// }

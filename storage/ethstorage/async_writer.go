@@ -31,10 +31,11 @@ type AsyncWriter struct {
 	*async.Pipeline[*EthIndexer]
 	*EthIndexer
 	ethStore *EthDataStore
+	version  uint64
 	Err      error
 }
 
-func NewAsyncWriter(ethStore *EthDataStore) *AsyncWriter {
+func NewAsyncWriter(ethStore *EthDataStore, version uint64) *AsyncWriter {
 	pipe := async.NewPipeline(
 		4,
 		10,
@@ -82,6 +83,7 @@ func NewAsyncWriter(ethStore *EthDataStore) *AsyncWriter {
 		Pipeline:   pipe.Start(),
 		EthIndexer: NewEthIndexer(ethStore, 0),
 		ethStore:   ethStore,
+		version:    version,
 	}
 }
 

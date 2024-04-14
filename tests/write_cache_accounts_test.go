@@ -7,7 +7,6 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/slice"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
-	importer "github.com/arcology-network/storage-committer/committer"
 	stgcommitter "github.com/arcology-network/storage-committer/committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
@@ -32,7 +31,7 @@ func TestCacheMultiAccountCreation(t *testing.T) {
 		}
 	}
 	raw := writeCache.Export(univalue.Sorter)
-	acctTrans := univalue.Univalues(slice.Clone(raw)).To(importer.ITTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(raw)).To(univalue.ITTransition{})
 
 	paths := platform.NewPlatform().GetSysPaths()
 	if len(acctTrans) != len(paths)*len(accounts) {
@@ -45,7 +44,7 @@ func TestCacheMultiAccountCreation(t *testing.T) {
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
 	writeCache.Clear()
-	// acctTrans = univalue.Univalues(slice.Clone(raw)).To(importer.ITTransition{})
+	// acctTrans = univalue.Univalues(slice.Clone(raw)).To(univalue.ITTransition{})
 	// encoded := univalue.Univalues(acctTrans).Encode()
 
 	// out := univalue.Univalues{}.Decode(encoded).(univalue.Univalues)

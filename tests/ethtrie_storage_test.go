@@ -15,7 +15,6 @@ import (
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/common-lib/merkle"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
-	importer "github.com/arcology-network/storage-committer/committer"
 	stgcommitter "github.com/arcology-network/storage-committer/committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
@@ -122,7 +121,7 @@ func TestTrieUpdates(t *testing.T) {
 
 	trans := writeCache.Export(univalue.Sorter)
 	committer := stgcommitter.NewStateCommitter(store)
-	committer.Import(univalue.Univalues(slice.Clone(trans)).To(importer.IPTransition{}))
+	committer.Import(univalue.Univalues(slice.Clone(trans)).To(univalue.IPTransition{}))
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(0)
@@ -152,7 +151,7 @@ func TestTrieUpdates(t *testing.T) {
 	// }
 
 	committer = stgcommitter.NewStateCommitter(store)
-	committer.Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{}))
+	committer.Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 
 	// aliceAddr := ethcommon.BytesToAddress(hexutil.MustDecode(alice))
@@ -177,7 +176,7 @@ func TestTrieUpdates(t *testing.T) {
 	}
 
 	committer = stgcommitter.NewStateCommitter(store)
-	committer.Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{}))
+	committer.Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 
 	// if len(ds.Dirties()) != 1 || ds.Dirties()[0].Address() != aliceAddr || ds.Dirties()[0].StorageDirty {
@@ -211,7 +210,7 @@ func TestEthStorageConnection(t *testing.T) {
 		t.Error(err)
 	}
 
-	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{})
+	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 	committer := stgcommitter.NewStateCommitter(store)
 	committer.Import(trans)
 
@@ -318,7 +317,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 	}
 
 	// _, trans := writeCache.Export(univalue.Sorter)
-	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{})
+	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 	acctTrans := (&univalue.Univalues{}).Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues)
 
 	//values := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).([]*univalue.Univalue)
@@ -338,7 +337,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 		t.Error(err)
 	}
 
-	transitions := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{})
+	transitions := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
 	committer = stgcommitter.NewStateCommitter(store)
 	committer.Import((&univalue.Univalues{}).Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues))
@@ -356,7 +355,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 		t.Error(err)
 	}
 
-	trans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{})
+	trans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
 	committer = stgcommitter.NewStateCommitter(store)
 	committer.Import((&univalue.Univalues{}).Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))

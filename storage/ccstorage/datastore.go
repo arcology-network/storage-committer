@@ -181,12 +181,9 @@ func (this *DataStore) BatchRetrive(keys []string, T []any) []interface{} {
 	return values
 }
 
-// Placeholders
-// func (this *DataStore) Precommit(arg ...interface{}) [32]byte { return [32]byte{} }
-// func (this *DataStore) Commit(_ uint64) error                 { return nil } // Commit the changes to the local cache and the persistent storage
-// func (this *DataStore) AsyncPrecommit(args ...interface{})    {}
-
-func (this *DataStore) NewWriter(blockNum uint64) interface{} { return NewAsyncWriter(this) }
+func (this *DataStore) NewWriter(blockNum uint64) interface{} {
+	return NewAsyncWriter(this, blockNum)
+}
 
 func (this *DataStore) RefreshCache(blockNum uint64) (uint64, uint64) {
 	return this.cache.Policy().Refresh(this.Cache(nil).(*mapi.ConcurrentMap[string, any]))

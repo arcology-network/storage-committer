@@ -26,7 +26,6 @@ import (
 	"github.com/arcology-network/storage-committer/interfaces"
 
 	statestore "github.com/arcology-network/storage-committer"
-	importer "github.com/arcology-network/storage-committer/committer"
 	stgcomm "github.com/arcology-network/storage-committer/common"
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
@@ -40,7 +39,7 @@ func commitToStateStore(store interfaces.Datastore, t *testing.T) {
 	if _, err := adaptorcommon.CreateNewAccount(stgcomm.SYSTEM, alice, stateStore.ShardedWriteCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
-	acctTrans := univalue.Univalues(slice.Clone(stateStore.Export(univalue.Sorter))).To(importer.IPTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(stateStore.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
 	stateStore.Import(acctTrans).Precommit([]uint32{stgcomm.SYSTEM})
 	stateStore.Commit(stgcomm.SYSTEM)
@@ -55,7 +54,7 @@ func commitToStateStore(store interfaces.Datastore, t *testing.T) {
 	if _, err := stateStore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), noncommutative.NewBytes([]byte{199, 45, 67})); err != nil {
 		t.Error(err)
 	}
-	acctTrans = univalue.Univalues(slice.Clone(stateStore.Export(univalue.Sorter))).To(importer.IPTransition{})
+	acctTrans = univalue.Univalues(slice.Clone(stateStore.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
 	// stateStore.Import(acctTrans)
 	stateStore = statestore.NewStateStore(store)
@@ -101,7 +100,7 @@ func commitToStateStore(store interfaces.Datastore, t *testing.T) {
 		t.Error("Error: The path should not exist", outV)
 	}
 
-	acctTrans = univalue.Univalues(slice.Clone(stateStore.Export(univalue.Sorter))).To(importer.IPTransition{})
+	acctTrans = univalue.Univalues(slice.Clone(stateStore.Export(univalue.Sorter))).To(univalue.IPTransition{})
 	// stateStore = statestore.NewStateStore(store)
 	stateStore.Import(acctTrans).Precommit([]uint32{1})
 	stateStore.Commit(2).Clear()
@@ -130,7 +129,7 @@ func TestAsyncCommitToStateStore(t *testing.T) {
 	if _, err := adaptorcommon.CreateNewAccount(stgcomm.SYSTEM, alice, stateStore.ShardedWriteCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
-	acctTrans := univalue.Univalues(slice.Clone(stateStore.Export(univalue.Sorter))).To(importer.IPTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(stateStore.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
 	stateStore.Import(acctTrans).Precommit([]uint32{stgcomm.SYSTEM})
 	stateStore.Commit(stgcomm.SYSTEM)
@@ -147,7 +146,7 @@ func TestAsyncCommitToStateStore(t *testing.T) {
 	if _, err := stateStore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), noncommutative.NewBytes([]byte{199, 45, 67})); err != nil {
 		t.Error(err)
 	}
-	acctTrans = univalue.Univalues(slice.Clone(stateStore.Export(univalue.Sorter))).To(importer.IPTransition{})
+	acctTrans = univalue.Univalues(slice.Clone(stateStore.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
 	// stateStore.Import(acctTrans)
 	stateStore = statestore.NewStateStore(store)
@@ -193,7 +192,7 @@ func TestAsyncCommitToStateStore(t *testing.T) {
 		t.Error("Error: The path should not exist", outV)
 	}
 
-	acctTrans = univalue.Univalues(slice.Clone(stateStore.Export(univalue.Sorter))).To(importer.IPTransition{})
+	acctTrans = univalue.Univalues(slice.Clone(stateStore.Export(univalue.Sorter))).To(univalue.IPTransition{})
 	stateStore = statestore.NewStateStore(store)
 	stateStore.Import(acctTrans).Precommit([]uint32{1})
 	stateStore.Commit(2) //.Clear()

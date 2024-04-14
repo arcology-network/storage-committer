@@ -33,10 +33,8 @@ type AsyncWriter struct {
 	version uint64
 }
 
-func NewAsyncWriter(reader intf.ReadOnlyDataStore) *AsyncWriter {
+func NewAsyncWriter(reader intf.ReadOnlyDataStore, version uint64) *AsyncWriter {
 	store := reader.(*DataStore)
-	version := uint64(0) // TODO: get the block number from the block header
-
 	pipe := async.NewPipeline(
 		4,
 		10,
@@ -83,5 +81,5 @@ func (this *AsyncWriter) Feed() {
 func (this *AsyncWriter) Write() {
 	this.Pipeline.Push(nil) // commit all th indexers to the state db
 	this.Pipeline.Await()
-	this.version++
+
 }

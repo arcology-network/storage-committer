@@ -10,7 +10,6 @@ import (
 	"github.com/arcology-network/common-lib/exp/orderedset"
 	"github.com/arcology-network/common-lib/exp/slice"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
-	importer "github.com/arcology-network/storage-committer/committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/commutative"
 	platform "github.com/arcology-network/storage-committer/platform"
@@ -39,7 +38,7 @@ func TestTransitionFilters(t *testing.T) {
 
 	raw := writeCache.Export(univalue.Sorter)
 
-	acctTrans := univalue.Univalues(slice.Clone(raw)).To(importer.IPTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(raw)).To(univalue.IPTransition{})
 
 	if !acctTrans[1].Value().(*commutative.U256).Equal(raw[1].Value()) {
 		t.Error("Error: Non-path commutative should have the values!!")
@@ -78,7 +77,7 @@ func TestTransitionFilters(t *testing.T) {
 		t.Error("Error: Max altered")
 	}
 
-	copied := univalue.Univalues(slice.Clone(acctTrans)).To(importer.IPTransition{})
+	copied := univalue.Univalues(slice.Clone(acctTrans)).To(univalue.IPTransition{})
 
 	// Test Path
 	v := copied[0].Value().(*commutative.Path).Value() // Committed
@@ -135,7 +134,7 @@ func TestAccessFilters(t *testing.T) {
 	raw[1].Value().(*commutative.U256).SetMin(*uint256.NewInt(1))
 	raw[1].Value().(*commutative.U256).SetMax(*uint256.NewInt(2222222))
 
-	acctTrans := univalue.Univalues(slice.Clone(raw)).To(importer.IPAccess{})
+	acctTrans := univalue.Univalues(slice.Clone(raw)).To(univalue.IPAccess{})
 
 	if acctTrans[0].Value() != nil {
 		t.Error("Error: Value altered")

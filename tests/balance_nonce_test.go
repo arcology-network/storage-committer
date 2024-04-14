@@ -8,7 +8,6 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/slice"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
-	importer "github.com/arcology-network/storage-committer/committer"
 	stgcommitter "github.com/arcology-network/storage-committer/committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
@@ -46,7 +45,7 @@ func TestSimpleBalance(t *testing.T) {
 	}
 
 	// Export variables
-	in := univalue.Univalues((writeCache.Export(univalue.Sorter))).To(importer.ITTransition{})
+	in := univalue.Univalues((writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
 	buffer := univalue.Univalues(in).Encode()
 	out := univalue.Univalues{}.Decode(buffer).(univalue.Univalues)
@@ -76,8 +75,8 @@ func TestSimpleBalance(t *testing.T) {
 		t.Error("Error: Wrong blcc://eth1.0/account/alice/balance value", balanceAddr)
 	}
 
-	trans := univalue.Univalues((writeCache.Export(univalue.Sorter))).To(importer.ITTransition{})
-	records := univalue.Univalues((writeCache.Export(univalue.Sorter))).To(importer.ITAccess{})
+	trans := univalue.Univalues((writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
+	records := univalue.Univalues((writeCache.Export(univalue.Sorter))).To(univalue.ITAccess{})
 
 	univalue.Univalues(trans).Encode()
 	for _, v := range records {
@@ -162,7 +161,7 @@ func TestBalance(t *testing.T) {
 	}
 
 	// Export variables
-	transitions := univalue.Univalues((writeCache.Export(univalue.Sorter))).To(importer.ITTransition{})
+	transitions := univalue.Univalues((writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 	// for i := range transitions {
 	trans := transitions[9]
 
@@ -206,7 +205,7 @@ func TestNonce(t *testing.T) {
 		t.Error("Error: blcc://eth1.0/account/alice/nonce should be ", 6)
 	}
 
-	trans := univalue.Univalues((writeCache.Export(univalue.Sorter))).To(importer.ITTransition{})
+	trans := univalue.Univalues((writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
 	committer := stgcommitter.NewStateCommitter(store)
 	committer.Import(trans)
@@ -238,7 +237,7 @@ func TestMultipleNonces(t *testing.T) {
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
-	trans0 := univalue.Univalues((writeCache.Export(univalue.Sorter))).To(importer.ITTransition{})
+	trans0 := univalue.Univalues((writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
 	bob := BobAccount()
 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
@@ -261,7 +260,7 @@ func TestMultipleNonces(t *testing.T) {
 	}
 
 	raw := (writeCache.Export(univalue.Sorter))
-	trans1 := univalue.Univalues(raw).To(importer.ITTransition{})
+	trans1 := univalue.Univalues(raw).To(univalue.ITTransition{})
 
 	nonce, _, _ = writeCache.Read(0, "blcc://eth1.0/account/"+bob+"/nonce", new(commutative.Uint64))
 	bobNonce = nonce.(uint64)
@@ -306,11 +305,11 @@ func TestUint64Delta(t *testing.T) {
 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
-	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
 	committer.Import(acctTrans).Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(stgcommcommon.SYSTEM)
-	committer.Clear()
+
 	writeCache.Clear()
 
 	deltav1 := commutative.NewUint64Delta(11)
@@ -324,8 +323,8 @@ func TestUint64Delta(t *testing.T) {
 		t.Error(err)
 	}
 
-	acctTrans0 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(importer.IPTransition{})
-	acctTrans1 := univalue.Univalues(slice.Clone(writeCache2.Export(univalue.Sorter))).To(importer.IPTransition{})
+	acctTrans0 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	acctTrans1 := univalue.Univalues(slice.Clone(writeCache2.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
 	acctTrans0.Print()
 	fmt.Println("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
@@ -335,6 +334,6 @@ func TestUint64Delta(t *testing.T) {
 	committer.Import(acctTrans0)
 	committer.Import(acctTrans1)
 	committer.Precommit([]uint32{1, 2})
-	committer.Commit(0).Clear()
+	committer.Commit(0)
 	writeCache.Clear()
 }

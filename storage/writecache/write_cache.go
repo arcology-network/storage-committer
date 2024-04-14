@@ -31,7 +31,6 @@ import (
 	committercommon "github.com/arcology-network/storage-committer/common"
 	platform "github.com/arcology-network/storage-committer/platform"
 
-	importer "github.com/arcology-network/storage-committer/committer"
 	"github.com/arcology-network/storage-committer/commutative"
 	"github.com/arcology-network/storage-committer/interfaces"
 	intf "github.com/arcology-network/storage-committer/interfaces"
@@ -267,16 +266,16 @@ func (this *WriteCache) Export(preprocs ...func([]*univalue.Univalue) []*univalu
 }
 
 func (this *WriteCache) ExportAll(preprocs ...func([]*univalue.Univalue) []*univalue.Univalue) ([]*univalue.Univalue, []*univalue.Univalue) {
-	all := this.Export(univalue.Sorter)
+	all := this.Export()
 	// univalue.Univalues(all).Print()
 
-	accesses := univalue.Univalues(slice.Clone(all)).To(importer.ITAccess{})
-	transitions := univalue.Univalues(slice.Clone(all)).To(importer.ITTransition{})
+	accesses := univalue.Univalues(slice.Clone(all)).To(univalue.ITAccess{})
+	transitions := univalue.Univalues(slice.Clone(all)).To(univalue.ITTransition{})
 	return accesses, transitions
 }
 
 func (this *WriteCache) KVs() ([]string, []intf.Type) {
-	transitions := univalue.Univalues(slice.Clone(this.Export(univalue.Sorter))).To(importer.ITTransition{})
+	transitions := univalue.Univalues(slice.Clone(this.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
 	values := make([]intf.Type, len(transitions))
 	keys := slice.ParallelTransform(transitions, 4, func(i int, v *univalue.Univalue) string {

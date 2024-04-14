@@ -31,8 +31,7 @@ type AsyncWriter struct {
 	version uint64
 }
 
-func NewAsyncWriter(cache *ReadCache) *AsyncWriter {
-	version := uint64(0) // TODO: get the block number from the block header
+func NewAsyncWriter(cache *ReadCache, version uint64) *AsyncWriter {
 	idxer := NewCacheIndexer(cache, 0)
 	pipe := async.NewPipeline(
 		4,
@@ -85,5 +84,4 @@ func (this *AsyncWriter) Feed() *AsyncWriter {
 func (this *AsyncWriter) Write() {
 	this.Pipeline.Push(nil) // commit all the indexers to the state db
 	this.Pipeline.Await()
-	this.version++
 }

@@ -27,7 +27,6 @@ import (
 
 	slice "github.com/arcology-network/common-lib/exp/slice"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
-	importer "github.com/arcology-network/storage-committer/committer"
 	stgcommitter "github.com/arcology-network/storage-committer/committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/interfaces"
@@ -137,7 +136,7 @@ func verifierEthMerkle(roothash [32]byte, acct string, key string, store interfa
 
 // It's mainly used for TESTING purpose.
 func FlushToStore(this *cache.WriteCache, store interfaces.Datastore) interfaces.Datastore {
-	acctTrans := univalue.Univalues(slice.Clone(this.Export(univalue.Sorter))).To(importer.IPTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(this.Export(univalue.Sorter))).To(univalue.IPTransition{})
 	txs := slice.Transform(acctTrans, func(_ int, v *univalue.Univalue) uint32 {
 		return v.GetTx()
 	})
