@@ -20,8 +20,6 @@ package ccstorage
 import (
 	"runtime"
 
-	codec "github.com/arcology-network/common-lib/codec"
-	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/slice"
 	intf "github.com/arcology-network/storage-committer/interfaces"
 	"github.com/arcology-network/storage-committer/platform"
@@ -41,7 +39,7 @@ type CCIndexer struct {
 	encodedBuffer [][]byte //The encoded buffer contains the encoded values
 }
 
-func NewCCIndexer(ccstore intf.ReadOnlyDataStore, version uint64) *CCIndexer {
+func NewCCIndexer(ccstore intf.ReadOnlyStore, version uint64) *CCIndexer {
 	return &CCIndexer{
 		buffer:  []*univalue.Univalue{},
 		ccstore: ccstore.(*DataStore),
@@ -57,7 +55,7 @@ func (this *CCIndexer) SetVersion(version uint64) { this.version = version }
 
 // An index by account address, transitions have the same Eth account address will be put together in a list
 // This is for ETH storage, concurrent container related sub-paths won't be put into this index.
-func (this *CCIndexer) Add(trans []*univalue.Univalue) {
+func (this *CCIndexer) Import(trans []*univalue.Univalue) {
 	for _, v := range trans {
 		if v.GetPath() != nil || !platform.IsEthPath(*v.GetPath()) {
 			this.buffer = append(this.buffer, v)
@@ -76,15 +74,6 @@ func (this *CCIndexer) Finalize() {
 		this.keyBuffer[i] = *v.GetPath()
 		return v.Value()
 	})
-
-	// Compress the keys if the keyCompressor is available
-	this.keyBuffer = common.IfThenDo1st(
-		this.ccstore.keyCompressor != nil,
-		func() []string {
-			return this.ccstore.keyCompressor.CompressOnTemp(codec.Strings(this.keyBuffer).Clone())
-		},
-		this.keyBuffer,
-	)
 
 	// Encode the keys and values to the buffer so that they can be written to calcualte the root hash.
 	this.encodedBuffer = make([][]byte, len(this.valueBuffer))

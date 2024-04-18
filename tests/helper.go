@@ -6,16 +6,18 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
+	statestore "github.com/arcology-network/storage-committer"
 	commutative "github.com/arcology-network/storage-committer/commutative"
 	"github.com/arcology-network/storage-committer/interfaces"
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
-	platform "github.com/arcology-network/storage-committer/platform"
+	"github.com/arcology-network/storage-committer/storage/proxy"
 	cache "github.com/arcology-network/storage-committer/storage/writecache"
 	"github.com/arcology-network/storage-committer/univalue"
 )
 
-func Create_Ctrn_0(account string, store interfaces.Datastore) ([]byte, []*univalue.Univalue, error) {
-	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+func Create_Ctrn_0(account string, store interfaces.ReadOnlyStore) ([]byte, []*univalue.Univalue, error) {
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
 
 	path := commutative.NewPath() // create a path
 	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", path); err != nil {
@@ -35,9 +37,10 @@ func Create_Ctrn_0(account string, store interfaces.Datastore) ([]byte, []*univa
 	return univalue.Univalues(transitions).Encode(), transitions, nil
 }
 
-func ParallelInsert_Ctrn_0(account string, store interfaces.Datastore) ([]byte, error) {
+func ParallelInsert_Ctrn_0(account string, store interfaces.ReadOnlyStore) ([]byte, error) {
 
-	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
 	path := commutative.NewPath() // create a path
 	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", path); err != nil {
 		return []byte{}, err
@@ -55,9 +58,10 @@ func ParallelInsert_Ctrn_0(account string, store interfaces.Datastore) ([]byte, 
 	return univalue.Univalues(transitions).Encode(), nil
 }
 
-func Create_Ctrn_1(account string, store interfaces.Datastore) ([]byte, error) {
+func Create_Ctrn_1(account string, store interfaces.ReadOnlyStore) ([]byte, error) {
 
-	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
 	path := commutative.NewPath() // create a path
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/", path); err != nil {
 		return []byte{}, err

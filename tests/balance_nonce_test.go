@@ -8,11 +8,13 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/slice"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
+	statestore "github.com/arcology-network/storage-committer"
 	stgcommitter "github.com/arcology-network/storage-committer/committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 	platform "github.com/arcology-network/storage-committer/platform"
+	"github.com/arcology-network/storage-committer/storage/proxy"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
 	cache "github.com/arcology-network/storage-committer/storage/writecache"
 	univalue "github.com/arcology-network/storage-committer/univalue"
@@ -21,9 +23,8 @@ import (
 
 func TestSimpleBalance(t *testing.T) {
 	store := chooseDataStore()
-
-	committer := stgcommitter.NewStateCommitter(store)
-	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
@@ -55,11 +56,11 @@ func TestSimpleBalance(t *testing.T) {
 		}
 	}
 
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
 	committer.Import(out)
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM, 0, 1})
 	committer.Commit(0)
 	// Read alice's balance again
-	writeCache.Clear()
 
 	balance, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/balance", new(commutative.U256))
 	balanceAddr := balance.(uint256.Int)
@@ -89,7 +90,8 @@ func TestSimpleBalance(t *testing.T) {
 func TestBalance(t *testing.T) {
 	store := chooseDataStore()
 
-	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
 	alice := AliceAccount()
 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
@@ -175,10 +177,10 @@ func TestBalance(t *testing.T) {
 
 func TestNonce(t *testing.T) {
 	store := chooseDataStore()
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
-
-	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -207,7 +209,7 @@ func TestNonce(t *testing.T) {
 
 	trans := univalue.Univalues((writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
-	committer := stgcommitter.NewStateCommitter(store)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
 	committer.Import(trans)
 
 	committer.Precommit([]uint32{0})
@@ -221,7 +223,9 @@ func TestNonce(t *testing.T) {
 
 func TestMultipleNonces(t *testing.T) {
 	store := chooseDataStore()
-	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
+	NewAcountsInCache(writeCache, AliceAccount(), BobAccount())
 
 	alice := AliceAccount()
 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
@@ -268,7 +272,7 @@ func TestMultipleNonces(t *testing.T) {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
 	}
 
-	committer := stgcommitter.NewStateCommitter(store)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
 	committer.Import(trans0)
 	committer.Import(trans1)
 
@@ -278,9 +282,8 @@ func TestMultipleNonces(t *testing.T) {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be 2", " actual: ", bobNonce)
 	}
 
-	committer = stgcommitter.NewStateCommitter(store)
-
-	committer.Precommit([]uint32{0})
+	// committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer.Precommit([]uint32{0, stgcommcommon.SYSTEM})
 	committer.Commit(0)
 
 	nonce, _, _ = writeCache.Read(0, "blcc://eth1.0/account/"+bob+"/nonce", new(commutative.Uint64))
@@ -298,19 +301,18 @@ func TestMultipleNonces(t *testing.T) {
 
 func TestUint64Delta(t *testing.T) {
 	store := stgproxy.NewStoreProxy()
-	alice := AliceAccount()
-	committer := stgcommitter.NewStateCommitter(store)
+	sstore := statestore.NewStateStore(store)
+	writeCache := sstore.WriteCache
 
-	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+	alice := AliceAccount()
 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
 	committer.Import(acctTrans).Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(stgcommcommon.SYSTEM)
-
-	writeCache.Clear()
 
 	deltav1 := commutative.NewUint64Delta(11)
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/nonce", deltav1); err != nil {
@@ -330,10 +332,10 @@ func TestUint64Delta(t *testing.T) {
 	fmt.Println("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 	acctTrans1.Print()
 
-	committer = stgcommitter.NewStateCommitter(store)
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
 	committer.Import(acctTrans0)
 	committer.Import(acctTrans1)
 	committer.Precommit([]uint32{1, 2})
 	committer.Commit(0)
-	writeCache.Clear()
+
 }

@@ -42,7 +42,7 @@ func NewAsyncWriter(ethStore *EthDataStore, version uint64) *AsyncWriter {
 		// The function updates and storage tries and the world trie without writing to the db.
 		func(indexers ...*EthIndexer) (*EthIndexer, bool) {
 			if len(indexers) == 0 || indexers[0] == nil {
-				return nil, true // Forwards the nil indexer to the next function
+				return nil, true // Forwards the an array of indexers, including the nil one to the next function
 			}
 			ethIdxer := indexers[0]
 
@@ -90,14 +90,14 @@ func NewAsyncWriter(ethStore *EthDataStore, version uint64) *AsyncWriter {
 // Send the data to the downstream processor, this is called for each generation.
 // If there are multiple generations, this can be called multiple times before Await.
 // Each generation
-func (this *AsyncWriter) Feed() {
+func (this *AsyncWriter) Precommit() {
 	this.EthIndexer.Finalize()                                              // Remove the nil transitions
 	this.Pipeline.Push(this.EthIndexer)                                     // push the indexer to the processor stream
 	this.EthIndexer = NewEthIndexer(this.ethStore, this.EthIndexer.version) // Reset the indexer
 }
 
 // Signals a block is completed, time to write to the db.
-func (this *AsyncWriter) Write() {
+func (this *AsyncWriter) Commit() {
 	this.Pipeline.Push(nil)
 	this.Pipeline.Await()
 }

@@ -141,7 +141,7 @@ func (this *Univalue) Set(tx uint32, path string, newV interface{}, inCache bool
 		return nil
 	}
 
-	// Write != 0 means the value has been not modified, so we don't need to make a deep copy.
+	// Writes == 0 means the value hasn't been modified yet, so we don't need to make a deep copy.
 	// this.value == nil, this is a new value assignment, so we don't need to make a deep copy.
 	// typedV == nil, this is a delete operation, so we don't need to make a deep copy.
 	// In cascading write cache, the values' access info will stripped off, so it wouldn't introduce interference.

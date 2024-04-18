@@ -29,7 +29,7 @@ func (this DeltaSequence) sort() DeltaSequence {
 	return this
 }
 
-func (this DeltaSequence) Finalize(store intf.ReadOnlyDataStore) *univalue.Univalue {
+func (this DeltaSequence) Finalize(store intf.ReadOnlyStore) *univalue.Univalue {
 	trans := []*univalue.Univalue(this)
 	slice.RemoveIf(&trans, func(_ int, v *univalue.Univalue) bool {
 		return v.GetPath() == nil

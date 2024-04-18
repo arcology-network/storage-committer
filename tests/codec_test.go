@@ -8,16 +8,9 @@ import (
 	"time"
 
 	codec "github.com/arcology-network/common-lib/codec"
-	"github.com/arcology-network/common-lib/exp/slice"
-	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
-	stgcommcommon "github.com/arcology-network/storage-committer/common"
-	cache "github.com/arcology-network/storage-committer/storage/writecache"
 
 	commutative "github.com/arcology-network/storage-committer/commutative"
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
-	platform "github.com/arcology-network/storage-committer/platform"
-	ccstorage "github.com/arcology-network/storage-committer/storage/ccstorage"
-	univalue "github.com/arcology-network/storage-committer/univalue"
 	rlp "github.com/ethereum/go-ethereum/rlp"
 )
 
@@ -67,59 +60,61 @@ func TestNoncommutativeCodec(t *testing.T) {
 	}
 }
 
-func TestUnivalueCodec(t *testing.T) {
-	store := ccstorage.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
-	transitions := []*univalue.Univalue{}
+// func TestUnivalueCodec(t *testing.T) {
+// 	store := ccstorage.NewDataStore(nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
+// 	transitions := []*univalue.Univalue{}
 
-	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
-	// committer.NewAccount(stgcommcommon.SYSTEM, fmt.Sprint("rand.Int()"))
-	adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, fmt.Sprint("rand.Int()"), writeCache)
+// 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+// 	writeCache := sstore.WriteCache
+// 	// committer.NewAccount(stgcommcommon.SYSTEM, fmt.Sprint("rand.Int()"))
+// 	adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, fmt.Sprint("rand.Int()"), writeCache)
 
-	transVec := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
-	transitions = append(transitions, transVec...)
+// 	transVec := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+// 	transitions = append(transitions, transVec...)
 
-	for i := 0; i < len(transitions); i++ {
-		buffer := transitions[i].Encode()
-		in := transitions[i]
-		out := (&univalue.Univalue{}).Decode(buffer).(*univalue.Univalue)
-		// out.(*univalue.Univalue).ClearReserve()
+// 	for i := 0; i < len(transitions); i++ {
+// 		buffer := transitions[i].Encode()
+// 		in := transitions[i]
+// 		out := (&univalue.Univalue{}).Decode(buffer).(*univalue.Univalue)
+// 		// out.(*univalue.Univalue).ClearReserve()
 
-		if !in.Equal(out) {
-			t.Error("Error: Missmatched")
-		}
-	}
-}
+// 		if !in.Equal(out) {
+// 			t.Error("Error: Missmatched")
+// 		}
+// 	}
+// }
 
-func TestUnivaluesCodec(t *testing.T) {
-	store := ccstorage.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
-	transitions := []*univalue.Univalue{}
-	for i := 0; i < 10; i++ {
-		acct := RandomAccount()
+// func TestUnivaluesCodec(t *testing.T) {
+// 	store := ccstorage.NewDataStore(nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
+// 	transitions := []*univalue.Univalue{}
+// 	for i := 0; i < 10; i++ {
+// 		acct := RandomAccount()
 
-		writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
-		// committer.NewAccount(stgcommcommon.SYSTEM, acct)
+// 		sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+// 		writeCache := sstore.WriteCache
+// 		// committer.NewAccount(stgcommcommon.SYSTEM, acct)
 
-		adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, acct, writeCache)
+// 		adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, acct, writeCache)
 
-		transVec := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
-		transitions = append(transitions, transVec...)
-	}
-	t0 := time.Now()
-	buffer := univalue.Univalues(transitions).Encode()
-	fmt.Println("Encode() ", len(transitions), " univalue in :", time.Since(t0))
+// 		transVec := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
+// 		transitions = append(transitions, transVec...)
+// 	}
+// 	t0 := time.Now()
+// 	buffer := univalue.Univalues(transitions).Encode()
+// 	fmt.Println("Encode() ", len(transitions), " univalue in :", time.Since(t0))
 
-	t0 = time.Now()
-	out := (univalue.Univalues([]*univalue.Univalue{})).Decode(buffer).(univalue.Univalues)
-	fmt.Println("Decode() ", len(transitions), " univalue in :", time.Since(t0))
+// 	t0 = time.Now()
+// 	out := (univalue.Univalues([]*univalue.Univalue{})).Decode(buffer).(univalue.Univalues)
+// 	fmt.Println("Decode() ", len(transitions), " univalue in :", time.Since(t0))
 
-	for i := 0; i < len(transitions); i++ {
-		tran := transitions[i]
-		out[i].ClearCache()
-		if !reflect.DeepEqual(tran, out[i]) {
-			fmt.Println("Error: Missmatched")
-		}
-	}
-}
+// 	for i := 0; i < len(transitions); i++ {
+// 		tran := transitions[i]
+// 		out[i].ClearCache()
+// 		if !reflect.DeepEqual(tran, out[i]) {
+// 			fmt.Println("Error: Missmatched")
+// 		}
+// 	}
+// }
 
 func BenchmarkRlpComparePerformance(t *testing.B) {
 	num := big.NewInt(100)

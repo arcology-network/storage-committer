@@ -28,7 +28,7 @@ type WriteCacheIndexer struct {
 	buffer  []*univalue.Univalue
 }
 
-func NewWriteCacheIndexer(_ *intf.ReadOnlyDataStore, version uint64) *WriteCacheIndexer {
+func NewWriteCacheIndexer(_ *intf.ReadOnlyStore, version uint64) *WriteCacheIndexer {
 	return &WriteCacheIndexer{
 		version: version,
 		buffer:  []*univalue.Univalue{},
@@ -39,7 +39,7 @@ func (this *WriteCacheIndexer) SetVersion(version uint64) { this.version = versi
 
 // An index by account address, transitions have the same Eth account address will be put together in a list
 // This is for ETH storage, concurrent container related sub-paths won't be put into this index.
-func (this *WriteCacheIndexer) Add(transitions []*univalue.Univalue) {
+func (this *WriteCacheIndexer) Import(transitions []*univalue.Univalue) {
 	this.buffer = append(this.buffer, transitions...)
 }
 

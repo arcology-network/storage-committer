@@ -20,7 +20,7 @@ var (
 	decoder = ethstg.Rlp{}.Decode
 )
 
-func chooseDataStore() interfaces.Datastore {
+func chooseDataStore() interfaces.ReadOnlyStore {
 	// ethPair := associative.Pair[intf.Indexer[*univalue.Univalue], []intf.Datastore]{
 	// 	First:  ethstg.NewIndexer(store),
 	// 	Second: []intf.Datastore{store.(*stgproxy.StorageProxy).EthStore()},
@@ -37,6 +37,6 @@ func chooseDataStore() interfaces.Datastore {
 	// store.DisableCache()
 	return store
 	// return storage.NewLevelDBDataStore("/tmp")
-	// return datastore.NewDataStore(nil, datastore.NewCachePolicy(1000000, 1), memdb.NewMemoryDB(), encoder, decoder)
-	// return storage.NewDataStore(nil, storage.NewCachePolicy(0, 1), storage.NewMemoryDB(), encoder, decoder)
+	// return datastore.NewDataStore( datastore.NewCachePolicy(1000000, 1), memdb.NewMemoryDB(), encoder, decoder)
+	// return storage.NewDataStore( storage.NewCachePolicy(0, 1), storage.NewMemoryDB(), encoder, decoder)
 }

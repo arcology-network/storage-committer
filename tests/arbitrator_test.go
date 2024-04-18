@@ -9,31 +9,33 @@ import (
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/slice"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
+	statestore "github.com/arcology-network/storage-committer"
 	arbitrator "github.com/arcology-network/storage-committer/arbitrator"
 	stgcommitter "github.com/arcology-network/storage-committer/committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
-	platform "github.com/arcology-network/storage-committer/platform"
-	cache "github.com/arcology-network/storage-committer/storage/writecache"
+	"github.com/arcology-network/storage-committer/storage/proxy"
 	univalue "github.com/arcology-network/storage-committer/univalue"
 )
 
 func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	store := chooseDataStore()
-
-	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
 
 	meta := commutative.NewPath()
 	writeCache.Write(stgcommcommon.SYSTEM, stgcommcommon.ETH10_ACCOUNT_PREFIX, meta)
 	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
-	committer := stgcommitter.NewStateCommitter(store)
+	// sstore:= statestore.NewStateStore(store.(*proxy.StorageProxy))
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(0)
-	writeCache.Clear()
+
+	time.Sleep(2 * time.Second)
 
 	alice := AliceAccount()
 	if _, err := adaptorcommon.CreateNewAccount(1, alice, writeCache); err != nil { // NewAccount account structure {
@@ -43,8 +45,8 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	// accesses1, transitions1 := writeCache.Export(univalue.Sorter)
 	accesses1 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITAccess{})
 	univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
-
 	writeCache.Clear()
+
 	bob := BobAccount()
 	if _, err := adaptorcommon.CreateNewAccount(2, bob, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
@@ -61,18 +63,21 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	conflictdict, _, _ := arbitrator.Conflicts(ids).ToDict()
 	if len(conflictdict) != 0 {
 		t.Error("Error: There should be NO conflict")
+		accesses1.Print()
+		accesses2.Print()
 	}
 }
 
 func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	store := chooseDataStore()
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
 
-	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	meta := commutative.NewPath()
 	writeCache.Write(stgcommcommon.SYSTEM, stgcommcommon.ETH10_ACCOUNT_PREFIX, meta)
 	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
-	committer := stgcommitter.NewStateCommitter(store)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
@@ -81,7 +86,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	committer.SetStore(store)
 	alice := AliceAccount()
 
-	writeCache.Clear()                                                              // = committer.WriteCache()
+	// = committer.WriteCache()
 	if _, err := adaptorcommon.CreateNewAccount(1, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -90,8 +95,9 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-2/", path1) // create a path
 	raw := writeCache.Export(univalue.Sorter)
 	accesses1 := univalue.Univalues(slice.Clone(raw)).To(univalue.IPTransition{})
+	writeCache.Clear()
 
-	writeCache.Clear()                                                              // = committer.WriteCache()
+	// = committer.WriteCache()
 	if _, err := adaptorcommon.CreateNewAccount(2, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	} // NewAccount account structure {
@@ -125,7 +131,9 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 
 	alice := AliceAccount()
 
-	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
+
 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -133,7 +141,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	// writeCache.Write(stgcommcommon.SYSTEM, stgcommcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
 	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
-	committer := stgcommitter.NewStateCommitter(store)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
@@ -141,7 +149,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	committer.SetStore(store)
 
 	// committer.NewAccount(1, alice)
-	writeCache.Clear()
+
 	if _, err := adaptorcommon.CreateNewAccount(1, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -154,7 +162,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	transitions1 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
 	// writeCache = committer.WriteCache()
-	writeCache.Clear()
+
 	if _, err := adaptorcommon.CreateNewAccount(2, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	} // NewAccount account structure {
@@ -184,11 +192,10 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	buffer := univalue.Univalues(in).Encode()
 	out := univalue.Univalues{}.Decode(buffer).(univalue.Univalues)
 
-	committer = stgcommitter.NewStateCommitter(store)
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
 	committer.Import(out)
 	committer.Precommit(toCommit)
 	committer.Commit(0)
-	writeCache.Clear()
 
 	if _, err := writeCache.Write(3, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("committer-1-by-tx-3")); err != nil {
 		t.Error(err)
@@ -198,8 +205,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	accesses3 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITAccess{})
 	transitions3 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
-	writeCache.Clear()
-	// url4 := stgcommitter.NewStateCommitter(store)
+	// url4 := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
 	if _, err := writeCache.Write(4, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("url4-1-by-tx-3")); err != nil {
 		t.Error(err)
 	}
@@ -227,7 +233,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	out = univalue.Univalues{}.Decode(buffer).(univalue.Univalues)
 
 	acctTrans = append(transitions3, transitions4...)
-	committer = stgcommitter.NewStateCommitter(store)
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	// committer.Import(committer.Decode(univalue.Univalues(append(transitions3, transitions4...)).Encode()))
@@ -236,7 +242,6 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	committer.Commit(0)
 	committer.SetStore(store)
 
-	writeCache.Clear()
 	v, _, _ := writeCache.Read(3, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", new(noncommutative.String))
 	if v == nil || v.(string) != "committer-1-by-tx-3" {
 		t.Error("Error: Wrong value, expecting:", "committer-1-by-tx-3 ", "actual:", v)

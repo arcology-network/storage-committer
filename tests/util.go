@@ -27,12 +27,13 @@ import (
 
 	slice "github.com/arcology-network/common-lib/exp/slice"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
+	statestore "github.com/arcology-network/storage-committer"
 	stgcommitter "github.com/arcology-network/storage-committer/committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/interfaces"
 	opadapter "github.com/arcology-network/storage-committer/op"
-	platform "github.com/arcology-network/storage-committer/platform"
 	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
+	"github.com/arcology-network/storage-committer/storage/proxy"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
 	cache "github.com/arcology-network/storage-committer/storage/writecache"
 	"github.com/arcology-network/storage-committer/univalue"
@@ -103,8 +104,19 @@ func RandomKeys[T constraints.Integer](s0, s1 T) []string {
 	return keys
 }
 
-func NewWriteCacheWithAcounts(store interfaces.Datastore, accounts ...string) *cache.WriteCache {
-	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+func NewAcountsInCache(writeCache *cache.WriteCache, accounts ...string) {
+	// sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	// writeCache := sstore.WriteCache
+	for i := range accounts {
+		if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, accounts[i], writeCache); err != nil { // NewAccount account structure {
+			fmt.Println(err)
+		}
+	}
+}
+
+func NewWriteCacheWithAcounts(store interfaces.ReadOnlyStore, accounts ...string) *cache.WriteCache {
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
 	for i := range accounts {
 		if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, accounts[i], writeCache); err != nil { // NewAccount account structure {
 			fmt.Println(err)
@@ -113,7 +125,7 @@ func NewWriteCacheWithAcounts(store interfaces.Datastore, accounts ...string) *c
 	return writeCache
 }
 
-func verifierEthMerkle(roothash [32]byte, acct string, key string, store interfaces.ReadOnlyDataStore, t *testing.T) {
+func verifierEthMerkle(roothash [32]byte, acct string, key string, store interfaces.ReadOnlyStore, t *testing.T) {
 	// roothash := store.(*stgproxy.StorageProxy).EthStore().Root()                               // Get the proof provider by a root hash.
 	ethdb := store.(*stgproxy.StorageProxy).EthStore().EthDB()                       // Get the proof provider by a root hash.
 	provider, err := ethstg.NewMerkleProofCache(2, ethdb).GetProofProvider(roothash) // Initiate the proof cache, maximum 2 blocks
@@ -135,16 +147,16 @@ func verifierEthMerkle(roothash [32]byte, acct string, key string, store interfa
 }
 
 // It's mainly used for TESTING purpose.
-func FlushToStore(this *cache.WriteCache, store interfaces.Datastore) interfaces.Datastore {
-	acctTrans := univalue.Univalues(slice.Clone(this.Export(univalue.Sorter))).To(univalue.IPTransition{})
+func FlushToStore(sstore *statestore.StateStore) interfaces.ReadOnlyStore {
+	acctTrans := univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})
 	txs := slice.Transform(acctTrans, func(_ int, v *univalue.Univalue) uint32 {
 		return v.GetTx()
 	})
 
-	committer := stgcommitter.NewStateCommitter(store)
+	committer := stgcommitter.NewStateCommitter(sstore, sstore.GetWriters()...)
 	committer.Import(acctTrans)
 	committer.Precommit(txs) // Write all the transitions to the store
 	committer.Commit(0)
-	this.Clear()
-	return store
+	sstore.Clear()
+	return sstore
 }

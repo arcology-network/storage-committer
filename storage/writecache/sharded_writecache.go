@@ -35,13 +35,13 @@ const (
 // which is responsible for a subset of the data. It can be updated in parallel when a transaction generation
 // is completed. But it isn't thread-safe.
 type ShardedWriteCache struct {
-	backend intf.ReadOnlyDataStore
+	backend intf.ReadOnlyStore
 	caches  [NUM_SHARDS]*WriteCache
 	hasher  func(string) uint64
 	queue   chan *[]*univalue.Univalue
 }
 
-func NewShardedWriteCache(backend intf.ReadOnlyDataStore, perPage int, numPages int, hasher func(string) uint64, args ...interface{}) *ShardedWriteCache {
+func NewShardedWriteCache(backend intf.ReadOnlyStore, perPage int, numPages int, hasher func(string) uint64, args ...interface{}) *ShardedWriteCache {
 	writeCache := &ShardedWriteCache{
 		backend: backend,
 		hasher:  hasher,
@@ -54,16 +54,17 @@ func NewShardedWriteCache(backend intf.ReadOnlyDataStore, perPage int, numPages 
 	return writeCache
 }
 
-func (this *ShardedWriteCache) ReadOnlyDataStore() intf.ReadOnlyDataStore { return this.backend }
-func (this *ShardedWriteCache) Cache() [NUM_SHARDS]*WriteCache            { return this.caches }
+func (this *ShardedWriteCache) ReadOnlyStore() intf.ReadOnlyStore { return this.backend }
+func (this *ShardedWriteCache) Cache() [NUM_SHARDS]*WriteCache    { return this.caches }
 
 func (this *ShardedWriteCache) NewUnivalue(k string) *univalue.Univalue {
 	return this.caches[this.hasher(k)].NewUnivalue()
 }
 
-func (this *ShardedWriteCache) GetOrNew(tx uint32, path string, T any) (*univalue.Univalue, bool) {
-	return this.caches[this.hasher(path)%NUM_SHARDS].GetOrNew(tx, path, T)
-}
+// ONLY THE TX WRITECACHE HAS THE NEED TO SUPPORT GET OR NOW
+// func (this *ShardedWriteCache) GetOrNew(tx uint32, path string, T any) (*univalue.Univalue, bool) {
+// 	return this.caches[this.hasher(path)%NUM_SHARDS].GetOrNew(tx, path, T)
+// }
 
 func (this *ShardedWriteCache) Read(tx uint32, path string, T any) (interface{}, interface{}, uint64) {
 	return this.caches[this.hasher(path)%NUM_SHARDS].Read(tx, path, T)
@@ -73,9 +74,9 @@ func (this *ShardedWriteCache) Write(tx uint32, path string, value interface{}) 
 	return this.caches[this.hasher(path)%NUM_SHARDS].Write(tx, path, value)
 }
 
-func (this *ShardedWriteCache) InCache(path string) (interface{}, bool) {
-	return this.caches[this.hasher(path)%NUM_SHARDS].InCache(path)
-}
+// func (this *ShardedWriteCache) InCache(path string) (interface{}, bool) {
+// 	return this.caches[this.hasher(path)%NUM_SHARDS].InCache(path)
+// }
 
 func (this *ShardedWriteCache) Retrive(path string, T any) (interface{}, error) {
 	return this.caches[this.hasher(path)%NUM_SHARDS].Retrive(path, T)
@@ -85,7 +86,7 @@ func (this *ShardedWriteCache) IfExists(path string) bool {
 	return this.caches[this.hasher(path)%NUM_SHARDS].IfExists(path)
 }
 
-func (this *ShardedWriteCache) Insert(transitions []*univalue.Univalue) *ShardedWriteCache {
+func (this *ShardedWriteCache) Import(transitions []*univalue.Univalue) *ShardedWriteCache {
 	univalue.Univalues(transitions).SortByDepth() // To ensure that the parent  is inserted before the child
 
 	// Precalculate the shard ID of each transition
@@ -105,10 +106,7 @@ func (this *ShardedWriteCache) Insert(transitions []*univalue.Univalue) *Sharded
 }
 
 // Reset the writecache to the initial state for the next round of processing.
-func (this *ShardedWriteCache) Precommit(args ...interface{}) [32]byte {
-	this.Insert(args[0].([]*univalue.Univalue))
-	return [32]byte{}
-}
+// func (this *ShardedWriteCache) Precommit([]uint32) [32]byte { return [32]byte{} }
 
 func (this *ShardedWriteCache) Clear() *ShardedWriteCache {
 	slice.ParallelForeach(this.caches[:], runtime.NumCPU(), func(i int, wcache **WriteCache) {

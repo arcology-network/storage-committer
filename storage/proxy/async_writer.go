@@ -58,30 +58,17 @@ func NewAsyncWriter(cache *ReadCache, version uint64) *AsyncWriter {
 	}
 }
 
-// Add adds a list of transitions to the indexer. If the list is empty, the indexer is finalized and pushed to the processor stream.
-// The processor stream is a list of functions that will be executed in order, consuming the output of the previous function.
-// func (this *AsyncWriter) Add(univ []*univalue.Univalue) *AsyncWriter {
-// 	if len(univ) == 0 {
-// 		this.CacheIndexer.Finalize()
-// 		this.Pipeline.Push(this.CacheIndexer) // push the indexer to the processor stream
-// 	} else {
-// 		this.CacheIndexer.Add(univ)
-// 	}
-// 	return this
-// }
-
 // Send the data to the downstream processor, this is called for each generation.
 // If there are multiple generations, this can be called multiple times before Await.
 // Each generation
-func (this *AsyncWriter) Feed() *AsyncWriter {
+func (this *AsyncWriter) Precommit() {
 	this.CacheIndexer.Finalize()                                  // Remove the nil transitions
 	this.Pipeline.Push(this.CacheIndexer)                         // push the indexer to the processor stream
 	this.CacheIndexer = NewCacheIndexer(this.store, this.version) // Reset the indexer
-	return this
 }
 
 // Triggered by the block commit.
-func (this *AsyncWriter) Write() {
+func (this *AsyncWriter) Commit() {
 	this.Pipeline.Push(nil) // commit all the indexers to the state db
 	this.Pipeline.Await()
 }

@@ -7,20 +7,21 @@ import (
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
+	statestore "github.com/arcology-network/storage-committer"
 	stgcommitter "github.com/arcology-network/storage-committer/committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
 	"github.com/arcology-network/storage-committer/interfaces"
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
-	platform "github.com/arcology-network/storage-committer/platform"
-	cache "github.com/arcology-network/storage-committer/storage/writecache"
+	"github.com/arcology-network/storage-committer/storage/proxy"
 	univalue "github.com/arcology-network/storage-committer/univalue"
 )
 
 func TestAuxTrans(t *testing.T) {
 	store := chooseDataStore()
-	committer := stgcommitter.NewStateCommitter(store)
-	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
@@ -29,15 +30,12 @@ func TestAuxTrans(t *testing.T) {
 
 	// _, trans00 := writeCache.Export(univalue.Sorter)
 	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
-
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
-
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(0) // Commit
 
 	committer.SetStore(store)
 	// create a path
-	writeCache.Clear()
 
 	path := commutative.NewPath()
 
@@ -103,7 +101,7 @@ func TestAuxTrans(t *testing.T) {
 	in := univalue.Univalues(transitions).Encode()
 	out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
 
-	committer = stgcommitter.NewStateCommitter(store)
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
 	committer.Import(out)
 
 	committer.Precommit([]uint32{1})
@@ -112,9 +110,9 @@ func TestAuxTrans(t *testing.T) {
 
 func TestCheckAccessRecords(t *testing.T) {
 	store := chooseDataStore()
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
 
-	committer := stgcommitter.NewStateCommitter(store)
-	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	alice := AliceAccount()
 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
@@ -123,13 +121,12 @@ func TestCheckAccessRecords(t *testing.T) {
 	// _, trans00 := writeCache.Export(univalue.Sorter)
 	trans00 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
-	committer = stgcommitter.NewStateCommitter(store)
-	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans00).Encode()).(univalue.Univalues))
-
-	committer.Precommit([]uint32{1})
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer.Import(trans00)
+	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(0) // Commit
 
-	committer.SetStore(store)
+	// committer.SetStore(store)
 	path := commutative.NewPath()
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/") // create a path
@@ -138,13 +135,12 @@ func TestCheckAccessRecords(t *testing.T) {
 	// _, trans10 := writeCache.Export(univalue.Sorter)
 	trans10 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
-	committer = stgcommitter.NewStateCommitter(store)
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans10).Encode()).(univalue.Univalues))
 	committer.Precommit([]uint32{1})
 	committer.Commit(0) // Commit
 
-	committer.SetStore(store)
-	writeCache.Clear()
+	// committer.SetStore(store)
 
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/1", noncommutative.NewInt64(1111)); err != nil {
 		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/1") // create a path
@@ -154,34 +150,9 @@ func TestCheckAccessRecords(t *testing.T) {
 		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/2") // create a path
 	}
 
-	// accesses10, trans11 := writeCache.Export(univalue.Sorter)
-	// committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans11).Encode()).(univalue.Univalues))
-
-	//
-	// committer.Precommit([]uint32{1})
-	// committer = stgcommitter.NewStateCommitter(store)
-	// committer.Commit(0) // Commit
-
-	// committer = stgcommitter.NewStateCommitter(store)
-	// if len(trans11) != 3 {
-	// 	t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/2") // create a path
-	// }
-
-	// if len(trans11) != 3 {
-	// 	t.Error("Error: There should be 3 transitions in committer") // create a path
-	// }
-
-	// if len(accesses10) != 3 {
-	// 	t.Error("Error: There should be 3 accesse records committer") // create a path
-	// }
-
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/3", noncommutative.NewInt64(3333)); err != nil {
 		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/3") // create a path
 	}
-
-	// if writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/3", noncommutative.NewInt64(4444)) != nil {
-	// 	t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/3") // create a path
-	// }
 
 	v1, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path))
 	if v1 == nil {

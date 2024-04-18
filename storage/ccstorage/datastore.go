@@ -1,16 +1,11 @@
 package ccstorage
 
 import (
-	"crypto/sha256"
 	"errors"
 
-	addrcompressor "github.com/arcology-network/common-lib/addrcompressor"
-	codec "github.com/arcology-network/common-lib/codec"
 	common "github.com/arcology-network/common-lib/common"
 	"github.com/cespare/xxhash/v2"
 
-	// mapi "github.com/arcology-network/common-lib/container/map"
-	mapi "github.com/arcology-network/common-lib/exp/map"
 	slice "github.com/arcology-network/common-lib/exp/slice"
 	cache "github.com/arcology-network/common-lib/storage/cache"
 	commonintf "github.com/arcology-network/common-lib/storage/interface"
@@ -21,14 +16,12 @@ type DataStore struct {
 	db    commonintf.PersistentStorage
 	cache *cache.ReadCache[string, any]
 
-	keyCompressor *addrcompressor.CompressionLut
-	encoder       func(string, interface{}) []byte
-	decoder       func(string, []byte, any) interface{}
+	encoder func(string, interface{}) []byte
+	decoder func(string, []byte, any) interface{}
 }
 
 // numShards uint64, isNil func(V) bool, hasher func(K) uint64, cachePolicy *policy.CachePolicy
 func NewDataStore(
-	keyCompressor *addrcompressor.CompressionLut,
 	cachePolicy *policy.CachePolicy,
 	db commonintf.PersistentStorage,
 	encoder func(string, any) []byte,
@@ -46,42 +39,20 @@ func NewDataStore(
 			cachePolicy,
 		),
 
-		keyCompressor: keyCompressor,
-
 		db:      db,
 		encoder: encoder,
 		decoder: decoder,
 	}
 
+	dataStore.cache.Disable()
 	return dataStore
 }
 
-// Pleaseholder only
-// func (this *DataStore) GetNewIndex(store intf.Datastore) interface {
-// 	Add([]*univalue.Univalue)
-// 	Clear()
-// } {
-// 	return NewCCIndexer(this, 0)
-// }
-
 // Placeholder only
-func (this *DataStore) Preload(data []byte) interface{} { return nil }
-
+func (this *DataStore) Preload(data []byte) interface{}                   { return nil }
 func (this *DataStore) Cache(any) interface{}                             { return this.cache }
 func (this *DataStore) Encoder(any) func(string, interface{}) []byte      { return this.encoder }
 func (this *DataStore) Decoder(any) func(string, []byte, any) interface{} { return this.decoder }
-func (this *DataStore) Size() uint64                                      { return uint64(this.cache.Length()) }
-
-func (this *DataStore) Checksum() [32]byte {
-	return this.cache.Checksum(
-		func(k0 string, k1 string) bool { return k0 < k1 },
-		func(k string, v any) ([]byte, []byte) { return []byte(k), this.encoder(k, v) },
-	)
-}
-
-func (this *DataStore) Query(pattern string, condition func(string, string) bool) ([]string, [][]byte, error) {
-	return this.db.Query(pattern, condition)
-}
 
 func (this *DataStore) IfExists(key string) bool {
 	v, _ := this.Retrive(key, nil)
@@ -90,23 +61,12 @@ func (this *DataStore) IfExists(key string) bool {
 
 // Inject directly to the local cache.
 func (this *DataStore) Inject(key string, v interface{}) error {
-	if this.keyCompressor != nil {
-		key = this.keyCompressor.CompressOnTemp([]string{key})[0]
-		this.keyCompressor.Commit()
-	}
-
 	this.cache.Set(key, v)
 	return this.db.BatchSet([]string{key}, [][]byte{this.encoder(key, v)})
 }
 
 // Inject directly to the local cache.
 func (this *DataStore) BatchInject(keys []string, values []interface{}) error {
-	if this.keyCompressor != nil {
-		this.keyCompressor.CompressOnTemp(keys)
-		this.keyCompressor.Commit()
-	}
-
-	// this.batchAddToCache(this.GetPartitions(keys), keys, values)
 	this.cache.BatchSet(keys, values) // update the local cache
 	encoded := make([][]byte, len(keys))
 	for i := 0; i < len(keys); i++ {
@@ -131,10 +91,6 @@ func (this *DataStore) retriveFromStorage(key string, T any) (interface{}, error
 }
 
 func (this *DataStore) Retrive(key string, T any) (interface{}, error) {
-	if this.keyCompressor != nil {
-		key = this.keyCompressor.TryCompress(key) // Convert the key
-	}
-
 	// Read from the local cache first
 	if v, _ := this.cache.Get(key); v != nil {
 		return *v, nil
@@ -148,10 +104,6 @@ func (this *DataStore) Retrive(key string, T any) (interface{}, error) {
 }
 
 func (this *DataStore) BatchRetrive(keys []string, T []any) []interface{} {
-	if this.keyCompressor != nil {
-		keys = this.keyCompressor.TryBatchCompress(keys)
-	}
-
 	values := common.FilterFirst(this.cache.BatchGet(keys)) // From the local cache first
 	if slice.Count[any, int](values, nil) == 0 {            // All found
 		return values
@@ -181,31 +133,44 @@ func (this *DataStore) BatchRetrive(keys []string, T []any) []interface{} {
 	return values
 }
 
-func (this *DataStore) NewWriter(blockNum uint64) interface{} {
-	return NewAsyncWriter(this, blockNum)
-}
+// func (this *DataStore) Checksum() [32]byte {
+// 	return this.cache.Checksum(
+// 		func(k0 string, k1 string) bool { return k0 < k1 },
+// 		func(k string, v any) ([]byte, []byte) { return []byte(k), this.encoder(k, v) },
+// 	)
+// }
 
-func (this *DataStore) RefreshCache(blockNum uint64) (uint64, uint64) {
-	return this.cache.Policy().Refresh(this.Cache(nil).(*mapi.ConcurrentMap[string, any]))
-}
+// func (this *DataStore) Query(pattern string, condition func(string, string) bool) ([]string, [][]byte, error) {
+// 	return this.db.Query(pattern, condition)
+// }
 
-func (this *DataStore) Print() { this.cache.Print() }
+// Pleaseholder only
+// func (this *DataStore) GetNewIndex(store intf.Datastore) interface {
+// 	Add([]*univalue.Univalue)
+// 	Clear()
+// } {
+// 	return NewCCIndexer(this, 0)
+// }
 
-func (this *DataStore) CheckSum() [32]byte {
-	k, vs := this.KVs()
-	kData := codec.Strings(k).Flatten()
-	vData := make([][]byte, len(vs))
-	for i, v := range vs {
-		vData[i] = this.encoder(k[i], v)
-	}
-	vData = append(vData, kData)
-	return sha256.Sum256(codec.Byteset(vData).Flatten())
-}
+// func (this *DataStore) NewWriter(blockNum uint64) interface{} {
+// 	return NewAsyncWriter(this, blockNum)
+// }
 
-func (this *DataStore) KVs() ([]string, []interface{}) {
-	return this.cache.KVs()
-}
+// func (this *DataStore) RefreshCache(blockNum uint64) (uint64, uint64) {
+// 	return this.cache.Policy().Refresh(this.Cache(nil).(*mapi.ConcurrentMap[string, any]))
+// }
 
-// func (this *DataStore) CachePolicy() *policy.CachePolicy {
-// 	return this.cache.Policy()
+// func (this *DataStore) CheckSum() [32]byte {
+// 	k, vs := this.KVs()
+// 	kData := codec.Strings(k).Flatten()
+// 	vData := make([][]byte, len(vs))
+// 	for i, v := range vs {
+// 		vData[i] = this.encoder(k[i], v)
+// 	}
+// 	vData = append(vData, kData)
+// 	return sha256.Sum256(codec.Byteset(vData).Flatten())
+// }
+
+// func (this *DataStore) KVs() ([]string, []interface{}) {
+// 	return this.cache.KVs()
 // }

@@ -19,7 +19,6 @@ package ccstorage
 
 import (
 	async "github.com/arcology-network/common-lib/async"
-	common "github.com/arcology-network/common-lib/common"
 	intf "github.com/arcology-network/storage-committer/interfaces"
 )
 
@@ -33,7 +32,7 @@ type AsyncWriter struct {
 	version uint64
 }
 
-func NewAsyncWriter(reader intf.ReadOnlyDataStore, version uint64) *AsyncWriter {
+func NewAsyncWriter(reader intf.ReadOnlyStore, version uint64) *AsyncWriter {
 	store := reader.(*DataStore)
 	pipe := async.NewPipeline(
 		4,
@@ -47,14 +46,14 @@ func NewAsyncWriter(reader intf.ReadOnlyDataStore, version uint64) *AsyncWriter 
 		func(indexers ...*CCIndexer) (*CCIndexer, bool) {
 			mergedIdxer := new(CCIndexer).Merge(indexers)
 
-			var err error
-			if store.keyCompressor != nil {
-				common.ParallelExecute(
-					func() { err = store.db.BatchSet(mergedIdxer.keyBuffer, mergedIdxer.encodedBuffer) }, // Write data back
-					func() { store.keyCompressor.Commit() })
-			} else {
-				err = store.db.BatchSet(mergedIdxer.keyBuffer, mergedIdxer.encodedBuffer)
-			}
+			// var err error
+			// if store.keyCompressor != nil {
+			// 	common.ParallelExecute(
+			// 		func() { err = store.db.BatchSet(mergedIdxer.keyBuffer, mergedIdxer.encodedBuffer) }, // Write data back
+			// 		func() { store.keyCompressor.Commit() })
+			// } else {
+			err := store.db.BatchSet(mergedIdxer.keyBuffer, mergedIdxer.encodedBuffer)
+			// }
 
 			store.cache.BatchSet(mergedIdxer.keyBuffer, mergedIdxer.valueBuffer) // update the local cache
 			return nil, err == nil
@@ -71,15 +70,14 @@ func NewAsyncWriter(reader intf.ReadOnlyDataStore, version uint64) *AsyncWriter 
 
 // Send the data to the downstream processor. This can be called multiple times
 // before calling Await to commit the data to the state db.
-func (this *AsyncWriter) Feed() {
+func (this *AsyncWriter) Precommit() {
 	this.CCIndexer.Finalize()          // Remove the nil transitions
 	this.Pipeline.Push(this.CCIndexer) // push the indexer to the processor stream
 	this.CCIndexer = NewCCIndexer(this.store, this.version)
 }
 
 // Await commits the data to the state db.
-func (this *AsyncWriter) Write() {
+func (this *AsyncWriter) Commit() {
 	this.Pipeline.Push(nil) // commit all th indexers to the state db
 	this.Pipeline.Await()
-
 }

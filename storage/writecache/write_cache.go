@@ -39,7 +39,7 @@ import (
 
 // WriteCache is a read-only data backend used for caching.
 type WriteCache struct {
-	backend  intf.ReadOnlyDataStore
+	backend  intf.ReadOnlyStore
 	kvDict   map[string]*univalue.Univalue // Local KV lookup
 	platform intf.Platform
 	pool     *mempool.Mempool[*univalue.Univalue]
@@ -47,7 +47,7 @@ type WriteCache struct {
 
 // NewWriteCache creates a new instance of WriteCache; the backend can be another instance of WriteCache,
 // resulting in a cascading-like structure.
-func NewWriteCache(backend intf.ReadOnlyDataStore, perPage int, numPages int, args ...interface{}) *WriteCache {
+func NewWriteCache(backend intf.ReadOnlyStore, perPage int, numPages int, args ...interface{}) *WriteCache {
 	return &WriteCache{
 		backend:  backend,
 		kvDict:   make(map[string]*univalue.Univalue),
@@ -58,23 +58,22 @@ func NewWriteCache(backend intf.ReadOnlyDataStore, perPage int, numPages int, ar
 	}
 }
 
-func (this *WriteCache) SetReadOnlyDataStore(backend intf.ReadOnlyDataStore) *WriteCache {
+func (this *WriteCache) SetReadOnlyBackend(backend intf.ReadOnlyStore) *WriteCache {
 	this.backend = backend
 	return this
 }
 
-func (this *WriteCache) ReadOnlyDataStore() intf.ReadOnlyDataStore { return this.backend }
-func (this *WriteCache) Cache() *map[string]*univalue.Univalue     { return &this.kvDict }
-
-// func (this *WriteCache) MinSize() int                              { return this.pool.MinSize() }
-func (this *WriteCache) NewUnivalue() *univalue.Univalue { return this.pool.New() }
+func (this *WriteCache) ReadOnlyStore() intf.ReadOnlyStore     { return this.backend }
+func (this *WriteCache) Cache() *map[string]*univalue.Univalue { return &this.kvDict }
+func (this *WriteCache) Preload([]byte) interface{}            { return nil } // Placeholder
+func (this *WriteCache) NewUnivalue() *univalue.Univalue       { return this.pool.New() }
 
 // If the access has been recorded
 func (this *WriteCache) GetOrNew(tx uint32, path string, T any) (*univalue.Univalue, bool) {
 	unival, inCache := this.kvDict[path]
 	if unival == nil { // Not in the kvDict, check the datastore
 		var typedv interface{}
-		if backend := this.ReadOnlyDataStore(); backend != nil {
+		if backend := this.ReadOnlyStore(); backend != nil {
 			typedv = common.FilterFirst(backend.Retrive(path, T))
 		}
 
@@ -104,7 +103,7 @@ func (this *WriteCache) write(tx uint32, path string, value interface{}) error {
 		}
 		return err
 	}
-	return errors.New("Error: The parent path doesn't exist: " + parentPath)
+	return errors.New("Error: The parent path " + parentPath + " doesn't exist for " + path)
 }
 
 func (this *WriteCache) Write(tx uint32, path string, value interface{}) (int64, error) {
@@ -121,7 +120,7 @@ func (this *WriteCache) ReadCommitted(tx uint32, key string, T any) (interface{}
 		return v, Fee
 	}
 
-	v, _ := this.ReadOnlyDataStore().Retrive(key, T)
+	v, _ := this.ReadOnlyStore().Retrive(key, T)
 	if v == nil {
 		return v, 0 //Fee{}.Reader(univalue.NewUnivalue(tx, key, 1, 0, 0, v, nil))
 	}
@@ -140,7 +139,7 @@ func (this *WriteCache) Find(tx uint32, path string, T any) (interface{}, interf
 		return univ.Value(), univ
 	}
 
-	v, _ := this.ReadOnlyDataStore().Retrive(path, T)
+	v, _ := this.ReadOnlyStore().Retrive(path, T)
 	univ := univalue.NewUnivalue(tx, path, 0, 0, 0, v, nil)
 	return univ.Value(), univ
 }
@@ -168,7 +167,9 @@ func (this *WriteCache) IfExists(path string) bool {
 	if this.backend == nil {
 		return false
 	}
-	return this.backend.IfExists(path) //this.RetriveShallow(path, nil) != nil
+
+	flag := this.backend.IfExists(path) //this.RetriveShallow(path, nil) != nil
+	return flag
 }
 
 // The function is used to add the transitions to the writecache. It assumes that the transition's
@@ -220,17 +221,7 @@ func (this *WriteCache) Insert(transitions []*univalue.Univalue) *WriteCache {
 }
 
 // Reset the writecache to the initial state for the next round of processing.
-func (this *WriteCache) Precommit(args ...interface{}) [32]byte {
-	this.Insert(args[0].([]*univalue.Univalue))
-	return [32]byte{}
-}
-
-// Reset the writecache to the initial state for the next round of processing.
 func (this *WriteCache) Clear() *WriteCache {
-	// if clear(this.buffer); cap(this.buffer) > 3*this.pool.MinSize() {
-	// 	this.buffer = make([]*univalue.Univalue, 0, this.pool.MinSize())
-	// }
-	// this.buffer = this.buffer[:0]
 	this.pool.Reset()
 	clear(this.kvDict)
 	return this

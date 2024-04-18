@@ -10,10 +10,10 @@ import (
 	"github.com/arcology-network/common-lib/exp/orderedset"
 	"github.com/arcology-network/common-lib/exp/slice"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
+	statestore "github.com/arcology-network/storage-committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/commutative"
-	platform "github.com/arcology-network/storage-committer/platform"
-	cache "github.com/arcology-network/storage-committer/storage/writecache"
+	"github.com/arcology-network/storage-committer/storage/proxy"
 	univalue "github.com/arcology-network/storage-committer/univalue"
 	"github.com/holiman/uint256"
 )
@@ -25,7 +25,8 @@ func TestTransitionFilters(t *testing.T) {
 	alice := addrcompressor.RandomAccount()
 	bob := addrcompressor.RandomAccount()
 
-	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
 
 	// writeCache = cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
@@ -117,7 +118,8 @@ func TestAccessFilters(t *testing.T) {
 	alice := addrcompressor.RandomAccount()
 	bob := addrcompressor.RandomAccount()
 
-	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
 	adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache)
 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)

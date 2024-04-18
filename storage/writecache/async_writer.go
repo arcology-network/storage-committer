@@ -45,19 +45,21 @@ func NewAsyncWriter(cache *WriteCache, version uint64) *AsyncWriter {
 	return &AsyncWriter{
 		Pipeline:          pipe.Start(),
 		WriteCacheIndexer: NewWriteCacheIndexer(nil, version),
+		WriteCache:        cache,
 		version:           version,
 	}
 }
 
-// Called after each precommit to update the cache.
-func (this *AsyncWriter) Feed() {
+// write cache updates itself every generation. It doesn't need to write to the database.
+func (this *AsyncWriter) Precommit() {
 	this.WriteCacheIndexer.Finalize()          // Remove the nil transitions
 	this.Pipeline.Push(this.WriteCacheIndexer) // push the indexer to the processor stream
 	this.Pipeline.Await()
 	this.WriteCacheIndexer = NewWriteCacheIndexer(nil, this.version)
 }
 
-// write cache updates itself every generation. It doesn't need to write to the database.
-func (this *AsyncWriter) Write() {
-
+// The generation cache is transient and will clear itself when all the transitions are committed to
+// the database.
+func (this *AsyncWriter) Commit() {
+	this.WriteCache.Clear()
 }

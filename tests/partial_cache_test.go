@@ -16,8 +16,8 @@ package committertest
 // func TestPartialCache(t *testing.T) {
 // 	memDB := storage.NewMemoryDB()
 // 	policy := storage.NewCachePolicy(10000000, 1.0)
-// 	store := storage.NewDataStore(nil, policy, memDB, platform.Codec{}.Encode, platform.Codec{}.Decode)
-// 		committer := stgcommitter.NewStateCommitter(store)
+// 	store := storage.NewDataStore( policy, memDB, platform.Codec{}.Encode, platform.Codec{}.Decode)
+// 		committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
 // writeCache := committer.WriteCache()
 // 	alice := AliceAccount()
 // 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
@@ -79,8 +79,8 @@ package committertest
 // 		return name == "*storage.MemDB"
 // 	}
 
-// 	store := storage.NewDataStore(nil, policy, memDB, platform.Codec{}.Encode, platform.Codec{}.Decode, excludeMemDB)
-// 		committer := stgcommitter.NewStateCommitter(store)
+// 	store := storage.NewDataStore( policy, memDB, platform.Codec{}.Encode, platform.Codec{}.Decode, excludeMemDB)
+// 		committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
 // writeCache := committer.WriteCache()
 // 	alice := AliceAccount()
 // 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
@@ -100,7 +100,7 @@ package committertest
 
 // 	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
-// 	// 	committer := stgcommitter.NewStateCommitter(store)
+// 	// 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
 // writeCache := committer.WriteCache()
 
 // 	committer.WriteCache().Clear()

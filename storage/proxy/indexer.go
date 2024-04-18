@@ -43,7 +43,7 @@ func NewCacheIndexer(store *ReadCache, version uint64) *CacheIndexer {
 
 // An index by account address, transitions have the same Eth account address will be put together in a list
 // This is for ETH storage, concurrent container related sub-paths won't be put into this index.
-func (this *CacheIndexer) Add(transitions []*univalue.Univalue) {
+func (this *CacheIndexer) Import(transitions []*univalue.Univalue) {
 	this.buffer = append(this.buffer, transitions...)
 }
 

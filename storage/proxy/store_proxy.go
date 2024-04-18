@@ -20,13 +20,17 @@ package proxy
 import (
 	memdb "github.com/arcology-network/common-lib/storage/memdb"
 	policy "github.com/arcology-network/common-lib/storage/policy"
+	intf "github.com/arcology-network/storage-committer/interfaces"
 	platform "github.com/arcology-network/storage-committer/platform"
+	"github.com/arcology-network/storage-committer/storage/ccstorage"
 	ccstg "github.com/arcology-network/storage-committer/storage/ccstorage"
+	"github.com/arcology-network/storage-committer/storage/ethstorage"
 	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
+	"github.com/arcology-network/storage-committer/univalue"
 )
 
 type StorageProxy struct {
-	objectCache  *ReadCache // An object cache for the backend storage, only updated once at the end of the block.
+	unifiedCache *ReadCache // An object cache for the backend storage, only updated once at the end of the block.
 	ethDataStore *ethstg.EthDataStore
 	ccDataStore  *ccstg.DataStore
 }
@@ -35,30 +39,31 @@ func NewStoreProxy() *StorageProxy {
 	proxy := &StorageProxy{
 		ethDataStore: ethstg.NewParallelEthMemDataStore(),
 		ccDataStore: ccstg.NewDataStore(
-			nil,
 			policy.NewCachePolicy(0, 1), // Don't cache anything in the underlying storage, the cache is managed by the router
 			memdb.NewMemoryDB(),
-			platform.Codec{}.Encode, platform.Codec{}.Decode),
+			platform.Codec{}.Encode,
+			platform.Codec{}.Decode,
+		),
 	}
-	proxy.objectCache = NewReadCache(proxy)
+	proxy.unifiedCache = NewReadCache(proxy)
 	return proxy
 }
 
 func (this *StorageProxy) Cache() interface{} {
-	return this.objectCache
+	return this.unifiedCache
 }
 
 func (this *StorageProxy) EnableCache() *StorageProxy {
-	this.objectCache.Enable()
+	this.unifiedCache.Enable()
 	return this
 }
 
 func (this *StorageProxy) DisableCache() *StorageProxy {
-	this.objectCache.Disable()
+	this.unifiedCache.Disable()
 	return this
 }
 
-func (this *StorageProxy) ClearCache() { this.objectCache.Clear() }
+func (this *StorageProxy) ClearCache() { this.unifiedCache.Clear() }
 
 func (this *StorageProxy) EthStore() *ethstg.EthDataStore { return this.ethDataStore } // Eth storage
 func (this *StorageProxy) CCStore() *ccstg.DataStore      { return this.ccDataStore }  // Arcology storage
@@ -68,7 +73,7 @@ func (this *StorageProxy) Preload(data []byte) interface{} {
 }
 
 func (this *StorageProxy) IfExists(key string) bool {
-	if _, ok := this.objectCache.Get(key); ok { // Check the cache first
+	if _, ok := this.unifiedCache.Get(key); ok { // Check the cache first
 		return true
 	}
 	return this.ccDataStore.IfExists(key)
@@ -80,37 +85,21 @@ func (this *StorageProxy) Inject(key string, v any) error {
 }
 
 func (this *StorageProxy) Retrive(key string, v any) (interface{}, error) {
-	if v, ok := this.objectCache.Get(key); ok { // Get from cache first
+	if v, ok := this.unifiedCache.Get(key); ok { // Get from cache first
 		return *v, nil
 	}
 	return this.ccDataStore.Retrive(key, v)
 }
 
 // Placeholders for the storage interface
-func (this *StorageProxy) Precommit(args ...interface{}) [32]byte { return this.ethDataStore.Root() }
-func (this *StorageProxy) Commit(blockNum uint64) error           { return nil }
+func (this *StorageProxy) Precommit([]uint32) [32]byte  { return this.ethDataStore.Root() }
+func (this *StorageProxy) Commit(blockNum uint64) error { return nil }
 
 // Get the stores that can be
-// func (this *StorageProxy) Committables() []*associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore] {
-// 	// bufferPair := &associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore]{
-// 	// 	First: NewCacheIndexer(this.objectCache),
-// 	// 	Second: []intf.CommittableStore{
-// 	// 		this.objectCache,
-// 	// 	}}
-
-// 	ethPair := &associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore]{
-// 		First:  ethstg.NewEthIndexer(this.EthStore()),
-// 		Second: []intf.CommittableStore{this.EthStore()},
-// 	}
-
-// 	ccPair := &associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore]{
-// 		First:  ccstg.NewCCIndexer(this.CCStore()),
-// 		Second: []intf.CommittableStore{this.CCStore()},
-// 	}
-
-// 	return []*associative.Pair[intf.Indexer[*univalue.Univalue], []intf.CommittableStore]{
-// 		// bufferPair,
-// 		ethPair,
-// 		ccPair,
-// 	}
-// }
+func (this *StorageProxy) GetWriters() []intf.AsyncWriter[*univalue.Univalue] {
+	return []intf.AsyncWriter[*univalue.Univalue]{
+		NewAsyncWriter(this.unifiedCache, 0),
+		ethstorage.NewAsyncWriter(this.ethDataStore, 0),
+		ccstorage.NewAsyncWriter(this.ccDataStore, 0),
+	}
+}

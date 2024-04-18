@@ -15,12 +15,13 @@ import (
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/common-lib/merkle"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
+	statestore "github.com/arcology-network/storage-committer"
 	stgcommitter "github.com/arcology-network/storage-committer/committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 	platform "github.com/arcology-network/storage-committer/platform"
-	datastore "github.com/arcology-network/storage-committer/storage/ccstorage"
+	"github.com/arcology-network/storage-committer/storage/proxy"
 	cache "github.com/arcology-network/storage-committer/storage/writecache"
 	univalue "github.com/arcology-network/storage-committer/univalue"
 	ethcommon "github.com/ethereum/go-ethereum/common"
@@ -36,7 +37,8 @@ import (
 func TestConcurrentDB(t *testing.T) {
 	store := chooseDataStore()
 
-	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
@@ -102,7 +104,8 @@ func TestConcurrentDB(t *testing.T) {
 func TestTrieUpdates(t *testing.T) {
 	store := chooseDataStore()
 
-	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
@@ -120,7 +123,7 @@ func TestTrieUpdates(t *testing.T) {
 	}
 
 	trans := writeCache.Export(univalue.Sorter)
-	committer := stgcommitter.NewStateCommitter(store)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
 	committer.Import(univalue.Univalues(slice.Clone(trans)).To(univalue.IPTransition{}))
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
@@ -132,7 +135,6 @@ func TestTrieUpdates(t *testing.T) {
 	// }
 
 	committer.SetStore(store)
-	writeCache.Clear()
 
 	if _, err := writeCache.Write(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
 		t.Error(err)
@@ -150,7 +152,7 @@ func TestTrieUpdates(t *testing.T) {
 	// 	t.Error("Error: Cache() should be 3, actual", len(ds.AccountDict()))
 	// }
 
-	committer = stgcommitter.NewStateCommitter(store)
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
 	committer.Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 
@@ -161,7 +163,6 @@ func TestTrieUpdates(t *testing.T) {
 	committer.Commit(0)
 
 	committer.SetStore(store)
-	writeCache.Clear()
 
 	if _, err := writeCache.Write(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(100), true)); err != nil {
 		t.Error(err)
@@ -175,7 +176,7 @@ func TestTrieUpdates(t *testing.T) {
 		t.Error(err)
 	}
 
-	committer = stgcommitter.NewStateCommitter(store)
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
 	committer.Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 
@@ -196,7 +197,8 @@ func TestEthStorageConnection(t *testing.T) {
 	alice := AliceAccount()
 
 	// writeCache := committer.WriteCache()
-	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -211,7 +213,7 @@ func TestEthStorageConnection(t *testing.T) {
 	}
 
 	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
-	committer := stgcommitter.NewStateCommitter(store)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
 	committer.Import(trans)
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
@@ -237,7 +239,8 @@ func TestBasicAddRead(t *testing.T) {
 	alice := AliceAccount()
 
 	// writeCache := committer.WriteCache()
-	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
 
 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
@@ -311,7 +314,8 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 
 	alice := AliceAccount()
 
-	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
@@ -323,14 +327,13 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 	//values := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).([]*univalue.Univalue)
 	ts := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues)
 
-	committer := stgcommitter.NewStateCommitter(store)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
 	committer.Import(ts)
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(0)
 	committer.SetStore(store)
 
-	writeCache.Clear()
 	// create a path
 	path := commutative.NewPath()
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", path); err != nil {
@@ -339,12 +342,11 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 
 	transitions := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
-	committer = stgcommitter.NewStateCommitter(store)
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
 	committer.Import((&univalue.Univalues{}).Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues))
 	committer.Precommit([]uint32{1})
 	committer.Commit(0)
 
-	writeCache.Clear()
 	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", &commutative.Path{})
 	if v == nil {
 		t.Error("Error: The path should exist")
@@ -357,12 +359,11 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 
 	trans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
-	committer = stgcommitter.NewStateCommitter(store)
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
 	committer.Import((&univalue.Univalues{}).Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 	committer.Precommit([]uint32{1})
 	committer.Commit(0)
 
-	writeCache.Clear()
 	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", new(commutative.Path)); v != nil {
 		t.Error("Error: The path should have been deleted")
 	}
@@ -370,9 +371,10 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 
 func BenchmarkMultipleAccountCommitDataStore(b *testing.B) {
 	// store := chooseDataStore() // Eth data store
-	store := datastore.NewDataStore(nil, nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode) // Native data store
+	store := chooseDataStore() // Native data store
 
-	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {

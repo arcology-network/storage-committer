@@ -68,9 +68,7 @@ func NewEthIndexer(store *EthDataStore, version uint64) *EthIndexer {
 	}
 }
 
-func (this *EthIndexer) Add(v []*univalue.Univalue) {
-	this.UnorderedIndexer.Add(v)
-}
+func (this *EthIndexer) Import(v []*univalue.Univalue) { this.UnorderedIndexer.Import(v) }
 
 // Remove the nil transitions from the index, because they are set by
 func (this *EthIndexer) Finalize() {

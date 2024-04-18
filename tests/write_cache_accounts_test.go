@@ -7,21 +7,21 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/slice"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
+	statestore "github.com/arcology-network/storage-committer"
 	stgcommitter "github.com/arcology-network/storage-committer/committer"
-	stgcommcommon "github.com/arcology-network/storage-committer/common"
-	commutative "github.com/arcology-network/storage-committer/commutative"
 	platform "github.com/arcology-network/storage-committer/platform"
-	cache "github.com/arcology-network/storage-committer/storage/writecache"
+	"github.com/arcology-network/storage-committer/storage/proxy"
 	univalue "github.com/arcology-network/storage-committer/univalue"
 )
 
 func TestCacheMultiAccountCreation(t *testing.T) {
 	store := chooseDataStore()
-	// store := datastore.NewDataStore(nil, datastore.NewCachePolicy(0, 1), datastore.NewMemoryDB(), encoder, decoder)
+	// store := datastore.NewDataStore( datastore.NewCachePolicy(0, 1), datastore.NewMemoryDB(), encoder, decoder)
 
-	store.Inject((stgcommcommon.ETH10_ACCOUNT_PREFIX), commutative.NewPath())
+	// store.Inject((stgcommcommon.ETH10_ACCOUNT_PREFIX), commutative.NewPath())
 
-	writeCache := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
 
 	accounts := make([]string, 10)
 	for i := 0; i < len(accounts); i++ {
@@ -38,12 +38,12 @@ func TestCacheMultiAccountCreation(t *testing.T) {
 		t.Error("Error: Transition counts don't match up")
 	}
 
-	committer := stgcommitter.NewStateCommitter(store)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
 	committer.Import(acctTrans)
 
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
-	writeCache.Clear()
+
 	// acctTrans = univalue.Univalues(slice.Clone(raw)).To(univalue.ITTransition{})
 	// encoded := univalue.Univalues(acctTrans).Encode()
 

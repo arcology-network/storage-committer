@@ -23,94 +23,96 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/slice"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
-	"github.com/arcology-network/storage-committer/interfaces"
 
 	statestore "github.com/arcology-network/storage-committer"
+	stgcommitter "github.com/arcology-network/storage-committer/committer"
 	stgcomm "github.com/arcology-network/storage-committer/common"
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
 	univalue "github.com/arcology-network/storage-committer/univalue"
 )
 
-func commitToStateStore(store interfaces.Datastore, t *testing.T) {
+func commitToStateStore(sstore *statestore.StateStore, t *testing.T) {
 	alice := AliceAccount()
-	stateStore := statestore.NewStateStore(store)
+	// sstore:= statestore.NewStateStore(store)
 
-	if _, err := adaptorcommon.CreateNewAccount(stgcomm.SYSTEM, alice, stateStore.ShardedWriteCache); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcomm.SYSTEM, alice, sstore.WriteCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
-	acctTrans := univalue.Univalues(slice.Clone(stateStore.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
-	stateStore.Import(acctTrans).Precommit([]uint32{stgcomm.SYSTEM})
-	stateStore.Commit(stgcomm.SYSTEM)
-	stateStore.Clear()
+	committer := stgcommitter.NewStateCommitter(sstore.ReadOnlyStore(), sstore.GetWriters()...)
+	committer.Import(acctTrans)
+	committer.Precommit([]uint32{stgcomm.SYSTEM})
+	committer.Commit(stgcomm.SYSTEM)
 
-	if _, err := stateStore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(0), noncommutative.NewBytes([]byte{1, 2, 3})); err != nil {
+	if _, err := sstore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(0), noncommutative.NewBytes([]byte{1, 2, 3})); err != nil {
 		t.Error(err)
 	}
-	if _, err := stateStore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(1), noncommutative.NewBytes([]byte{2, 2, 3})); err != nil {
+	if _, err := sstore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(1), noncommutative.NewBytes([]byte{2, 2, 3})); err != nil {
 		t.Error(err)
 	}
-	if _, err := stateStore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), noncommutative.NewBytes([]byte{199, 45, 67})); err != nil {
+	if _, err := sstore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), noncommutative.NewBytes([]byte{199, 45, 67})); err != nil {
 		t.Error(err)
 	}
-	acctTrans = univalue.Univalues(slice.Clone(stateStore.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	acctTrans = univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
-	// stateStore.Import(acctTrans)
-	stateStore = statestore.NewStateStore(store)
-	stateStore.Import(acctTrans).Precommit([]uint32{1})
-	stateStore.Commit(2).Clear()
+	// committer.Import(acctTrans)
+	committer = stgcommitter.NewStateCommitter(sstore.ReadOnlyStore(), sstore.GetWriters()...)
+	committer.Import(acctTrans)
+	committer.Precommit([]uint32{1})
+	committer.Commit(2)
 
-	outV, _, _ := stateStore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(0), new(noncommutative.Bytes))
+	outV, _, _ := sstore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(0), new(noncommutative.Bytes))
 	if outV == nil || !bytes.Equal(outV.([]byte), []byte{1, 2, 3}) {
 		t.Error("Error: The path should exist", outV)
 	}
 
-	outV, _, _ = stateStore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(1), new(noncommutative.Bytes))
+	outV, _, _ = sstore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(1), new(noncommutative.Bytes))
 	if outV == nil || !bytes.Equal(outV.([]byte), []byte{2, 2, 3}) {
 		t.Error("Error: The path should exist", outV)
 	}
 
-	outV, _, _ = stateStore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), new(noncommutative.Bytes))
+	outV, _, _ = sstore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), new(noncommutative.Bytes))
 	if outV == nil || !bytes.Equal(outV.([]byte), []byte{199, 45, 67}) {
 		t.Error("Error: The path should exist", outV)
 	}
 
-	if _, err := stateStore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), noncommutative.NewBytes([]byte{199, 199, 199})); err != nil {
+	if _, err := sstore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), noncommutative.NewBytes([]byte{199, 199, 199})); err != nil {
 		t.Error(err)
 	}
 
-	outV, _, _ = stateStore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), new(noncommutative.Bytes))
+	outV, _, _ = sstore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), new(noncommutative.Bytes))
 	if outV == nil || !bytes.Equal(outV.([]byte), []byte{199, 199, 199}) {
 		t.Error("Error: The path should exist", outV)
 	}
 
 	// Delete the entry
-	if _, err := stateStore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), nil); err != nil {
+	if _, err := sstore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), nil); err != nil {
 		t.Error(err)
 	}
 
 	// Delete the entry
-	if _, err := stateStore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(77), noncommutative.NewBytes([]byte{77, 77})); err != nil {
+	if _, err := sstore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(77), noncommutative.NewBytes([]byte{77, 77})); err != nil {
 		t.Error(err)
 	}
 
-	outV, _, _ = stateStore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), new(noncommutative.Bytes))
+	outV, _, _ = sstore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), new(noncommutative.Bytes))
 	if outV != nil {
 		t.Error("Error: The path should not exist", outV)
 	}
 
-	acctTrans = univalue.Univalues(slice.Clone(stateStore.Export(univalue.Sorter))).To(univalue.IPTransition{})
-	// stateStore = statestore.NewStateStore(store)
-	stateStore.Import(acctTrans).Precommit([]uint32{1})
-	stateStore.Commit(2).Clear()
+	acctTrans = univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	committer.Import(acctTrans)
+	committer.Precommit([]uint32{1})
+	committer.Commit(2)
 
-	outV, _, _ = stateStore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), new(noncommutative.Bytes))
+	outV, _, _ = sstore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), new(noncommutative.Bytes))
 	if outV != nil {
 		t.Error("Error: The path should not exist", outV)
 	}
 
-	outV, _, _ = stateStore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(77), new(noncommutative.Bytes))
+	outV, _, _ = sstore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(77), new(noncommutative.Bytes))
 	if outV == nil || !bytes.Equal(outV.([]byte), []byte{77, 77}) {
 		t.Error("Error: The path should not exist", outV)
 	}
@@ -118,91 +120,100 @@ func commitToStateStore(store interfaces.Datastore, t *testing.T) {
 
 func TestCommitToStatStore(t *testing.T) {
 	// commitToStateStore(stgproxy.NewStoreProxy().EnableCache(), t) // Use cache
-	commitToStateStore(stgproxy.NewStoreProxy().DisableCache(), t)
+
+	sstore := statestore.NewStateStore(stgproxy.NewStoreProxy().EnableCache())
+	// store := statestore.NewStateStore(Proxy)
+	commitToStateStore(sstore, t)
 }
 
 func TestAsyncCommitToStateStore(t *testing.T) {
 	alice := AliceAccount()
 	store := stgproxy.NewStoreProxy().EnableCache()
-	stateStore := statestore.NewStateStore(store)
+	sstore := statestore.NewStateStore(store)
+	WriteCache := sstore.WriteCache
 
-	if _, err := adaptorcommon.CreateNewAccount(stgcomm.SYSTEM, alice, stateStore.ShardedWriteCache); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcomm.SYSTEM, alice, WriteCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
-	acctTrans := univalue.Univalues(slice.Clone(stateStore.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(WriteCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
-	stateStore.Import(acctTrans).Precommit([]uint32{stgcomm.SYSTEM})
-	stateStore.Commit(stgcomm.SYSTEM)
-	stateStore.Clear()
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer.Import(acctTrans)
+	committer.Precommit([]uint32{stgcomm.SYSTEM})
+	committer.Commit(stgcomm.SYSTEM)
 
 	fmt.Println(" ================================================= ")
 
-	if _, err := stateStore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(0), noncommutative.NewBytes([]byte{1, 2, 3})); err != nil {
+	if _, err := sstore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(0), noncommutative.NewBytes([]byte{1, 2, 3})); err != nil {
 		t.Error(err)
 	}
-	if _, err := stateStore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(1), noncommutative.NewBytes([]byte{2, 2, 3})); err != nil {
+	if _, err := sstore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(1), noncommutative.NewBytes([]byte{2, 2, 3})); err != nil {
 		t.Error(err)
 	}
-	if _, err := stateStore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), noncommutative.NewBytes([]byte{199, 45, 67})); err != nil {
+	if _, err := sstore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), noncommutative.NewBytes([]byte{199, 45, 67})); err != nil {
 		t.Error(err)
 	}
-	acctTrans = univalue.Univalues(slice.Clone(stateStore.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	acctTrans = univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
-	// stateStore.Import(acctTrans)
-	stateStore = statestore.NewStateStore(store)
-	stateStore.Import(acctTrans).Precommit([]uint32{1})
-	stateStore.Commit(2).Clear()
+	// committer.Import(acctTrans)
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer.Import(acctTrans)
+	committer.Precommit([]uint32{1})
+	committer.Commit(2)
+
 	fmt.Println(" ================================================= ")
-	outV, _, _ := stateStore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(0), new(noncommutative.Bytes))
+	outV, _, _ := sstore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(0), new(noncommutative.Bytes))
 	if outV == nil || !bytes.Equal(outV.([]byte), []byte{1, 2, 3}) {
 		t.Error("Error: The path should exist", outV)
 	}
 
-	outV, _, _ = stateStore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(1), new(noncommutative.Bytes))
+	outV, _, _ = sstore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(1), new(noncommutative.Bytes))
 	if outV == nil || !bytes.Equal(outV.([]byte), []byte{2, 2, 3}) {
 		t.Error("Error: The path should exist", outV)
 	}
 
-	outV, _, _ = stateStore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), new(noncommutative.Bytes))
+	outV, _, _ = sstore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), new(noncommutative.Bytes))
 	if outV == nil || !bytes.Equal(outV.([]byte), []byte{199, 45, 67}) {
 		t.Error("Error: The path should exist", outV)
 	}
 
-	if _, err := stateStore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), noncommutative.NewBytes([]byte{199, 199, 199})); err != nil {
+	if _, err := sstore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), noncommutative.NewBytes([]byte{199, 199, 199})); err != nil {
 		t.Error(err)
 	}
 
-	outV, _, _ = stateStore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), new(noncommutative.Bytes))
+	outV, _, _ = sstore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), new(noncommutative.Bytes))
 	if outV == nil || !bytes.Equal(outV.([]byte), []byte{199, 199, 199}) {
 		t.Error("Error: The path should exist", outV)
 	}
 
 	// Delete the entry
-	if _, err := stateStore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), nil); err != nil {
+	if _, err := sstore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), nil); err != nil {
 		t.Error(err)
 	}
 
 	// Delete the entry
-	if _, err := stateStore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(77), noncommutative.NewBytes([]byte{77, 77})); err != nil {
+	if _, err := sstore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(77), noncommutative.NewBytes([]byte{77, 77})); err != nil {
 		t.Error(err)
 	}
 
-	outV, _, _ = stateStore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), new(noncommutative.Bytes))
+	outV, _, _ = sstore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), new(noncommutative.Bytes))
 	if outV != nil {
 		t.Error("Error: The path should not exist", outV)
 	}
 
-	acctTrans = univalue.Univalues(slice.Clone(stateStore.Export(univalue.Sorter))).To(univalue.IPTransition{})
-	stateStore = statestore.NewStateStore(store)
-	stateStore.Import(acctTrans).Precommit([]uint32{1})
-	stateStore.Commit(2) //.Clear()
+	acctTrans = univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})
+
+	// committer = statestore.NewStateStore(store)
+	committer.Import(acctTrans)
+	committer.Precommit([]uint32{1})
+	committer.Commit(2) //.Clear()
 	fmt.Println(" ================================================= ")
-	outV, _, _ = stateStore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), new(noncommutative.Bytes))
+	outV, _, _ = sstore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), new(noncommutative.Bytes))
 	if outV != nil {
 		t.Error("Error: The path should not exist", outV)
 	}
 
-	outV, _, _ = stateStore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(77), new(noncommutative.Bytes))
+	outV, _, _ = sstore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(77), new(noncommutative.Bytes))
 	if outV == nil || !bytes.Equal(outV.([]byte), []byte{77, 77}) {
 		t.Error("Error: The path should not exist", outV)
 	}

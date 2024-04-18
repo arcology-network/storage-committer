@@ -16,7 +16,7 @@ package committertest
 // 	// Server end
 // 	persistentDB := storage.NewMemoryDB()
 // 	serverCachePolicy := storage.NewCachePolicy(1, 0.8)
-// 	serverDataStore := storage.NewDataStore(nil, serverCachePolicy, persistentDB, platform.Codec{}.Encode, platform.Codec{}.Decode)
+// 	serverDataStore := storage.NewDataStore( serverCachePolicy, persistentDB, platform.Codec{}.Encode, platform.Codec{}.Decode)
 
 // 	keys := []string{}
 // 	values := []interface{}{}
@@ -43,7 +43,7 @@ package committertest
 
 // 	readonlyClientProxy := storage.NewReadonlyClient("", "", nil, serverDataStore)
 // 	clientCachePolicy := storage.NewCachePolicy(1, 0.8)
-// 	clientDataStore := storage.NewDataStore(nil, clientCachePolicy, readonlyClientProxy, placeholderEncoder, placeholderDecoder)
+// 	clientDataStore := storage.NewDataStore( clientCachePolicy, readonlyClientProxy, placeholderEncoder, placeholderDecoder)
 // 	clientDataStore.Precommit(keys1[:2], values1[:2]) // 2 in the client side cache
 // 	clientDataStore.Commit()
 
@@ -77,7 +77,7 @@ package committertest
 // 	// Server end
 // 	persistentDB := storage.NewMemoryDB()
 // 	serverCachePolicy := storage.NewCachePolicy(1, 0.8)
-// 	serverDataStore := storage.NewDataStore(nil, serverCachePolicy, persistentDB, platform.Codec{}.Encode, platform.Codec{}.Decode)
+// 	serverDataStore := storage.NewDataStore( serverCachePolicy, persistentDB, platform.Codec{}.Encode, platform.Codec{}.Decode)
 
 // 	keys := []string{}
 // 	values := []interface{}{}
@@ -109,7 +109,7 @@ package committertest
 
 // 	readonlyClientProxy := storage.NewReadonlyClient("http://localhost:8090", "store", nil)
 // 	clientCachePolicy := storage.NewCachePolicy(1, 0.8)
-// 	clientDataStore := storage.NewDataStore(nil, clientCachePolicy, readonlyClientProxy, proxyEncoder, proxyDecoder)
+// 	clientDataStore := storage.NewDataStore( clientCachePolicy, readonlyClientProxy, proxyEncoder, proxyDecoder)
 // 	clientDataStore.Precommit(keys1[:2], values1[:2]) // 2 in the client side cache
 // 	clientDataStore.Commit()
 

@@ -2,7 +2,7 @@ package interfaces
 
 const (
 	MAX_DEPTH            uint8 = 12
-	ETH10_ACCOUNT_LENGTH       = 40
+	ETH10_ACCOUNT_LENGTH uint8 = 40
 )
 
 type Platform interface { // value type
@@ -57,26 +57,15 @@ type Type interface { // value type
 	Print()
 }
 
-type Indexer[T any] interface {
-	Add([]T)
-	Finalize()
-	// Clear()
+type AsyncWriter[T any] interface {
+	Import([]T)
+	Precommit()
+	Commit()
 }
 
-type ReadOnlyDataStore interface {
+type ReadOnlyStore interface {
 	IfExists(string) bool
 	Retrive(string, any) (interface{}, error)
-}
-
-type CommittableStore interface {
-	Inject(string, any) error
-	Precommit(...interface{}) [32]byte //key gatter, value gatter,
-	Commit(uint64) error
-}
-
-type Datastore interface {
-	ReadOnlyDataStore
-	CommittableStore
 	Preload([]byte) interface{}
 }
 

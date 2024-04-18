@@ -310,6 +310,5 @@ func (this *EthDataStore) EnableAccountCache()                         { this.ac
 func (this *EthDataStore) DisableAccountCache()                        { this.accountCacheEnabled = false }
 func (this *EthDataStore) AccountDict() map[ethcommon.Address]*Account { return this.accountCache }
 func (this *EthDataStore) Clear()                                      {}
-func (this *EthDataStore) Precommit(arg ...interface{}) [32]byte       { return [32]byte{} }
-func (this *EthDataStore) Commit(blockNum uint64) error                { return nil }
-func (this *EthDataStore) Inject(key string, value interface{}) error  { return nil }
+
+func (this *EthDataStore) Inject(key string, value interface{}) error { return nil }

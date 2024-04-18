@@ -20,23 +20,26 @@ package statestore
 import (
 	stgcomm "github.com/arcology-network/storage-committer/committer"
 	intf "github.com/arcology-network/storage-committer/interfaces"
+	proxy "github.com/arcology-network/storage-committer/storage/proxy"
 	writecache "github.com/arcology-network/storage-committer/storage/writecache"
 	"github.com/arcology-network/storage-committer/univalue"
 	"github.com/cespare/xxhash/v2"
+	//  "github.com/arcology-network/storage-committer/storage/proxy"
 )
 
 // Buffer is simpliest  of indexers. It does not index anything, just stores the transitions.
 type StateStore struct {
-	*writecache.ShardedWriteCache
-	store     intf.ReadOnlyDataStore
-	committer *stgcomm.StateCommitter
+	// *writecache.ShardedWriteCache
+	*writecache.WriteCache
+	*stgcomm.StateCommitter
+	store *proxy.StorageProxy
 }
 
 // New creates a new StateCommitter instance.
-func NewStateStore(store intf.ReadOnlyDataStore) *StateStore {
+func NewStateStore(store *proxy.StorageProxy) *StateStore {
 	return &StateStore{
 		store: store,
-		ShardedWriteCache: writecache.NewShardedWriteCache(
+		WriteCache: writecache.NewWriteCache(
 			store,
 			16,
 			1,
@@ -44,28 +47,18 @@ func NewStateStore(store intf.ReadOnlyDataStore) *StateStore {
 				return xxhash.Sum64String(k)
 			},
 		),
-		committer: stgcomm.NewStateCommitter(store),
+		StateCommitter: stgcomm.NewStateCommitter(store),
 	}
 }
 
-func (this *StateStore) Store() intf.ReadOnlyDataStore      { return this.store }
-func (this *StateStore) Committer() *stgcomm.StateCommitter { return this.committer }
+func (this *StateStore) Store() *proxy.StorageProxy      { return this.store }
+func (this *StateStore) Cache() *writecache.WriteCache   { return this.WriteCache }
+func (this *StateStore) Import(trans univalue.Univalues) { this.StateCommitter.Import(trans) }
+func (this *StateStore) Preload(key []byte) interface{}  { return this.store.Preload(key) }
+func (this *StateStore) Clear()                          { this.WriteCache.Clear() }
 
-// The committer will commit the transactions to different stores registered with the committer.
-func (this *StateStore) Precommit(tx []uint32) [32]byte {
-	return this.committer.Precommit(tx)
-}
-
-func (this *StateStore) Commit(blockNum uint64) *StateStore {
-	this.committer.Commit(blockNum)
-	return this
-}
-
-func (this *StateStore) Import(trans univalue.Univalues) *StateStore {
-	this.committer.Import(trans)
-	return this
-}
-
-func (this *StateStore) Clear() {
-	this.ShardedWriteCache.Clear()
+func (this *StateStore) GetWriters() []intf.AsyncWriter[*univalue.Univalue] {
+	return append([]intf.AsyncWriter[*univalue.Univalue]{
+		writecache.NewAsyncWriter(this.WriteCache, 0)},
+		this.store.GetWriters()...)
 }
