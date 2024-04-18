@@ -141,11 +141,11 @@ func (this *Univalue) Set(tx uint32, path string, newV interface{}, inCache bool
 		return nil
 	}
 
-	// Writes == 0 means the value hasn't been modified yet, so we don't need to make a deep copy.
+	// Writes > 0 means the value has been modified already.
 	// this.value == nil, this is a new value assignment, so we don't need to make a deep copy.
 	// typedV == nil, this is a delete operation, so we don't need to make a deep copy.
 	// In cascading write cache, the values' access info will stripped off, so it wouldn't introduce interference.
-	if this.writes == 0 && this.value != nil && newV != nil { // Make a deep copy if has't done so
+	if this.writes == 0 && this.deltaWrites == 0 && this.value != nil && newV != nil { // Make a deep copy if has't done so
 		this.value = this.value.(intf.Type).Clone()
 	}
 
