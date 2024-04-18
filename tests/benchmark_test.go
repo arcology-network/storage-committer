@@ -11,11 +11,11 @@ import (
 	"github.com/arcology-network/common-lib/exp/slice"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	statestore "github.com/arcology-network/storage-committer"
-	stgcommitter "github.com/arcology-network/storage-committer/committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
-	"github.com/arcology-network/storage-committer/storage/proxy"
+	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
+	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
 	univalue "github.com/arcology-network/storage-committer/univalue"
 	orderedmap "github.com/elliotchance/orderedmap"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
@@ -26,21 +26,10 @@ import (
 )
 
 func BenchmarkAccountMerkleImportPerf(b *testing.B) {
-	// lut := addrcompressor.NewCompressionLut()
-	// store := datastore.NewDataStore( nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
-	// fileDB, err := datastore.NewFileDB(ROOT_PATH, 8, 2)
-	// if err != nil {
-	// 	b.Error(err)
-	// 	return
-	// }
 	store := chooseDataStore()
-
-	// meta := commutative.NewPath()
-	// store.Inject((stgcommcommon.ETH10_ACCOUNT_PREFIX), meta)
-
-	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
 	writeCache := sstore.WriteCache
-	for i := 0; i < 100000; i++ {
+	for i := 0; i < 1000; i++ {
 		if _, err := adaptorcommon.CreateNewAccount(0, fmt.Sprint(rand.Float64()), writeCache); err != nil { // Preload account structure {
 			b.Error(err)
 		}
@@ -55,7 +44,7 @@ func BenchmarkAccountMerkleImportPerf(b *testing.B) {
 func BenchmarkSingleAccountCommit(b *testing.B) {
 	store := chooseDataStore()
 
-	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
 	writeCache := sstore.WriteCache
 	alice := AliceAccount()
 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
@@ -73,29 +62,20 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 		}
 	}
 
-	//t0 = time.Now()
-	// _, transitions := writeCache.Export(nil)
 	transitions := univalue.Univalues(slice.Clone(writeCache.Export())).To(univalue.ITTransition{})
 
-	// in := univalue.Univalues(transitions).Encode()
-	//out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
-
-	//fmt.Println("Export:", time.Since(t0))
-
 	t0 := time.Now()
-
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
 	committer.Import(transitions)
-
-	committer.Precommit([]uint32{0})
+	committer.Precommit([]uint32{stgcommcommon.SYSTEM, 0, 1})
 	committer.Commit(0)
-	fmt.Println("Account Commit single Total time= :", time.Since(t0))
+	fmt.Println("Init committer= :", time.Since(t0), "with initial transitions:", len(transitions))
 }
 
 func BenchmarkMultipleAccountCommit(b *testing.B) {
 	store := chooseDataStore()
 
-	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
 	writeCache := sstore.WriteCache
 	alice := AliceAccount()
 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
@@ -174,9 +154,9 @@ func BenchmarkAddThenDelete(b *testing.B) {
 	// store := chooseDataStore()
 	store := chooseDataStore()
 
-	// sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	// sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
 
-	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
 	writeCache := sstore.WriteCache
 	meta := commutative.NewPath()
 	writeCache.Write(stgcommcommon.SYSTEM, stgcommcommon.ETH10_ACCOUNT_PREFIX, meta)
@@ -220,7 +200,7 @@ func BenchmarkAddThenPop(b *testing.B) {
 	store := chooseDataStore()
 
 	// writeCache := committer.WriteCache()
-	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
 	writeCache := sstore.WriteCache
 	meta := commutative.NewPath()
 	writeCache.Write(stgcommcommon.SYSTEM, stgcommcommon.ETH10_ACCOUNT_PREFIX, meta)
@@ -250,14 +230,6 @@ func BenchmarkAddThenPop(b *testing.B) {
 		}
 	}
 	fmt.Println("Write "+fmt.Sprint(50000), "noncommutative bytes in", time.Since(t0))
-
-	// t0 = time.Now()
-	// v, _ := committer.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/")
-	// for i := 0; i < 50000; i++ {
-	// 	key := v.(*commutative.Path).Next()
-	// 	committer.Write(1, key, nil)
-	// }
-	// fmt.Println("Pop 50000 noncommutative bytes in", fmt.Sprint(50000), time.Since(t0))
 }
 
 // func BenchmarkOrderedMap(b *testing.B) {
@@ -314,7 +286,7 @@ func BenchmarkInsertAndDelete(b *testing.B) {
 		m.Delete("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-0" + fmt.Sprint(i))
 	}
 
-	fmt.Println("Delete then delete keys:", time.Since(t0))
+	fmt.Println("Delete then delete 100000 keys:", time.Since(t0))
 }
 
 func BenchmarkMapInit(b *testing.B) {
@@ -344,7 +316,7 @@ func BenchmarkShrinkSlice(b *testing.B) {
 func BenchmarkEncodeTransitions(b *testing.B) {
 	store := chooseDataStore()
 
-	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
 	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
@@ -410,7 +382,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 
 	t0 := time.Now()
 
-	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
 	writeCache := sstore.WriteCache
 	for i := 0; i < 10; i++ {
 		acct := addrcompressor.RandomAccount()
@@ -633,7 +605,7 @@ func (s String) Less(b btree.Item) bool {
 
 // 	t0 := time.Now()
 
-// 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+// 	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
 // 	writeCache := sstore.WriteCache
 
 // 	// writeCache := committer.WriteCache()
@@ -698,7 +670,7 @@ func BenchmarkRandomAccountSort(t *testing.B) {
 
 	// t0 := time.Now()
 
-	// sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	// sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
 	// writeCache := sstore.WriteCache
 	// for i := 0; i < 100000; i++ {
 	// 	acct := addrcompressor.RandomAccount()

@@ -101,3 +101,6 @@ func (this *AsyncWriter) Commit() {
 	this.Pipeline.Push(nil)
 	this.Pipeline.Await()
 }
+
+// Await commits the data to the state db.
+func (this *AsyncWriter) Close() { this.Pipeline.Close() }

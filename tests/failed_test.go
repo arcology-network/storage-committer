@@ -23,22 +23,18 @@ import (
 	"github.com/arcology-network/common-lib/exp/slice"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	statestore "github.com/arcology-network/storage-committer"
-	stgcommitter "github.com/arcology-network/storage-committer/committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
+	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
-	"github.com/arcology-network/storage-committer/storage/proxy"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
-	storage "github.com/arcology-network/storage-committer/storage/proxy"
 	univalue "github.com/arcology-network/storage-committer/univalue"
 )
 
 func TestAddAndDelete(t *testing.T) {
 	store := chooseDataStore()
-	// store := storage.NewDataStore( nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
-	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
 	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
@@ -47,7 +43,7 @@ func TestAddAndDelete(t *testing.T) {
 	}
 
 	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
@@ -103,8 +99,10 @@ func TestAddAndDelete(t *testing.T) {
 
 func TestPathReadAndWriteBatchCache(b *testing.T) {
 	store := chooseDataStore()
-	store.(*storage.StorageProxy).EnableCache()
-	writeCache := NewAcountsInCache(writeCache, AliceAccount(), BobAccount())
+	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
+	writeCache := sstore.WriteCache
+
+	NewAcountsInCache(writeCache, AliceAccount(), BobAccount())
 
 	alice := AliceAccount()
 	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
@@ -132,7 +130,7 @@ func TestPathReadAndWriteBatchCache(b *testing.T) {
 	committer.Commit(0)
 
 	for i := 0; i < len(keys); i++ {
-		v, ok := store.(*storage.StorageProxy).Cache().(*stgproxy.ReadCache).Get("blcc://eth1.0/account/" + alice + "/storage/container/ctrn-0/alice-elem-" + keys[i])
+		v, ok := store.(*stgproxy.StorageProxy).Cache().(*stgproxy.ReadCache).Get("blcc://eth1.0/account/" + alice + "/storage/container/ctrn-0/alice-elem-" + keys[i])
 		if typedv, _, _ := (*(v)).Get(); !ok || typedv != int64(i) {
 			b.Error("not found")
 		}
@@ -156,7 +154,7 @@ func TestPathReadAndWriteBatchCache(b *testing.T) {
 	committer.Commit(0)
 
 	for i := 0; i < len(keys); i++ {
-		v, ok := store.(*storage.StorageProxy).Cache().(*stgproxy.ReadCache).Get("blcc://eth1.0/account/" + alice + "/storage/container/ctrn-0/alice-elem-" + keys[i])
+		v, ok := store.(*stgproxy.StorageProxy).Cache().(*stgproxy.ReadCache).Get("blcc://eth1.0/account/" + alice + "/storage/container/ctrn-0/alice-elem-" + keys[i])
 		if typedv, _, _ := (*(v)).Get(); !ok || typedv != int64(i+9999) {
 			b.Error("not found")
 		}

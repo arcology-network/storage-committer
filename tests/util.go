@@ -28,10 +28,10 @@ import (
 	slice "github.com/arcology-network/common-lib/exp/slice"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	statestore "github.com/arcology-network/storage-committer"
-	stgcommitter "github.com/arcology-network/storage-committer/committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/interfaces"
 	opadapter "github.com/arcology-network/storage-committer/op"
+	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
 	"github.com/arcology-network/storage-committer/storage/proxy"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
@@ -104,6 +104,7 @@ func RandomKeys[T constraints.Integer](s0, s1 T) []string {
 	return keys
 }
 
+// Initiate the input new accounts in the cache
 func NewAcountsInCache(writeCache *cache.WriteCache, accounts ...string) {
 	// sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	// writeCache := sstore.WriteCache

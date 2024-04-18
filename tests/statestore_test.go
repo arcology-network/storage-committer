@@ -25,9 +25,9 @@ import (
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 
 	statestore "github.com/arcology-network/storage-committer"
-	stgcommitter "github.com/arcology-network/storage-committer/committer"
 	stgcomm "github.com/arcology-network/storage-committer/common"
 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
+	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
 	univalue "github.com/arcology-network/storage-committer/univalue"
 )

@@ -18,8 +18,8 @@
 package statestore
 
 import (
-	stgcomm "github.com/arcology-network/storage-committer/committer"
 	intf "github.com/arcology-network/storage-committer/interfaces"
+	stgcomm "github.com/arcology-network/storage-committer/storage/committer"
 	proxy "github.com/arcology-network/storage-committer/storage/proxy"
 	writecache "github.com/arcology-network/storage-committer/storage/writecache"
 	"github.com/arcology-network/storage-committer/univalue"
