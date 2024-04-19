@@ -32,33 +32,33 @@ type StateStore struct {
 	// *writecache.ShardedWriteCache
 	*writecache.WriteCache
 	*stgcomm.StateCommitter
-	store *proxy.StorageProxy
+	backend *proxy.StorageProxy
 }
 
 // New creates a new StateCommitter instance.
-func NewStateStore(store *proxy.StorageProxy) *StateStore {
+func NewStateStore(backend *proxy.StorageProxy) *StateStore {
 	return &StateStore{
-		store: store,
+		backend: backend,
 		WriteCache: writecache.NewWriteCache(
-			store,
+			backend,
 			16,
 			1,
 			func(k string) uint64 {
 				return xxhash.Sum64String(k)
 			},
 		),
-		StateCommitter: stgcomm.NewStateCommitter(store),
+		StateCommitter: stgcomm.NewStateCommitter(backend),
 	}
 }
 
-func (this *StateStore) Store() *proxy.StorageProxy      { return this.store }
+func (this *StateStore) Backend() *proxy.StorageProxy    { return this.backend }
 func (this *StateStore) Cache() *writecache.WriteCache   { return this.WriteCache }
 func (this *StateStore) Import(trans univalue.Univalues) { this.StateCommitter.Import(trans) }
-func (this *StateStore) Preload(key []byte) interface{}  { return this.store.Preload(key) }
+func (this *StateStore) Preload(key []byte) interface{}  { return this.backend.Preload(key) }
 func (this *StateStore) Clear()                          { this.WriteCache.Clear() }
 
 func (this *StateStore) GetWriters() []intf.AsyncWriter[*univalue.Univalue] {
 	return append([]intf.AsyncWriter[*univalue.Univalue]{
 		writecache.NewAsyncWriter(this.WriteCache, 0)},
-		this.store.GetWriters()...)
+		this.backend.GetWriters()...)
 }

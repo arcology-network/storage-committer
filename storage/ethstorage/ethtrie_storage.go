@@ -3,10 +3,12 @@ package ethstorage
 import (
 	"errors"
 	"runtime"
+	"sync"
 
 	"github.com/VictoriaMetrics/fastcache"
 	common "github.com/arcology-network/common-lib/common"
 
+	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/slice"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	platform "github.com/arcology-network/storage-committer/platform"
@@ -33,6 +35,9 @@ type EthDataStore struct {
 
 	ethdb   *ethmpt.Database
 	diskdbs [16]ethdb.Database
+
+	lock     sync.RWMutex
+	rootDict map[uint64][32]byte // lookup the root hash for a block number
 
 	encoder func(string, interface{}) []byte
 	decoder func(string, []byte, any) interface{}
@@ -61,6 +66,7 @@ func LoadEthDataStore(triedb *ethmpt.Database, root [32]byte) (*EthDataStore, er
 func NewEthDataStore(trie *ethmpt.Trie, triedb *ethmpt.Database, diskdb [16]ethdb.Database) *EthDataStore {
 	trieDbConfig := &hashdb.Config{CleanCacheSize: 1024 * 1024 * 100} // 100MB of the shared cache
 	return &EthDataStore{
+		rootDict:       map[uint64][32]byte{},
 		ethdb:          triedb,
 		diskdbs:        diskdb,
 		trieDbConfig:   trieDbConfig,
@@ -270,6 +276,18 @@ func (this *EthDataStore) WriteWorldTrie(dirtyAccounts []*Account) [32]byte {
 }
 
 func (this *EthDataStore) WriteToEthStorage(blockNum uint64, dirtyAccounts []*Account) error {
+	this.lock.RLock()
+	defer this.lock.RUnlock()
+
+	// It Only keeps the last 1024 root hashes. Remove the oldest root hash if the root hash map is full.
+	if len(this.rootDict) >= 1024 {
+		_, minBlockNum := slice.Min(mapi.Keys(this.rootDict))
+		delete(this.rootDict, minBlockNum)
+	}
+
+	this.rootDict[blockNum] = this.worldStateTrie.Hash() // Store the root hash for the block
+
+	// Write the world trie
 	slice.ParallelForeach(dirtyAccounts, runtime.NumCPU(), func(_ int, acct **Account) {
 		if err := (**acct).Commit(blockNum); err != nil {
 			panic(err)
@@ -312,3 +330,9 @@ func (this *EthDataStore) AccountDict() map[ethcommon.Address]*Account { return 
 func (this *EthDataStore) Clear()                                      {}
 
 func (this *EthDataStore) Inject(key string, value interface{}) error { return nil }
+
+func (this *EthDataStore) GetRootHash(blockNum uint64) [32]byte {
+	this.lock.RLock()
+	defer this.lock.RUnlock()
+	return this.rootDict[blockNum]
+}
