@@ -37,7 +37,7 @@ type StateStore struct {
 
 // New creates a new StateCommitter instance.
 func NewStateStore(backend *proxy.StorageProxy) *StateStore {
-	return &StateStore{
+	store := &StateStore{
 		backend: backend,
 		WriteCache: writecache.NewWriteCache(
 			backend,
@@ -47,8 +47,9 @@ func NewStateStore(backend *proxy.StorageProxy) *StateStore {
 				return xxhash.Sum64String(k)
 			},
 		),
-		StateCommitter: stgcomm.NewStateCommitter(backend),
 	}
+	store.StateCommitter = stgcomm.NewStateCommitter(backend, store.GetWriters()...)
+	return store
 }
 
 func (this *StateStore) Backend() *proxy.StorageProxy    { return this.backend }
