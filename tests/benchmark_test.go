@@ -65,7 +65,7 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 	transitions := univalue.Univalues(slice.Clone(writeCache.Export())).To(univalue.ITTransition{})
 
 	t0 := time.Now()
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(transitions)
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM, 0, 1})
 	committer.Commit(0)
@@ -119,7 +119,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	trans = univalue.Univalues(trans).To(univalue.IPTransition{})
 	fmt.Println("To(univalue.ITTransition{}):", len(trans), "in ", time.Since(t0))
 
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	t0 = time.Now()
 	committer.Import(trans)
 	fmt.Println("Import: ", len(trans), " in: ", time.Since(t0))
@@ -162,7 +162,7 @@ func BenchmarkAddThenDelete(b *testing.B) {
 	writeCache.Write(stgcommcommon.SYSTEM, stgcommcommon.ETH10_ACCOUNT_PREFIX, meta)
 	trans := univalue.Univalues(slice.Clone(writeCache.Export())).To(univalue.ITTransition{})
 
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(trans)
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
@@ -207,7 +207,7 @@ func BenchmarkAddThenPop(b *testing.B) {
 
 	trans := univalue.Univalues(slice.Clone(writeCache.Export())).To(univalue.ITTransition{})
 
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
@@ -325,7 +325,7 @@ func BenchmarkEncodeTransitions(b *testing.B) {
 
 	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITAccess{})
 
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
@@ -400,7 +400,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	t0 = time.Now()
 
 	// transitions := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues)
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
@@ -626,7 +626,7 @@ func (s String) Less(b btree.Item) bool {
 
 // 	fmt.Println("-------------")
 // 	t0 = time.Now()
-// 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+// 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 // 	committer.Import(acctTrans)
 // 	// accountMerkle.Import(acctTrans)
 // 	fmt.Println("committer + accountMerkle Import "+fmt.Sprint(150000*9), time.Since(t0))
@@ -638,7 +638,7 @@ func (s String) Less(b btree.Item) bool {
 // 	store.Inject((stgcommcommon.ETH10_ACCOUNT_PREFIX), meta)
 
 // 	t0 := time.Now()
-// 		committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+// 		committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 // writeCache := committer.WriteCache()
 // 	for i := 0; i < 90000; i++ {
 // 		acct := addrcompressor.RandomAccount()

@@ -151,8 +151,13 @@ func (this *WriteCache) Retrive(path string, T any) (interface{}, error) {
 		return typedv, nil
 	}
 
+	// Special treatment for the commutative.Path.
+	// Other value types' committed valus need to be cloned as well, except for the commutative.Path.
+	if common.IsType[*commutative.Path](typedv) {
+		return typedv.(*commutative.Path).Clone(), nil
+	}
 	rawv, _, _ := typedv.(intf.Type).Get()
-	return typedv.(intf.Type).New(rawv, nil, nil, typedv.(intf.Type).Min(), typedv.(intf.Type).Max()), nil // Return in a new univalue
+	return typedv.(intf.Type).New(rawv, nil, nil, typedv.(intf.Type).Min(), typedv.(intf.Type).Max()), nil // Clone the value
 }
 
 func (this *WriteCache) IfExists(path string) bool {

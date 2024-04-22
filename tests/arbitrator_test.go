@@ -29,7 +29,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
 	// sstore:= statestore.NewStateStore(store.(*proxy.StorageProxy))
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
@@ -77,7 +77,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	writeCache.Write(stgcommcommon.SYSTEM, stgcommcommon.ETH10_ACCOUNT_PREFIX, meta)
 	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
@@ -141,7 +141,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	// writeCache.Write(stgcommcommon.SYSTEM, stgcommcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
 	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
@@ -192,7 +192,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	buffer := univalue.Univalues(in).Encode()
 	out := univalue.Univalues{}.Decode(buffer).(univalue.Univalues)
 
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(out)
 	committer.Precommit(toCommit)
 	committer.Commit(0)
@@ -205,7 +205,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	accesses3 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITAccess{})
 	transitions3 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
-	// url4 := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	// url4 := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	if _, err := writeCache.Write(4, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("url4-1-by-tx-3")); err != nil {
 		t.Error(err)
 	}
@@ -233,7 +233,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	out = univalue.Univalues{}.Decode(buffer).(univalue.Univalues)
 
 	acctTrans = append(transitions3, transitions4...)
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	// committer.Import(committer.Decode(univalue.Univalues(append(transitions3, transitions4...)).Encode()))

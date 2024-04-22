@@ -48,7 +48,7 @@ func NewStateStore(backend *proxy.StorageProxy) *StateStore {
 			},
 		),
 	}
-	store.StateCommitter = stgcomm.NewStateCommitter(backend, store.GetWriters()...)
+	store.StateCommitter = stgcomm.NewStateCommitter(backend, store.GetWriters())
 	return store
 }
 

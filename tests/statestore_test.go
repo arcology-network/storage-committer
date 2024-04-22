@@ -41,7 +41,7 @@ func commitToStateStore(sstore *statestore.StateStore, t *testing.T) {
 	}
 	acctTrans := univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
-	committer := stgcommitter.NewStateCommitter(sstore.ReadOnlyStore(), sstore.GetWriters()...)
+	committer := stgcommitter.NewStateCommitter(sstore.ReadOnlyStore(), sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint32{stgcomm.SYSTEM})
 	committer.Commit(stgcomm.SYSTEM)
@@ -58,7 +58,7 @@ func commitToStateStore(sstore *statestore.StateStore, t *testing.T) {
 	acctTrans = univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
 	// committer.Import(acctTrans)
-	committer = stgcommitter.NewStateCommitter(sstore.ReadOnlyStore(), sstore.GetWriters()...)
+	committer = stgcommitter.NewStateCommitter(sstore.ReadOnlyStore(), sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint32{1})
 	committer.Commit(2)
@@ -137,7 +137,7 @@ func TestAsyncCommitToStateStore(t *testing.T) {
 	}
 	acctTrans := univalue.Univalues(slice.Clone(WriteCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint32{stgcomm.SYSTEM})
 	committer.Commit(stgcomm.SYSTEM)
@@ -156,7 +156,7 @@ func TestAsyncCommitToStateStore(t *testing.T) {
 	acctTrans = univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
 	// committer.Import(acctTrans)
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint32{1})
 	committer.Commit(2)

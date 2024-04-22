@@ -46,7 +46,7 @@ type StateCommitter struct {
 // A Committable store is a pair of an index and a store. The index is used to index the input transitions as they are
 // received, and the store is used to commit the indexed transitions. Since multiple store can share the same index, each
 // CommittableStore is an indexer and a list of Committable stores.
-func NewStateCommitter(readonlyStore intf.ReadOnlyStore, writers ...intf.AsyncWriter[*univalue.Univalue]) *StateCommitter {
+func NewStateCommitter(readonlyStore intf.ReadOnlyStore, writers []intf.AsyncWriter[*univalue.Univalue]) *StateCommitter {
 	return &StateCommitter{
 		readonlyStore: readonlyStore,
 		platform:      platform.NewPlatform(),
@@ -121,13 +121,13 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 
 // Commit commits the transitions to different stores.
 func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
-	// for _, writer := range this.writers {
-	// 	writer.Commit()
-	// }
+	for _, writer := range this.writers {
+		writer.Commit()
+	}
 
-	slice.ParallelForeach(this.writers, len(this.writers), func(_ int, writer *intf.AsyncWriter[*univalue.Univalue]) {
-		(*writer).Commit()
-	})
+	// slice.ParallelForeach(this.writers, len(this.writers), func(_ int, writer *intf.AsyncWriter[*univalue.Univalue]) {
+	// 	(*writer).Commit()
+	// })
 
 	this.byPath.Clear()
 	this.byTxID.Clear()

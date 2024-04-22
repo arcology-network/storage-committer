@@ -20,7 +20,7 @@ import (
 func TestAuxTrans(t *testing.T) {
 	store := chooseDataStore()
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
@@ -101,7 +101,7 @@ func TestAuxTrans(t *testing.T) {
 	in := univalue.Univalues(transitions).Encode()
 	out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
 
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(out)
 
 	committer.Precommit([]uint32{1})
@@ -121,7 +121,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	// _, trans00 := writeCache.Export(univalue.Sorter)
 	trans00 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(trans00)
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(0) // Commit
@@ -135,7 +135,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	// _, trans10 := writeCache.Export(univalue.Sorter)
 	trans10 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans10).Encode()).(univalue.Univalues))
 	committer.Precommit([]uint32{1})
 	committer.Commit(0) // Commit

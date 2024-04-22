@@ -69,7 +69,7 @@ func TestWriteWithNewWriteCacheSlowWrite(b *testing.T) {
 	}
 	fmt.Println("First Write time:", len(keys)*2, "keys in", time.Since(t0))
 
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...).Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()).Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
 	fmt.Println("Commit time:", time.Since(t0))
@@ -123,7 +123,7 @@ func TestWriteWithNewWriteCache(b *testing.T) {
 	fmt.Println("First Write time:", len(keys)*2, "keys in", time.Since(t0))
 
 	t0 = time.Now()
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...).Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()).Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
 	fmt.Println("New committer + Import:", time.Since(t0))
 
 	t0 = time.Now()
@@ -179,7 +179,7 @@ func BenchmarkWriteAfterLargeCommitUint64(b *testing.B) {
 	fmt.Println("First Write time:", len(keys)*2, "keys in", time.Since(t0))
 
 	t0 = time.Now()
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...).Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()).Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
 	fmt.Println("Commit time:", time.Since(t0))
@@ -211,7 +211,7 @@ func BenchmarkWriteAfterLargeCommitUint64(b *testing.B) {
 	fmt.Println("Second Write time:", len(keys)*2, "keys in", time.Since(t0))
 
 	t0 = time.Now()
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()...).Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()).Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
 	fmt.Println("2.Commit time:", time.Since(t0))
@@ -263,7 +263,7 @@ func BenchmarkWriteAfterLargeCommitUint256(b *testing.B) {
 	fmt.Println("First Write time:", len(keys)*2, "keys in", time.Since(t0))
 
 	t0 = time.Now()
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...).Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()).Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
 	fmt.Println("Commit time:", time.Since(t0))
@@ -295,7 +295,7 @@ func BenchmarkWriteAfterLargeCommitUint256(b *testing.B) {
 	fmt.Println("Second Write time:", len(keys)*2, "keys in", time.Since(t0))
 
 	t0 = time.Now()
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()...).Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()).Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
 	fmt.Println("2.Commit time:", time.Since(t0))
@@ -348,7 +348,7 @@ func BenchmarkPathReadAndWrites(b *testing.B) {
 	fmt.Println("Inserted ", len(keys), "Keys in:", time.Since(t0))
 
 	t0 = time.Now()
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...).Import(writeCache.Export())
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()).Import(writeCache.Export())
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(0)
 	fmt.Println("committer ", len(keys), "Keys in:", time.Since(t0))

@@ -43,14 +43,14 @@ func TestAddAndDelete(t *testing.T) {
 	}
 
 	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(0)
 
 	// acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues{})
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
@@ -65,7 +65,7 @@ func TestAddAndDelete(t *testing.T) {
 	}
 
 	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	committer.Precommit([]uint32{1})
@@ -125,7 +125,7 @@ func TestPathReadAndWriteBatchCache(b *testing.T) {
 		}
 	}
 
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...).Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()).Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
 
@@ -149,7 +149,7 @@ func TestPathReadAndWriteBatchCache(b *testing.T) {
 	}
 
 	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()...).Import(trans)
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()).Import(trans)
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
 

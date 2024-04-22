@@ -123,7 +123,7 @@ func TestTrieUpdates(t *testing.T) {
 	}
 
 	trans := writeCache.Export(univalue.Sorter)
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues(slice.Clone(trans)).To(univalue.IPTransition{}))
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
@@ -152,7 +152,7 @@ func TestTrieUpdates(t *testing.T) {
 	// 	t.Error("Error: Cache() should be 3, actual", len(ds.AccountDict()))
 	// }
 
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 
@@ -176,7 +176,7 @@ func TestTrieUpdates(t *testing.T) {
 		t.Error(err)
 	}
 
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 
@@ -213,7 +213,7 @@ func TestEthStorageConnection(t *testing.T) {
 	}
 
 	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(trans)
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
@@ -327,7 +327,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 	//values := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).([]*univalue.Univalue)
 	ts := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues)
 
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(ts)
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
@@ -342,7 +342,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 
 	transitions := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import((&univalue.Univalues{}).Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues))
 	committer.Precommit([]uint32{1})
 	committer.Commit(0)
@@ -359,7 +359,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 
 	trans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import((&univalue.Univalues{}).Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 	committer.Precommit([]uint32{1})
 	committer.Commit(0)
