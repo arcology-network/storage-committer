@@ -116,6 +116,9 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 	for _, writer := range this.writers {
 		writer.Precommit()
 	}
+
+	this.byPath.Clear()
+	this.byTxID.Clear()
 	return [32]byte{}
 }
 
@@ -128,8 +131,5 @@ func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
 	// slice.ParallelForeach(this.writers, len(this.writers), func(_ int, writer *intf.AsyncWriter[*univalue.Univalue]) {
 	// 	(*writer).Commit()
 	// })
-
-	this.byPath.Clear()
-	this.byTxID.Clear()
 	return this
 }

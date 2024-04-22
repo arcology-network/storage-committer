@@ -144,7 +144,8 @@ func (this *WriteCache) Find(tx uint32, path string, T any) (interface{}, interf
 	return univ.Value(), univ
 }
 
-// Get the raw value directly.
+// Get the raw value directly whichout tracks the access.
+// Users need to track the access count themselves.
 func (this *WriteCache) Retrive(path string, T any) (interface{}, error) {
 	typedv, _ := this.Find(committercommon.SYSTEM, path, T)
 	if typedv == nil || typedv.(intf.Type).IsDeltaApplied() {
@@ -152,10 +153,14 @@ func (this *WriteCache) Retrive(path string, T any) (interface{}, error) {
 	}
 
 	// Special treatment for the commutative.Path.
-	// Other value types' committed valus need to be cloned as well, except for the commutative.Path.
+	// In general, value types'need to be fully cloned as well so they be
+	// manipulated without affecting the original value, except for the commutative.Path, which
+	// inherently has its own change tracking mechanism.
 	if common.IsType[*commutative.Path](typedv) {
 		return typedv.(*commutative.Path).Clone(), nil
 	}
+
+	// Make a Deep copy of the original value.
 	rawv, _, _ := typedv.(intf.Type).Get()
 	return typedv.(intf.Type).New(rawv, nil, nil, typedv.(intf.Type).Min(), typedv.(intf.Type).Max()), nil // Clone the value
 }
