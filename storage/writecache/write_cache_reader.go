@@ -78,6 +78,7 @@ func (this *WriteCache) PeekCommitted(path string, T any) (interface{}, uint64) 
 	return v, READ_COMMITTED_FROM_DB
 }
 
+// This function looks up the value and carries out the operation on the value directly.
 func (this *WriteCache) Do(tx uint32, path string, doer interface{}, T any) (interface{}, error) {
 	univalue, _ := this.GetOrNew(tx, path, T)
 	return univalue.Do(tx, path, doer), nil

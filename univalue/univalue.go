@@ -85,6 +85,9 @@ func (this *Univalue) Reclaim() {
 	}
 }
 
+// This performs the action on the value and returns the result.
+// This function doesnn't make a deep copy of the original value.
+// It should be used for read-only operations ONLY!!!.
 func (this *Univalue) Do(tx uint32, path string, doer interface{}) interface{} {
 	r, w, dw, ret := doer.(func(interface{}) (uint32, uint32, uint32, interface{}))(this)
 	this.reads += r
@@ -97,6 +100,17 @@ func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{
 	if this.value != nil {
 		tempV, r, w := this.value.(intf.Type).Get() //RW: Affiliated reads and writes
 		this.reads += r
+
+		// The whole copy mechansim is designed to avoid interference with maximum performance,
+		// so deep copy is made only when necessary. The criteria for making a deep copy are:
+		// 1. The value needs to be updated.
+		// 2. The value is modified for the first time, when writes == 0 && deltaWrites == 0.
+		// So in the following cases, if we record a write with a deep copy, it will effectivly stop making deep copy in the future.
+		// This is problematic because it will change the value in the global object cache as well.
+		if w > 0 {
+			this.MakeDeepCopy(this.value)
+		}
+
 		this.writes += w
 		return tempV
 	}
@@ -141,13 +155,8 @@ func (this *Univalue) Set(tx uint32, path string, newV interface{}, inCache bool
 		return nil
 	}
 
-	// Writes > 0 means the value has been modified already.
-	// this.value == nil, this is a new value assignment, so we don't need to make a deep copy.
-	// typedV == nil, this is a delete operation, so we don't need to make a deep copy.
-	// In cascading write cache, the values' access info will stripped off, so it wouldn't introduce interference.
-	if this.writes == 0 && this.deltaWrites == 0 && this.value != nil && newV != nil { // Make a deep copy if has't done so
-		this.value = this.value.(intf.Type).Clone()
-	}
+	// To avoid interference with the value in the global object cache.
+	this.MakeDeepCopy(newV)
 
 	oldV := this.value.(intf.Type)
 	v, r, w, dw, err := oldV.Set(newV, []interface{}{path, *this.path, tx, importer}) // Update the current value
@@ -162,6 +171,18 @@ func (this *Univalue) Set(tx uint32, path string, newV interface{}, inCache bool
 		this.writes++
 	}
 	return err
+}
+
+// Making a deep copy may be necessary to avoid interference with
+// the value in the global object cache.
+func (this *Univalue) MakeDeepCopy(newV interface{}) {
+	// writes == 0 && deltaWrites == 0 means the value has been modified already.
+	// this.value == nil, this is a new value assignment, so we don't need to make a deep copy.
+	// typedV == nil, this is a delete operation, so we don't need to make a deep copy.
+	// In cascading write cache, the values' access info will stripped off, so it wouldn't introduce interference.
+	if this.writes == 0 && this.deltaWrites == 0 && this.value != nil { // Make a deep copy if has't done so
+		this.value = this.value.(intf.Type).Clone()
+	}
 }
 
 // Check & Merge attributes
