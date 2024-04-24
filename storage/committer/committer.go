@@ -22,12 +22,7 @@ import (
 	indexer "github.com/arcology-network/common-lib/storage/indexer"
 	intf "github.com/arcology-network/storage-committer/interfaces"
 	platform "github.com/arcology-network/storage-committer/platform"
-	"github.com/arcology-network/storage-committer/storage/ccstorage"
-	"github.com/arcology-network/storage-committer/storage/ethstorage"
-	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
 	"github.com/arcology-network/storage-committer/univalue"
-
-	writecache "github.com/arcology-network/storage-committer/storage/writecache"
 
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/slice"
@@ -39,12 +34,7 @@ type StateCommitter struct {
 	readonlyStore intf.ReadOnlyStore
 	platform      *platform.Platform
 
-	genCacheWriter      *writecache.AsyncWriter // Generation cache writer.
-	uniCacheAsyncWriter *stgproxy.AsyncWriter
-	ethAsyncWriter      *ethstorage.AsyncWriter
-	ccAsyncWriter       *ccstorage.AsyncWriter
-
-	writers []intf.AsyncWriter[*univalue.Univalue]
+	writers []intf.AsyncWriter[*univalue.Univalue] // db writers
 
 	byPath *indexer.UnorderedIndexer[string, *univalue.Univalue, []*univalue.Univalue]
 	byTxID *indexer.UnorderedIndexer[uint32, *univalue.Univalue, []*univalue.Univalue]
@@ -56,17 +46,11 @@ type StateCommitter struct {
 // A Committable store is a pair of an index and a store. The index is used to index the input transitions as they are
 // received, and the store is used to commit the indexed transitions. Since multiple store can share the same index, each
 // CommittableStore is an indexer and a list of Committable stores.
-func NewStateCommitter(readonlyStore intf.ReadOnlyStore, writers ...intf.AsyncWriter[*univalue.Univalue]) *StateCommitter {
-	// proxy := readonlyStore.(*stgproxy.StorageProxy)
-
+func NewStateCommitter(readonlyStore intf.ReadOnlyStore, writers []intf.AsyncWriter[*univalue.Univalue]) *StateCommitter {
 	return &StateCommitter{
 		readonlyStore: readonlyStore,
 		platform:      platform.NewPlatform(),
 
-		// genCacheWriter:   writecache.NewAsyncWriter(readonlyStore, 0),
-		// uniCacheAsyncWriter: stgproxy.NewAsyncWriter(proxy.Cache().(*stgproxy.ReadCache), 0),
-		// ethAsyncWriter:      ethstorage.NewAsyncWriter(proxy.EthStore(), 0),
-		// ccAsyncWriter:       ccstorage.NewAsyncWriter(proxy.CCStore(), 0),
 		writers: writers,
 		byPath:  PathIndexer(readonlyStore), // By storage path
 		byTxID:  TxIndexer(readonlyStore),   // By tx ID
@@ -91,10 +75,6 @@ func (this *StateCommitter) Import(transitions []*univalue.Univalue) *StateCommi
 	this.byPath.Import(transitions)
 	this.byTxID.Import(transitions)
 
-	// this.genCacheWriter.Import(transitions)
-	// this.uniCacheAsyncWriter.Import(transitions)
-	// this.ethAsyncWriter.Import(transitions)
-	// this.ccAsyncWriter.Import(transitions)
 	for _, writer := range this.writers {
 		writer.Import(transitions)
 	}
@@ -133,41 +113,23 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 		}
 	})
 
-	// fmt.Printf("=================Precommit===================\n")
-	// vs = slice.Flatten(this.byPath.Values())
-	// vvs = slice.RemoveIf(&vs, func(_ int, v *univalue.Univalue) bool {
-	// 	return v == nil || v.GetPath() == nil
-	// })
-	// univalue.Univalues(vvs).Print()
-
-	// Signal the async writers that all transitions are pushed and finalized.
-	// this.uniCacheAsyncWriter.Precommit()
-	// this.ccAsyncWriter.Precommit() // Wait for the concurrent db DB finish committing the transitions
-	// this.ethAsyncWriter.Precommit()
-
 	for _, writer := range this.writers {
 		writer.Precommit()
 	}
 
 	this.byPath.Clear()
 	this.byTxID.Clear()
-
 	return [32]byte{}
 }
 
 // Commit commits the transitions to different stores.
 func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
-	// this.uniCacheAsyncWriter.Commit()
-	// this.ethAsyncWriter.Commit()
-	// this.ccAsyncWriter.Commit()
-
 	for _, writer := range this.writers {
 		writer.Commit()
 	}
 
-	// this.uniCacheAsyncWriter = stgproxy.NewAsyncWriter(this.readonlyStore.(*stgproxy.StorageProxy).Cache().(*stgproxy.ReadCache), blockNum)
-	// this.ethAsyncWriter = ethstorage.NewAsyncWriter(this.readonlyStore.(*stgproxy.StorageProxy).EthStore(), blockNum)
-	// this.ccAsyncWriter = ccstorage.NewAsyncWriter(this.readonlyStore.(*stgproxy.StorageProxy).CCStore(), blockNum)
-
+	// slice.ParallelForeach(this.writers, len(this.writers), func(_ int, writer *intf.AsyncWriter[*univalue.Univalue]) {
+	// 	(*writer).Commit()
+	// })
 	return this
 }

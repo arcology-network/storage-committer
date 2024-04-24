@@ -19,7 +19,6 @@ package ccstorage
 
 import (
 	async "github.com/arcology-network/common-lib/async"
-	intf "github.com/arcology-network/storage-committer/interfaces"
 )
 
 // AsyncWriter is a struct that contains data strucuture and methods for writing data to concurrent storage asynchronously.
@@ -32,8 +31,8 @@ type AsyncWriter struct {
 	version uint64
 }
 
-func NewAsyncWriter(reader intf.ReadOnlyStore, version uint64) *AsyncWriter {
-	store := reader.(*DataStore)
+func NewAsyncWriter(store *DataStore, version uint64) *AsyncWriter {
+	// store := reader.(*DataStore)
 	pipe := async.NewPipeline(
 		4,
 		10,
@@ -81,3 +80,6 @@ func (this *AsyncWriter) Commit() {
 	this.Pipeline.Push(nil) // commit all th indexers to the state db
 	this.Pipeline.Await()
 }
+
+// Await commits the data to the state db.
+func (this *AsyncWriter) Close() { this.Pipeline.Close() }

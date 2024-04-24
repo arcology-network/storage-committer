@@ -18,8 +18,8 @@
 package statestore
 
 import (
-	stgcomm "github.com/arcology-network/storage-committer/committer"
 	intf "github.com/arcology-network/storage-committer/interfaces"
+	stgcomm "github.com/arcology-network/storage-committer/storage/committer"
 	proxy "github.com/arcology-network/storage-committer/storage/proxy"
 	writecache "github.com/arcology-network/storage-committer/storage/writecache"
 	"github.com/arcology-network/storage-committer/univalue"
@@ -47,13 +47,12 @@ func NewStateStore(backend *proxy.StorageProxy) *StateStore {
 				return xxhash.Sum64String(k)
 			},
 		),
-		StateCommitter: stgcomm.NewStateCommitter(backend),
 	}
-	store.StateCommitter = stgcomm.NewStateCommitter(backend, store.GetWriters()...)
+	store.StateCommitter = stgcomm.NewStateCommitter(backend, store.GetWriters())
 	return store
 }
 
-func (this *StateStore) Store() *proxy.StorageProxy      { return this.backend }
+func (this *StateStore) Backend() *proxy.StorageProxy    { return this.backend }
 func (this *StateStore) Cache() *writecache.WriteCache   { return this.WriteCache }
 func (this *StateStore) Import(trans univalue.Univalues) { this.StateCommitter.Import(trans) }
 func (this *StateStore) Preload(key []byte) interface{}  { return this.backend.Preload(key) }

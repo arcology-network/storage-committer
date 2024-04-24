@@ -8,7 +8,7 @@ package committertest
 // 	"github.com/arcology-network/common-lib/common"
 // 	stgcomm "github.com/arcology-network/storage-committer"
 // 	stgcommcommon "github.com/arcology-network/storage-committer/common"
-// 	importer "github.com/arcology-network/storage-committer/committer"
+// 	importer "github.com/arcology-network/storage-committer/storage/committer"
 // 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 // 	storage "github.com/arcology-network/storage-committer/storage/proxy"
 // )
@@ -17,7 +17,7 @@ package committertest
 // 	memDB := storage.NewMemoryDB()
 // 	policy := storage.NewCachePolicy(10000000, 1.0)
 // 	store := storage.NewDataStore( policy, memDB, platform.Codec{}.Encode, platform.Codec{}.Decode)
-// 		committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+// 		committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 // writeCache := committer.WriteCache()
 // 	alice := AliceAccount()
 // 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
@@ -80,7 +80,7 @@ package committertest
 // 	}
 
 // 	store := storage.NewDataStore( policy, memDB, platform.Codec{}.Encode, platform.Codec{}.Decode, excludeMemDB)
-// 		committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+// 		committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 // writeCache := committer.WriteCache()
 // 	alice := AliceAccount()
 // 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
@@ -100,7 +100,7 @@ package committertest
 
 // 	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
-// 	// 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()...)
+// 	// 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 // writeCache := committer.WriteCache()
 
 // 	committer.WriteCache().Clear()
