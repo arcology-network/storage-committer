@@ -76,7 +76,7 @@ func CarolAccount() string {
 
 func RandomAccounts(n int) []string {
 	accounts := make([]string, n)
-	for i := range n {
+	for i := range accounts {
 		b := sha3.Sum256([]byte(fmt.Sprintf("%v", rand.Intn(1000000))))
 		accounts[i] = hexutil.Encode(b[:20])
 	}

@@ -133,6 +133,13 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 		}
 	})
 
+	// fmt.Printf("=================Precommit===================\n")
+	// vs = slice.Flatten(this.byPath.Values())
+	// vvs = slice.RemoveIf(&vs, func(_ int, v *univalue.Univalue) bool {
+	// 	return v == nil || v.GetPath() == nil
+	// })
+	// univalue.Univalues(vvs).Print()
+
 	// Signal the async writers that all transitions are pushed and finalized.
 	// this.uniCacheAsyncWriter.Precommit()
 	// this.ccAsyncWriter.Precommit() // Wait for the concurrent db DB finish committing the transitions
@@ -141,6 +148,10 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 	for _, writer := range this.writers {
 		writer.Precommit()
 	}
+
+	this.byPath.Clear()
+	this.byTxID.Clear()
+
 	return [32]byte{}
 }
 
@@ -153,9 +164,6 @@ func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
 	for _, writer := range this.writers {
 		writer.Commit()
 	}
-
-	this.byPath.Clear()
-	this.byTxID.Clear()
 
 	// this.uniCacheAsyncWriter = stgproxy.NewAsyncWriter(this.readonlyStore.(*stgproxy.StorageProxy).Cache().(*stgproxy.ReadCache), blockNum)
 	// this.ethAsyncWriter = ethstorage.NewAsyncWriter(this.readonlyStore.(*stgproxy.StorageProxy).EthStore(), blockNum)
