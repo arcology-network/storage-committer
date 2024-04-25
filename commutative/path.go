@@ -159,7 +159,7 @@ func (this *Path) Set(value interface{}, source interface{}) (interface{}, uint3
 	ok, _ := this.DeltaSet.Exists(subkey)
 
 	if (ok && value != nil) || (!ok && value == nil) {
-		return this, 1, 0, 0, nil //value update only or delete an non existent entry
+		return this, 0, 0, 0, nil //value update only or delete an non existent entry
 	}
 
 	if value == nil {
