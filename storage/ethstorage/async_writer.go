@@ -28,29 +28,29 @@ import (
 )
 
 type AsyncWriter struct {
-	*async.Pipeline[*EthIndexer]
+	*async.PipelineV2[*EthIndexer]
 	*EthIndexer
 	ethStore *EthDataStore
-	version  uint64
 	Err      error
 }
 
 func NewAsyncWriter(ethStore *EthDataStore, version uint64) *AsyncWriter {
-	pipe := async.NewPipeline(
+	pipe := async.NewPipelineV2(
+		"ethstorage",
 		4,
 		10,
 		// The function updates and storage tries and the world trie without writing to the db.
-		func(indexers ...*EthIndexer) (*EthIndexer, bool) {
-			if len(indexers) == 0 || indexers[0] == nil {
-				return nil, true // Forwards the an array of indexers, including the nil one to the next function
+		func(idxer *EthIndexer, buffer *[]*EthIndexer) ([]*EthIndexer, bool) {
+			if *buffer = append(*buffer, idxer); idxer.UnorderedIndexer == nil {
+				v := slice.Move(buffer) // Move the buffer to the next function
+				return v, true          // Forwards the an array of indexers, including the nil one to the next function
 			}
-			ethIdxer := indexers[0]
 
-			pairs := ethIdxer.UnorderedIndexer.Values()
-			ethIdxer.dirtyAccounts = associative.Pairs[*Account, []*univalue.Univalue](pairs).Firsts()
+			pairs := idxer.UnorderedIndexer.Values()
+			idxer.dirtyAccounts = associative.Pairs[*Account, []*univalue.Univalue](pairs).Firsts()
 
 			// Need to check if this is necessary or could be moved to the import phase
-			slice.Foreach(ethIdxer.dirtyAccounts, func(_ int, pair **Account) {
+			slice.Foreach(idxer.dirtyAccounts, func(_ int, pair **Account) {
 				ethStore.accountCache[(**pair).Address()] = (*pair) // Add the account to the cache
 			})
 
@@ -60,30 +60,35 @@ func NewAsyncWriter(ethStore *EthDataStore, version uint64) *AsyncWriter {
 				}
 
 				keys, vals := univalue.Univalues((*acctTrans).Second).KVs() // Get all transitions under the same account
-				err := ethIdxer.dirtyAccounts[i].UpdateAccountTrie(keys, vals)
+				err := idxer.dirtyAccounts[i].UpdateAccountTrie(keys, vals)
 				if err != nil {
 					ethStore.dbErr = errors.Join(ethStore.dbErr, err)
 				}
 			})
-			ethStore.WriteWorldTrie(ethIdxer.dirtyAccounts) // Update the world trie
-			return ethIdxer, false                          // False means the data is only cached in the buffer provided by the Pipeliner for now.
+			ethStore.WriteWorldTrie(idxer.dirtyAccounts) // Update the world trie
+
+			return nil, false // False means the data is only cached in the buffer provided by the Pipeliner for now.
 		},
 
 		// This function actually writes the data to the db
-		func(indexers ...*EthIndexer) (*EthIndexer, bool) {
-			mergedIdxer := new(EthIndexer).Merge(indexers) // Merge all the indexers together to commit to the db at once.
+		func(idxer *EthIndexer, buffer *[]*EthIndexer) ([]*EthIndexer, bool) {
+			if *buffer = append(*buffer, idxer); idxer.UnorderedIndexer != nil {
+				return nil, false // Forwards the an array of indexers, including the nil one to the next function
+			}
 
 			// Write to the db
-			mergedIdxer.err = ethStore.WriteToEthStorage(mergedIdxer.version, mergedIdxer.dirtyAccounts)
-			return mergedIdxer, true
+			mergedIdxer := new(EthIndexer).Merge(*buffer) // Merge all the indexers together to commit to the db at once.
+			ethStore.WriteToEthStorage(mergedIdxer.Version, mergedIdxer.dirtyAccounts)
+
+			*buffer = (*buffer)[:0] // Clear the buffer
+			return nil, false
 		},
 	)
 
 	return &AsyncWriter{
-		Pipeline:   pipe.Start(),
-		EthIndexer: NewEthIndexer(ethStore, 0),
+		PipelineV2: pipe.Start(),
+		EthIndexer: NewEthIndexer(ethStore, version),
 		ethStore:   ethStore,
-		version:    version,
 	}
 }
 
@@ -91,16 +96,16 @@ func NewAsyncWriter(ethStore *EthDataStore, version uint64) *AsyncWriter {
 // If there are multiple generations, this can be called multiple times before Await.
 // Each generation
 func (this *AsyncWriter) Precommit() {
-	this.EthIndexer.Finalize()                                              // Remove the nil transitions
-	this.Pipeline.Push(this.EthIndexer)                                     // push the indexer to the processor stream
-	this.EthIndexer = NewEthIndexer(this.ethStore, this.EthIndexer.version) // Reset the indexer
+	this.EthIndexer.Finalize()                        // Remove the nil transitions
+	this.PipelineV2.Push(this.EthIndexer)             // push the indexer to the processor stream
+	this.EthIndexer = NewEthIndexer(this.ethStore, 0) // Reset the indexer with a default version number.
 }
 
 // Signals a block is completed, time to write to the db.
-func (this *AsyncWriter) Commit() {
-	this.Pipeline.Push(nil)
-	this.Pipeline.Await()
+func (this *AsyncWriter) Commit(version uint64) {
+	this.PipelineV2.Push(&EthIndexer{Version: version}) //
+	this.PipelineV2.Await()
 }
 
 // Await commits the data to the state db.
-func (this *AsyncWriter) Close() { this.Pipeline.Close() }
+func (this *AsyncWriter) Close() { this.PipelineV2.Close() }

@@ -275,7 +275,7 @@ func (this *EthDataStore) WriteWorldTrie(dirtyAccounts []*Account) [32]byte {
 	return this.worldStateTrie.Hash()
 }
 
-func (this *EthDataStore) WriteToEthStorage(blockNum uint64, dirtyAccounts []*Account) error {
+func (this *EthDataStore) WriteToEthStorage(blockNum uint64, dirtyAccounts []*Account) {
 	this.lock.RLock()
 	defer this.lock.RUnlock()
 
@@ -285,6 +285,7 @@ func (this *EthDataStore) WriteToEthStorage(blockNum uint64, dirtyAccounts []*Ac
 		delete(this.rootDict, minBlockNum)
 	}
 
+	// Write the world root hash to the root hash map.
 	this.rootDict[blockNum] = this.worldStateTrie.Hash() // Store the root hash for the block
 
 	// Write the world trie
@@ -296,7 +297,9 @@ func (this *EthDataStore) WriteToEthStorage(blockNum uint64, dirtyAccounts []*Ac
 
 	var err error
 	this.worldStateTrie, err = parallelcommitToEthDB(this.worldStateTrie, this.ethdb, blockNum) // Reload the trie for the next block
-	return err
+	if err != nil {
+		this.dbErr = errors.Join(this.dbErr, err)
+	}
 }
 
 func (this *EthDataStore) BatchRetrive(keys []string, T []any) []interface{} {

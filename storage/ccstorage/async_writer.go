@@ -19,13 +19,15 @@ package ccstorage
 
 import (
 	async "github.com/arcology-network/common-lib/async"
+	slice "github.com/arcology-network/common-lib/exp/slice"
+	"github.com/arcology-network/storage-committer/univalue"
 )
 
 // AsyncWriter is a struct that contains data strucuture and methods for writing data to concurrent storage asynchronously.
 // It contains a pipeline that has a list of functions executing in order. Each function consumes the output of the previous function.
 // The indexer is used to index the input transitions as they are received, in a way that they can be committed efficiently later.
 type AsyncWriter struct {
-	*async.Pipeline[*CCIndexer]
+	*async.PipelineV2[*CCIndexer]
 	*CCIndexer
 	store   *DataStore
 	version uint64
@@ -33,53 +35,60 @@ type AsyncWriter struct {
 
 func NewAsyncWriter(store *DataStore, version uint64) *AsyncWriter {
 	// store := reader.(*DataStore)
-	pipe := async.NewPipeline(
+	pipe := async.NewPipelineV2(
+		"ccstorage",
 		4,
 		10,
 		// Buffer the indexers in the pipeline, until an empty indexer is received.
-		func(indexers ...*CCIndexer) (*CCIndexer, bool) {
-			return indexers[0], indexers[0] == nil
+		func(idxer *CCIndexer, buffer *[]*CCIndexer) ([]*CCIndexer, bool) {
+			*buffer = append(*buffer, idxer)
+			if idxer == nil {
+				return slice.Move(buffer), true
+			}
+			return nil, false
 		},
 
 		// db and cache writer
-		func(indexers ...*CCIndexer) (*CCIndexer, bool) {
-			mergedIdxer := new(CCIndexer).Merge(indexers)
+		func(idxer *CCIndexer, buffer *[]*CCIndexer) ([]*CCIndexer, bool) {
+			if idxer != nil {
+				*buffer = append(*buffer, idxer)
+				return nil, false
+			}
+			mergedIdxer := new(CCIndexer).Merge(*buffer)
 
-			// var err error
-			// if store.keyCompressor != nil {
-			// 	common.ParallelExecute(
-			// 		func() { err = store.db.BatchSet(mergedIdxer.keyBuffer, mergedIdxer.encodedBuffer) }, // Write data back
-			// 		func() { store.keyCompressor.Commit() })
-			// } else {
 			err := store.db.BatchSet(mergedIdxer.keyBuffer, mergedIdxer.encodedBuffer)
-			// }
-
 			store.cache.BatchSet(mergedIdxer.keyBuffer, mergedIdxer.valueBuffer) // update the local cache
+
+			*buffer = (*buffer)[:0]
 			return nil, err == nil
 		},
 	)
 
 	return &AsyncWriter{
-		Pipeline:  pipe.Start(),
-		CCIndexer: NewCCIndexer(store, 0),
-		store:     store,
-		version:   version,
+		PipelineV2: pipe.Start(),
+		CCIndexer:  NewCCIndexer(store, 0),
+		store:      store,
+		version:    version,
 	}
+}
+
+func (this *AsyncWriter) Import(trans []*univalue.Univalue) {
+	this.CCIndexer.Import(trans)
 }
 
 // Send the data to the downstream processor. This can be called multiple times
 // before calling Await to commit the data to the state db.
 func (this *AsyncWriter) Precommit() {
-	this.CCIndexer.Finalize()          // Remove the nil transitions
-	this.Pipeline.Push(this.CCIndexer) // push the indexer to the processor stream
+	this.CCIndexer.Finalize()            // Remove the nil transitions
+	this.PipelineV2.Push(this.CCIndexer) // push the indexer to the processor stream
 	this.CCIndexer = NewCCIndexer(this.store, this.version)
 }
 
 // Await commits the data to the state db.
-func (this *AsyncWriter) Commit() {
-	this.Pipeline.Push(nil) // commit all th indexers to the state db
-	this.Pipeline.Await()
+func (this *AsyncWriter) Commit(version uint64) {
+	this.PipelineV2.Push(nil) // commit all th indexers to the state db
+	this.PipelineV2.Await()
 }
 
 // Await commits the data to the state db.
-func (this *AsyncWriter) Close() { this.Pipeline.Close() }
+func (this *AsyncWriter) Close() { this.PipelineV2.Close() }

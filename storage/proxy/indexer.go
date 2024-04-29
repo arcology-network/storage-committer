@@ -26,15 +26,15 @@ import (
 
 // CacheIndexer is simpliest  of indexers. It does not index anything, just stores the transitions.
 type CacheIndexer struct {
-	version uint64
+	Version uint64
 	buffer  []*univalue.Univalue
 	keys    []string
 	values  []intf.Type
 }
 
-func NewCacheIndexer(store *ReadCache, version uint64) *CacheIndexer {
+func NewCacheIndexer(store *ReadCache, Version uint64) *CacheIndexer {
 	return &CacheIndexer{
-		version: version,
+		Version: Version,
 		buffer:  []*univalue.Univalue{},
 		keys:    []string{},
 		values:  []intf.Type{},

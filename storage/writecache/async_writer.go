@@ -25,25 +25,26 @@ import (
 // It contains a pipeline that has a list of functions executing in order. Each function consumes the output of the previous function.
 // The indexer is used to index the input transitions as they are received, in a way that they can be committed efficiently later.
 type AsyncWriter struct {
-	*async.Pipeline[*WriteCacheIndexer]
+	*async.PipelineV2[*WriteCacheIndexer]
 	*WriteCacheIndexer
 	*WriteCache
 	version uint64
 }
 
 func NewAsyncWriter(cache *WriteCache, version uint64) *AsyncWriter {
-	pipe := async.NewPipeline(
+	pipe := async.NewPipelineV2(
+		"WriteCache",
 		4,
 		10,
 		// db writer
-		func(idxers ...*WriteCacheIndexer) (*WriteCacheIndexer, bool) {
-			cache.Insert(idxers[0].buffer) // update the write cache right away as soon as the indexer is received
+		func(idxer *WriteCacheIndexer, _ *[]*WriteCacheIndexer) ([]*WriteCacheIndexer, bool) {
+			cache.Insert(idxer.buffer) // update the write cache right away as soon as the indexer is received
 			return nil, true
 		},
 	)
 
 	return &AsyncWriter{
-		Pipeline:          pipe.Start(),
+		PipelineV2:        pipe.Start(),
 		WriteCacheIndexer: NewWriteCacheIndexer(nil, version),
 		WriteCache:        cache,
 		version:           version,
@@ -52,14 +53,14 @@ func NewAsyncWriter(cache *WriteCache, version uint64) *AsyncWriter {
 
 // write cache updates itself every generation. It doesn't need to write to the database.
 func (this *AsyncWriter) Precommit() {
-	this.WriteCacheIndexer.Finalize()          // Remove the nil transitions
-	this.Pipeline.Push(this.WriteCacheIndexer) // push the indexer to the processor stream
-	this.Pipeline.Await()
+	this.WriteCacheIndexer.Finalize()            // Remove the nil transitions
+	this.PipelineV2.Push(this.WriteCacheIndexer) // push the indexer to the processor stream
+	this.PipelineV2.Await()
 	this.WriteCacheIndexer = NewWriteCacheIndexer(nil, this.version)
 }
 
 // The generation cache is transient and will clear itself when all the transitions are committed to
 // the database.
-func (this *AsyncWriter) Commit() {
+func (this *AsyncWriter) Commit(version uint64) {
 	this.WriteCache.Clear()
 }

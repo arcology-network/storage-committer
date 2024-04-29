@@ -59,7 +59,7 @@ func TestSimpleBalance(t *testing.T) {
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(out)
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM, 0, 1})
-	committer.Commit(0)
+	committer.Commit(10)
 	// Read alice's balance again
 
 	balance, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/balance", new(commutative.U256))
@@ -213,7 +213,7 @@ func TestNonce(t *testing.T) {
 	committer.Import(trans)
 
 	committer.Precommit([]uint32{0})
-	committer.Commit(0)
+	committer.Commit(10)
 	nonce, _, _ = writeCache.Read(0, "blcc://eth1.0/account/"+alice+"/nonce", new(commutative.Uint64))
 	v = nonce.(uint64)
 	if v != 6 {
@@ -284,7 +284,7 @@ func TestMultipleNonces(t *testing.T) {
 
 	// committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Precommit([]uint32{0, stgcommcommon.SYSTEM})
-	committer.Commit(0)
+	committer.Commit(10)
 
 	nonce, _, _ = writeCache.Read(0, "blcc://eth1.0/account/"+bob+"/nonce", new(commutative.Uint64))
 	bobNonce = nonce.(uint64)
@@ -336,6 +336,6 @@ func TestUint64Delta(t *testing.T) {
 	committer.Import(acctTrans0)
 	committer.Import(acctTrans1)
 	committer.Precommit([]uint32{1, 2})
-	committer.Commit(0)
+	committer.Commit(10)
 
 }

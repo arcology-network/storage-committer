@@ -66,7 +66,7 @@ func (this *StateCommitter) New(args ...interface{}) *StateCommitter {
 
 // Importer returns the importer of the StateCommitter.
 func (this *StateCommitter) Store() intf.ReadOnlyStore { return this.readonlyStore }
-func (this *StateCommitter) SetStore(store intf.ReadOnlyStore) {
+func (this *StateCommitter) SetStore(store intf.ReadOnlyStore) { // Testing only
 	this.readonlyStore = store
 }
 
@@ -125,10 +125,11 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 // Commit commits the transitions to different stores.
 func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
 	for _, writer := range this.writers {
-		writer.Commit()
+		writer.Commit(blockNum)
 	}
 
-	// slice.ParallelForeach(this.writers, len(this.writers), func(_ int, writer *intf.AsyncWriter[*univalue.Univalue]) {
+	// slice.ParallelForeach(this.writers, len(this.writers),
+	// func(_ int, writer *intf.AsyncWriter[*univalue.Univalue]) {
 	// 	(*writer).Commit()
 	// })
 	return this

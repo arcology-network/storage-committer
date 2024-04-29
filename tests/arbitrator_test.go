@@ -33,7 +33,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
-	committer.Commit(0)
+	committer.Commit(10)
 
 	time.Sleep(2 * time.Second)
 
@@ -81,7 +81,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
-	committer.Commit(0)
+	committer.Commit(10)
 
 	committer.SetStore(store)
 	alice := AliceAccount()
@@ -145,7 +145,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
-	committer.Commit(0)
+	committer.Commit(10)
 	committer.SetStore(store)
 
 	// committer.NewAccount(1, alice)
@@ -195,7 +195,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(out)
 	committer.Precommit(toCommit)
-	committer.Commit(0)
+	committer.Commit(10)
 
 	if _, err := writeCache.Write(3, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("committer-1-by-tx-3")); err != nil {
 		t.Error(err)
@@ -239,7 +239,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	// committer.Import(committer.Decode(univalue.Univalues(append(transitions3, transitions4...)).Encode()))
 
 	committer.Precommit(toCommit)
-	committer.Commit(0)
+	committer.Commit(10)
 	committer.SetStore(store)
 
 	v, _, _ := writeCache.Read(3, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", new(noncommutative.String))

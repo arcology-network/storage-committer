@@ -30,22 +30,16 @@ import (
 // An index by account address, transitions have the same Eth account address will be put together in a list
 // This is for ETH storage, concurrent container related sub-paths won't be put into this index.
 type EthIndexer struct {
+	Version uint64
 	*indexer.UnorderedIndexer[[20]byte, *univalue.Univalue, *associative.Pair[*Account, []*univalue.Univalue]]
-
-	version       uint64 // Block number of the last update
 	dirtyAccounts []*Account
-	// dirtyVals     [][]interfaces.Type // Dirty accountCache are the accountCache that have been updated in the current cycle.
-	// dirtyKeys     [][]string          // Dirty accountCache are the accountCache that have been updated in the current cycle.
-	err error
+	err           error
 }
 
-func NewEthIndexer(store *EthDataStore, version uint64) *EthIndexer {
+func NewEthIndexer(store *EthDataStore, Version uint64) *EthIndexer {
 	idxer := (indexer.NewUnorderedIndexer(
 		nil,
 		func(v *univalue.Univalue) ([20]byte, bool) {
-			// if !platform.IsEthPath(*v.GetPath()) {
-			// 	return [20]byte{}, false
-			// }
 			addr, _ := hexutil.Decode(platform.GetAccountAddr(*v.GetPath()))
 			return ethcommon.BytesToAddress(addr), true //platform.IsEthPath(*v.GetPath())
 		},
@@ -63,7 +57,7 @@ func NewEthIndexer(store *EthDataStore, version uint64) *EthIndexer {
 	))
 
 	return &EthIndexer{
-		version:          version,
+		Version:          Version,
 		UnorderedIndexer: idxer,
 	}
 }
@@ -83,19 +77,15 @@ func (this *EthIndexer) Finalize() {
 
 // Merge indexers so they can be updated at once.
 func (this *EthIndexer) Merge(idxers []*EthIndexer) *EthIndexer {
-	slice.Remove(&idxers, nil) // Remove the nil elements
+	_, maxIdxer := slice.MaxIf(idxers, func(idxer *EthIndexer) uint64 { return idxer.Version })
+	this.Version = maxIdxer.Version
+
+	slice.RemoveIf(&idxers, func(_ int, idxer *EthIndexer) bool {
+		return (idxer.dirtyAccounts) == nil
+	})
 
 	this.dirtyAccounts = slice.ConcateDo(idxers,
 		func(idxer *EthIndexer) uint64 { return uint64(len(idxer.dirtyAccounts)) },
 		func(idxer *EthIndexer) []*Account { return idxer.dirtyAccounts })
-
-	// this.dirtyVals = slice.ConcateDo(idxers,
-	// 	func(idxer *EthIndexer) uint64 { return uint64(len(idxer.dirtyVals)) },
-	// 	func(idxer *EthIndexer) [][]interfaces.Type { return idxer.dirtyVals })
-
-	// this.dirtyKeys = slice.ConcateDo(idxers,
-	// 	func(idxer *EthIndexer) uint64 { return uint64(len(idxer.dirtyKeys)) },
-	// 	func(idxer *EthIndexer) [][]string { return idxer.dirtyKeys })
-
 	return this
 }

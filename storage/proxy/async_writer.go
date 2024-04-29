@@ -19,42 +19,51 @@ package proxy
 
 import (
 	async "github.com/arcology-network/common-lib/async"
+	"github.com/arcology-network/common-lib/exp/slice"
 )
 
 // AsyncWriter is a struct that contains data strucuture and methods for writing data to cache asynchronously.
 // It contains a pipeline that has a list of functions executing in order. Each function consumes the output of the previous function.
 // The indexer is used to index the input transitions as they are received, in a way that they can be committed efficiently later.
 type AsyncWriter struct {
-	*async.Pipeline[*CacheIndexer]
-	*CacheIndexer
-	store   *ReadCache
 	version uint64
+	*async.PipelineV2[*CacheIndexer]
+	*CacheIndexer
+	store *ReadCache
 }
 
 func NewAsyncWriter(cache *ReadCache, version uint64) *AsyncWriter {
 	idxer := NewCacheIndexer(cache, 0)
-	pipe := async.NewPipeline(
+	pipe := async.NewPipelineV2(
+		"object cache",
 		4,
 		10,
-		func(idxers ...*CacheIndexer) (*CacheIndexer, bool) {
-			if len(idxers) == 0 || idxers[0] == nil {
-				return nil, true
+		func(idxer *CacheIndexer, buffer *[]*CacheIndexer) ([]*CacheIndexer, bool) {
+			*buffer = append(*buffer, idxer) // Buffer the indexers until the final one is received
+			if idxer.Version == 0 {
+				return nil, false
 			}
-			return idxers[0], false // Buffer the indexers until the final indexer is received
+			v := slice.Move(buffer)
+			return v, true
 		},
 		// Merge the indexers and update the cache at once.
-		func(idxers ...*CacheIndexer) (*CacheIndexer, bool) {
-			mergedIdxer := new(CacheIndexer).Merge(idxers)       // Merge indexers
+		func(idxer *CacheIndexer, buffer *[]*CacheIndexer) ([]*CacheIndexer, bool) {
+			if idxer.Version == 0 {
+				*buffer = append(*buffer, idxer) // Buffer the indexers until the final one is received
+				return nil, false
+			}
+
+			mergedIdxer := new(CacheIndexer).Merge(*buffer)      // Merge indexers
 			cache.BatchSet(mergedIdxer.keys, mergedIdxer.values) // update the local cache with the new values in the indexer
-			return nil, true
+			*buffer = (*buffer)[:0]                              // Clear the buffer
+			return nil, false
 		},
 	)
 
 	return &AsyncWriter{
-		Pipeline:     pipe.Start(),
+		PipelineV2:   pipe.Start(),
 		CacheIndexer: idxer,
 		store:        cache,
-		version:      version,
 	}
 }
 
@@ -62,13 +71,13 @@ func NewAsyncWriter(cache *ReadCache, version uint64) *AsyncWriter {
 // If there are multiple generations, this can be called multiple times before Await.
 // Each generation
 func (this *AsyncWriter) Precommit() {
-	this.CacheIndexer.Finalize()                                  // Remove the nil transitions
-	this.Pipeline.Push(this.CacheIndexer)                         // push the indexer to the processor stream
-	this.CacheIndexer = NewCacheIndexer(this.store, this.version) // Reset the indexer
+	this.CacheIndexer.Finalize()                       // Remove the nil transitions
+	this.PipelineV2.Push(this.CacheIndexer)            // push the indexer to the processor stream
+	this.CacheIndexer = NewCacheIndexer(this.store, 0) // Reset the indexer with a default version number
 }
 
 // Triggered by the block commit.
-func (this *AsyncWriter) Commit() {
-	this.Pipeline.Push(nil) // commit all the indexers to the state db
-	this.Pipeline.Await()
+func (this *AsyncWriter) Commit(version uint64) {
+	this.PipelineV2.Push(&CacheIndexer{Version: version}) // commit all the indexers to the state db
+	this.PipelineV2.Await()
 }

@@ -157,7 +157,7 @@ func FlushToStore(sstore *statestore.StateStore) interfaces.ReadOnlyStore {
 	committer := stgcommitter.NewStateCommitter(sstore, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit(txs) // Write all the transitions to the store
-	committer.Commit(0)
+	committer.Commit(10)
 	sstore.Clear()
 	return sstore
 }

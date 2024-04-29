@@ -68,7 +68,7 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(transitions)
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM, 0, 1})
-	committer.Commit(0)
+	committer.Commit(10)
 	fmt.Println("Init committer= :", time.Since(t0), "with initial transitions:", len(transitions))
 }
 
@@ -133,7 +133,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	fmt.Println("Precommit:", time.Since(t0))
 
 	t0 = time.Now()
-	committer.Commit(0)
+	committer.Commit(10)
 	fmt.Println("Commit:", time.Since(t0))
 
 	t0 = time.Now()
@@ -166,7 +166,7 @@ func BenchmarkAddThenDelete(b *testing.B) {
 	committer.Import(trans)
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
-	committer.Commit(0)
+	committer.Commit(10)
 
 	alice := AliceAccount()
 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
@@ -211,7 +211,7 @@ func BenchmarkAddThenPop(b *testing.B) {
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
-	committer.Commit(0)
+	committer.Commit(10)
 
 	alice := AliceAccount()
 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
@@ -329,7 +329,7 @@ func BenchmarkEncodeTransitions(b *testing.B) {
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
-	committer.Commit(0)
+	committer.Commit(10)
 
 	path := commutative.NewPath()
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
@@ -404,7 +404,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	committer.Import(acctTrans)
 
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
-	committer.Commit(0)
+	committer.Commit(10)
 	// errs := committer.AllInOneCommit(acctTrans, []uint32{0})
 
 	// if len(errs) > 0 {

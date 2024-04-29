@@ -60,7 +60,7 @@ type Type interface { // value type
 type AsyncWriter[T any] interface {
 	Import([]T)
 	Precommit()
-	Commit()
+	Commit(uint64)
 }
 
 type ReadOnlyStore interface {

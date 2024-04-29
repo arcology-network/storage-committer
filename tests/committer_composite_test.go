@@ -32,7 +32,7 @@ func TestAuxTrans(t *testing.T) {
 	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
-	committer.Commit(0) // Commit
+	committer.Commit(10) // Commit
 
 	committer.SetStore(store)
 	// create a path
@@ -105,7 +105,7 @@ func TestAuxTrans(t *testing.T) {
 	committer.Import(out)
 
 	committer.Precommit([]uint32{1})
-	committer.Commit(0)
+	committer.Commit(10)
 }
 
 func TestCheckAccessRecords(t *testing.T) {
@@ -124,7 +124,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(trans00)
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
-	committer.Commit(0) // Commit
+	committer.Commit(10) // Commit
 
 	// committer.SetStore(store)
 	path := commutative.NewPath()
@@ -138,7 +138,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans10).Encode()).(univalue.Univalues))
 	committer.Precommit([]uint32{1})
-	committer.Commit(0) // Commit
+	committer.Commit(10) // Commit
 
 	// committer.SetStore(store)
 
