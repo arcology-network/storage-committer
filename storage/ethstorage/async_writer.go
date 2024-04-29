@@ -28,14 +28,14 @@ import (
 )
 
 type AsyncWriter struct {
-	*async.PipelineV2[*EthIndexer]
+	*async.Pipeline[*EthIndexer]
 	*EthIndexer
 	ethStore *EthDataStore
 	Err      error
 }
 
 func NewAsyncWriter(ethStore *EthDataStore, version uint64) *AsyncWriter {
-	pipe := async.NewPipelineV2(
+	pipe := async.NewPipeline(
 		"ethstorage",
 		4,
 		10,
@@ -86,7 +86,7 @@ func NewAsyncWriter(ethStore *EthDataStore, version uint64) *AsyncWriter {
 	)
 
 	return &AsyncWriter{
-		PipelineV2: pipe.Start(),
+		Pipeline:   pipe.Start(),
 		EthIndexer: NewEthIndexer(ethStore, version),
 		ethStore:   ethStore,
 	}
@@ -97,15 +97,15 @@ func NewAsyncWriter(ethStore *EthDataStore, version uint64) *AsyncWriter {
 // Each generation
 func (this *AsyncWriter) Precommit() {
 	this.EthIndexer.Finalize()                        // Remove the nil transitions
-	this.PipelineV2.Push(this.EthIndexer)             // push the indexer to the processor stream
+	this.Pipeline.Push(this.EthIndexer)               // push the indexer to the processor stream
 	this.EthIndexer = NewEthIndexer(this.ethStore, 0) // Reset the indexer with a default version number.
 }
 
 // Signals a block is completed, time to write to the db.
 func (this *AsyncWriter) Commit(version uint64) {
-	this.PipelineV2.Push(&EthIndexer{Version: version}) //
-	this.PipelineV2.Await()
+	this.Pipeline.Push(&EthIndexer{Version: version}) //
+	this.Pipeline.Await()
 }
 
 // Await commits the data to the state db.
-func (this *AsyncWriter) Close() { this.PipelineV2.Close() }
+func (this *AsyncWriter) Close() { this.Pipeline.Close() }

@@ -27,14 +27,14 @@ import (
 // The indexer is used to index the input transitions as they are received, in a way that they can be committed efficiently later.
 type AsyncWriter struct {
 	version uint64
-	*async.PipelineV2[*CacheIndexer]
+	*async.Pipeline[*CacheIndexer]
 	*CacheIndexer
 	store *ReadCache
 }
 
 func NewAsyncWriter(cache *ReadCache, version uint64) *AsyncWriter {
 	idxer := NewCacheIndexer(cache, 0)
-	pipe := async.NewPipelineV2(
+	pipe := async.NewPipeline(
 		"object cache",
 		4,
 		10,
@@ -61,7 +61,7 @@ func NewAsyncWriter(cache *ReadCache, version uint64) *AsyncWriter {
 	)
 
 	return &AsyncWriter{
-		PipelineV2:   pipe.Start(),
+		Pipeline:     pipe.Start(),
 		CacheIndexer: idxer,
 		store:        cache,
 	}
@@ -72,12 +72,12 @@ func NewAsyncWriter(cache *ReadCache, version uint64) *AsyncWriter {
 // Each generation
 func (this *AsyncWriter) Precommit() {
 	this.CacheIndexer.Finalize()                       // Remove the nil transitions
-	this.PipelineV2.Push(this.CacheIndexer)            // push the indexer to the processor stream
+	this.Pipeline.Push(this.CacheIndexer)              // push the indexer to the processor stream
 	this.CacheIndexer = NewCacheIndexer(this.store, 0) // Reset the indexer with a default version number
 }
 
 // Triggered by the block commit.
 func (this *AsyncWriter) Commit(version uint64) {
-	this.PipelineV2.Push(&CacheIndexer{Version: version}) // commit all the indexers to the state db
-	this.PipelineV2.Await()
+	this.Pipeline.Push(&CacheIndexer{Version: version}) // commit all the indexers to the state db
+	this.Pipeline.Await()
 }

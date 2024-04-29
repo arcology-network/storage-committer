@@ -27,7 +27,7 @@ import (
 // It contains a pipeline that has a list of functions executing in order. Each function consumes the output of the previous function.
 // The indexer is used to index the input transitions as they are received, in a way that they can be committed efficiently later.
 type AsyncWriter struct {
-	*async.PipelineV2[*CCIndexer]
+	*async.Pipeline[*CCIndexer]
 	*CCIndexer
 	store   *DataStore
 	version uint64
@@ -35,7 +35,7 @@ type AsyncWriter struct {
 
 func NewAsyncWriter(store *DataStore, version uint64) *AsyncWriter {
 	// store := reader.(*DataStore)
-	pipe := async.NewPipelineV2(
+	pipe := async.NewPipeline(
 		"ccstorage",
 		4,
 		10,
@@ -65,10 +65,10 @@ func NewAsyncWriter(store *DataStore, version uint64) *AsyncWriter {
 	)
 
 	return &AsyncWriter{
-		PipelineV2: pipe.Start(),
-		CCIndexer:  NewCCIndexer(store, 0),
-		store:      store,
-		version:    version,
+		Pipeline:  pipe.Start(),
+		CCIndexer: NewCCIndexer(store, 0),
+		store:     store,
+		version:   version,
 	}
 }
 
@@ -79,16 +79,16 @@ func (this *AsyncWriter) Import(trans []*univalue.Univalue) {
 // Send the data to the downstream processor. This can be called multiple times
 // before calling Await to commit the data to the state db.
 func (this *AsyncWriter) Precommit() {
-	this.CCIndexer.Finalize()            // Remove the nil transitions
-	this.PipelineV2.Push(this.CCIndexer) // push the indexer to the processor stream
+	this.CCIndexer.Finalize()          // Remove the nil transitions
+	this.Pipeline.Push(this.CCIndexer) // push the indexer to the processor stream
 	this.CCIndexer = NewCCIndexer(this.store, this.version)
 }
 
 // Await commits the data to the state db.
 func (this *AsyncWriter) Commit(version uint64) {
-	this.PipelineV2.Push(nil) // commit all th indexers to the state db
-	this.PipelineV2.Await()
+	this.Pipeline.Push(nil) // commit all th indexers to the state db
+	this.Pipeline.Await()
 }
 
 // Await commits the data to the state db.
-func (this *AsyncWriter) Close() { this.PipelineV2.Close() }
+func (this *AsyncWriter) Close() { this.Pipeline.Close() }
