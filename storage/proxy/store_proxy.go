@@ -35,10 +35,9 @@ type StorageProxy struct {
 	ccDataStore  *ccstg.DataStore
 }
 
-// NewStoreProxy creates a new storage proxy object with a unified cache and memory storages.
-func NewStoreProxy() *StorageProxy {
+func NewStoreProxy(dbpath string) *StorageProxy {
 	proxy := &StorageProxy{
-		ethDataStore: ethstg.NewParallelEthMemDataStore(),
+		ethDataStore: ethstg.NewLevelDBDataStore(dbpath), //ethstg.NewParallelEthMemDataStore(),
 		ccDataStore: ccstg.NewDataStore(
 			policy.NewCachePolicy(0, 1), // Don't cache anything in the underlying storage, the cache is managed by the router
 			memdb.NewMemoryDB(),

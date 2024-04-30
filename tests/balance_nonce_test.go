@@ -300,7 +300,7 @@ func TestMultipleNonces(t *testing.T) {
 }
 
 func TestUint64Delta(t *testing.T) {
-	store := stgproxy.NewStoreProxy()
+	store := stgproxy.NewStoreProxy("test")
 	sstore := statestore.NewStateStore(store)
 	writeCache := sstore.WriteCache
 
