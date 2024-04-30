@@ -18,6 +18,8 @@
 package proxy
 
 import (
+	"math"
+
 	async "github.com/arcology-network/common-lib/async"
 	"github.com/arcology-network/common-lib/exp/slice"
 )
@@ -26,7 +28,6 @@ import (
 // It contains a pipeline that has a list of functions executing in order. Each function consumes the output of the previous function.
 // The indexer is used to index the input transitions as they are received, in a way that they can be committed efficiently later.
 type AsyncWriter struct {
-	version uint64
 	*async.Pipeline[*CacheIndexer]
 	*CacheIndexer
 	store *ReadCache
@@ -40,7 +41,7 @@ func NewAsyncWriter(cache *ReadCache, version uint64) *AsyncWriter {
 		10,
 		func(idxer *CacheIndexer, buffer *[]*CacheIndexer) ([]*CacheIndexer, bool) {
 			*buffer = append(*buffer, idxer) // Buffer the indexers until the final one is received
-			if idxer.Version == 0 {
+			if idxer.Version == math.MaxUint64 {
 				return nil, false
 			}
 			v := slice.Move(buffer)
@@ -48,7 +49,7 @@ func NewAsyncWriter(cache *ReadCache, version uint64) *AsyncWriter {
 		},
 		// Merge the indexers and update the cache at once.
 		func(idxer *CacheIndexer, buffer *[]*CacheIndexer) ([]*CacheIndexer, bool) {
-			if idxer.Version == 0 {
+			if idxer.Version == math.MaxUint64 {
 				*buffer = append(*buffer, idxer) // Buffer the indexers until the final one is received
 				return nil, false
 			}
@@ -71,9 +72,9 @@ func NewAsyncWriter(cache *ReadCache, version uint64) *AsyncWriter {
 // If there are multiple generations, this can be called multiple times before Await.
 // Each generation
 func (this *AsyncWriter) Precommit() {
-	this.CacheIndexer.Finalize()                       // Remove the nil transitions
-	this.Pipeline.Push(this.CacheIndexer)              // push the indexer to the processor stream
-	this.CacheIndexer = NewCacheIndexer(this.store, 0) // Reset the indexer with a default version number
+	this.CacheIndexer.Finalize()                                    // Remove the nil transitions
+	this.Pipeline.Push(this.CacheIndexer)                           // push the indexer to the processor stream
+	this.CacheIndexer = NewCacheIndexer(this.store, math.MaxUint64) // Reset the indexer with a default version number
 }
 
 // Triggered by the block commit.

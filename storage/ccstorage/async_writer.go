@@ -85,7 +85,7 @@ func (this *AsyncWriter) Precommit() {
 }
 
 // Await commits the data to the state db.
-func (this *AsyncWriter) Commit(version uint64) {
+func (this *AsyncWriter) Commit(_ uint64) {
 	this.Pipeline.Push(nil) // commit all th indexers to the state db
 	this.Pipeline.Await()
 }
