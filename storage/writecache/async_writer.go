@@ -19,6 +19,7 @@ package cache
 
 import (
 	async "github.com/arcology-network/common-lib/async"
+	"github.com/ethereum/go-ethereum/common/math"
 )
 
 // AsyncWriter is a struct that contains data strucuture and methods for writing data to cache asynchronously.
@@ -28,7 +29,6 @@ type AsyncWriter struct {
 	*async.Pipeline[*WriteCacheIndexer]
 	*WriteCacheIndexer
 	*WriteCache
-	version uint64
 }
 
 func NewAsyncWriter(cache *WriteCache, version uint64) *AsyncWriter {
@@ -47,7 +47,6 @@ func NewAsyncWriter(cache *WriteCache, version uint64) *AsyncWriter {
 		Pipeline:          pipe.Start(),
 		WriteCacheIndexer: NewWriteCacheIndexer(nil, version),
 		WriteCache:        cache,
-		version:           version,
 	}
 }
 
@@ -56,11 +55,11 @@ func (this *AsyncWriter) Precommit() {
 	this.WriteCacheIndexer.Finalize()          // Remove the nil transitions
 	this.Pipeline.Push(this.WriteCacheIndexer) // push the indexer to the processor stream
 	this.Pipeline.Await()
-	this.WriteCacheIndexer = NewWriteCacheIndexer(nil, this.version)
+	this.WriteCacheIndexer = NewWriteCacheIndexer(nil, math.MaxUint64)
 }
 
 // The generation cache is transient and will clear itself when all the transitions are committed to
 // the database.
-func (this *AsyncWriter) Commit(version uint64) {
+func (this *AsyncWriter) Commit(_ uint64) {
 	this.WriteCache.Clear()
 }

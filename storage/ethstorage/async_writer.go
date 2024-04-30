@@ -19,6 +19,7 @@ package ethstorage
 
 import (
 	"errors"
+	"math"
 	"runtime"
 
 	async "github.com/arcology-network/common-lib/async"
@@ -96,9 +97,9 @@ func NewAsyncWriter(ethStore *EthDataStore, version uint64) *AsyncWriter {
 // If there are multiple generations, this can be called multiple times before Await.
 // Each generation
 func (this *AsyncWriter) Precommit() {
-	this.EthIndexer.Finalize()                        // Remove the nil transitions
-	this.Pipeline.Push(this.EthIndexer)               // push the indexer to the processor stream
-	this.EthIndexer = NewEthIndexer(this.ethStore, 0) // Reset the indexer with a default version number.
+	this.EthIndexer.Finalize()                                     // Remove the nil transitions
+	this.Pipeline.Push(this.EthIndexer)                            // push the indexer to the processor stream
+	this.EthIndexer = NewEthIndexer(this.ethStore, math.MaxUint64) // Reset the indexer with a default version number.
 }
 
 // Signals a block is completed, time to write to the db.
