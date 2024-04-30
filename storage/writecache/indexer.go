@@ -24,18 +24,16 @@ import (
 
 // WriteCacheIndexer is simpliest  of indexers. It does not index anything, just stores the transitions.
 type WriteCacheIndexer struct {
-	version uint64
+	version int64
 	buffer  []*univalue.Univalue
 }
 
-func NewWriteCacheIndexer(_ *intf.ReadOnlyStore, version uint64) *WriteCacheIndexer {
+func NewWriteCacheIndexer(_ *intf.ReadOnlyStore, version int64) *WriteCacheIndexer {
 	return &WriteCacheIndexer{
 		version: version,
 		buffer:  []*univalue.Univalue{},
 	}
 }
-
-func (this *WriteCacheIndexer) SetVersion(version uint64) { this.version = version }
 
 // An index by account address, transitions have the same Eth account address will be put together in a list
 // This is for ETH storage, concurrent container related sub-paths won't be put into this index.

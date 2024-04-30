@@ -19,7 +19,6 @@ package ethstorage
 
 import (
 	"errors"
-	"math"
 	"runtime"
 
 	async "github.com/arcology-network/common-lib/async"
@@ -35,7 +34,7 @@ type AsyncWriter struct {
 	Err      error
 }
 
-func NewAsyncWriter(ethStore *EthDataStore, version uint64) *AsyncWriter {
+func NewAsyncWriter(ethStore *EthDataStore, version int64) *AsyncWriter {
 	pipe := async.NewPipeline(
 		"ethstorage",
 		4,
@@ -79,7 +78,7 @@ func NewAsyncWriter(ethStore *EthDataStore, version uint64) *AsyncWriter {
 
 			// Write to the db
 			mergedIdxer := new(EthIndexer).Merge(*buffer) // Merge all the indexers together to commit to the db at once.
-			ethStore.WriteToEthStorage(mergedIdxer.Version, mergedIdxer.dirtyAccounts)
+			ethStore.WriteToEthStorage(uint64(mergedIdxer.Version), mergedIdxer.dirtyAccounts)
 
 			*buffer = (*buffer)[:0] // Clear the buffer
 			return nil, false
@@ -97,14 +96,14 @@ func NewAsyncWriter(ethStore *EthDataStore, version uint64) *AsyncWriter {
 // If there are multiple generations, this can be called multiple times before Await.
 // Each generation
 func (this *AsyncWriter) Precommit() {
-	this.EthIndexer.Finalize()                                     // Remove the nil transitions
-	this.Pipeline.Push(this.EthIndexer)                            // push the indexer to the processor stream
-	this.EthIndexer = NewEthIndexer(this.ethStore, math.MaxUint64) // Reset the indexer with a default version number.
+	this.EthIndexer.Finalize()                         // Remove the nil transitions
+	this.Pipeline.Push(this.EthIndexer)                // push the indexer to the processor stream
+	this.EthIndexer = NewEthIndexer(this.ethStore, -1) // Reset the indexer with a default version number.
 }
 
 // Signals a block is completed, time to write to the db.
 func (this *AsyncWriter) Commit(version uint64) {
-	this.Pipeline.Push(&EthIndexer{Version: version}) //
+	this.Pipeline.Push(&EthIndexer{Version: int64(version)}) //
 	this.Pipeline.Await()
 }
 

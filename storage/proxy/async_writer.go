@@ -18,8 +18,6 @@
 package proxy
 
 import (
-	"math"
-
 	async "github.com/arcology-network/common-lib/async"
 	"github.com/arcology-network/common-lib/exp/slice"
 )
@@ -33,15 +31,15 @@ type AsyncWriter struct {
 	store *ReadCache
 }
 
-func NewAsyncWriter(cache *ReadCache, version uint64) *AsyncWriter {
-	idxer := NewCacheIndexer(cache, 0)
+func NewAsyncWriter(cache *ReadCache, version int64) *AsyncWriter {
+	idxer := NewCacheIndexer(cache, version)
 	pipe := async.NewPipeline(
 		"object cache",
 		4,
 		10,
 		func(idxer *CacheIndexer, buffer *[]*CacheIndexer) ([]*CacheIndexer, bool) {
 			*buffer = append(*buffer, idxer) // Buffer the indexers until the final one is received
-			if idxer.Version == math.MaxUint64 {
+			if idxer.Version < 0 {
 				return nil, false
 			}
 			v := slice.Move(buffer)
@@ -49,7 +47,7 @@ func NewAsyncWriter(cache *ReadCache, version uint64) *AsyncWriter {
 		},
 		// Merge the indexers and update the cache at once.
 		func(idxer *CacheIndexer, buffer *[]*CacheIndexer) ([]*CacheIndexer, bool) {
-			if idxer.Version == math.MaxUint64 {
+			if idxer.Version < 0 {
 				*buffer = append(*buffer, idxer) // Buffer the indexers until the final one is received
 				return nil, false
 			}
@@ -72,13 +70,13 @@ func NewAsyncWriter(cache *ReadCache, version uint64) *AsyncWriter {
 // If there are multiple generations, this can be called multiple times before Await.
 // Each generation
 func (this *AsyncWriter) Precommit() {
-	this.CacheIndexer.Finalize()                                    // Remove the nil transitions
-	this.Pipeline.Push(this.CacheIndexer)                           // push the indexer to the processor stream
-	this.CacheIndexer = NewCacheIndexer(this.store, math.MaxUint64) // Reset the indexer with a default version number
+	this.CacheIndexer.Finalize()                        // Remove the nil transitions
+	this.Pipeline.Push(this.CacheIndexer)               // push the indexer to the processor stream
+	this.CacheIndexer = NewCacheIndexer(this.store, -1) // Reset the indexer with a default version number
 }
 
 // Triggered by the block commit.
 func (this *AsyncWriter) Commit(version uint64) {
-	this.Pipeline.Push(&CacheIndexer{Version: version}) // commit all the indexers to the state db
+	this.Pipeline.Push(&CacheIndexer{Version: int64(version)}) // commit all the indexers to the state db
 	this.Pipeline.Await()
 }
