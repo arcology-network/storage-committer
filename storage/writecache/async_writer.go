@@ -30,14 +30,14 @@ type AsyncWriter struct {
 	*WriteCache
 }
 
-func NewAsyncWriter(cache *WriteCache, version int64) *AsyncWriter {
+func NewAsyncWriter(writeCache *WriteCache, version int64) *AsyncWriter {
 	pipe := async.NewPipeline(
 		"WriteCache",
 		4,
 		10,
 		// db writer
 		func(idxer *WriteCacheIndexer, _ *[]*WriteCacheIndexer) ([]*WriteCacheIndexer, bool) {
-			cache.Insert(idxer.buffer) // update the write cache right away as soon as the indexer is received
+			writeCache.Insert(idxer.buffer) // update the write cache right away as soon as the indexer is received
 			return nil, true
 		},
 	)
@@ -45,7 +45,7 @@ func NewAsyncWriter(cache *WriteCache, version int64) *AsyncWriter {
 	return &AsyncWriter{
 		Pipeline:          pipe.Start(),
 		WriteCacheIndexer: NewWriteCacheIndexer(nil, int64(version)),
-		WriteCache:        cache,
+		WriteCache:        writeCache,
 	}
 }
 

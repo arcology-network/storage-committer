@@ -276,8 +276,8 @@ func (this *EthDataStore) WriteWorldTrie(dirtyAccounts []*Account) [32]byte {
 }
 
 func (this *EthDataStore) WriteToEthStorage(blockNum uint64, dirtyAccounts []*Account) {
-	this.lock.RLock()
-	defer this.lock.RUnlock()
+	this.lock.Lock()
+	defer this.lock.Unlock()
 
 	// It Only keeps the last 1024 root hashes. Remove the oldest root hash if the root hash map is full.
 	if len(this.rootDict) >= 1024 {
