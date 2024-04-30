@@ -60,6 +60,6 @@ func (this *StateStore) Clear()                          { this.WriteCache.Clear
 
 func (this *StateStore) GetWriters() []intf.AsyncWriter[*univalue.Univalue] {
 	return append([]intf.AsyncWriter[*univalue.Univalue]{
-		writecache.NewAsyncWriter(this.WriteCache, 0)},
+		writecache.NewAsyncWriter(this.WriteCache, -1)},
 		this.backend.GetWriters()...)
 }

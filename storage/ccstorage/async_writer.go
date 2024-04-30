@@ -30,10 +30,10 @@ type AsyncWriter struct {
 	*async.Pipeline[*CCIndexer]
 	*CCIndexer
 	store   *DataStore
-	version uint64
+	version int64
 }
 
-func NewAsyncWriter(store *DataStore, version uint64) *AsyncWriter {
+func NewAsyncWriter(store *DataStore, version int64) *AsyncWriter {
 	// store := reader.(*DataStore)
 	pipe := async.NewPipeline(
 		"ccstorage",
@@ -81,7 +81,7 @@ func (this *AsyncWriter) Import(trans []*univalue.Univalue) {
 func (this *AsyncWriter) Precommit() {
 	this.CCIndexer.Finalize()          // Remove the nil transitions
 	this.Pipeline.Push(this.CCIndexer) // push the indexer to the processor stream
-	this.CCIndexer = NewCCIndexer(this.store, this.version)
+	this.CCIndexer = NewCCIndexer(this.store, -1)
 }
 
 // Await commits the data to the state db.

@@ -114,8 +114,8 @@ func (this *StorageProxy) Commit(blockNum uint64) error { return nil }
 // Get the stores that can be
 func (this *StorageProxy) GetWriters() []intf.AsyncWriter[*univalue.Univalue] {
 	return []intf.AsyncWriter[*univalue.Univalue]{
-		NewAsyncWriter(this.unifiedCache, 0),
-		ethstorage.NewAsyncWriter(this.ethDataStore, 0),
-		ccstorage.NewAsyncWriter(this.ccDataStore, 0),
+		NewAsyncWriter(this.unifiedCache, -1),
+		ethstorage.NewAsyncWriter(this.ethDataStore, -1),
+		ccstorage.NewAsyncWriter(this.ccDataStore, -1),
 	}
 }

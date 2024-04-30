@@ -30,13 +30,13 @@ import (
 // An index by account address, transitions have the same Eth account address will be put together in a list
 // This is for ETH storage, concurrent container related sub-paths won't be put into this index.
 type EthIndexer struct {
-	Version uint64
+	Version int64
 	*indexer.UnorderedIndexer[[20]byte, *univalue.Univalue, *associative.Pair[*Account, []*univalue.Univalue]]
 	dirtyAccounts []*Account
 	err           error
 }
 
-func NewEthIndexer(store *EthDataStore, Version uint64) *EthIndexer {
+func NewEthIndexer(store *EthDataStore, Version int64) *EthIndexer {
 	idxer := (indexer.NewUnorderedIndexer(
 		nil,
 		func(v *univalue.Univalue) ([20]byte, bool) {
@@ -77,7 +77,7 @@ func (this *EthIndexer) Finalize() {
 
 // Merge indexers so they can be updated at once.
 func (this *EthIndexer) Merge(idxers []*EthIndexer) *EthIndexer {
-	_, maxIdxer := slice.MaxIf(idxers, func(idxer *EthIndexer) uint64 { return idxer.Version })
+	_, maxIdxer := slice.MaxIf(idxers, func(idxer *EthIndexer) int64 { return idxer.Version })
 	this.Version = maxIdxer.Version
 
 	slice.RemoveIf(&idxers, func(_ int, idxer *EthIndexer) bool {
