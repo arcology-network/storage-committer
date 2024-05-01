@@ -36,7 +36,7 @@ func NewAsyncWriter(writeCache *WriteCache, version int64) *AsyncWriter {
 		4,
 		10,
 		// db writer
-		func(idxer *WriteCacheIndexer, _ *[]*WriteCacheIndexer) ([]*WriteCacheIndexer, bool) {
+		func(idxer *WriteCacheIndexer, _ *async.Slice[*WriteCacheIndexer]) ([]*WriteCacheIndexer, bool) {
 			writeCache.Insert(idxer.buffer) // update the write cache right away as soon as the indexer is received
 			return nil, true
 		},

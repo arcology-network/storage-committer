@@ -19,7 +19,6 @@ package proxy
 
 import (
 	async "github.com/arcology-network/common-lib/async"
-	"github.com/arcology-network/common-lib/exp/slice"
 )
 
 // AsyncWriter is a struct that contains data strucuture and methods for writing data to cache asynchronously.
@@ -37,24 +36,25 @@ func NewAsyncWriter(cache *ReadCache, version int64) *AsyncWriter {
 		"object cache",
 		4,
 		10,
-		func(idxer *CacheIndexer, buffer *[]*CacheIndexer) ([]*CacheIndexer, bool) {
-			*buffer = append(*buffer, idxer) // Buffer the indexers until the final one is received
+		func(idxer *CacheIndexer, buffer *async.Slice[*CacheIndexer]) ([]*CacheIndexer, bool) {
+			// *buffer = append(*buffer, idxer) // Buffer the indexers until the final one is received
+			buffer.Append(idxer)
 			if idxer.Version < 0 {
 				return nil, false
 			}
-			v := slice.Move(buffer)
+			v := buffer.MoveToSlice()
 			return v, true
 		},
 		// Merge the indexers and update the cache at once.
-		func(idxer *CacheIndexer, buffer *[]*CacheIndexer) ([]*CacheIndexer, bool) {
+		func(idxer *CacheIndexer, buffer *async.Slice[*CacheIndexer]) ([]*CacheIndexer, bool) {
 			if idxer.Version < 0 {
-				*buffer = append(*buffer, idxer) // Buffer the indexers until the final one is received
+				buffer.Append(idxer)
 				return nil, false
 			}
 
-			mergedIdxer := new(CacheIndexer).Merge(*buffer)      // Merge indexers
-			cache.BatchSet(mergedIdxer.keys, mergedIdxer.values) // update the local cache with the new values in the indexer
-			*buffer = (*buffer)[:0]                              // Clear the buffer
+			mergedIdxer := new(CacheIndexer).Merge(buffer.MoveToSlice()) // Merge indexers
+			cache.BatchSet(mergedIdxer.keys, mergedIdxer.values)         // update the local cache with the new values in the indexer
+			// *buffer = (*buffer)[:0]                                      // Clear the buffer
 			return nil, false
 		},
 	)

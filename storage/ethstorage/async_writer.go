@@ -40,10 +40,9 @@ func NewAsyncWriter(ethStore *EthDataStore, version int64) *AsyncWriter {
 		4,
 		10,
 		// The function updates and storage tries and the world trie without writing to the db.
-		func(idxer *EthIndexer, buffer *[]*EthIndexer) ([]*EthIndexer, bool) {
-			if *buffer = append(*buffer, idxer); idxer.UnorderedIndexer == nil {
-				v := slice.Move(buffer) // Move the buffer to the next function
-				return v, true          // Forwards the an array of indexers, including the nil one to the next function
+		func(idxer *EthIndexer, buffer *async.Slice[*EthIndexer]) ([]*EthIndexer, bool) {
+			if buffer.Append(idxer); idxer.UnorderedIndexer == nil {
+				return buffer.MoveToSlice(), true // Forwards the an array of indexers, including the nil one to the next function
 			}
 
 			pairs := idxer.UnorderedIndexer.Values()
@@ -71,16 +70,14 @@ func NewAsyncWriter(ethStore *EthDataStore, version int64) *AsyncWriter {
 		},
 
 		// This function actually writes the data to the db
-		func(idxer *EthIndexer, buffer *[]*EthIndexer) ([]*EthIndexer, bool) {
-			if *buffer = append(*buffer, idxer); idxer.UnorderedIndexer != nil {
+		func(idxer *EthIndexer, buffer *async.Slice[*EthIndexer]) ([]*EthIndexer, bool) {
+			if buffer.Append(idxer); idxer.UnorderedIndexer != nil {
 				return nil, false // Forwards the an array of indexers, including the nil one to the next function
 			}
 
 			// Write to the db
-			mergedIdxer := new(EthIndexer).Merge(*buffer) // Merge all the indexers together to commit to the db at once.
+			mergedIdxer := new(EthIndexer).Merge(buffer.MoveToSlice()) // Merge all the indexers together to commit to the db at once.
 			ethStore.WriteToEthStorage(uint64(mergedIdxer.Version), mergedIdxer.dirtyAccounts)
-
-			*buffer = (*buffer)[:0] // Clear the buffer
 			return nil, false
 		},
 	)

@@ -19,7 +19,6 @@ package ccstorage
 
 import (
 	async "github.com/arcology-network/common-lib/async"
-	slice "github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/storage-committer/univalue"
 )
 
@@ -40,26 +39,23 @@ func NewAsyncWriter(store *DataStore, version int64) *AsyncWriter {
 		4,
 		10,
 		// Buffer the indexers in the pipeline, until an empty indexer is received.
-		func(idxer *CCIndexer, buffer *[]*CCIndexer) ([]*CCIndexer, bool) {
-			*buffer = append(*buffer, idxer)
-			if idxer == nil {
-				return slice.Move(buffer), true
+		func(idxer *CCIndexer, buffer *async.Slice[*CCIndexer]) ([]*CCIndexer, bool) {
+			if buffer.Append(idxer); idxer != nil {
+				return nil, false
 			}
-			return nil, false
+			return buffer.MoveToSlice(), true
 		},
 
 		// db and cache writer
-		func(idxer *CCIndexer, buffer *[]*CCIndexer) ([]*CCIndexer, bool) {
-			if idxer != nil {
-				*buffer = append(*buffer, idxer)
+		func(idxer *CCIndexer, buffer *async.Slice[*CCIndexer]) ([]*CCIndexer, bool) {
+			if buffer.Append(idxer); idxer != nil {
 				return nil, false
 			}
-			mergedIdxer := new(CCIndexer).Merge(*buffer)
 
+			mergedIdxer := new(CCIndexer).Merge(buffer.MoveToSlice())
 			err := store.db.BatchSet(mergedIdxer.keyBuffer, mergedIdxer.encodedBuffer)
 			store.cache.BatchSet(mergedIdxer.keyBuffer, mergedIdxer.valueBuffer) // update the local cache
 
-			*buffer = (*buffer)[:0]
 			return nil, err == nil
 		},
 	)
