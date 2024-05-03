@@ -37,7 +37,9 @@ func NewAsyncWriter(writeCache *WriteCache, version int64) *AsyncWriter {
 		10,
 		// db writer
 		func(idxer *WriteCacheIndexer, _ *async.Slice[*WriteCacheIndexer]) ([]*WriteCacheIndexer, bool) {
-			writeCache.Insert(idxer.buffer) // update the write cache right away as soon as the indexer is received
+			for _, tran := range idxer.buffer { // Update the cache right away as soon as the indexer is received.
+				writeCache.kvDict[*tran.GetPath()] = tran
+			}
 			return nil, true
 		},
 	)

@@ -74,18 +74,18 @@ func TestMultiBatchPrecommitWithSingleCommit(t *testing.T) {
 		t.Error(err)
 	}
 
-	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
-	committer.Import(acctTrans)
-	committer.Precommit([]uint32{1})
-	// committer.Commit(111110)
-	writeCache.Clear()
-
 	// second generation modify ele1and ele2
 	v = commutative.NewUint64Delta(60)
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele1", v); err != nil {
 		t.Error(err)
 	}
+
+	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(acctTrans)
+	committer.Precommit([]uint32{1})
+	// committer.Commit(111110)
+	// writeCache.Clear()
 
 	v = commutative.NewUint64Delta(90)
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele2", v); err != nil {
@@ -109,7 +109,6 @@ func TestMultiBatchPrecommitWithSingleCommit(t *testing.T) {
 	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele2", new(commutative.Uint64)); v == nil || v.(uint64) != 90 {
 		t.Error("Error: The path should exist")
 	}
-
 }
 
 func TestAddAndDelete(t *testing.T) {

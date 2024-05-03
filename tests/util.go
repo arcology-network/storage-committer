@@ -161,3 +161,16 @@ func FlushToStore(sstore *statestore.StateStore) interfaces.ReadOnlyStore {
 	sstore.Clear()
 	return sstore
 }
+
+// It's mainly used for TESTING purpose.
+func FlushGeneration(sstore *statestore.StateStore) []uint32 {
+	acctTrans := univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	txs := slice.Transform(acctTrans, func(_ int, v *univalue.Univalue) uint32 {
+		return v.GetTx()
+	})
+
+	committer := stgcommitter.NewStateCommitter(sstore, sstore.GetWriters())
+	committer.Import(acctTrans)
+	committer.Precommit(txs) // Write all the transitions to the store
+	return txs
+}

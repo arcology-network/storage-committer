@@ -266,6 +266,7 @@ func (this *WriteCache) Export(preprocs ...func([]*univalue.Univalue) []*univalu
 	return buffer
 }
 
+// For the testing purpose, export the content of the writecache to two arrays of univalues and filter.
 func (this *WriteCache) ExportAll(preprocs ...func([]*univalue.Univalue) []*univalue.Univalue) ([]*univalue.Univalue, []*univalue.Univalue) {
 	all := this.Export()
 	// univalue.Univalues(all).Print()
