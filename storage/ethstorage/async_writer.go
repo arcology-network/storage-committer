@@ -46,7 +46,7 @@ func NewAsyncWriter(ethStore *EthDataStore, version int64) *AsyncWriter {
 			}
 
 			pairs := idxer.UnorderedIndexer.Values()
-			idxer.dirtyAccounts = associative.Pairs[*Account, []*univalue.Univalue](pairs).Firsts()
+			idxer.dirtyAccounts = (associative.Pairs[*Account, []*univalue.Univalue])(pairs).Firsts()
 
 			// Need to check if this is necessary or could be moved to the import phase
 			slice.Foreach(idxer.dirtyAccounts, func(_ int, pair **Account) {
