@@ -344,8 +344,3 @@ func (this *EthDataStore) GetRootHash(blockNum uint64) [32]byte {
 	defer this.lock.RUnlock()
 	return this.rootDict[blockNum]
 }
-
-// Calculate the root hash for the world trie
-func (this *EthDataStore) LatestWorldTrieRoot() [32]byte {
-	return this.worldStateTrie.Hash() // Store the root hash for the block
-}
