@@ -15,12 +15,14 @@ type Univalues []*Univalue
 
 func (this Univalues) To(filter interface{}) Univalues {
 	fun := filter.(interface{ From(*Univalue) *Univalue })
-	// slice.ParallelForeach(this, 8, func(i int, _ **Univalue) {
-	// 	this[i] = fun.From(this[i])
-	// })
 	for i, v := range this {
 		this[i] = fun.From(v)
 	}
+
+	slice.ParallelForeach(this, 8, func(i int, _ **Univalue) {
+		this[i] = fun.From(this[i])
+	})
+
 	slice.Remove((*[]*Univalue)(&this), nil)
 	return this
 }
@@ -91,7 +93,10 @@ func (this Univalues) Clone() Univalues {
 
 func (this Univalues) SortByKey() Univalues {
 	sort.Slice(this, func(i, j int) bool {
-		return (*this[i].GetPath()) < (*this[j].GetPath())
+		if *this[i].GetPath() == *this[j].GetPath() {
+			return (*this[i].GetPath()) < (*this[j].GetPath())
+		}
+		return this[i].GetTx() < this[j].GetTx()
 	})
 	return this
 }

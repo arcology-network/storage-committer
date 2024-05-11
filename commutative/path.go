@@ -34,17 +34,11 @@ type Path struct {
 	preloaded *orderedset.OrderedSet[string]
 }
 
-func NewPath() intf.Type {
+func NewPath(newPaths ...string) intf.Type {
 	this := &Path{
-		DeltaSet: deltaset.NewDeltaSet("", 1000, nil),
-	}
-	return this
-}
-
-func InitNewPaths(newPaths []string) *Path {
-	return &Path{
 		DeltaSet: deltaset.NewDeltaSet("", 1000, nil, newPaths...),
 	}
+	return this
 }
 
 func (this *Path) Length() int                                                { return int(this.DeltaSet.NonNilCount()) }
