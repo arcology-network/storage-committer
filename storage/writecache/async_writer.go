@@ -51,14 +51,21 @@ func NewAsyncWriter(cache *WriteCache, version int64) *AsyncWriter {
 
 // write cache updates itself every generation. It doesn't need to write to the database.
 func (this *AsyncWriter) Precommit() {
-	this.WriteCacheIndexer.Finalize()          // Remove the nil transitions
-	this.Pipeline.Push(this.WriteCacheIndexer) // push the indexer to the processor stream
-	this.Pipeline.Await()
+	this.WriteCacheIndexer.Finalize() // Remove the nil transitions
+	// this.Pipeline.Push(this.WriteCacheIndexer) // push the indexer to the processor stream
+	// this.Pipeline.Await()
+
+	for i := range this.WriteCacheIndexer.buffer {
+		this.WriteCache.kvDict[*this.WriteCacheIndexer.buffer[i].GetPath()] = this.WriteCacheIndexer.buffer[i]
+	}
+
 	this.WriteCacheIndexer = NewWriteCacheIndexer(nil, -1)
+
 }
 
 // The generation cache is transient and will clear itself when all the transitions are committed to
 // the database.
 func (this *AsyncWriter) Commit(_ uint64) {
 	this.WriteCache.Clear()
+	this.WriteCacheIndexer.buffer = this.WriteCacheIndexer.buffer[:0]
 }
