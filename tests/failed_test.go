@@ -32,6 +32,85 @@ import (
 	univalue "github.com/arcology-network/storage-committer/univalue"
 )
 
+func TestMultiBatchPrecommitWithSingleCommit(t *testing.T) {
+	store := chooseDataStore()
+	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
+	writeCache := sstore.WriteCache
+
+	alice := AliceAccount()
+	if _, err := adaptorcommon.CreateNewAccount(1, alice, writeCache); err != nil { // NewAccount account structure {
+		t.Error(err)
+	}
+
+	v := commutative.NewBoundedUint64(0, 100)
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele0", v); err != nil {
+		t.Error(err)
+	}
+
+	v = commutative.NewBoundedUint64(0, 100)
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele1", v); err != nil {
+		t.Error(err)
+	}
+
+	v = commutative.NewBoundedUint64(0, 100)
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele2", v); err != nil {
+		t.Error(err)
+	}
+
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(acctTrans)
+	committer.Precommit([]uint32{1})
+	// committer.Commit(111110)
+
+	// First generation modify ele0 and ele1
+	v = commutative.NewUint64Delta(11)
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele0", v); err != nil {
+		t.Error(err)
+	}
+
+	v = commutative.NewUint64Delta(22)
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele1", v); err != nil {
+		t.Error(err)
+	}
+
+	// second generation modify ele1and ele2
+	v = commutative.NewUint64Delta(60)
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele1", v); err != nil {
+		t.Error(err)
+	}
+
+	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(acctTrans)
+	committer.Precommit([]uint32{1})
+	// committer.Commit(111110)
+	// writeCache.Clear()
+
+	v = commutative.NewUint64Delta(90)
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele2", v); err != nil {
+		t.Error(err)
+	}
+
+	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(acctTrans)
+	committer.Precommit([]uint32{1})
+	committer.Commit(111110)
+
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele0", new(commutative.Uint64)); v == nil || v.(uint64) != 11 {
+		t.Error("Error: The path should exist")
+	}
+
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele1", new(commutative.Uint64)); v == nil || v.(uint64) != 82 {
+		t.Error("Error: The path should exist")
+	}
+
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele2", new(commutative.Uint64)); v == nil || v.(uint64) != 90 {
+		t.Error("Error: The path should exist")
+	}
+}
+
 func TestAddAndDelete(t *testing.T) {
 	store := chooseDataStore()
 	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))

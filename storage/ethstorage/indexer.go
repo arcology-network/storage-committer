@@ -72,7 +72,7 @@ func (this *EthIndexer) Finalize() {
 
 	// Remove accounts that have no transitions left after cleanning up
 	pairs := this.UnorderedIndexer.Values()
-	slice.RemoveIf(&(pairs), func(_ int, v *associative.Pair[*Account, []*univalue.Univalue]) bool { return len(v.Second) == 0 })
+	slice.RemoveIf(&pairs, func(_ int, v *associative.Pair[*Account, []*univalue.Univalue]) bool { return len(v.Second) == 0 })
 }
 
 // Merge indexers so they can be updated at once.

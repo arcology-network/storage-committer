@@ -1,6 +1,8 @@
 package ethstorage
 
 import (
+	"errors"
+
 	"github.com/arcology-network/common-lib/common"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -16,19 +18,23 @@ import (
 func commitToEthDB(trie *ethmpt.Trie, ethdb *ethmpt.Database, block uint64) (*ethmpt.Trie, error) {
 	root, nodes, err := trie.Commit(false) // Finalized the trie
 	if err != nil {
-		return nil, err
+		return nil, errors.Join(errors.New("trie.Commit:"), err)
 	}
 
 	if nodes != nil {
 		if err := ethdb.Update(root, types.EmptyRootHash, block, trienode.NewWithNodeSet(nodes), nil); err != nil { // Move to DB dirty node set
-			return nil, err
+			return nil, errors.Join(errors.New("ethdb.Update"), err)
 		}
 
 		if err := ethdb.Commit(root, false); err != nil {
-			return nil, err
+			return nil, errors.Join(errors.New("ethdb.Commit:"), err)
 		}
 	}
-	return ethmpt.NewParallel(ethmpt.TrieID(root), ethdb)
+	newTrie, err := ethmpt.NewParallel(ethmpt.TrieID(root), ethdb)
+	if err != nil {
+		err = errors.Join(errors.New("ethmpt.NewParallel:"), err)
+	}
+	return newTrie, err
 }
 
 func parallelcommitToEthDB(trie *ethmpt.Trie, ethdb *ethmpt.Database, block uint64) (*ethmpt.Trie, error) {

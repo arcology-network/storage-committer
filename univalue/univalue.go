@@ -131,8 +131,11 @@ func (this *Univalue) CopyTo(writable interface{}) {
 		writeCache.Write(this.tx, *this.GetPath(), this.value)
 	}
 
-	// here !!!
 	_, univ := writeCache.Find(this.tx, *this.GetPath(), nil)
+	if this == univ {
+		return
+	}
+
 	univ.(*Univalue).IncrementReads(this.Reads())
 	univ.(*Univalue).IncrementWrites(this.Writes())
 	univ.(*Univalue).IncrementDeltaWrites(this.DeltaWrites())

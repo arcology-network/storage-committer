@@ -94,7 +94,11 @@ func (this *WriteCache) getKeyByIdx(tx uint32, path string, idx uint64) (interfa
 	length := meta.(*deltaset.DeltaSet[string]).Length()
 
 	if meta != nil {
-		return path + meta.(*deltaset.DeltaSet[string]).KeyAt(idx), readFee, nil
+		subKey := meta.(*deltaset.DeltaSet[string]).KeyAt(idx)
+		if len(subKey) > 0 {
+			return path + meta.(*deltaset.DeltaSet[string]).KeyAt(idx), readFee, nil
+		}
+		return nil, 0, errors.New("Error: Exceeded the length of the path !!!")
 	}
 
 	return common.IfThen(meta == nil,
@@ -114,7 +118,7 @@ func (this *WriteCache) Min(tx uint32, path string, idx uint64) (interface{}, ui
 	meta, _, readFee := this.Read(tx, path, new(commutative.Path)) // read the container meta
 	if meta != nil {
 		if subkey := meta.(*deltaset.DeltaSet[string]).KeyAt(idx); len(subkey) > 0 {
-			return path + meta.(*deltaset.DeltaSet[string]).KeyAt(idx), readFee, nil
+			return path + subkey, readFee, nil
 		}
 	}
 	return "", readFee, errors.New("Error: Key not found in the path!!!")
@@ -129,7 +133,7 @@ func (this *WriteCache) Max(tx uint32, path string, idx uint64) (interface{}, ui
 	meta, _, readFee := this.Read(tx, path, new(commutative.Path)) // read the container meta
 	if meta != nil {
 		if subkey := meta.(*deltaset.DeltaSet[string]).KeyAt(idx); len(subkey) > 0 {
-			return path + meta.(*deltaset.DeltaSet[string]).KeyAt(idx), readFee, nil
+			return path + subkey, readFee, nil
 		}
 	}
 	return "", readFee, errors.New("Error: Key not found in the path!!!")
