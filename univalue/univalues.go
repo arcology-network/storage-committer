@@ -15,9 +15,9 @@ type Univalues []*Univalue
 
 func (this Univalues) To(filter interface{}) Univalues {
 	fun := filter.(interface{ From(*Univalue) *Univalue })
-	for i, v := range this {
-		this[i] = fun.From(v)
-	}
+	// for i, v := range this {
+	// 	this[i] = fun.From(v)
+	// }
 
 	slice.ParallelForeach(this, 8, func(i int, _ **Univalue) {
 		this[i] = fun.From(this[i])
