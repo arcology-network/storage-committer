@@ -113,7 +113,7 @@ func (this *Path) ApplyDelta(typedVals []intf.Type) (intf.Type, int, error) {
 	if this.preloaded != nil {
 		this.DeltaSet.SetCommitted(this.preloaded)
 	} else {
-		if idx, v := slice.FindFirstIf(typedVals, func(v intf.Type) bool { return v.(*Path).preloaded != nil }); idx >= 0 {
+		if idx, v := slice.FindFirstIf(typedVals, func(_ int, v intf.Type) bool { return v.(*Path).preloaded != nil }); idx >= 0 {
 			typedVals[idx].(*Path).preloaded = nil
 			this.preloaded = (*v).(*Path).preloaded
 		}

@@ -88,7 +88,7 @@ func (this *Accumulator) CheckMinMax(transitions []*univalue.Univalue) []*Confli
 
 // categorize transitions into two groups, one is negative, the other is positive.
 func (*Accumulator) Categorize(transitions []*univalue.Univalue) ([]*univalue.Univalue, []*univalue.Univalue) {
-	offset, _ := slice.FindFirstIf(transitions, func(v *univalue.Univalue) bool { return v.Value().(intf.Type).DeltaSign() })
+	offset, _ := slice.FindFirstIf(transitions, func(_ int, v *univalue.Univalue) bool { return v.Value().(intf.Type).DeltaSign() })
 
 	if offset < 0 {
 		offset = len(transitions)

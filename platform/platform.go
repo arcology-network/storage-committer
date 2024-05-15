@@ -39,7 +39,6 @@ func NewPlatform() *Platform {
 			"/code":               noncommutative.BYTES,
 			"/nonce":              commutative.UINT64,
 			"/balance":            commutative.UINT256,
-			"/setting/":           commutative.PATH,
 			"/func/":              commutative.PATH,
 			"/storage/":           commutative.PATH,
 			"/storage/container/": commutative.PATH,

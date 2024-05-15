@@ -28,7 +28,7 @@ func (this Univalues) To(filter interface{}) Univalues {
 }
 
 func (this Univalues) PathsContain(keyword string) Univalues {
-	return slice.CopyIf(this, func(v *Univalue) bool {
+	return slice.CopyIf(this, func(_ int, v *Univalue) bool {
 		return strings.Contains((*v.GetPath()), (keyword))
 	})
 }

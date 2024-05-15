@@ -218,25 +218,25 @@ func (this *Account) Retrive(key string, T any) (interface{}, error) {
 }
 
 func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Type) error {
-	if pos, _ := slice.FindFirstIf(keys, func(k string) bool { return len(k) == stgcommcommon.ETH10_ACCOUNT_FULL_LENGTH+1 }); pos >= 0 {
+	if pos, _ := slice.FindFirstIf(keys, func(_ int, k string) bool { return len(k) == stgcommcommon.ETH10_ACCOUNT_FULL_LENGTH+1 }); pos >= 0 {
 		slice.RemoveAt(&keys, pos)
 		slice.RemoveAt(&typedVals, pos)
 	}
 
-	if pos, _ := slice.FindFirstIf(keys, func(k string) bool { return strings.HasSuffix(k, "/nonce") }); pos >= 0 {
+	if pos, _ := slice.FindFirstIf(keys, func(_ int, k string) bool { return strings.HasSuffix(k, "/nonce") }); pos >= 0 {
 		this.Nonce = typedVals[pos].Value().(uint64)
 		slice.RemoveAt(&keys, pos)
 		slice.RemoveAt(&typedVals, pos)
 	}
 
-	if pos, _ := slice.FindFirstIf(keys, func(k string) bool { return strings.HasSuffix(k, "/balance") }); pos >= 0 {
+	if pos, _ := slice.FindFirstIf(keys, func(_ int, k string) bool { return strings.HasSuffix(k, "/balance") }); pos >= 0 {
 		balance := typedVals[pos].Value().(uint256.Int)
 		this.Balance = balance.ToBig()
 		slice.RemoveAt(&keys, pos)
 		slice.RemoveAt(&typedVals, pos)
 	}
 
-	if pos, _ := slice.FindFirstIf(keys, func(k string) bool { return strings.HasSuffix(k, "/code") }); pos >= 0 {
+	if pos, _ := slice.FindFirstIf(keys, func(_ int, k string) bool { return strings.HasSuffix(k, "/code") }); pos >= 0 {
 		this.code = typedVals[pos].Value().(codec.Bytes)
 		this.StateAccount.CodeHash = this.Hash(this.code)
 		if err := this.DB(keys[pos]).Put(this.CodeHash, this.code); err != nil { // Save to DB directly, only for code
@@ -266,7 +266,7 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Typ
 
 	// Update the storage trie with the encoded keys and values.
 	errs := this.storageTrie.ParallelUpdate(encodedKeys, encodedVals)
-	if _, err := slice.FindFirstIf(errs, func(v error) bool { return v != nil }); err != nil {
+	if _, err := slice.FindFirstIf(errs, func(_ int, v error) bool { return v != nil }); err != nil {
 		return *err
 	}
 

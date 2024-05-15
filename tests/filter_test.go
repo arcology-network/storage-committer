@@ -158,7 +158,7 @@ func TestAccessFilters(t *testing.T) {
 		t.Error("Error: A non-path commutative variable should have the initial value")
 	}
 
-	idx, v := slice.FindFirstIf(acctTrans, func(v *univalue.Univalue) bool {
+	idx, v := slice.FindFirstIf(acctTrans, func(_ int, v *univalue.Univalue) bool {
 		return strings.Index(*v.GetPath(), "/balance") == -1 && strings.Index(*v.GetPath(), "/nonce") == -1 && v.Value() != nil
 	})
 
