@@ -119,16 +119,16 @@ func commitToStateStore(sstore *statestore.StateStore, t *testing.T) {
 }
 
 func TestCommitToStatStore(t *testing.T) {
-	// commitToStateStore(stgproxy.NewStoreProxy().EnableCache(), t) // Use cache
+	// commitToStateStore(stgproxy.NewMemDBStoreProxy().EnableCache(), t) // Use cache
 
-	sstore := statestore.NewStateStore(stgproxy.NewStoreProxy("test").EnableCache())
+	sstore := statestore.NewStateStore(stgproxy.NewMemDBStoreProxy().EnableCache())
 	// store := statestore.NewStateStore(Proxy)
 	commitToStateStore(sstore, t)
 }
 
 func TestAsyncCommitToStateStore(t *testing.T) {
 	alice := AliceAccount()
-	store := stgproxy.NewStoreProxy("test").EnableCache()
+	store := stgproxy.NewMemDBStoreProxy().EnableCache()
 	sstore := statestore.NewStateStore(store)
 	WriteCache := sstore.WriteCache
 

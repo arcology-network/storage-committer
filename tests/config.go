@@ -32,8 +32,8 @@ func chooseDataStore() interfaces.ReadOnlyStore {
 	// }
 
 	// return storage.NewParallelEthMemDataStore() // Eth trie datastore
-	// return storage.NewStoreProxy() // Eth trie datastore
-	store := stgproxy.NewStoreProxy("test")
+	// return storage.NewMemDBStoreProxy() // Eth trie datastore
+	store := stgproxy.NewMemDBStoreProxy()
 	// store.DisableCache()
 	return store
 	// return storage.NewLevelDBDataStore("/tmp")

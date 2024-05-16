@@ -35,7 +35,21 @@ type StorageProxy struct {
 	ccDataStore  *ccstg.DataStore
 }
 
-func NewStoreProxy(dbpath string) *StorageProxy {
+func NewMemDBStoreProxy() *StorageProxy {
+	proxy := &StorageProxy{
+		ethDataStore: ethstg.NewParallelEthMemDataStore(), //ethstg.NewParallelEthMemDataStore(),
+		ccDataStore: ccstg.NewDataStore(
+			policy.NewCachePolicy(0, 1), // Don't cache anything in the underlying storage, the cache is managed by the router
+			memdb.NewMemoryDB(),
+			platform.Codec{}.Encode,
+			platform.Codec{}.Decode,
+		),
+	}
+	proxy.unifiedCache = NewReadCache(proxy)
+	return proxy
+}
+
+func NewLevelDBStoreProxy(dbpath string) *StorageProxy {
 	proxy := &StorageProxy{
 		ethDataStore: ethstg.NewLevelDBDataStore(dbpath), //ethstg.NewParallelEthMemDataStore(),
 		ccDataStore: ccstg.NewDataStore(
@@ -50,18 +64,8 @@ func NewStoreProxy(dbpath string) *StorageProxy {
 }
 
 // NewStoreProxyPersistentDB creates a new storage proxy with a persistent databases
-func NewStoreProxyPersistentDBs() *StorageProxy {
-	proxy := &StorageProxy{
-		ethDataStore: ethstg.NewLevelDBDataStore("/tmp"),
-		ccDataStore: ccstg.NewDataStore(
-			policy.NewCachePolicy(0, 1), // Don't cache anything in the underlying storage, the cache is managed by the router
-			memdb.NewMemoryDB(),
-			platform.Codec{}.Encode,
-			platform.Codec{}.Decode,
-		),
-	}
-	proxy.unifiedCache = NewReadCache(proxy)
-	return proxy
+func NewTestLevelDBStoreProxy() *StorageProxy {
+	return NewLevelDBStoreProxy("/tmp")
 }
 
 func (this *StorageProxy) Cache() interface{} {
