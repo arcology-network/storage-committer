@@ -35,17 +35,23 @@ type StorageProxy struct {
 	ccDataStore  *ccstg.DataStore
 }
 
-func NewMemDBStoreProxy() *StorageProxy {
+func NewCacheOnlyStoreProxy() *StorageProxy {
 	proxy := &StorageProxy{
 		ethDataStore: ethstg.NewParallelEthMemDataStore(), //ethstg.NewParallelEthMemDataStore(),
 		ccDataStore: ccstg.NewDataStore(
 			policy.NewCachePolicy(0, 1), // Don't cache anything in the underlying storage, the cache is managed by the router
-			memdb.NewMemoryDB(),
+			nil,
 			platform.Codec{}.Encode,
 			platform.Codec{}.Decode,
 		),
 	}
 	proxy.unifiedCache = NewReadCache(proxy)
+	return proxy
+}
+
+func NewMemDBStoreProxy() *StorageProxy {
+	proxy := NewCacheOnlyStoreProxy()
+	proxy.ccDataStore.SetDB(memdb.NewMemoryDB())
 	return proxy
 }
 

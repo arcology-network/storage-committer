@@ -53,7 +53,11 @@ func NewAsyncWriter(store *DataStore, version int64) *AsyncWriter {
 			}
 
 			mergedIdxer := new(CCIndexer).Merge(buffer.MoveToSlice())
-			err := store.db.BatchSet(mergedIdxer.keyBuffer, mergedIdxer.encodedBuffer)
+			var err error
+			if store.db != nil {
+				err = store.db.BatchSet(mergedIdxer.keyBuffer, mergedIdxer.encodedBuffer)
+			}
+
 			store.cache.BatchSet(mergedIdxer.keyBuffer, mergedIdxer.valueBuffer) // update the local cache
 			return nil, err == nil
 		},

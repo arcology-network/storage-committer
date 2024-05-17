@@ -54,6 +54,9 @@ func (this *DataStore) Cache(any) interface{}                             { retu
 func (this *DataStore) Encoder(any) func(string, interface{}) []byte      { return this.encoder }
 func (this *DataStore) Decoder(any) func(string, []byte, any) interface{} { return this.decoder }
 
+func (this *DataStore) GetDB() commonintf.PersistentStorage   { return this.db }
+func (this *DataStore) SetDB(db commonintf.PersistentStorage) { this.db = db }
+
 func (this *DataStore) IfExists(key string) bool {
 	v, _ := this.Retrive(key, nil)
 	return v != nil
