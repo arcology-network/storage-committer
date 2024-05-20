@@ -29,11 +29,6 @@ func CommitterCache(sstore *statestore.StateStore, t *testing.T) {
 	committer := stgcommitter.NewStateCommitter(sstore, sstore.GetWriters())
 	writeCache := sstore.WriteCache
 
-	// alice := AliceAccount()
-	// committer := stgcommitter.NewStateCommitter(sstore, sstore.GetWriters())
-
-	// sstore := statestore.NewStateStore(sstore.Store())
-	// writeCache := sstore.WriteCache
 	alice := AliceAccount()
 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
@@ -58,6 +53,8 @@ func CommitterCache(sstore *statestore.StateStore, t *testing.T) {
 	committer = stgcommitter.NewStateCommitter(sstore, sstore.GetWriters())
 	committer.Import(acctTrans).Precommit([]uint32{1})
 	committer.Commit(2)
+	// //
+	time.Sleep(2 * time.Second)
 
 	outV, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(0), new(noncommutative.Bytes))
 	if outV == nil || !bytes.Equal(outV.([]byte), []byte{1, 2, 3}) {
@@ -96,6 +93,7 @@ func CommitterCache(sstore *statestore.StateStore, t *testing.T) {
 	committer = stgcommitter.NewStateCommitter(sstore, sstore.GetWriters())
 	committer.Import(acctTrans).Precommit([]uint32{1})
 	committer.Commit(2)
+	committer.Close()
 }
 
 func TestNewCommitterWithoutCache(t *testing.T) {
@@ -145,6 +143,46 @@ func TestSize(t *testing.T) {
 	}
 
 	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(acctTrans)
+	committer.Precommit([]uint32{1})
+	committer.Commit(9999)
+
+	// time.Sleep(4 * time.Second)
+	outV, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+key, new(noncommutative.Bytes))
+	if !bytes.Equal(outV.([]byte), slice.New[byte](320, 11)) {
+		t.Error("Error: The path should exist")
+	}
+	committer.Close()
+}
+
+func TestSize2(t *testing.T) {
+	store := chooseDataStore()
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
+	key := RandomKey(0)
+	alice := AliceAccount()
+
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(acctTrans)
+	committer.Precommit([]uint32{1})
+	committer.Commit(111110)
+
+	adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache)
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele0", noncommutative.NewString("124"))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+key, noncommutative.NewBytes(slice.New[byte](320, 11)))
+
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/", new(commutative.Path)); v == nil {
+		t.Error("Error: The path should exist")
+	}
+
+	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele0", new(noncommutative.String))
+	if v == nil || v.(string) != "124" {
+		t.Error("Error: The path should exist")
+	}
+
+	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 	// committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint32{1})
@@ -154,6 +192,7 @@ func TestSize(t *testing.T) {
 	if !bytes.Equal(outV.([]byte), slice.New[byte](320, 11)) {
 		t.Error("Error: The path should exist")
 	}
+	committer.Close()
 }
 
 func TestNativeStorageReadWrite(t *testing.T) {
@@ -178,6 +217,7 @@ func TestNativeStorageReadWrite(t *testing.T) {
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(10)
 	committer.SetStore(store)
+	//
 
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000011", noncommutative.NewString("124")); err != nil {
 		t.Error(err)
@@ -192,6 +232,7 @@ func TestNativeStorageReadWrite(t *testing.T) {
 	committer.Import(transitions)
 	committer.Precommit([]uint32{1})
 	committer.Commit(10)
+	//
 
 	_0, _, _ := writeCache.Read(0, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000011", new(noncommutative.String))
 	if !reflect.DeepEqual(_0, "124") {
@@ -202,6 +243,7 @@ func TestNativeStorageReadWrite(t *testing.T) {
 	if !reflect.DeepEqual(_1, "1111") {
 		t.Error("Error: Should be empty!!", _1)
 	}
+	committer.Close()
 }
 
 func TestReadWriteAt(t *testing.T) {
@@ -269,6 +311,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(10)
 
+	//
 	committer.SetStore(store)
 
 	// create a path
@@ -316,6 +359,8 @@ func TestAddThenDeletePath2(t *testing.T) {
 	// if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000011", new(noncommutative.String)); v == nil {
 	// 	t.Error("Error: The path should exist")
 	// }
+	//
+	committer.Close()
 }
 
 func TestBasic(t *testing.T) {
@@ -333,6 +378,9 @@ func TestBasic(t *testing.T) {
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(10)
+
+	//
+	time.Sleep(2 * time.Second)
 
 	// Try to read an NONEXISTENT path, should fail !
 	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container", nil); value != nil {
@@ -405,7 +453,10 @@ func TestBasic(t *testing.T) {
 
 	committer.Precommit([]uint32{1})
 	committer.Commit(10)
+	time.Sleep(2 * time.Second)
+	committer.Close()
 
+	//
 	/* =========== The second cycle ==============*/
 	//try reading an element written in the previous cycle
 	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem-000", new(noncommutative.Int64)); value == nil {
@@ -416,6 +467,8 @@ func TestBasic(t *testing.T) {
 	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+bob+"/storage/container/elem-000", new(noncommutative.Int64)); value != nil {
 		t.Error("Error: Wrong value")
 	}
+
+	//
 }
 
 func TestCommitter(t *testing.T) {
@@ -436,6 +489,9 @@ func TestCommitter(t *testing.T) {
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(10)
+
+	//
+	// time.Sleep(2 * time.Second)
 
 	// committer.SetStore(store)
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
@@ -506,6 +562,8 @@ func TestCommitter(t *testing.T) {
 	if meta, _, _ := writeCache.Read(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/", &commutative.Path{}); meta == nil {
 		t.Error("Error: The variable has been cleared")
 	}
+	committer.Close()
+	//
 }
 
 func TestCommitter2(t *testing.T) {
@@ -524,6 +582,7 @@ func TestCommitter2(t *testing.T) {
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(10)
 
+	//
 	committer.SetStore(store)
 	// Create a new container
 	path := commutative.NewPath()
@@ -683,6 +742,8 @@ func TestCommitter2(t *testing.T) {
 			t.Error("Error: transitions don't match")
 		}
 	}
+	committer.Close()
+	//
 }
 
 func TestTransientDBv2(t *testing.T) {
@@ -708,6 +769,7 @@ func TestTransientDBv2(t *testing.T) {
 	original[0] = 99
 	fmt.Println(original)
 	fmt.Println(original, "!!!")
+	committer.Close()
 }
 
 func TestCustomCodec(t *testing.T) {
@@ -732,6 +794,7 @@ func TestCustomCodec(t *testing.T) {
 	committer.Commit(10)
 	committer.SetStore(store)
 
+	//
 	// commutative.NewU256Delta(100)
 	// writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/balance", &commutative.U256{value: 100})
 
@@ -740,6 +803,8 @@ func TestCustomCodec(t *testing.T) {
 	if value == nil || (&valueAdd).ToBig().Uint64() != 0 {
 		t.Error("Error: Wrong value", value.(*uint256.Int).ToBig().Uint64())
 	}
+	committer.Close()
+	//
 }
 
 func TestPathReadAndWriteBatchCache2(b *testing.T) {
@@ -780,10 +845,13 @@ func TestPathReadAndWriteBatchCache2(b *testing.T) {
 	committer.Precommit([]uint32{0})
 	committer.Commit(10)
 
+	//
 	if v, _, err := writeCache.Read(0, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/alice-elem-"+RandomKey(0), new(noncommutative.Int64)); v == nil ||
 		v.(int64) != int64(911) {
 		b.Error(err)
 	}
+	committer.Close()
+	//
 }
 
 func BenchmarkPathReadAndWriteBatch(b *testing.B) {
@@ -850,6 +918,7 @@ func BenchmarkPathReadAndWriteBatch(b *testing.B) {
 	committer.Commit(10)
 	fmt.Println("Commit time:", time.Since(t0))
 
+	//
 	t0 = time.Now()
 	for i := 0; i < len(keys); i++ {
 		if v, _, err := writeCache.Read(0, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/alice-elem-"+keys[i], new(noncommutative.Int64)); v == nil ||
@@ -908,6 +977,8 @@ func BenchmarkPathReadAndWriteBatch(b *testing.B) {
 		}
 	}
 	fmt.Println(" New Path Write time:", len(keys), "keys in", time.Since(t0))
+	//
+	committer.Close()
 }
 
 func TestPathReadAndWrites(b *testing.T) {
@@ -943,6 +1014,7 @@ func TestPathReadAndWrites(b *testing.T) {
 	committer.Precommit([]uint32{0})
 	committer.Commit(10)
 
+	//
 	for i := 0; i < len(keys); i++ {
 		if v, _, err := writeCache.Read(0, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/alice-elem-"+keys[i], new(noncommutative.Int64)); v == nil ||
 			v.(int64) != int64(i) {
@@ -977,6 +1049,8 @@ func TestPathReadAndWrites(b *testing.T) {
 			b.Error(err)
 		}
 	}
+	committer.Close()
+	//
 }
 
 func TestPathReadAndWritesPath(b *testing.T) {
@@ -1015,6 +1089,7 @@ func TestPathReadAndWritesPath(b *testing.T) {
 	committer.Precommit([]uint32{0})
 	committer.Commit(10)
 
+	//
 	// writeCache = eucache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	if typedv, _, _ := writeCache.Read(0, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", new(commutative.Path)); typedv == nil {
 		b.Error("Error: Failed to read the Path !")
@@ -1039,6 +1114,8 @@ func TestPathReadAndWritesPath(b *testing.T) {
 	if typedv == nil || typedv.(*deltaset.DeltaSet[string]).Length() != 3 {
 		b.Error("Error: Failed to read the key !", typedv.(*deltaset.DeltaSet[string]).Length())
 	}
+	committer.Close()
+	//
 }
 
 func TestEthDataStoreAddDeleteRead(t *testing.T) {
@@ -1061,6 +1138,7 @@ func TestEthDataStoreAddDeleteRead(t *testing.T) {
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(10)
 
+	//
 	committer.SetStore(store)
 	// create a path
 
@@ -1088,6 +1166,8 @@ func TestEthDataStoreAddDeleteRead(t *testing.T) {
 		keys[1] != "elem-001" {
 		t.Error("not found")
 	}
+	committer.Close()
+	//
 }
 
 func TestPathMultiBatch(b *testing.T) {
@@ -1104,6 +1184,7 @@ func TestPathMultiBatch(b *testing.T) {
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(10)
 
+	//
 	alice := AliceAccount()
 	keys := RandomKeys(0, 5)
 	for i := 0; i < len(keys); i++ {
@@ -1118,6 +1199,7 @@ func TestPathMultiBatch(b *testing.T) {
 	committer.Precommit([]uint32{0})
 	committer.Commit(10)
 
+	//
 	for i := 0; i < len(keys); i++ {
 		if v, _, err := writeCache.Read(0, "blcc://eth1.0/account/"+alice+"/storage/container/"+keys[i], new(noncommutative.Int64)); v == nil ||
 			v.(int64) != int64(i) {
@@ -1143,6 +1225,7 @@ func TestPathMultiBatch(b *testing.T) {
 	committer.Precommit([]uint32{0})
 	committer.Commit(10)
 
+	//
 	for i, k := range keys {
 		if v, _, err := writeCache.Read(0, "blcc://eth1.0/account/"+alice+"/storage/container/"+k, new(noncommutative.Int64)); v == nil ||
 			v.(int64) != int64(i) {
@@ -1161,5 +1244,6 @@ func TestPathMultiBatch(b *testing.T) {
 	if v == nil || (v.(*deltaset.DeltaSet[string]).Length()) != 7 {
 		b.Error(err, v.(*deltaset.DeltaSet[string]).Length())
 	}
-
+	//
+	committer.Close()
 }

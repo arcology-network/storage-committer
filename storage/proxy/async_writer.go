@@ -34,28 +34,25 @@ func NewAsyncWriter(cache *ReadCache, version int64) *AsyncWriter {
 	idxer := NewCacheIndexer(cache, version)
 	pipe := async.NewPipeline(
 		"object cache",
-		4,
+		14,
 		10,
-		func(idxer *CacheIndexer, buffer *async.Slice[*CacheIndexer]) ([]*CacheIndexer, bool) {
-			// *buffer = append(*buffer, idxer) // Buffer the indexers until the final one is received
-			buffer.Append(idxer)
-			if idxer.Version < 0 {
-				return nil, false
+		func(idxer *CacheIndexer, buffer *async.Slice[*CacheIndexer]) ([]*CacheIndexer, bool, bool) {
+			if buffer.Append(idxer); idxer.Version < 0 {
+				return nil, false, false
 			}
-			v := buffer.MoveToSlice()
-			return v, true
+			return buffer.MoveToSlice(), true, true
 		},
 		// Merge the indexers and update the cache at once.
-		func(idxer *CacheIndexer, buffer *async.Slice[*CacheIndexer]) ([]*CacheIndexer, bool) {
+		func(idxer *CacheIndexer, buffer *async.Slice[*CacheIndexer]) ([]*CacheIndexer, bool, bool) {
 			if idxer.Version < 0 {
 				buffer.Append(idxer)
-				return nil, false
+				return nil, false, false
 			}
 
 			mergedIdxer := new(CacheIndexer).Merge(buffer.MoveToSlice()) // Merge indexers
 			cache.BatchSet(mergedIdxer.keys, mergedIdxer.values)         // update the local cache with the new values in the indexer
-			// *buffer = (*buffer)[:0]                                      // Clear the buffer
-			return nil, false
+			buffer.Clear()                                               // Clear the buffer
+			return nil, false, true
 		},
 	)
 

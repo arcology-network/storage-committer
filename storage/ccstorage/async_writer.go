@@ -18,6 +18,8 @@
 package ccstorage
 
 import (
+	"fmt"
+
 	async "github.com/arcology-network/common-lib/async"
 	"github.com/arcology-network/storage-committer/univalue"
 )
@@ -36,20 +38,20 @@ func NewAsyncWriter(store *DataStore, version int64) *AsyncWriter {
 	// store := reader.(*DataStore)
 	pipe := async.NewPipeline(
 		"ccstorage",
-		4,
+		14,
 		10,
 		// Buffer the indexers in the pipeline, until an empty indexer is received.
-		func(idxer *CCIndexer, buffer *async.Slice[*CCIndexer]) ([]*CCIndexer, bool) {
+		func(idxer *CCIndexer, buffer *async.Slice[*CCIndexer]) ([]*CCIndexer, bool, bool) {
 			if buffer.Append(idxer); idxer != nil {
-				return nil, false
+				return nil, false, false
 			}
-			return buffer.MoveToSlice(), true
+			return buffer.MoveToSlice(), true, true
 		},
 
 		// db and cache writer
-		func(idxer *CCIndexer, buffer *async.Slice[*CCIndexer]) ([]*CCIndexer, bool) {
+		func(idxer *CCIndexer, buffer *async.Slice[*CCIndexer]) ([]*CCIndexer, bool, bool) {
 			if buffer.Append(idxer); idxer != nil {
-				return nil, false
+				return nil, false, false
 			}
 
 			mergedIdxer := new(CCIndexer).Merge(buffer.MoveToSlice())
@@ -59,7 +61,7 @@ func NewAsyncWriter(store *DataStore, version int64) *AsyncWriter {
 			}
 
 			store.cache.BatchSet(mergedIdxer.keyBuffer, mergedIdxer.valueBuffer) // update the local cache
-			return nil, err == nil
+			return nil, err == nil, true
 		},
 	)
 
@@ -87,6 +89,7 @@ func (this *AsyncWriter) Precommit() {
 func (this *AsyncWriter) Commit(_ uint64) {
 	this.Pipeline.Push(nil) // commit all th indexers to the state db
 	this.Pipeline.Await()
+	fmt.Println("Await() ends")
 }
 
 // Await commits the data to the state db.
