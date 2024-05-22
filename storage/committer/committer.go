@@ -19,9 +19,12 @@
 package statestore
 
 import (
+	"github.com/arcology-network/common-lib/common"
 	indexer "github.com/arcology-network/common-lib/storage/indexer"
 	intf "github.com/arcology-network/storage-committer/interfaces"
 	platform "github.com/arcology-network/storage-committer/platform"
+	"github.com/arcology-network/storage-committer/storage/proxy"
+	cache "github.com/arcology-network/storage-committer/storage/writecache"
 	"github.com/arcology-network/storage-committer/univalue"
 
 	mapi "github.com/arcology-network/common-lib/exp/map"
@@ -82,7 +85,7 @@ func (this *StateCommitter) Import(transitions []*univalue.Univalue) *StateCommi
 }
 
 // Finalize finalizes the transitions in the StateCommitter.
-func (this *StateCommitter) Whitelist(txs []uint32) *StateCommitter {
+func (this *StateCommitter) whitelist(txs []uint32) *StateCommitter {
 	if len(txs) == 0 {
 		return this
 	}
@@ -98,11 +101,9 @@ func (this *StateCommitter) Whitelist(txs []uint32) *StateCommitter {
 	return this
 }
 
-// Commit commits the transitions in the StateCommitter.
-// 1. For the block write cache, it commits the transitions to the cache.
-// 2. For the eth storage, it updates the tries without committing the transitions to the DB
-func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
-	this.Whitelist(txs) // Mark the transitions that are not in the whitelist
+// Commit commits the transitions to different stores.
+func (this *StateCommitter) Finalize(txs []uint32) {
+	this.whitelist(txs) // Mark the transitions that are not in the whitelist
 
 	// Finalize all the transitions by merging the transitions
 	// for both the ETH storage and the concurrent container transitions
@@ -112,34 +113,63 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 			DeltaSequence(*v).Finalize(this.readonlyStore) // Finalize the transitions and flag the merged ones.
 		}
 	})
-
-	for _, writer := range this.writers {
-		writer.Precommit()
-	}
-
 	this.byPath.Clear()
 	this.byTxID.Clear()
+}
+
+// Commit commits the transitions in the StateCommitter.
+// 1. For the block write cache, it commits the transitions to the cache.
+// 2. For the eth storage, it updates the tries without committing the transitions to the DB
+func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
+	this.Finalize(txs)
+	this.SyncPrecommit()
+	this.AsyncPrecommit()
 	return [32]byte{}
 }
 
-// Commit commits the transitions to different stores.
-func (this *StateCommitter) Commit(blockNum uint64, filters ...func(intf.AsyncWriter[*univalue.Univalue]) bool) *StateCommitter {
-	// for _, writer := range this.writers {
-	// 	writer.Commit(blockNum)
-	// }
+// Only the global write cache needs to be synchronized before the next precommit or commit.
+func (this *StateCommitter) SyncPrecommit() {
+	for _, writer := range this.writers {
+		if common.IsType[*cache.WriteCache](writer) {
+			writer.Precommit()
+		}
+	}
+}
 
+// Only the global write cache needs to be synchronized before the next precommit or commit.
+func (this *StateCommitter) AsyncPrecommit() {
+	for _, writer := range this.writers {
+		if !common.IsType[*cache.WriteCache](writer) {
+			writer.Precommit()
+		}
+	}
+}
+
+// Commit commits the transitions to different stores.
+func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
+	this.SyncCommit(blockNum)
+	this.AsyncCommit(blockNum)
+	return this
+}
+
+// Only the global write cache needs to be synchronized before the next precommit.
+func (this *StateCommitter) SyncCommit(blockNum uint64) {
 	slice.ParallelForeach(this.writers, len(this.writers),
 		func(_ int, writer *intf.AsyncWriter[*univalue.Univalue]) {
-			if len(filters) == 0 || filters[0](*writer) {
+			if common.IsType[*proxy.ObjectCache](writer) || common.IsType[*cache.WriteCache](writer) {
 				(*writer).Commit(blockNum)
 				return
 			}
 		})
-	return this
 }
 
-func (this *StateCommitter) Close() {
-	for _, writer := range this.writers {
-		writer.Close()
-	}
+// Only the global write cache needs to be synchronized before the next precommit.
+func (this *StateCommitter) AsyncCommit(blockNum uint64) {
+	slice.ParallelForeach(this.writers, len(this.writers),
+		func(_ int, writer *intf.AsyncWriter[*univalue.Univalue]) {
+			if !common.IsType[*proxy.ObjectCache](writer) && !common.IsType[*cache.WriteCache](writer) {
+				(*writer).Commit(blockNum)
+				return
+			}
+		})
 }

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/arcology-network/common-lib/codec"
-	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
@@ -16,7 +15,6 @@ import (
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/commutative"
 	"github.com/arcology-network/storage-committer/interfaces"
-	intf "github.com/arcology-network/storage-committer/interfaces"
 	"github.com/arcology-network/storage-committer/noncommutative"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	"github.com/arcology-network/storage-committer/storage/proxy"
@@ -57,17 +55,7 @@ func CommitterCache(sstore *statestore.StateStore, t *testing.T) {
 	// committer.Commit(2)
 
 	// Commit to the Object cache
-	committer.Commit(2, func(writer intf.AsyncWriter[*univalue.Univalue]) bool {
-		return common.IsType[*proxy.ObjectCache](writer)
-	})
-
-	// Commit to the Other storages
-	committer.Commit(2, func(writer intf.AsyncWriter[*univalue.Univalue]) bool {
-		return !common.IsType[*proxy.ObjectCache](writer)
-	})
-
-	// //
-	time.Sleep(2 * time.Second)
+	committer.Commit(2)
 
 	outV, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(0), new(noncommutative.Bytes))
 	if outV == nil || !bytes.Equal(outV.([]byte), []byte{1, 2, 3}) {
@@ -110,27 +98,17 @@ func CommitterCache(sstore *statestore.StateStore, t *testing.T) {
 
 	committer.Import(acctTrans).Precommit([]uint32{1})
 
-	// Commit to the Object cache
-	committer.Commit(2, func(writer intf.AsyncWriter[*univalue.Univalue]) bool {
-		return common.IsType[*proxy.ObjectCache](writer)
-	})
-
 	// Commit to the Other storages
-	committer.Commit(2, func(writer intf.AsyncWriter[*univalue.Univalue]) bool {
-		return !common.IsType[*proxy.ObjectCache](writer)
-	})
-
 	committer.Commit(2)
-	// committer.Close()
 }
 
 func TestNewCommitterWithoutCache(t *testing.T) {
-	// store := chooseDataStore()
-	// sstore := statestore.NewStateStore(store.(*proxy.StorageProxy).DisableCache())
-	// CommitterCache(sstore, t) // Use cache
-
 	store := chooseDataStore()
-	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy).DisableCache())
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy).EnableCache())
+	CommitterCache(sstore, t) // Use cache
+
+	store = chooseDataStore()
+	sstore = statestore.NewStateStore(store.(*proxy.StorageProxy).DisableCache())
 	CommitterCache(sstore, t) // Don't use cache
 }
 
@@ -181,7 +159,7 @@ func TestSize(t *testing.T) {
 	if !bytes.Equal(outV.([]byte), slice.New[byte](320, 11)) {
 		t.Error("Error: The path should exist")
 	}
-	committer.Close()
+
 }
 
 func TestSize2(t *testing.T) {
@@ -220,7 +198,7 @@ func TestSize2(t *testing.T) {
 	if !bytes.Equal(outV.([]byte), slice.New[byte](320, 11)) {
 		t.Error("Error: The path should exist")
 	}
-	committer.Close()
+
 }
 
 func TestNativeStorageReadWrite(t *testing.T) {
@@ -271,7 +249,7 @@ func TestNativeStorageReadWrite(t *testing.T) {
 	if !reflect.DeepEqual(_1, "1111") {
 		t.Error("Error: Should be empty!!", _1)
 	}
-	committer.Close()
+
 }
 
 func TestReadWriteAt(t *testing.T) {
@@ -388,7 +366,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 	// 	t.Error("Error: The path should exist")
 	// }
 	//
-	committer.Close()
+
 }
 
 func TestBasic(t *testing.T) {
@@ -482,7 +460,6 @@ func TestBasic(t *testing.T) {
 	committer.Precommit([]uint32{1})
 	committer.Commit(10)
 	time.Sleep(2 * time.Second)
-	committer.Close()
 
 	//
 	/* =========== The second cycle ==============*/
@@ -590,7 +567,7 @@ func TestCommitter(t *testing.T) {
 	if meta, _, _ := writeCache.Read(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/", &commutative.Path{}); meta == nil {
 		t.Error("Error: The variable has been cleared")
 	}
-	committer.Close()
+
 	//
 }
 
@@ -770,7 +747,7 @@ func TestCommitter2(t *testing.T) {
 			t.Error("Error: transitions don't match")
 		}
 	}
-	committer.Close()
+
 	//
 }
 
@@ -797,7 +774,7 @@ func TestTransientDBv2(t *testing.T) {
 	original[0] = 99
 	fmt.Println(original)
 	fmt.Println(original, "!!!")
-	committer.Close()
+
 }
 
 func TestCustomCodec(t *testing.T) {
@@ -831,7 +808,7 @@ func TestCustomCodec(t *testing.T) {
 	if value == nil || (&valueAdd).ToBig().Uint64() != 0 {
 		t.Error("Error: Wrong value", value.(*uint256.Int).ToBig().Uint64())
 	}
-	committer.Close()
+
 	//
 }
 
@@ -878,7 +855,7 @@ func TestPathReadAndWriteBatchCache2(b *testing.T) {
 		v.(int64) != int64(911) {
 		b.Error(err)
 	}
-	committer.Close()
+
 	//
 }
 
@@ -1006,7 +983,7 @@ func BenchmarkPathReadAndWriteBatch(b *testing.B) {
 	}
 	fmt.Println(" New Path Write time:", len(keys), "keys in", time.Since(t0))
 	//
-	committer.Close()
+
 }
 
 func TestPathReadAndWrites(b *testing.T) {
@@ -1077,7 +1054,7 @@ func TestPathReadAndWrites(b *testing.T) {
 			b.Error(err)
 		}
 	}
-	committer.Close()
+
 	//
 }
 
@@ -1142,7 +1119,7 @@ func TestPathReadAndWritesPath(b *testing.T) {
 	if typedv == nil || typedv.(*deltaset.DeltaSet[string]).Length() != 3 {
 		b.Error("Error: Failed to read the key !", typedv.(*deltaset.DeltaSet[string]).Length())
 	}
-	committer.Close()
+
 	//
 }
 
@@ -1194,7 +1171,7 @@ func TestEthDataStoreAddDeleteRead(t *testing.T) {
 		keys[1] != "elem-001" {
 		t.Error("not found")
 	}
-	committer.Close()
+
 	//
 }
 
@@ -1273,5 +1250,5 @@ func TestPathMultiBatch(b *testing.T) {
 		b.Error(err, v.(*deltaset.DeltaSet[string]).Length())
 	}
 	//
-	committer.Close()
+
 }

@@ -17,49 +17,19 @@
 
 package proxy
 
-import (
-	async "github.com/arcology-network/common-lib/async"
-)
-
-// AsyncWriter is a struct that contains data strucuture and methods for writing data to cache asynchronously.
-// It contains a pipeline that has a list of functions executing in order. Each function consumes the output of the previous function.
+// AsyncWriter is a struct that contains data strucuture and methods for writing data to cache.
 // The indexer is used to index the input transitions as they are received, in a way that they can be committed efficiently later.
 type AsyncWriter struct {
-	*async.Pipeline[*CacheIndexer]
 	*CacheIndexer
-	store *ObjectCache
+	store  *ObjectCache
+	buffer []*CacheIndexer
 }
 
 func NewAsyncWriter(cache *ObjectCache, version int64) *AsyncWriter {
-	idxer := NewCacheIndexer(cache, version)
-	pipe := async.NewPipeline(
-		"object cache",
-		14,
-		10,
-		func(idxer *CacheIndexer, buffer *async.Slice[*CacheIndexer]) ([]*CacheIndexer, bool, bool) {
-			if buffer.Append(idxer); idxer.Version < 0 {
-				return nil, false, false
-			}
-			return buffer.MoveToSlice(), true, true
-		},
-		// Merge the indexers and update the cache at once.
-		func(idxer *CacheIndexer, buffer *async.Slice[*CacheIndexer]) ([]*CacheIndexer, bool, bool) {
-			if idxer.Version < 0 {
-				buffer.Append(idxer)
-				return nil, false, false
-			}
-
-			mergedIdxer := new(CacheIndexer).Merge(buffer.MoveToSlice()) // Merge indexers
-			cache.BatchSet(mergedIdxer.keys, mergedIdxer.values)         // update the local cache with the new values in the indexer
-			buffer.Clear()                                               // Clear the buffer
-			return nil, false, true
-		},
-	)
-
 	return &AsyncWriter{
-		Pipeline:     pipe.Start(),
-		CacheIndexer: idxer,
+		CacheIndexer: NewCacheIndexer(cache, version),
 		store:        cache,
+		buffer:       make([]*CacheIndexer, 0),
 	}
 }
 
@@ -67,13 +37,14 @@ func NewAsyncWriter(cache *ObjectCache, version int64) *AsyncWriter {
 // If there are multiple generations, this can be called multiple times before Await.
 // Each generation
 func (this *AsyncWriter) Precommit() {
-	this.CacheIndexer.Finalize()                        // Remove the nil transitions
-	this.Pipeline.Push(this.CacheIndexer)               // push the indexer to the processor stream
-	this.CacheIndexer = NewCacheIndexer(this.store, -1) // Reset the indexer with a default version number
+	this.CacheIndexer.Finalize()                         // Remove the nil transitions
+	this.buffer = append(this.buffer, this.CacheIndexer) // Append the indexer to the buffer
+	this.CacheIndexer = NewCacheIndexer(this.store, -1)  // Reset the indexer with a default version number
 }
 
 // Triggered by the block commit.
 func (this *AsyncWriter) Commit(version uint64) {
-	this.Pipeline.Push(&CacheIndexer{Version: int64(version)}) // commit all the indexers to the state db
-	this.Pipeline.Await()
+	mergedIdxer := new(CacheIndexer).Merge(this.buffer)       // Merge indexers
+	this.store.BatchSet(mergedIdxer.keys, mergedIdxer.values) // update the local cache with the new values in the indexer
+	this.buffer = make([]*CacheIndexer, 0)
 }

@@ -17,35 +17,15 @@
 
 package cache
 
-import (
-	async "github.com/arcology-network/common-lib/async"
-)
-
-// AsyncWriter is a struct that contains data strucuture and methods for writing data to cache asynchronously.
-// It contains a pipeline that has a list of functions executing in order. Each function consumes the output of the previous function.
+// AsyncWriter is a struct that contains data strucuture and methods for writing data to cache.
 // The indexer is used to index the input transitions as they are received, in a way that they can be committed efficiently later.
 type AsyncWriter struct {
-	*async.Pipeline[*WriteCacheIndexer]
 	*WriteCacheIndexer
 	*WriteCache
 }
 
 func NewAsyncWriter(writeCache *WriteCache, version int64) *AsyncWriter {
-	pipe := async.NewPipeline(
-		"WriteCache",
-		4,
-		10,
-		// db writer
-		func(idxer *WriteCacheIndexer, _ *async.Slice[*WriteCacheIndexer]) ([]*WriteCacheIndexer, bool, bool) {
-			for _, tran := range idxer.buffer { // Update the cache right away as soon as the indexer is received.
-				writeCache.kvDict[*tran.GetPath()] = tran
-			}
-			return nil, true, true
-		},
-	)
-
 	return &AsyncWriter{
-		Pipeline:          pipe.Start(),
 		WriteCacheIndexer: NewWriteCacheIndexer(nil, int64(version)),
 		WriteCache:        writeCache,
 	}
@@ -54,13 +34,9 @@ func NewAsyncWriter(writeCache *WriteCache, version int64) *AsyncWriter {
 // write cache updates itself every generation. It doesn't need to write to the database.
 func (this *AsyncWriter) Precommit() {
 	this.WriteCacheIndexer.Finalize() // Remove the nil transitions
-	// this.Pipeline.Push(this.WriteCacheIndexer) // push the indexer to the processor stream
-	// this.Pipeline.Await()
-
 	for i := range this.WriteCacheIndexer.buffer {
 		this.WriteCache.kvDict[*this.WriteCacheIndexer.buffer[i].GetPath()] = this.WriteCacheIndexer.buffer[i]
 	}
-
 	this.WriteCacheIndexer = NewWriteCacheIndexer(nil, -1)
 
 }

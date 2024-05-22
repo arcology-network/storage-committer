@@ -61,7 +61,6 @@ type AsyncWriter[T any] interface {
 	Import([]T)
 	Precommit()
 	Commit(uint64)
-	Close()
 }
 
 type ReadOnlyStore interface {
