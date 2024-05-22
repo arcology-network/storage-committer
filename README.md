@@ -23,6 +23,26 @@ The module is responsible for the following tasks.
 
 >> To support parallel updates in batch mode, similar to the EVM, the original Ethereum Trie implementation has already been parallelized through some special extensions. The `Batch Writer` in the diagram above is one of them.
 
+<h2> DB Modules </h2>
+
+The module consists of the following storage components:
+- Generation Cache: A cache that stores the clear state transitions generated from a single transaction generation.
+- Object Cache: An in-memory cache for the latest state of the blockchain.
+- Execution Storage: A storage only for the last state of the blockchain.
+- Eth storage: The Ethereum stateDB. It is mainly for generating the Merkle proof for end users and the consensus layer.
+
+<h2> Committing Sequence </h2>
+
+The generation cache needs to be flushed as soon as a batch of generation state transitions is ready. So the subsequent generation can have immediate access to the latest state. The cache is cleared after each new block is generated.
+
+The Object cache is updated after a new block is confirmed. So it has to be updated before the execution of the next block begins.
+
+if the object cache isn't a full copy of the execution storage, the cache needs to be updated with the latest state from the execution storage.
+
+
+<img align="center" height="200" src="./img/storage-seq.png">
+
+
 
 <h2> More Info  <img align="center" height="32" src="./img/info.svg">  </h2>
 

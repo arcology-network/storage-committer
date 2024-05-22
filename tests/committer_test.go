@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/arcology-network/common-lib/codec"
+	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
@@ -15,6 +16,7 @@ import (
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/commutative"
 	"github.com/arcology-network/storage-committer/interfaces"
+	intf "github.com/arcology-network/storage-committer/interfaces"
 	"github.com/arcology-network/storage-committer/noncommutative"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	"github.com/arcology-network/storage-committer/storage/proxy"
@@ -50,9 +52,20 @@ func CommitterCache(sstore *statestore.StateStore, t *testing.T) {
 	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
 	// committer.Import(acctTrans)
-	committer = stgcommitter.NewStateCommitter(sstore, sstore.GetWriters())
+	// committer = stgcommitter.NewStateCommitter(sstore, sstore.GetWriters())
 	committer.Import(acctTrans).Precommit([]uint32{1})
-	committer.Commit(2)
+	// committer.Commit(2)
+
+	// Commit to the Object cache
+	committer.Commit(2, func(writer intf.AsyncWriter[*univalue.Univalue]) bool {
+		return common.IsType[*proxy.ObjectCache](writer)
+	})
+
+	// Commit to the Other storages
+	committer.Commit(2, func(writer intf.AsyncWriter[*univalue.Univalue]) bool {
+		return !common.IsType[*proxy.ObjectCache](writer)
+	})
+
 	// //
 	time.Sleep(2 * time.Second)
 
@@ -90,10 +103,25 @@ func CommitterCache(sstore *statestore.StateStore, t *testing.T) {
 	}
 
 	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	t0 := time.Now()
 	committer = stgcommitter.NewStateCommitter(sstore, sstore.GetWriters())
+	fmt.Println("Time to create committer", time.Since(t0))
+	// new state committer slow!!! reuse faster !!!
+
 	committer.Import(acctTrans).Precommit([]uint32{1})
+
+	// Commit to the Object cache
+	committer.Commit(2, func(writer intf.AsyncWriter[*univalue.Univalue]) bool {
+		return common.IsType[*proxy.ObjectCache](writer)
+	})
+
+	// Commit to the Other storages
+	committer.Commit(2, func(writer intf.AsyncWriter[*univalue.Univalue]) bool {
+		return !common.IsType[*proxy.ObjectCache](writer)
+	})
+
 	committer.Commit(2)
-	committer.Close()
+	// committer.Close()
 }
 
 func TestNewCommitterWithoutCache(t *testing.T) {

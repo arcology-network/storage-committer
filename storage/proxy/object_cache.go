@@ -26,13 +26,13 @@ import (
 
 // ReadCache is a wrapper around cache.ReadCache with some extra methods provided
 // by the intf.Datastore interface to work with the storage-committer.
-type ReadCache struct {
+type ObjectCache struct {
 	*cache.ReadCache[string, intf.Type] // Provide Readonly interface
 	queue                               chan *associative.Pair[[]string, []intf.Type]
 }
 
-func NewReadCache(store intf.ReadOnlyStore) *ReadCache {
-	return &ReadCache{
+func NewReadCache(store intf.ReadOnlyStore) *ObjectCache {
+	return &ObjectCache{
 		cache.NewReadCache[string, intf.Type](
 			4096, // 4096 shards to avoid lock contention
 			func(v intf.Type) bool {

@@ -123,19 +123,20 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 }
 
 // Commit commits the transitions to different stores.
-func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
+func (this *StateCommitter) Commit(blockNum uint64, filters ...func(intf.AsyncWriter[*univalue.Univalue]) bool) *StateCommitter {
 	// for _, writer := range this.writers {
 	// 	writer.Commit(blockNum)
 	// }
 
 	slice.ParallelForeach(this.writers, len(this.writers),
 		func(_ int, writer *intf.AsyncWriter[*univalue.Univalue]) {
-			(*writer).Commit(blockNum)
+			if len(filters) == 0 || filters[0](*writer) {
+				(*writer).Commit(blockNum)
+				return
+			}
 		})
 	return this
 }
-
-// func (this *StateCommitter) Writers() []intf.AsyncWriter[*univalue.Univalue] { return this.writers }
 
 func (this *StateCommitter) Close() {
 	for _, writer := range this.writers {

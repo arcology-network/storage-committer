@@ -27,10 +27,10 @@ import (
 type AsyncWriter struct {
 	*async.Pipeline[*CacheIndexer]
 	*CacheIndexer
-	store *ReadCache
+	store *ObjectCache
 }
 
-func NewAsyncWriter(cache *ReadCache, version int64) *AsyncWriter {
+func NewAsyncWriter(cache *ObjectCache, version int64) *AsyncWriter {
 	idxer := NewCacheIndexer(cache, version)
 	pipe := async.NewPipeline(
 		"object cache",

@@ -32,7 +32,7 @@ type CacheIndexer struct {
 	values  []intf.Type
 }
 
-func NewCacheIndexer(store *ReadCache, Version int64) *CacheIndexer {
+func NewCacheIndexer(store *ObjectCache, Version int64) *CacheIndexer {
 	return &CacheIndexer{
 		Version: Version,
 		buffer:  []*univalue.Univalue{},

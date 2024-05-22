@@ -30,7 +30,7 @@ import (
 )
 
 type StorageProxy struct {
-	unifiedCache *ReadCache // An object cache for the backend storage, only updated once at the end of the block.
+	unifiedCache *ObjectCache // An object cache for the backend storage, only updated once at the end of the block.
 	ethDataStore *ethstg.EthDataStore
 	ccDataStore  *ccstg.DataStore
 }
@@ -70,9 +70,9 @@ func NewLevelDBStoreProxy(dbpath string) *StorageProxy {
 }
 
 // NewStoreProxyPersistentDB creates a new storage proxy with a persistent databases
-func NewTestLevelDBStoreProxy() *StorageProxy {
-	return NewLevelDBStoreProxy("/tmp")
-}
+// func NewTestLevelDBStoreProxy() *StorageProxy {
+// 	return NewLevelDBStoreProxy("/tmp")
+// }
 
 func (this *StorageProxy) Cache() interface{} {
 	return this.unifiedCache
@@ -115,10 +115,6 @@ func (this *StorageProxy) Retrive(key string, v any) (interface{}, error) {
 	}
 	return this.ccDataStore.Retrive(key, v)
 }
-
-// Placeholders for the storage interface
-func (this *StorageProxy) Precommit([]uint32) [32]byte  { return this.ethDataStore.Root() }
-func (this *StorageProxy) Commit(blockNum uint64) error { return nil }
 
 // Get the stores that can be
 func (this *StorageProxy) GetWriters() []intf.AsyncWriter[*univalue.Univalue] {
