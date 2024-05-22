@@ -100,6 +100,7 @@ func CommitterCache(sstore *statestore.StateStore, t *testing.T) {
 
 	// Commit to the Other storages
 	committer.Commit(2)
+	committer.Commit(2)
 }
 
 func TestNewCommitterWithoutCache(t *testing.T) {

@@ -77,15 +77,17 @@ func (this *EthIndexer) Finalize() {
 
 // Merge indexers so they can be updated at once.
 func (this *EthIndexer) Merge(idxers []*EthIndexer) *EthIndexer {
-	_, maxIdxer := slice.MaxIf(idxers, func(idxer *EthIndexer) int64 { return idxer.Version })
-	this.Version = maxIdxer.Version
+	if len(idxers) > 0 {
+		_, maxIdxer := slice.MaxIf(idxers, func(idxer *EthIndexer) int64 { return idxer.Version })
+		this.Version = maxIdxer.Version
 
-	slice.RemoveIf(&idxers, func(_ int, idxer *EthIndexer) bool {
-		return (idxer.dirtyAccounts) == nil
-	})
+		slice.RemoveIf(&idxers, func(_ int, idxer *EthIndexer) bool {
+			return (idxer.dirtyAccounts) == nil
+		})
 
-	this.dirtyAccounts = slice.ConcateDo(idxers,
-		func(idxer *EthIndexer) uint64 { return uint64(len(idxer.dirtyAccounts)) },
-		func(idxer *EthIndexer) []*Account { return idxer.dirtyAccounts })
+		this.dirtyAccounts = slice.ConcateDo(idxers,
+			func(idxer *EthIndexer) uint64 { return uint64(len(idxer.dirtyAccounts)) },
+			func(idxer *EthIndexer) []*Account { return idxer.dirtyAccounts })
+	}
 	return this
 }

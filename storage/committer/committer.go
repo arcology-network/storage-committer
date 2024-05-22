@@ -156,7 +156,7 @@ func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
 func (this *StateCommitter) SyncCommit(blockNum uint64) {
 	slice.ParallelForeach(this.writers, len(this.writers),
 		func(_ int, writer *intf.AsyncWriter[*univalue.Univalue]) {
-			if common.IsType[*proxy.ObjectCache](writer) || common.IsType[*cache.WriteCache](writer) {
+			if common.IsType[*cache.WriteCache](writer) || common.IsType[*proxy.ObjectCache](writer) {
 				(*writer).Commit(blockNum)
 				return
 			}
@@ -167,7 +167,7 @@ func (this *StateCommitter) SyncCommit(blockNum uint64) {
 func (this *StateCommitter) AsyncCommit(blockNum uint64) {
 	slice.ParallelForeach(this.writers, len(this.writers),
 		func(_ int, writer *intf.AsyncWriter[*univalue.Univalue]) {
-			if !common.IsType[*proxy.ObjectCache](writer) && !common.IsType[*cache.WriteCache](writer) {
+			if !common.IsType[*cache.WriteCache](writer) && !common.IsType[*proxy.ObjectCache](writer) {
 				(*writer).Commit(blockNum)
 				return
 			}

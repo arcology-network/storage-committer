@@ -19,9 +19,7 @@ package ethstorage
 
 import (
 	"errors"
-	"fmt"
 	"runtime"
-	"time"
 
 	"github.com/arcology-network/common-lib/exp/associative"
 	"github.com/arcology-network/common-lib/exp/slice"
@@ -60,13 +58,11 @@ func (this *AsyncWriter) Precommit() {
 			return // All removed
 		}
 
-		t0 := time.Now()
 		keys, vals := univalue.Univalues((*acctTrans).Second).KVs() // Get all transitions under the same account
 		err := this.EthIndexer.dirtyAccounts[i].UpdateAccountTrie(keys, vals)
 		if err != nil {
 			this.ethStore.dbErr = errors.Join(this.ethStore.dbErr, err)
 		}
-		fmt.Println("UpdateAccountTrie ", len(keys), "in:", time.Since(t0))
 	})
 
 	this.ethStore.WriteWorldTrie(this.EthIndexer.dirtyAccounts) // Update the world trie
