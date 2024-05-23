@@ -27,9 +27,9 @@ The module consists of the following storage components:
 - **Execution Cache:** A cache that stores the clear state transitions generated from a single transaction generation.
  The generation cache needs to be flushed as soon as a batch of generation state transitions is ready. So the subsequent generation can have immediate access to the latest state. The cache is cleared after the last generation state transition batch is generated.
 
-- **Object Cache:** An in-memory cache for the latest state of the blockchain. The Object cache is updated after a new block is confirmed. If the object cache isn't a full copy of the execution storage, entries may be to cache eviction. When this happens it needs to be ensured that the update entries won't be evicted before they are flushed to the execution storage. 
+- **Object Cache:** An in-memory cache for the latest state of the blockchain. The Object cache is updated after a new block is confirmed. If the object cache isn't a full copy of the execution storage, entries may be to cache eviction. When this happens, it needs to be ensured that the updated entries won't be evicted before they are flushed to the execution storage. 
   
-- **Execution Storage:** A storage only for the last state of the blockchain.
+- **Execution Storage:** A storage only for the lastest state of the blockchain.
   
 - **Eth storage:** The Ethereum stateDB. It is mainly for generating the Merkle proof for end users and the consensus layer.
 
