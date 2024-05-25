@@ -129,20 +129,22 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 
 // Only the global write cache needs to be synchronized before the next precommit or commit.
 func (this *StateCommitter) SyncPrecommit() {
-	for _, writer := range this.writers {
-		if common.IsType[*cache.WriteCache](writer) {
-			writer.Precommit()
-		}
-	}
+	slice.ParallelForeach(this.writers, len(this.writers),
+		func(_ int, writer *intf.AsyncWriter[*univalue.Univalue]) {
+			if common.IsType[*cache.WriteCache](writer) {
+				(*writer).Precommit()
+			}
+		})
 }
 
 // Only the global write cache needs to be synchronized before the next precommit or commit.
 func (this *StateCommitter) AsyncPrecommit() {
-	for _, writer := range this.writers {
-		if !common.IsType[*cache.WriteCache](writer) {
-			writer.Precommit()
-		}
-	}
+	slice.ParallelForeach(this.writers, len(this.writers),
+		func(_ int, writer *intf.AsyncWriter[*univalue.Univalue]) {
+			if !common.IsType[*cache.WriteCache](writer) {
+				(*writer).Precommit()
+			}
+		})
 }
 
 // Commit commits the transitions to different stores.
