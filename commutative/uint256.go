@@ -1,3 +1,20 @@
+/*
+ *   Copyright (c) 2023 Arcology Network
+
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package commutative
 
 import (
@@ -7,7 +24,9 @@ import (
 
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/concurrenturl/interfaces"
+	"github.com/arcology-network/common-lib/exp/slice"
+	"github.com/arcology-network/storage-committer/interfaces"
+	intf "github.com/arcology-network/storage-committer/interfaces"
 	uint256 "github.com/holiman/uint256"
 )
 
@@ -62,6 +81,13 @@ func NewU256Delta(delta *uint256.Int, deltaPositive bool) interfaces.Type {
 	}
 }
 
+func NewU256DeltaFromU64(delta uint64, deltaPositive bool) interfaces.Type {
+	return &U256{
+		delta:         *uint256.NewInt(delta),
+		deltaPositive: deltaPositive,
+	}
+}
+
 func NewU256DeltaFromBigInt(delta *big.Int) (interface{}, bool) {
 	sign := delta.Sign()
 	deltaV, overflowed := uint256.FromBig(delta.Abs(delta))
@@ -75,6 +101,8 @@ func NewU256DeltaFromBigInt(delta *big.Int) (interface{}, bool) {
 	}, true
 }
 
+// A commutative type shouldn't have the initial value other than the type default value.
+// This function is mainly for debugging purpose.
 func (*U256) NewBoundedU256(value, delta, min, max *uint256.Int, sign bool) *U256 {
 	return &U256{
 		value:         *value,
@@ -83,6 +111,16 @@ func (*U256) NewBoundedU256(value, delta, min, max *uint256.Int, sign bool) *U25
 		max:           *max,
 		deltaPositive: sign, // positive delta by default
 	}
+}
+
+func (*U256) NewBoundedU256FromUint64(value, delta, min, max int64, sign bool) *U256 {
+	u256Value := &U256{}
+	u256Value.value.SetFromBig(big.NewInt(value))
+	u256Value.delta.SetFromBig(big.NewInt(delta))
+	u256Value.min.SetFromBig(big.NewInt(min))
+	u256Value.max.SetFromBig(big.NewInt(max))
+	u256Value.deltaPositive = sign
+	return u256Value
 }
 
 func (this *U256) New(value, delta, sign, min, max interface{}) interface{} {
@@ -105,9 +143,10 @@ func (this *U256) DeltaSign() bool    { return this.deltaPositive }
 func (this *U256) Min() interface{}   { return this.min }
 func (this *U256) Max() interface{}   { return this.max }
 
-func (this *U256) CloneDelta() interface{} { return *this.delta.Clone() }
-func (this *U256) ToAbsolute() interface{} { return this.value }
-func (this *U256) SetValue(v interface{})  { this.value = (v.(uint256.Int)) }
+func (this *U256) CloneDelta() interface{}         { return *this.delta.Clone() }
+func (this *U256) ToAbsolute() interface{}         { return this.value }
+func (this *U256) SetValue(v interface{})          { this.value = (v.(uint256.Int)) }
+func (this *U256) Preload(_ string, _ interface{}) {}
 
 func (this *U256) IsDeltaApplied() bool       { return this.delta.Eq(&U256_ZERO) }
 func (this *U256) ResetDelta()                { this.SetDelta(*U256_ZERO.Clone()) }
@@ -121,7 +160,7 @@ func (this *U256) IsSelf(key interface{}) bool                                { 
 func (this *U256) TypeID() uint8                                              { return UINT256 }
 func (this *U256) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }
 
-func (this *U256) Reset()                                 { common.Fill(this.delta[:], 0) } // reset delta}
+func (this *U256) Reset()                                 { slice.Fill(this.delta[:], 0) } // reset delta}
 func (this *U256) Hash(hasher func([]byte) []byte) []byte { return hasher(this.Encode()) }
 
 func (this *U256) Clone() interface{} {
@@ -195,10 +234,10 @@ func (this *U256) Set(newDelta interface{}, source interface{}) (interface{}, ui
 	return this, 0, 0, 1, errors.New("Error: Value out of range")
 }
 
-func (this *U256) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
-	vec := v.([]interfaces.Univalue)
-	for i := 0; i < len(vec); i++ {
-		v := vec[i].Value()
+func (this *U256) ApplyDelta(typedVals []intf.Type) (interfaces.Type, int, error) {
+	// vec := v.([]*univalue.Univalue)
+	for i, v := range typedVals {
+		// v := vec[i].Value()
 		if this == nil && v != nil { // New value
 			this = v.(*U256)
 		}
@@ -221,7 +260,7 @@ func (this *U256) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
 	newValue, _, _ := this.Get()
 	this.value = (newValue.(uint256.Int))
 	this.delta.Clear()
-	return this, len(vec), nil
+	return this, len(typedVals), nil
 }
 
 func (this *U256) Print() {

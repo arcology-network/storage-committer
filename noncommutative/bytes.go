@@ -5,8 +5,8 @@ import (
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/concurrenturl/interfaces"
-	"github.com/arcology-network/evm/rlp"
+	"github.com/arcology-network/common-lib/exp/slice"
+	intf "github.com/arcology-network/storage-committer/interfaces"
 )
 
 //type Bytes []byte
@@ -16,7 +16,7 @@ type Bytes struct {
 	value       codec.Bytes
 }
 
-func NewBytes(v []byte) interfaces.Type {
+func NewBytes(v []byte) intf.Type {
 	b := make([]byte, len(v))
 	copy(b, v)
 	return &Bytes{
@@ -41,7 +41,7 @@ func (this *Bytes) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) {
 func (this *Bytes) Clone() interface{} {
 	return &Bytes{
 		placeholder: true,
-		value:       common.Clone(this.value),
+		value:       slice.Clone(this.value),
 	}
 }
 
@@ -59,16 +59,16 @@ func (this *Bytes) DeltaSign() bool    { return true } // delta sign
 func (this *Bytes) Min() interface{}   { return nil }
 func (this *Bytes) Max() interface{}   { return nil }
 
-func (this *Bytes) CloneDelta() interface{} { return codec.Bytes(common.Clone(this.value)) }
-func (this *Bytes) SetValue(v interface{})  { this.SetDelta(v) }
+func (this *Bytes) CloneDelta() interface{}         { return codec.Bytes(slice.Clone(this.value)) }
+func (this *Bytes) SetValue(v interface{})          { this.SetDelta(v) }
+func (this *Bytes) Preload(_ string, _ interface{}) {}
 
-func (this *Bytes) IsDeltaApplied() bool       { return true }
-func (this *Bytes) ResetDelta()                { this.SetDelta(codec.Bytes([]byte{})) }
-func (this *Bytes) SetDelta(v interface{})     { copy(this.value, v.(codec.Bytes)) }
-func (this *Bytes) SetDeltaSign(v interface{}) {}
-func (this *Bytes) SetMin(v interface{})       {}
-func (this *Bytes) SetMax(v interface{})       {}
-
+func (this *Bytes) IsDeltaApplied() bool               { return true }
+func (this *Bytes) ResetDelta()                        { this.SetDelta(codec.Bytes([]byte{})) }
+func (this *Bytes) SetDelta(v interface{})             { copy(this.value, v.(codec.Bytes)) }
+func (this *Bytes) SetDeltaSign(v interface{})         {}
+func (this *Bytes) SetMin(v interface{})               {}
+func (this *Bytes) SetMax(v interface{})               {}
 func (this *Bytes) Get() (interface{}, uint32, uint32) { return []byte(this.value), 1, 0 }
 
 func (this *Bytes) New(_, delta, _, _, _ interface{}) interface{} {
@@ -87,10 +87,10 @@ func (this *Bytes) Set(value interface{}, _ interface{}) (interface{}, uint32, u
 	return this, 0, 1, 0, nil
 }
 
-func (this *Bytes) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
-	vec := v.([]interfaces.Univalue)
-	for i := 0; i < len(vec); i++ {
-		v := vec[i].Value()
+func (this *Bytes) ApplyDelta(typedVals []intf.Type) (intf.Type, int, error) {
+	// vec := v.([]*univalue.Univalue)
+	for _, v := range typedVals {
+		// v := vec[i].Value()
 		if this == nil && v != nil { // New value
 			this = v.(*Bytes)
 		}
@@ -111,23 +111,5 @@ func (this *Bytes) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
 	if this == nil {
 		return nil, 0, nil
 	}
-	return this, len(vec), nil
-}
-
-func (this *Bytes) StorageEncode() []byte {
-	buffer, err := rlp.EncodeToBytes(this.value)
-	if err != nil {
-		panic("Failed to encode bytes")
-	}
-	return buffer
-}
-
-func (this *Bytes) StorageDecode(buffer []byte) interface{} {
-	v := &Bytes{
-		placeholder: true,
-		value:       []byte{},
-	}
-
-	rlp.DecodeBytes(buffer, &v.value)
-	return v
+	return this, len(typedVals), nil
 }

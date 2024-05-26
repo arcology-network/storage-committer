@@ -1,37 +1,49 @@
+/*
+ *   Copyright (c) 2023 Arcology Network
+
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package commutative
 
 import (
 	"errors"
 
-	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	orderedset "github.com/arcology-network/common-lib/container/set"
-	"github.com/arcology-network/concurrenturl/interfaces"
+	"github.com/arcology-network/common-lib/exp/deltaset"
+	"github.com/arcology-network/common-lib/exp/orderedset"
+	"github.com/arcology-network/common-lib/exp/slice"
+	intf "github.com/arcology-network/storage-committer/interfaces"
 )
 
+// The Path type is a special commutative type that represents a path in the concurrent storage.
+// It keeps track of the all the sub paths that are added, removed or updated.
 type Path struct {
-	value *orderedset.OrderedSet // committed keys + added - removed
-	delta *PathDelta
+	*deltaset.DeltaSet[string]
+	preloaded *orderedset.OrderedSet[string]
 }
 
-func NewPath() interfaces.Type {
+func NewPath(newPaths ...string) intf.Type {
 	this := &Path{
-		value: orderedset.NewOrderedSet([]string{}),
-		delta: NewPathDelta([]string{}, []string{}),
+		DeltaSet: deltaset.NewDeltaSet("", 1000, nil, newPaths...),
 	}
 	return this
 }
 
-func InitNewPaths(newPaths []string) *Path {
-	return &Path{
-		value: orderedset.NewOrderedSet(newPaths),
-		delta: NewPathDelta([]string{}, []string{}),
-	}
-}
-
-func (this *Path) Length() int                                                { return this.value.Length() }
-func (this *Path) View() *orderedset.OrderedSet                               { return this.value }
-func (this *Path) MemSize() uint32                                            { return codec.Strings(this.value.Keys()).Size() * 2 } // Just an estimate, need to update on fly instead of calculating everytime
+func (this *Path) Length() int                                                { return int(this.DeltaSet.NonNilCount()) }
+func (this *Path) View() *deltaset.DeltaSet[string]                           { return this.DeltaSet }
+func (this *Path) MemSize() uint32                                            { return uint32(this.DeltaSet.NonNilCount()) * 32 * 2 } // Just an estimate, need to update on fly instead of calculating everytime
 func (this *Path) TypeID() uint8                                              { return PATH }
 func (this *Path) IsSelf(key interface{}) bool                                { return common.IsPath(key.(string)) }
 func (this *Path) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }
@@ -40,97 +52,96 @@ func (this *Path) IsNumeric() bool     { return false }
 func (this *Path) IsCommutative() bool { return true }
 func (this *Path) IsBounded() bool     { return true }
 
-func (this *Path) Value() interface{} { return this.value }
-func (this *Path) Delta() interface{} { return this.delta }
+func (this *Path) Value() interface{} { return this.DeltaSet.Committed() }
+func (this *Path) Delta() interface{} { return this.DeltaSet.Delta() }
 func (this *Path) DeltaSign() bool    { return true }
 func (this *Path) Min() interface{}   { return nil }
 func (this *Path) Max() interface{}   { return nil }
 
-func (this *Path) CloneDelta() interface{} { return this.delta.Clone().(*PathDelta) }
+func (this *Path) CloneDelta() interface{} { return this.DeltaSet.CloneDelta() }
 
-func (this *Path) IsDeltaApplied() bool       { return this.delta.IsEmpty() }
-func (this *Path) SetValue(v interface{})     { this.value = v.(*orderedset.OrderedSet) }
-func (this *Path) ResetDelta()                { this.SetDelta(NewPathDelta([]string{}, []string{})) }
-func (this *Path) SetDelta(v interface{})     { this.delta = v.(*PathDelta) }
+func (this *Path) IsDeltaApplied() bool       { return this.IsDirty() }
+func (this *Path) SetValue(v interface{})     { this.DeltaSet = v.(*deltaset.DeltaSet[string]) }
+func (this *Path) ResetDelta()                { this.DeltaSet.ResetDelta() }
+func (this *Path) SetDelta(v interface{})     { this.DeltaSet.SetDelta(v.(*deltaset.DeltaSet[string])) }
 func (this *Path) SetDeltaSign(v interface{}) {}
 func (this *Path) SetMin(v interface{})       {}
 func (this *Path) SetMax(v interface{})       {}
 
-func (this *Path) Clone() interface{} {
-	meta := &Path{
-		value: this.value.Clone().(*orderedset.OrderedSet),
-		delta: this.delta.Clone().(*PathDelta),
+func (this *Path) Preload(k string, arg interface{}) {
+	if this.preloaded != nil { // Already preloaded
+		return
 	}
-	return meta
+
+	store := arg.(interface {
+		Retrive(string, any) (interface{}, error)
+	})
+
+	if v, err := store.Retrive(k, new(Path)); v != nil && err == nil && v.(*Path).Committed().Length() > 0 {
+		this.preloaded = v.(*Path).Committed()
+	}
 }
 
-func (this *Path) Equal(other interface{}) bool {
-	return common.EqualIf(this.value, other.(*Path).value, func(v0, v1 *orderedset.OrderedSet) bool { return v0.Equal(v1) }, func(v *orderedset.OrderedSet) bool { return len(v.Keys()) == 0 }) &&
-		common.EqualIf(this.delta, other.(*Path).delta, func(v0, v1 *PathDelta) bool { return v0.Equal(v1) }, func(v *PathDelta) bool { return len(v.Added()) == 0 && len(v.Removed()) == 0 })
+func (this *Path) Clone() interface{} {
+	return &Path{
+		DeltaSet:  this.DeltaSet.Clone(),
+		preloaded: this.preloaded,
+	}
 }
+func (this *Path) Equal(other interface{}) bool { return this.DeltaSet.Equal(other.(*Path).DeltaSet) }
 
 func (this *Path) Get() (interface{}, uint32, uint32) {
-	return this.value, 1, common.IfThen(!this.value.Touched(), uint32(0), uint32(1))
-	// return this.value.Keys(), 1, common.IfThen(!this.value.Touched(), uint32(0), uint32(1))
+	return this.DeltaSet, 1, common.IfThen(this.DeltaSet.IsDirty(), uint32(1), uint32(0))
 }
 
 // For the codec only
 func (this *Path) New(value, delta, sign, min, max interface{}) interface{} {
-	return &Path{
-		value: common.IfThenDo1st(value != nil && value.(*orderedset.OrderedSet) != nil && len(value.(*orderedset.OrderedSet).Keys()) > 0,
-			func() *orderedset.OrderedSet { return value.(*orderedset.OrderedSet) }, orderedset.NewOrderedSet([]string{})),
-		delta: common.IfThenDo1st(delta != nil && delta.(*PathDelta) != nil && delta.(*PathDelta).Touched(),
-			func() *PathDelta { return delta.(*PathDelta) }, NewPathDelta([]string{}, []string{})),
+	deltaSet := &Path{
+		DeltaSet: this.DeltaSet.CloneDelta(),
 	}
+	return deltaSet
 }
 
-func (this *Path) ApplyDelta(v interface{}) (interfaces.Type, int, error) { // Apply the transitions to the original value
-	toAdd := this.delta.addDict.Keys() // The value should only contain committed keys
-	toRemove := this.delta.Removed()
-	univals := v.([]interfaces.Univalue)
-	for i := 0; i < len(univals); i++ {
-		if univals[i].GetPath() == nil { // Not in the whitelist
-			continue
-		}
-
-		if univals[i].Value() == nil { // Deletion
-			return nil, 0, nil
-		}
-
-		delta := univals[i].Value().(interfaces.Type).Delta().(*PathDelta)
-		toAdd = append(toAdd, delta.Added()...)
-		toRemove = append(toRemove, delta.Removed()...)
+// ApplyDelta applies all the deltas from the non-conflicting transitions to the original value and returns the new value.
+func (this *Path) ApplyDelta(typedVals []intf.Type) (intf.Type, int, error) {
+	if idx, _ := slice.FindFirst(typedVals, nil); idx >= 0 {
+		return nil, 1, nil //This is a deletion and when this is true, the number of write operations is 1.
 	}
 
-	keys := append(this.Keys(), toAdd...)
-	if len(toRemove) > 0 {
-		dict := make(map[string]bool)
-		for _, v := range toRemove {
-			dict[v] = true
+	// Due to the async nature of the importing process, the preloaded value may not be in the first element of the slice.
+	// If this is the case, we need to find the preloaded value and set it to the preloaded field of the first element.
+	if this.preloaded != nil {
+		this.DeltaSet.SetCommitted(this.preloaded)
+	} else {
+		if idx, v := slice.FindFirstIf(typedVals, func(_ int, v intf.Type) bool { return v.(*Path).preloaded != nil }); idx >= 0 {
+			typedVals[idx].(*Path).preloaded = nil
+			this.preloaded = (*v).(*Path).preloaded
 		}
-
-		common.RemoveIf(&keys, func(v string) bool {
-			_, ok := dict[v]
-			return ok
-		})
 	}
 
-	return &Path{
-		orderedset.NewOrderedSet(keys), // committed keys + added - removed
-		NewPathDelta([]string{}, []string{}),
-	}, len(univals), nil
+	deltaSets := slice.Transform(typedVals, func(_ int, v intf.Type) *deltaset.DeltaSet[string] { return v.(*Path).DeltaSet })
+	this.Commit(deltaSets...)
+	return this, len(typedVals), nil
 }
 
-// Write and afflicated operations
+// Set sets the value of the key to the given value and returns the new value, the number of keys added, the number of
+// keys removed and the number of keys updated.
 func (this *Path) Set(value interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
 	targetPath := source.([]interface{})[0].(string)
-	myPath := source.([]interface{})[1].(string)
+	containerRoot := source.([]interface{})[1].(string)
 	tx := source.([]interface{})[2].(uint32)
-	writeCache := source.([]interface{})[3].(interfaces.WriteCache)
+	writeCache := source.([]interface{})[3].(interface {
+		Write(tx uint32, key string, value interface{}) (int64, error)
+		InCache(path string) (interface{}, bool)
+	})
 
-	if common.IsPath(targetPath) && len(targetPath) == len(myPath) { // Delete or rewrite the path
+	// Delete or rewrite the path. A rewrite is generally not allowed.
+	// The path is the root of the container. It cannot be rewritten. But it can be deleted.
+	// When that happens, all the sub paths are also deleted.
+	if common.IsPath(targetPath) && len(targetPath) == len(containerRoot) {
 		if value == nil { // Delete the path and all its elements
-			for _, subpath := range this.value.Keys() { // Get all the sub paths
+			for _, subpath := range this.DeltaSet.Elements() { // Get all the committed sub paths
+				// Delete the sub path
 				writeCache.Write(tx, targetPath+subpath, nil) //FIXME: THIS EMITS SOME ERROR MESSAGEES BUT DON't SEEM TO BE HARMFUL
 			}
 			return this, 0, 1, 0, nil
@@ -138,27 +149,26 @@ func (this *Path) Set(value interface{}, source interface{}) (interface{}, uint3
 		return this, 0, 1, 0, errors.New("Error: Cannot rewrite a path!")
 	}
 
-	subkey := targetPath[len(targetPath)-(len(targetPath)-len(myPath)):] // Extract the sub key from the path
-	ok := this.value.Exists(subkey)
+	subkey := targetPath[len(targetPath)-(len(targetPath)-len(containerRoot)):] // Extract the sub key from the path
+	ok, _ := this.DeltaSet.Exists(subkey)
+
 	if (ok && value != nil) || (!ok && value == nil) {
-		return this, 1, 0, 0, nil //value update only or delete an non existent entry
+		return this, 0, 0, 0, nil //value update only or delete an non existent entry
 	}
 
 	if value == nil {
-		this.value.DeleteByKey(subkey) // Delete a key
+		// Delete an existing key
+		this.DeltaSet.Delete(subkey)
 	} else {
-		this.value.Insert(subkey)
+		// Insert a new key
+		this.DeltaSet.Insert(subkey)
 	}
-
-	preexists := (*writeCache.Cache())[targetPath].Preexist()
-	this.delta.ProcessKey(subkey, value, preexists)
 	return this, 0, 0, 1, nil
 }
 
 // data cleaning before saving to storage
 func (this *Path) Reset() {
-	this.value = orderedset.NewOrderedSet([]string{})
-	this.delta = NewPathDelta([]string{}, []string{})
+	this.DeltaSet.ResetDelta() // The committed keys are not reset.
 }
 
 func (this *Path) Hash(hasher func([]byte) []byte) []byte {
@@ -166,16 +176,18 @@ func (this *Path) Hash(hasher func([]byte) []byte) []byte {
 }
 
 // For Debug
-func (this *Path) SetSubs(keys []string)    { this.value = orderedset.NewOrderedSet(keys) }
-func (this *Path) SetAdded(keys []string)   { this.delta.addDict = orderedset.NewOrderedSet(keys) }
-func (this *Path) SetRemoved(keys []string) { this.delta.delDict = orderedset.NewOrderedSet(keys) }
+func (this *Path) SetSubPaths(keys []string)   { this.DeltaSet.InsertCommitted(keys) }
+func (this *Path) SetAdded(keys []string)      { this.DeltaSet.InsertUpdated(keys) }
+func (this *Path) InsertRemoved(keys []string) { this.DeltaSet.InsertRemoved(keys) }
 
-func (this *Path) Keys() []string {
-	return common.IfThenDo1st(this.value != nil, func() []string { return this.value.Keys() }, []string{})
+func (this *Path) Keys() []string { // Committed keys
+	return common.IfThenDo1st(this.DeltaSet.Committed() != nil, func() []string { return this.DeltaSet.Committed().Elements() }, []string{})
 }
+
 func (this *Path) Added() []string {
-	return common.IfThenDo1st(this.value != nil, func() []string { return this.delta.Added() }, []string{})
+	return common.IfThenDo1st(this.DeltaSet.Updated() != nil, func() []string { return this.DeltaSet.Updated().Elements() }, []string{})
 }
+
 func (this *Path) Removed() []string {
-	return common.IfThenDo1st(this.value != nil, func() []string { return this.delta.Removed() }, []string{})
+	return common.IfThenDo1st(this.DeltaSet.Removed() != nil, func() []string { return this.DeltaSet.Removed().Elements() }, []string{})
 }

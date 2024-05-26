@@ -1,8 +1,10 @@
-package ccurltest
+package committertest
 
 import (
-	"github.com/arcology-network/concurrenturl/interfaces"
-	storage "github.com/arcology-network/concurrenturl/storage"
+	"github.com/arcology-network/storage-committer/interfaces"
+	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
+	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
+	// trie "github.com/ethereum/go-ethereum/trie"
 )
 
 const (
@@ -11,15 +13,30 @@ const (
 )
 
 var (
-	// encoder = storage.Codec{}.Encode
-	// decoder = storage.Codec{}.Decode
+	// encoder = platform.Codec{}.Encode
+	// decoder = platform.Codec{}.Decode
 
-	encoder = storage.Rlp{}.Encode
-	decoder = storage.Rlp{}.Decode
+	encoder = ethstg.Rlp{}.Encode
+	decoder = ethstg.Rlp{}.Decode
 )
 
-func chooseDataStore() interfaces.Datastore {
-	return storage.NewParallelEthMemDataStore() // Eth trie datastore
-	// return cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(1000000, 1), cachedstorage.NewMemDB(), encoder, decoder)
-	// return cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
+func chooseDataStore() interfaces.ReadOnlyStore {
+	// ethPair := associative.Pair[intf.Indexer[*univalue.Univalue], []intf.Datastore]{
+	// 	First:  ethstg.NewIndexer(store),
+	// 	Second: []intf.Datastore{store.(*stgproxy.StorageProxy).EthStore()},
+	// }
+
+	// ccPair := associative.Pair[intf.Indexer[*univalue.Univalue], []intf.Datastore]{
+	// 	First:  ccstg.NewIndexer(store),
+	// 	Second: []intf.Datastore{store.(*stgproxy.StorageProxy).CCStore()},
+	// }
+
+	// return storage.NewParallelEthMemDataStore() // Eth trie datastore
+	// return storage.NewMemDBStoreProxy() // Eth trie datastore
+	store := stgproxy.NewMemDBStoreProxy()
+	// store.DisableCache()
+	return store
+	// return storage.NewLevelDBDataStore("/tmp")
+	// return datastore.NewDataStore( datastore.NewCachePolicy(1000000, 1), memdb.NewMemoryDB(), encoder, decoder)
+	// return storage.NewDataStore( storage.NewCachePolicy(0, 1), storage.NewMemoryDB(), encoder, decoder)
 }

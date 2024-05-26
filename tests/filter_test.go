@@ -1,18 +1,20 @@
-package ccurltest
+package committertest
 
 import (
 	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/arcology-network/common-lib/common"
-	orderedset "github.com/arcology-network/common-lib/container/set"
-	"github.com/arcology-network/common-lib/datacompression"
-	ccurl "github.com/arcology-network/concurrenturl"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
-	"github.com/arcology-network/concurrenturl/commutative"
-	indexer "github.com/arcology-network/concurrenturl/indexer"
-	"github.com/arcology-network/concurrenturl/interfaces"
+	"github.com/arcology-network/common-lib/addrcompressor"
+	deltaset "github.com/arcology-network/common-lib/exp/deltaset"
+	"github.com/arcology-network/common-lib/exp/orderedset"
+	"github.com/arcology-network/common-lib/exp/slice"
+	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
+	statestore "github.com/arcology-network/storage-committer"
+	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	"github.com/arcology-network/storage-committer/commutative"
+	"github.com/arcology-network/storage-committer/storage/proxy"
+	univalue "github.com/arcology-network/storage-committer/univalue"
 	"github.com/holiman/uint256"
 )
 
@@ -20,35 +22,43 @@ import (
 func TestTransitionFilters(t *testing.T) {
 	store := chooseDataStore()
 
-	alice := datacompression.RandomAccount()
-	bob := datacompression.RandomAccount()
+	alice := addrcompressor.RandomAccount()
+	bob := addrcompressor.RandomAccount()
 
-	url := ccurl.NewConcurrentUrl(store)
-	url.NewAccount(ccurlcommon.SYSTEM, alice)
-	url.NewAccount(ccurlcommon.SYSTEM, bob)
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
 
-	raw := url.Export(indexer.Sorter)
+	// writeCache = cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
-	acctTrans := indexer.Univalues(common.Clone(raw)).To(indexer.IPCTransition{})
+	adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache)
+	// committer.NewAccount(stgcommcommon.SYSTEM, bob)
+
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
+		t.Error(err)
+	}
+
+	raw := writeCache.Export(univalue.Sorter)
+
+	acctTrans := univalue.Univalues(slice.Clone(raw)).To(univalue.IPTransition{})
 
 	if !acctTrans[1].Value().(*commutative.U256).Equal(raw[1].Value()) {
 		t.Error("Error: Non-path commutative should have the values!!")
 	}
 
-	acctTrans[0].Value().(*commutative.Path).SetSubs([]string{"k0", "k1"})
+	acctTrans[0].Value().(*commutative.Path).SetSubPaths([]string{"k0", "k1"})
 	acctTrans[0].Value().(*commutative.Path).SetAdded([]string{"123", "456"})
-	acctTrans[0].Value().(*commutative.Path).SetRemoved([]string{"789", "116"})
+	acctTrans[0].Value().(*commutative.Path).InsertRemoved([]string{"789", "116"})
 
 	acctTrans[1].Value().(*commutative.U256).SetValue(*uint256.NewInt(111))
 	acctTrans[1].Value().(*commutative.U256).SetDelta(*uint256.NewInt(999))
 	acctTrans[1].Value().(*commutative.U256).SetMin(*uint256.NewInt(1))
 	acctTrans[1].Value().(*commutative.U256).SetMax(*uint256.NewInt(2222222))
 
-	if v := raw[0].Value().(*commutative.Path).Delta().(*commutative.PathDelta); !reflect.DeepEqual(v.Added(), []string{}) {
+	if v := raw[0].Value().(*commutative.Path).Delta().(*deltaset.DeltaSet[string]); !reflect.DeepEqual(v.Updated().Elements(), []string{}) {
 		t.Error("Error: Value altered")
 	}
 
-	if v := raw[0].Value().(*commutative.Path).Delta().(*commutative.PathDelta); !reflect.DeepEqual(v.Removed(), []string{}) {
+	if v := raw[0].Value().(*commutative.Path).Delta().(*deltaset.DeltaSet[string]); !reflect.DeepEqual(v.Removed().Elements(), []string{}) {
 		t.Error("Error: Delta altered")
 	}
 
@@ -68,18 +78,19 @@ func TestTransitionFilters(t *testing.T) {
 		t.Error("Error: Max altered")
 	}
 
-	copied := indexer.Univalues(common.Clone(acctTrans)).To(indexer.IPCTransition{})
+	copied := univalue.Univalues(slice.Clone(acctTrans)).To(univalue.IPTransition{})
 
 	// Test Path
-	if v := copied[0].Value().(*commutative.Path).Value().(*orderedset.OrderedSet); len(v.Keys()) != 0 {
+	v := copied[0].Value().(*commutative.Path).Value() // Committed
+	if v.(*orderedset.OrderedSet[string]).Length() != 0 {
 		t.Error("Error: A path commutative variable shouldn't have the initial value")
 	}
 
-	if v := copied[0].Value().(*commutative.Path).Delta().(*commutative.PathDelta); !reflect.DeepEqual(v.Added(), []string{"123", "456"}) {
+	if v := copied[0].Value().(*commutative.Path).Delta().(*deltaset.DeltaSet[string]); !reflect.DeepEqual(v.Updated().Elements(), []string{"123", "456"}) {
 		t.Error("Error: Delta altered")
 	}
 
-	if v := copied[0].Value().(*commutative.Path).Delta().(*commutative.PathDelta); !reflect.DeepEqual(v.Removed(), []string{"789", "116"}) {
+	if v := copied[0].Value().(*commutative.Path).Delta().(*deltaset.DeltaSet[string]); !reflect.DeepEqual(v.Removed().Elements(), []string{"789", "116"}) {
 		t.Error("Error: Delta altered")
 	}
 
@@ -104,25 +115,28 @@ func TestTransitionFilters(t *testing.T) {
 func TestAccessFilters(t *testing.T) {
 	store := chooseDataStore()
 
-	alice := datacompression.RandomAccount()
-	bob := datacompression.RandomAccount()
+	alice := addrcompressor.RandomAccount()
+	bob := addrcompressor.RandomAccount()
 
-	url := ccurl.NewConcurrentUrl(store)
-	url.NewAccount(ccurlcommon.SYSTEM, alice)
-	url.NewAccount(ccurlcommon.SYSTEM, bob)
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
+	adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache)
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
+		t.Error(err)
+	}
 
-	raw := url.Export(indexer.Sorter)
+	raw := writeCache.Export(univalue.Sorter)
 
-	raw[0].Value().(*commutative.Path).SetSubs([]string{"k0", "k1"})
+	raw[0].Value().(*commutative.Path).SetSubPaths([]string{"k0", "k1"})
 	raw[0].Value().(*commutative.Path).SetAdded([]string{"123", "456"})
-	raw[0].Value().(*commutative.Path).SetRemoved([]string{"789", "116"})
+	raw[0].Value().(*commutative.Path).InsertRemoved([]string{"789", "116"})
 
 	raw[1].Value().(*commutative.U256).SetValue(*uint256.NewInt(111))
 	raw[1].Value().(*commutative.U256).SetDelta(*uint256.NewInt(999))
 	raw[1].Value().(*commutative.U256).SetMin(*uint256.NewInt(1))
 	raw[1].Value().(*commutative.U256).SetMax(*uint256.NewInt(2222222))
 
-	acctTrans := indexer.Univalues(common.Clone(raw)).To(indexer.IPCAccess{})
+	acctTrans := univalue.Univalues(slice.Clone(raw)).To(univalue.IPAccess{})
 
 	if acctTrans[0].Value() != nil {
 		t.Error("Error: Value altered")
@@ -144,7 +158,7 @@ func TestAccessFilters(t *testing.T) {
 		t.Error("Error: A non-path commutative variable should have the initial value")
 	}
 
-	idx, v := common.FindFirstIf(acctTrans, func(v interfaces.Univalue) bool {
+	idx, v := slice.FindFirstIf(acctTrans, func(_ int, v *univalue.Univalue) bool {
 		return strings.Index(*v.GetPath(), "/balance") == -1 && strings.Index(*v.GetPath(), "/nonce") == -1 && v.Value() != nil
 	})
 

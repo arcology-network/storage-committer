@@ -3,7 +3,7 @@ package noncommutative
 import (
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/concurrenturl/interfaces"
+	intf "github.com/arcology-network/storage-committer/interfaces"
 )
 
 type Int64 int64
@@ -31,8 +31,9 @@ func (this *Int64) DeltaSign() bool    { return true } // delta sign
 func (this *Int64) Min() interface{}   { return nil }
 func (this *Int64) Max() interface{}   { return nil }
 
-func (this *Int64) CloneDelta() interface{} { return this.Clone() }
-func (this *Int64) SetValue(v interface{})  { this.SetDelta(v) }
+func (this *Int64) CloneDelta() interface{}         { return this.Clone() }
+func (this *Int64) SetValue(v interface{})          { this.SetDelta(v) }
+func (this *Int64) Preload(_ string, _ interface{}) {}
 
 func (this *Int64) IsDeltaApplied() bool   { return true }
 func (this *Int64) ResetDelta()            { this.SetDelta(common.New[Int64](0)) }
@@ -58,10 +59,10 @@ func (this *Int64) Set(value interface{}, source interface{}) (interface{}, uint
 	return this, 0, 1, 0, nil
 }
 
-func (this *Int64) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
-	vec := v.([]interfaces.Univalue)
-	for i := 0; i < len(vec); i++ {
-		v := vec[i].Value()
+func (this *Int64) ApplyDelta(typedVals []intf.Type) (intf.Type, int, error) {
+	// vec := v.([]*univalue.Univalue)
+	for _, v := range typedVals {
+		// v := vec[i].Value()
 		if this == nil && v != nil { // New value
 			this = v.(*Int64)
 		}
@@ -82,5 +83,5 @@ func (this *Int64) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
 	if this == nil {
 		return nil, 0, nil
 	}
-	return this, len(vec), nil
+	return this, len(typedVals), nil
 }

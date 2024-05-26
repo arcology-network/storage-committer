@@ -1,12 +1,14 @@
 package univalue
 
 import (
+	"fmt"
 	"testing"
 
-	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/common-lib/datacompression"
-	commutative "github.com/arcology-network/concurrenturl/commutative"
-	"github.com/arcology-network/concurrenturl/interfaces"
+	"github.com/arcology-network/common-lib/addrcompressor"
+	"github.com/arcology-network/common-lib/exp/deltaset"
+	"github.com/arcology-network/common-lib/exp/slice"
+	commutative "github.com/arcology-network/storage-committer/commutative"
+	intf "github.com/arcology-network/storage-committer/interfaces"
 	"github.com/holiman/uint256"
 )
 
@@ -35,9 +37,9 @@ func TestUnivalueCodecUint64(t *testing.T) {
 	bytes := in.Encode()
 	v := (&Univalue{}).Decode(bytes).(*Univalue)
 
-	unimeta := v.GetUnimeta().(*Unimeta)
-	inUnimeta := in.GetUnimeta().(*Unimeta)
-	if !(*inUnimeta).Equal(unimeta) {
+	property := v.Property
+	inProperty := in.Property
+	if !(inProperty).Equal(&property) {
 		t.Error("Error")
 	}
 
@@ -79,9 +81,16 @@ func TestUnivalueCodecU256(t *testing.T) {
 		*in.path != *v.path ||
 		in.writes != v.writes ||
 		in.deltaWrites != v.deltaWrites ||
-		in.preexists != v.preexists {
+		in.preexists != v.preexists || in.msg != v.msg {
 		t.Error("Error: mismatch after decoding")
 	}
+
+	str1 := "First string"
+	str2 := "Second string"
+
+	result := str1 + "\n" + str2
+
+	fmt.Println(result)
 }
 
 func TestUnivalueCodeMeta(t *testing.T) {
@@ -89,41 +98,42 @@ func TestUnivalueCodeMeta(t *testing.T) {
 	alice := AliceAccount()
 
 	meta := commutative.NewPath()
-	meta.(*commutative.Path).SetSubs([]string{"e-01", "e-001", "e-002", "e-002"})
+	meta.(*commutative.Path).SetSubPaths([]string{"e-01", "e-001", "e-002", "e-002"})
 	meta.(*commutative.Path).SetAdded([]string{"+01", "+001", "+002", "+002"})
-	meta.(*commutative.Path).SetRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
+	meta.(*commutative.Path).InsertRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
 
 	in := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 11, meta, nil)
 	in.reads = 1
 	in.writes = 2
 	in.deltaWrites = 3
 
-	inKeys, _, _ := in.Value().(interfaces.Type).Get()
+	inKeys, _, _ := in.Value().(intf.Type).Get()
 
 	bytes := in.Encode()
 	out := (&Univalue{}).Decode(bytes).(*Univalue)
-	outKeys, _, _ := out.Value().(interfaces.Type).Get()
+	outKeys, _, _ := out.Value().(intf.Type).Get()
 
-	if !common.EqualArray(inKeys.([]string), outKeys.([]string)) {
+	if !slice.EqualSet(inKeys.(*deltaset.DeltaSet[string]).Elements(), outKeys.(*deltaset.DeltaSet[string]).Elements()) {
 		t.Error("Error")
 	}
 }
 
-func TestUnimetaCodecUint64(t *testing.T) {
+func TestPropertyCodecUint64(t *testing.T) {
 	/* Commutative Int64 Test */
-	alice := datacompression.AliceAccount()
+	alice := addrcompressor.AliceAccount()
 
 	// meta:= commutative.NewPath()
 	u256 := commutative.NewBoundedUint64(0, 100).(*commutative.Uint64)
-	in := NewUnimeta(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, u256.TypeID(), true, false)
+	in := NewProperty(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, u256.TypeID(), true, false)
 	in.reads = 1
 	in.writes = 2
 	in.deltaWrites = 3
+	in.msg = "hello"
 
 	bytes := in.Encode()
-	out := (&Unimeta{}).Decode(bytes).(*Unimeta)
+	out := (&Property{}).Decode(bytes).(*Property)
 
-	if in == out {
+	if !in.Equal(out) {
 		t.Error("Error")
 	}
 }

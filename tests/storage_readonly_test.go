@@ -1,4 +1,4 @@
-package ccurltest
+package committertest
 
 // import (
 // 	"fmt"
@@ -6,17 +6,17 @@ package ccurltest
 // 	"testing"
 // 	"time"
 
-// 	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
-// 	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
-// 	storage "github.com/arcology-network/concurrenturl/storage"
-// 	univalue "github.com/arcology-network/concurrenturl/univalue"
+// 	storage "github.com/arcology-network/common-lib/storage"
+// 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
+// 	storage "github.com/arcology-network/storage-committer/storage/proxy"
+// 	univalue "github.com/arcology-network/storage-committer/univalue"
 // )
 
 // func TestReadonlyStorageLocal(t *testing.T) {
 // 	// Server end
-// 	persistentDB := cachedstorage.NewMemDB()
-// 	serverCachePolicy := cachedstorage.NewCachePolicy(1, 0.8)
-// 	serverDataStore := cachedstorage.NewDataStore(nil, serverCachePolicy, persistentDB, storage.Codec{}.Encode, storage.Codec{}.Decode)
+// 	persistentDB := storage.NewMemoryDB()
+// 	serverCachePolicy := storage.NewCachePolicy(1, 0.8)
+// 	serverDataStore := storage.NewDataStore( serverCachePolicy, persistentDB, platform.Codec{}.Encode, platform.Codec{}.Decode)
 
 // 	keys := []string{}
 // 	values := []interface{}{}
@@ -25,7 +25,7 @@ package ccurltest
 // 		v := univalue.NewUnivalue(uint32(i), fmt.Sprint(i), 1, 1, 2, noncommutative.NewInt64(int64(i)))
 // 		values = append(values, v)
 
-// 		persistentDB.Set(fmt.Sprint(i), storage.Codec{}.Encode(noncommutative.NewInt64(int64(i)))) // save to the DB directly
+// 		persistentDB.Set(fmt.Sprint(i), platform.Codec{}.Encode(noncommutative.NewInt64(int64(i)))) // save to the DB directly
 // 	}
 // 	serverDataStore.Precommit(keys[:4], values[:4]) // 4 in the server side cache
 // 	serverDataStore.Commit()
@@ -38,12 +38,12 @@ package ccurltest
 // 		values1 = append(values1, univalue.NewUnivalue(uint32(i), fmt.Sprint(i), 1, 1, 2, noncommutative.NewInt64(int64(i))))
 // 	}
 
-// 	placeholderEncoder := func(v interface{}) []byte { return storage.Codec{}.Encode(v) }
-// 	placeholderDecoder := func(bytes []byte) interface{} { return storage.Codec{}.Decode(bytes) }
+// 	placeholderEncoder := func(v interface{}) []byte { return platform.Codec{}.Encode(v) }
+// 	placeholderDecoder := func(bytes []byte) interface{} { return platform.Codec{}.Decode(bytes) }
 
 // 	readonlyClientProxy := storage.NewReadonlyClient("", "", nil, serverDataStore)
-// 	clientCachePolicy := cachedstorage.NewCachePolicy(1, 0.8)
-// 	clientDataStore := cachedstorage.NewDataStore(nil, clientCachePolicy, readonlyClientProxy, placeholderEncoder, placeholderDecoder)
+// 	clientCachePolicy := storage.NewCachePolicy(1, 0.8)
+// 	clientDataStore := storage.NewDataStore( clientCachePolicy, readonlyClientProxy, placeholderEncoder, placeholderDecoder)
 // 	clientDataStore.Precommit(keys1[:2], values1[:2]) // 2 in the client side cache
 // 	clientDataStore.Commit()
 
@@ -75,9 +75,9 @@ package ccurltest
 
 // func TestReadonlyStorageRemote(t *testing.T) {
 // 	// Server end
-// 	persistentDB := cachedstorage.NewMemDB()
-// 	serverCachePolicy := cachedstorage.NewCachePolicy(1, 0.8)
-// 	serverDataStore := cachedstorage.NewDataStore(nil, serverCachePolicy, persistentDB, storage.Codec{}.Encode, storage.Codec{}.Decode)
+// 	persistentDB := storage.NewMemoryDB()
+// 	serverCachePolicy := storage.NewCachePolicy(1, 0.8)
+// 	serverDataStore := storage.NewDataStore( serverCachePolicy, persistentDB, platform.Codec{}.Encode, platform.Codec{}.Decode)
 
 // 	keys := []string{}
 // 	values := []interface{}{}
@@ -85,12 +85,12 @@ package ccurltest
 // 		keys = append(keys, fmt.Sprint(i))
 // 		v := univalue.NewUnivalue(uint32(i), fmt.Sprint(i), 1, 1, 2, noncommutative.NewInt64(int64(i)))
 // 		values = append(values, v)
-// 		persistentDB.Set(fmt.Sprint(i), storage.Codec{}.Encode(noncommutative.NewInt64(int64(i)))) // save to the DB directly
+// 		persistentDB.Set(fmt.Sprint(i), platform.Codec{}.Encode(noncommutative.NewInt64(int64(i)))) // save to the DB directly
 // 	}
 // 	serverDataStore.Precommit(keys[:4], values[:4]) // 4 in the server side cache
 // 	serverDataStore.Commit()
 
-// 	server := storage.NewReadonlyServer("", storage.Codec{}.Encode, storage.Codec{}.Decode, serverDataStore)
+// 	server := storage.NewReadonlyServer("", platform.Codec{}.Encode, platform.Codec{}.Decode, serverDataStore)
 // 	go func() {
 // 		http.HandleFunc("/store", server.Receive)
 // 		http.ListenAndServe(":8090", nil)
@@ -104,12 +104,12 @@ package ccurltest
 // 		values1 = append(values1, univalue.NewUnivalue(uint32(i), fmt.Sprint(i), 1, 1, 2, noncommutative.NewInt64(int64(i))))
 // 	}
 
-// 	proxyEncoder := func(v interface{}) []byte { return storage.Codec{}.Encode(v) }
-// 	proxyDecoder := func(bytes []byte) interface{} { return storage.Codec{}.Decode(bytes) }
+// 	proxyEncoder := func(v interface{}) []byte { return platform.Codec{}.Encode(v) }
+// 	proxyDecoder := func(bytes []byte) interface{} { return platform.Codec{}.Decode(bytes) }
 
 // 	readonlyClientProxy := storage.NewReadonlyClient("http://localhost:8090", "store", nil)
-// 	clientCachePolicy := cachedstorage.NewCachePolicy(1, 0.8)
-// 	clientDataStore := cachedstorage.NewDataStore(nil, clientCachePolicy, readonlyClientProxy, proxyEncoder, proxyDecoder)
+// 	clientCachePolicy := storage.NewCachePolicy(1, 0.8)
+// 	clientDataStore := storage.NewDataStore( clientCachePolicy, readonlyClientProxy, proxyEncoder, proxyDecoder)
 // 	clientDataStore.Precommit(keys1[:2], values1[:2]) // 2 in the client side cache
 // 	clientDataStore.Commit()
 

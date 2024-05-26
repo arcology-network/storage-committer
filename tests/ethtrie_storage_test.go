@@ -1,4 +1,4 @@
-package ccurltest
+package committertest
 
 import (
 	"bytes"
@@ -9,180 +9,226 @@ import (
 	"testing"
 	"time"
 
-	cachedstorage "github.com/arcology-network/common-lib/cachedstorage"
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	orderedset "github.com/arcology-network/common-lib/container/set"
+	"github.com/arcology-network/common-lib/exp/deltaset"
+	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/common-lib/merkle"
-	ccurl "github.com/arcology-network/concurrenturl"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
-	commutative "github.com/arcology-network/concurrenturl/commutative"
-	indexer "github.com/arcology-network/concurrenturl/indexer"
-	"github.com/arcology-network/concurrenturl/interfaces"
-	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
-	storage "github.com/arcology-network/concurrenturl/storage"
-	univalue "github.com/arcology-network/concurrenturl/univalue"
-	"github.com/arcology-network/evm/core/rawdb"
-	"github.com/arcology-network/evm/core/types"
-	"github.com/arcology-network/evm/ethdb"
-	"github.com/arcology-network/evm/ethdb/memorydb"
-	"github.com/arcology-network/evm/trie"
-	ethmpt "github.com/arcology-network/evm/trie"
+	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
+	statestore "github.com/arcology-network/storage-committer"
+	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	commutative "github.com/arcology-network/storage-committer/commutative"
+	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
+	platform "github.com/arcology-network/storage-committer/platform"
+	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
+	"github.com/arcology-network/storage-committer/storage/proxy"
+	cache "github.com/arcology-network/storage-committer/storage/writecache"
+	univalue "github.com/arcology-network/storage-committer/univalue"
+	ethcommon "github.com/ethereum/go-ethereum/common"
+	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/trie"
+	ethmpt "github.com/ethereum/go-ethereum/trie"
+	"github.com/holiman/uint256"
 )
 
-func TestEthTrieBasic(t *testing.T) {
-	store := storage.NewParallelEthMemDataStore()
-	keys := []string{
-		"blcc://eth1.0/account/abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbc/storage/container/ctrn-0/",
-		"blcc://eth1.0/account/abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbc/storage/native/" + string(codec.Bytes32([32]byte{1}).Encode()),
-		"blcc://eth1.0/account/abbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbc/storage/native/" + string(codec.Bytes32([32]byte{2}).Encode()),
-	}
+func TestConcurrentDB(t *testing.T) {
+	store := chooseDataStore()
 
-	vals := []interface{}{
-		univalue.NewUnivalue(0, "", 0, 0, 0, commutative.NewBoundedUint64(1, 111), nil),
-		univalue.NewUnivalue(0, "", 0, 0, 0, commutative.InitNewPaths([]string{"ctrn-0"}), nil),
-		univalue.NewUnivalue(0, "", 0, 0, 0, noncommutative.NewInt64(199), nil),
-	}
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
 
-	store.Precommit(keys, vals)
-
-	v, err := store.Retrive(keys[0], new(commutative.Uint64))
-	if v == nil {
-		t.Error(err)
-	}
-
-	if v == nil || !vals[0].(interfaces.Univalue).Value().(interfaces.Type).Equal(v) {
-		t.Error("Expeced :", vals[0].(interfaces.Univalue).Value().(interfaces.Type))
-		t.Error("Actual; :", v)
-	}
-
-	v, err = store.Retrive(keys[1], new(commutative.Path))
-	if v == nil {
-		t.Error(err)
-	}
-
-	if v == nil || !vals[1].(interfaces.Univalue).Value().(interfaces.Type).Equal(v) {
-		t.Error("Expeced :", vals[0].(interfaces.Univalue).Value().(interfaces.Type))
-		t.Error("Actual; :", v)
-	}
-
-	v, err = store.Retrive(keys[2], new(noncommutative.Int64))
-	if v == nil {
-		t.Error(err)
-	}
-
-	if v == nil || !vals[2].(interfaces.Univalue).Value().(interfaces.Type).Equal(v) {
-		t.Error("Expeced :", vals[0].(interfaces.Univalue).Value().(interfaces.Type))
-		t.Error("Actual; :", v)
-	}
-
-	store.Commit() // Calculate root hash
-}
-
-func TestEthTrieBasicProof(t *testing.T) {
-	store := storage.NewParallelEthMemDataStore()
-
-	aliceKeys := []string{
-		"blcc://eth1.0/account/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/storage/container/ctrn-0/",
-		"blcc://eth1.0/account/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/storage/native/" + string(codec.Bytes32([32]byte{1}).Encode()),
-		"blcc://eth1.0/account/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/storage/native/" + string(codec.Bytes32([32]byte{2}).Encode()),
-	}
-
-	vals := []interface{}{
-		univalue.NewUnivalue(0, "", 0, 0, 0, commutative.NewBoundedUint64(1, 111), nil),
-		univalue.NewUnivalue(0, "", 0, 0, 0, commutative.InitNewPaths([]string{"ctrn-0"}), nil),
-		univalue.NewUnivalue(0, "", 0, 0, 0, noncommutative.NewInt64(199), nil),
-	}
-
-	store.Precommit(aliceKeys, vals)
-	store.Commit() // Calculate root hash
-
-	proofs := memorydb.New()
-	common.FilterFirst(storage.LoadDataStore(store.EthDB(), store.Root())).Trie().Prove(store.Hash(aliceKeys[0]), 0, proofs)
-	if _, err := ethmpt.VerifyProof(store.Root(), store.Hash(aliceKeys[0]), proofs); err != nil {
-		t.Error("Actual :", err)
-	}
-
-	common.FilterFirst(storage.LoadDataStore(store.EthDB(), store.Root())).Trie().Prove(store.Hash(aliceKeys[1]), 0, proofs)
-	if _, err := ethmpt.VerifyProof(store.Root(), store.Hash(aliceKeys[1]), proofs); err != nil {
-		t.Error("Actual :", err)
-	}
-
-	common.FilterFirst(storage.LoadDataStore(store.EthDB(), store.Root())).Trie().Prove(store.Hash(aliceKeys[2]), 0, proofs)
-	if _, err := ethmpt.VerifyProof(store.Root(), store.Hash(aliceKeys[2]), proofs); err != nil {
-		t.Error("Actual :", err)
-	}
-}
-
-func TestEthWorldTrieProof(t *testing.T) {
-	url := ccurl.NewConcurrentUrl(storage.NewParallelEthMemDataStore())
 	alice := AliceAccount()
-	aliceTrans, _ := url.NewAccount(0, alice)
-	fmt.Print(aliceTrans)
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+		t.Error(err)
+	}
 
 	bob := BobAccount()
-	bobTrans, _ := url.NewAccount(0, bob)
-	fmt.Print(bobTrans)
-
-	bobTrans[0].Value().(interfaces.Type).Clone()
-
-	acctTrans := url.Export(indexer.Sorter)
-
-	url.Import(acctTrans)
-	url.Sort()
-	url.Commit([]uint32{0})
-
-	proofs := memorydb.New() // Proof DB
-	store := url.Importer().Store().(*storage.EthDataStore)
-	// store.Precommit()
-
-	// Prove the world trie path
-	store.Trie().Prove([]byte(*aliceTrans[0].GetPath()), 0, proofs)
-	if _, err := ethmpt.VerifyProof(store.Trie().Hash(), []byte(alice), proofs); err != nil {
-		t.Error("Actual :", err)
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
+		t.Error(err)
 	}
 
-	// aliceAcctFromTrie := store.GetAccountFromTrie(alice, new(ethmpt.AccessListCache))
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
+		t.Error(err)
+	}
 
-	// if len(aliceAcctData.([]byte)) == 0 {
-	// 	t.Error("Error:")
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
+		t.Error(err)
+	}
+
+	for i := 0; i < 1000; i++ {
+		hash := ethcommon.BytesToHash(codec.Uint64(uint64(i)).Encode())
+		if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/"+hexutil.Encode(hash[:]), noncommutative.NewString(string(codec.Uint64(i).Encode()))); err != nil {
+			t.Error(err)
+		}
+
+		if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/"+hexutil.Encode(hash[:]), noncommutative.NewString(string(codec.Uint64(i).Encode()))); err != nil {
+			t.Error(err)
+		}
+	}
+
+	common.ParallelExecute(
+		func() {
+			for i := 1000; i < 2000; i++ {
+				hash := ethcommon.BytesToHash(codec.Uint64(uint64(i)).Encode())
+				if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/"+hexutil.Encode(hash[:]), noncommutative.NewString("124")); err != nil {
+					t.Error(err)
+				}
+
+				if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/"+hexutil.Encode(hash[:]), noncommutative.NewString("124")); err != nil {
+					t.Error(err)
+				}
+				time.Sleep(5 * time.Millisecond)
+			}
+			// },
+			// func() {
+			for i := 0; i < 1000; i++ {
+				hash := ethcommon.BytesToHash(codec.Uint64(uint64(i)).Encode())
+				if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/"+hexutil.Encode(hash[:]), new(noncommutative.String)); v != string(codec.Uint64(i).Encode()) {
+					t.Error("Mismatch")
+				}
+
+				if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-0/"+hexutil.Encode(hash[:]), new(noncommutative.String)); v != string(codec.Uint64(i).Encode()) {
+					t.Error("Mismatch")
+				}
+			}
+
+		})
+}
+
+// TestTrieUpdates tests the updates to the trie data structure.
+// It creates multiple accounts and performs write operations on their storage.
+// It checks the correctness of the storage updates and cache management.
+func TestTrieUpdates(t *testing.T) {
+	store := chooseDataStore()
+
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
+
+	alice := AliceAccount()
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+		t.Error(err)
+	}
+
+	bob := BobAccount()
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
+		t.Error(err)
+	}
+
+	carol := CarolAccount()
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, carol, writeCache); err != nil { // NewAccount account structure {
+		t.Error(err)
+	}
+
+	trans := writeCache.Export(univalue.Sorter)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(univalue.Univalues(slice.Clone(trans)).To(univalue.IPTransition{}))
+
+	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
+	committer.Commit(10)
+
+	// ds := committer.Store().(*storage.StorageProxy).EthStore()
+	// if (len(ds.AccountDict())) != 3 {
+	// 	t.Error("Error: Cache() should be 3", len(ds.AccountDict()))
 	// }
 
-	// Get Alice's account
-	aliceAcct, _ := store.GetAccountFromTrie(alice, &ethmpt.AccessListCache{})
-	fmt.Print(aliceAcct)
+	committer.SetStore(store)
 
-	// Prove the storage value
-	// proofs = memorydb.New() // Proof DB
-	// aliceAcct.Trie().Prove([]byte(*aliceTrans[0].GetPath()), 0, proofs)
-	// if _, err := ethmpt.VerifyProof(aliceAcct.StateAccount.Root, []byte(*aliceTrans[0].GetPath()), proofs); err != nil {
-	// 	t.Error("Actual :", err)
+	if _, err := writeCache.Write(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
+		t.Error(err)
+	}
+
+	if _, err := writeCache.Write(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ele-0", commutative.NewPath()); err != nil {
+		t.Error(err)
+	}
+
+	// if len(ds.DirtyAccounts()) != 0 {
+	// 	t.Error("Error: DirtyAccounts() should be 0, actual", len(ds.DirtyAccounts()))
+	// }
+
+	// if (len(ds.AccountDict())) != 3 {
+	// 	t.Error("Error: Cache() should be 3, actual", len(ds.AccountDict()))
+	// }
+
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
+	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
+
+	// aliceAddr := ethcommon.BytesToAddress(hexutil.MustDecode(alice))
+	// if len(ds.Dirties()) != 1 || ds.Dirties()[0].Address() != aliceAddr || !ds.Dirties()[0].StorageDirty {
+	// 	t.Error("Error: Dirties() should be 1, actual", len(ds.Dirties()))
+	// }
+	committer.Commit(10)
+
+	committer.SetStore(store)
+
+	if _, err := writeCache.Write(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(100), true)); err != nil {
+		t.Error(err)
+	}
+
+	if _, err := writeCache.Write(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(uint64(11))); err != nil {
+		t.Error(err)
+	}
+
+	if _, err := writeCache.Write(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/code", noncommutative.NewBytes([]byte{1, 2, 3, 4})); err != nil {
+		t.Error(err)
+	}
+
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
+	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
+
+	// if len(ds.Dirties()) != 1 || ds.Dirties()[0].Address() != aliceAddr || ds.Dirties()[0].StorageDirty {
+	// 	t.Error("Error: Dirties() should be 1, actual", len(ds.Dirties()))
+	// }
+
+	// if (len(ds.AccountDict())) != 3 {
+	// 	t.Error("Error: Cache() should be 3, actual", len(ds.AccountDict()))
 	// }
 }
 
 // need to hash the keys first
 func TestEthStorageConnection(t *testing.T) {
 	store := chooseDataStore()
-	// store := chooseDataStore()
+	// store = chooseDataStore()
 
 	alice := AliceAccount()
-	url := ccurl.NewConcurrentUrl(store)
-	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+
+	// writeCache := committer.WriteCache()
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
-	if _, err := url.Write(ccurlcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
+	if _, err := writeCache.Write(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
 		t.Error(err)
 	}
 
-	trans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{})
-	url.Import(trans)
-	url.Sort()
-	url.Commit([]uint32{ccurlcommon.SYSTEM})
+	u256 := new(commutative.U256).NewBoundedU256FromUint64(111, 0, 0, 999, true)
+	if _, err := writeCache.Write(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/1", u256); err != nil {
+		t.Error(err)
+	}
 
-	v, err := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", new(commutative.Path))
+	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(trans)
+
+	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
+	committer.Commit(10)
+
+	writeCache = cache.NewWriteCache(store, 1, 1, platform.NewPlatform()) // Reset the write cache
+	v, _, err := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", new(commutative.Path))
 	if v == nil {
 		t.Error(err)
+	}
+
+	v, _, _ = writeCache.Read(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/1", new(commutative.U256))
+	typedv := v.(uint256.Int)
+	if v == nil || typedv.Cmp(uint256.NewInt(111)) != 0 {
+		t.Error(err, v)
 	}
 }
 
@@ -191,152 +237,74 @@ func TestBasicAddRead(t *testing.T) {
 	// store := chooseDataStore()
 
 	alice := AliceAccount()
-	url := ccurl.NewConcurrentUrl(store)
-	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+
+	// writeCache := committer.WriteCache()
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
+
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
 	// create a path
 	path := commutative.NewPath()
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", path); err != nil {
 		t.Error(err)
 	}
 
 	// Try to rewrite a path, should fail !
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", noncommutative.NewString("path")); err == nil {
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", noncommutative.NewString("path")); err == nil {
 		t.Error(err)
 	}
 
 	// Try to read an nonexistent path, should fail !
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-1", nil); value != nil {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-1", nil); value != nil {
 		t.Error("Error: Path shouldn't be not found")
 	}
 
 	// Try to read an nonexistent entry from an nonexistent path, should fail !
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-1/elem-000", nil); value != nil {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-1/elem-000", nil); value != nil {
 		t.Error("Error: Shouldn't be not found")
 	}
 
 	// try again
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", nil); value != nil {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/elem-000", nil); value != nil {
 		t.Error("Error: Shouldn't be not found")
 	}
 
 	// try to read an nonexistent path
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", nil); value != nil {
-		t.Error("Error: Failed to write blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-000")
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/elem-000", nil); value != nil {
+		t.Error("Error: Failed to write blcc://eth1.0/account/" + alice + "/storage/container/ctrn-0/elem-000")
 	}
 
 	// Write the entry
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", noncommutative.NewInt64(1111)); err != nil {
-		t.Error("Error: Failed to write blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-000")
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/elem-000", noncommutative.NewInt64(1111)); err != nil {
+		t.Error("Error: Failed to write blcc://eth1.0/account/" + alice + "/storage/container/ctrn-0/elem-000")
 	}
 
 	// Write the entry
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-111", noncommutative.NewInt64(9999)); err != nil {
-		t.Error("Error: Failed to write blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-111")
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/elem-111", noncommutative.NewInt64(9999)); err != nil {
+		t.Error("Error: Failed to write blcc://eth1.0/account/" + alice + "/storage/container/ctrn-0/elem-111")
 	}
 
-	// if v, _ := url.Find(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", noncommutative.NewInt64(1111)); v != nil {
+	// if v, _ := committer.Find(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", noncommutative.NewInt64(1111)); v != nil {
 	// 	t.Error("Error: The path should have been deleted")
 	// }
 
 	// Read the entry back
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", new(noncommutative.Int64)); value.(int64) != 1111 {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/elem-000", new(noncommutative.Int64)); value.(int64) != 1111 {
 		t.Error("Error: Wrong value")
 	}
 
 	// Read the path
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path)); value == nil {
+	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", new(commutative.Path)); value == nil {
 		t.Error(value)
 	} else {
-		target := value.(*orderedset.OrderedSet).Keys()
+		target := value.(*deltaset.DeltaSet[string]).Elements()
 		if !reflect.DeepEqual(target, []string{"elem-000", "elem-111"}) {
 			t.Error("Error: Wrong value !!!!")
 		}
-	}
-}
-
-func TestEthDataStoreAddDeleteRead(t *testing.T) {
-	store := chooseDataStore()
-	// store := chooseDataStore()
-	url := ccurl.NewConcurrentUrl(store)
-	alice := AliceAccount()
-	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
-		fmt.Println(err)
-	}
-
-	// acctTrans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{})
-	// url.Import(indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues))
-
-	// url.Sort()
-	// url.Commit([]uint32{ccurlcommon.SYSTEM})
-
-	// url.Init(store)
-	// create a path
-
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.NewPath()); err != nil {
-		t.Error(err)
-	}
-
-	// Try to rewrite a path, should fail !
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", noncommutative.NewString("path")); err == nil {
-		t.Error(err)
-	}
-
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", new(noncommutative.Int64)); err != nil {
-		t.Error(err)
-	}
-
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", noncommutative.NewInt64(2222)); err != nil {
-		t.Error(err)
-	}
-
-	// Write an entry having the the same name of a path, should go through
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", nil); err != nil {
-		t.Error(err)
-	}
-
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{}); value != nil {
-		t.Error("not found")
-	}
-
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", new(noncommutative.Int64)); value != nil {
-		t.Error("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-000 not found")
-	}
-
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-001", new(noncommutative.Int64)); value != nil {
-		t.Error("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-001 not found")
-	}
-
-	// Write an entry having the the same name of a path, should go through
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", commutative.NewPath()); err != nil {
-		t.Error(err)
-	}
-
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-888", noncommutative.NewInt64(888)); err != nil {
-		t.Error(err)
-	}
-
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-999", noncommutative.NewInt64(999)); err != nil {
-		t.Error(err)
-	}
-
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-888", new(noncommutative.Int64)); value == nil {
-		t.Error("not found")
-	}
-
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-999", new(noncommutative.Int64)); value == nil {
-		t.Error("blcc://eth1.0/account/" + alice + "/storage/ctrn-0/elem-000 not found")
-	}
-
-	meta, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
-	keys := meta.(*orderedset.OrderedSet).Keys()
-	if meta == nil || len(keys) != 2 ||
-		keys[0] != "elem-888" ||
-		keys[1] != "elem-999" {
-		t.Error("not found")
 	}
 }
 
@@ -345,83 +313,97 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 	// store := chooseDataStore()
 
 	alice := AliceAccount()
-	url := ccurl.NewConcurrentUrl(store)
-	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
-	// _, trans := url.Export(indexer.Sorter)
-	trans := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{})
-	acctTrans := (&indexer.Univalues{}).Decode(indexer.Univalues(trans).Encode()).(indexer.Univalues)
+	// _, trans := writeCache.Export(univalue.Sorter)
+	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	acctTrans := (&univalue.Univalues{}).Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues)
 
-	//values := indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).([]interfaces.Univalue)
-	ts := indexer.Univalues{}.Decode(indexer.Univalues(acctTrans).Encode()).(indexer.Univalues)
-	url.Import(ts)
-	url.Sort()
-	url.Commit([]uint32{ccurlcommon.SYSTEM})
+	//values := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).([]*univalue.Univalue)
+	ts := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues)
 
-	url.Init(store)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(ts)
+
+	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
+	committer.Commit(10)
+	committer.SetStore(store)
+
 	// create a path
 	path := commutative.NewPath()
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", path); err != nil {
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", path); err != nil {
 		t.Error(err)
 	}
 
-	transitions := indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{})
-	url.Import((&indexer.Univalues{}).Decode(indexer.Univalues(transitions).Encode()).(indexer.Univalues))
+	transitions := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
-	url.Sort()
-	url.Commit([]uint32{1})
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import((&univalue.Univalues{}).Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues))
+	committer.Precommit([]uint32{1})
+	committer.Commit(10)
 
-	v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", &commutative.Path{})
+	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", &commutative.Path{})
 	if v == nil {
-		t.Error("Error: The path should exists")
+		t.Error("Error: The path should exist")
 	}
 
-	url.Init(store)
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", nil); err != nil { // Delete the path
+	committer.SetStore(store)
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", nil); err != nil { // Delete the path
 		t.Error(err)
 	}
 
-	trans = indexer.Univalues(common.Clone(url.Export(indexer.Sorter))).To(indexer.IPCTransition{})
-	url.Import((&indexer.Univalues{}).Decode(indexer.Univalues(trans).Encode()).(indexer.Univalues))
-	url.Sort()
-	url.Commit([]uint32{1})
+	trans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
-	if v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", new(commutative.Path)); v != nil {
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import((&univalue.Univalues{}).Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
+	committer.Precommit([]uint32{1})
+	committer.Commit(10)
+
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", new(commutative.Path)); v != nil {
 		t.Error("Error: The path should have been deleted")
 	}
 }
 
 func BenchmarkMultipleAccountCommitDataStore(b *testing.B) {
 	// store := chooseDataStore() // Eth data store
-	store := cachedstorage.NewDataStore(nil, nil, nil, storage.Codec{}.Encode, storage.Codec{}.Decode) // Native data store
+	store := chooseDataStore() // Native data store
 
-	url := ccurl.NewConcurrentUrl(store)
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
+
 	alice := AliceAccount()
-	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
 	path := commutative.NewPath() // create a path
-	if _, err := url.Write(0, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
+	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", path); err != nil {
 		b.Error(err)
 	}
 
 	// t0 := time.Now()
 	for i := 0; i < 100000; i++ {
 		acct := fmt.Sprint(rand.Int())
-		if _, err := url.NewAccount(ccurlcommon.SYSTEM, acct); err != nil { // NewAccount account structure {
+		if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, acct, writeCache); err != nil { // NewAccount account structure {
 			fmt.Println(err)
 		}
 
+		// if _, err := committer.NewAccount(stgcommcommon.SYSTEM, acct); err != nil { // NewAccount account structure {
+		// 	fmt.Println(err)
+		// }
+
 		path := commutative.NewPath() // create a path
-		if _, err := url.Write(0, "blcc://eth1.0/account/"+acct+"/storage/ctrn-0/", path); err != nil {
+		if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+acct+"/storage/container/ctrn-0/", path); err != nil {
 			b.Error(err)
 		}
 
 		for j := 0; j < 4; j++ {
-			if _, err := url.Write(0, "blcc://eth1.0/account/"+acct+"/storage/ctrn-0/elem-0"+fmt.Sprint(j), noncommutative.NewString("fmt.Sprint(i)")); err != nil { /* The first Element */
+			if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+acct+"/storage/container/ctrn-0/elem-0"+fmt.Sprint(j), noncommutative.NewString("fmt.Sprint(i)")); err != nil { /* The first Element */
 				b.Error(err)
 			}
 		}
@@ -435,7 +417,7 @@ func TestLevelDBBasic(t *testing.T) {
 	}
 
 	diskdbs := [16]ethdb.Database{}
-	common.Fill(diskdbs[:], leveldb)
+	slice.Fill(diskdbs[:], leveldb)
 	db := ethmpt.NewParallelDatabase(diskdbs, nil)
 
 	// db := trie.NewDatabase(leveldb)
@@ -474,7 +456,7 @@ func BenchmarkLevelDBPerformance1M(t *testing.B) {
 	}
 
 	diskdbs := [16]ethdb.Database{}
-	common.Fill(diskdbs[:], leveldb)
+	slice.Fill(diskdbs[:], leveldb)
 	db := ethmpt.NewParallelDatabase(diskdbs, nil)
 
 	trie := trie.NewEmptyParallel(db)
@@ -502,11 +484,7 @@ func BenchmarkLevelDBPerformance1M(t *testing.B) {
 	}
 
 	t0 = time.Now()
-	common.ParallelWorker(len(keys), 8, func(start, end, index int, args ...interface{}) {
-		for i := start; i < end; i++ {
-			trie.Get(keys[i])
-		}
-	})
+	slice.ParallelForeach(keys, 8, func(i int, _ *[]byte) { trie.Get(keys[i]) })
 	fmt.Println("Parallel Get ", len(keys), " entries in ", time.Since(t0))
 
 	t0 = time.Now()

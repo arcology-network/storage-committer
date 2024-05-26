@@ -2,9 +2,10 @@ package noncommutative
 
 import (
 	"fmt"
+	"math/big"
 
 	codec "github.com/arcology-network/common-lib/codec"
-	"github.com/arcology-network/evm/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 func (this *Bigint) Size() uint32 {
@@ -38,12 +39,12 @@ func (this *Bigint) Decode(buffer []byte) interface{} {
 // 	return this.Decode(bytes)
 // }
 
-func (this *Bigint) StorageEncode() []byte {
-	buffer, _ := rlp.EncodeToBytes(*this)
+func (this *Bigint) StorageEncode(_ string) []byte {
+	buffer, _ := rlp.EncodeToBytes((*big.Int)(this))
 	return buffer
 }
 
-func (this *Bigint) StorageDecode(buffer []byte) interface{} {
+func (this *Bigint) StorageDecode(_ string, buffer []byte) interface{} {
 	rlp.DecodeBytes(buffer, this)
 	return this
 }

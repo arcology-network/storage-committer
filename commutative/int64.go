@@ -1,3 +1,20 @@
+/*
+ *   Copyright (c) 2023 Arcology Network
+
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package commutative
 
 import (
@@ -5,7 +22,7 @@ import (
 	"math"
 
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/concurrenturl/interfaces"
+	intf "github.com/arcology-network/storage-committer/interfaces"
 )
 
 type Int64 struct {
@@ -61,8 +78,9 @@ func (this *Int64) DeltaSign() bool    { return this.delta >= 0 }
 func (this *Int64) Min() interface{}   { return this.min }
 func (this *Int64) Max() interface{}   { return this.max }
 
-func (this *Int64) CloneDelta() interface{} { return (this.delta) }
-func (this *Int64) SetValue(v interface{})  { this.value = v.(int64) }
+func (this *Int64) CloneDelta() interface{}         { return (this.delta) }
+func (this *Int64) SetValue(v interface{})          { this.value = v.(int64) }
+func (this *Int64) Preload(_ string, _ interface{}) {}
 
 func (this *Int64) IsDeltaApplied() bool       { return this.delta == 0 }
 func (this *Int64) ResetDelta()                { this.SetDelta(common.New[int64](0)) }
@@ -107,10 +125,10 @@ func (this *Int64) isUnderflow(delta int64) bool {
 		(this.min > delta || flag)
 }
 
-func (this *Int64) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
-	vec := v.([]interfaces.Univalue)
-	for i := 0; i < len(vec); i++ {
-		v := vec[i].Value()
+func (this *Int64) ApplyDelta(typedVals []intf.Type) (intf.Type, int, error) {
+	// vec := v.([]*univalue.Univalue)
+	for i, v := range typedVals {
+		// v := typedVals[i].Value()
 		if this == nil && v != nil { // New value
 			this = v.(*Int64)
 		}
@@ -120,7 +138,7 @@ func (this *Int64) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
 		}
 
 		if this != nil && v != nil {
-			if _, _, _, _, err := this.Set(v.(*Int64), nil); err != nil {
+			if _, _, _, _, err := this.Set(v, nil); err != nil {
 				return nil, i, err
 			}
 		}
@@ -131,12 +149,12 @@ func (this *Int64) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
 	}
 
 	if this == nil {
-		return nil, 0, errors.New("Error: Nil value")
+		return nil, 0, errors.New("Error: A commutative int64 can't be nil")
 	}
 
 	this.value += this.delta
 	this.delta = 0
-	return this, len(vec), nil
+	return this, len(typedVals), nil
 }
 
 func (this *Int64) Hash(hasher func([]byte) []byte) []byte {

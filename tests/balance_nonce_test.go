@@ -1,80 +1,86 @@
-package ccurltest
+package committertest
 
 import (
+	"fmt"
 	"math"
 	"math/big"
 	"testing"
 
-	ccurl "github.com/arcology-network/concurrenturl"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
-	commutative "github.com/arcology-network/concurrenturl/commutative"
-	indexer "github.com/arcology-network/concurrenturl/indexer"
-	noncommutative "github.com/arcology-network/concurrenturl/noncommutative"
-	univalue "github.com/arcology-network/concurrenturl/univalue"
+	"github.com/arcology-network/common-lib/exp/slice"
+	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
+
+	statestore "github.com/arcology-network/storage-committer"
+	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	commutative "github.com/arcology-network/storage-committer/commutative"
+	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
+	platform "github.com/arcology-network/storage-committer/platform"
+	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
+	"github.com/arcology-network/storage-committer/storage/proxy"
+	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
+	cache "github.com/arcology-network/storage-committer/storage/writecache"
+	univalue "github.com/arcology-network/storage-committer/univalue"
 	"github.com/holiman/uint256"
 )
 
 func TestSimpleBalance(t *testing.T) {
 	store := chooseDataStore()
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
 
-	url := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
-	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
-	if _, err := url.Write(0, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewUnboundedU256()); err != nil { //initialization
+	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewUnboundedU256()); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
 	// Add the first delta
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(22), true)); err != nil {
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(22), true)); err != nil {
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
 	// Add the second delta
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(11), true)); err != nil {
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(11), true)); err != nil {
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
 	// Export variables
-	// _, in := url.Export(indexer.Sorter)
-	in := indexer.Univalues((url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	in := univalue.Univalues((writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
-	buffer := indexer.Univalues(in).Encode()
-	out := indexer.Univalues{}.Decode(buffer).(indexer.Univalues)
+	buffer := univalue.Univalues(in).Encode()
+	out := univalue.Univalues{}.Decode(buffer).(univalue.Univalues)
 	for i := range in {
-		if !in[i].(*univalue.Univalue).Equal(out[i].(*univalue.Univalue)) {
+		if !in[i].Equal(out[i]) {
 			t.Error("Accesses don't match")
 		}
 	}
 
-	url.Import(out)
-	url.Sort()
-	url.Commit([]uint32{0, 1})
-
-	url = ccurl.NewConcurrentUrl(store)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(out)
+	committer.Precommit([]uint32{stgcommcommon.SYSTEM, 0, 1})
+	committer.Commit(10)
 	// Read alice's balance again
-	url2 := ccurl.NewConcurrentUrl(store)
-	balance, _ := url2.Read(1, "blcc://eth1.0/account/"+alice+"/balance", new(commutative.U256))
+
+	balance, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/balance", new(commutative.U256))
 	balanceAddr := balance.(uint256.Int)
 	if (&balanceAddr).Cmp(uint256.NewInt(33)) != 0 {
-		t.Error("Error: Wrong blcc://eth1.0/account/alice/balance value")
+		t.Error("Error: Wrong blcc://eth1.0/account/alice/balance value", balanceAddr)
 	}
 
-	url2.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(10), true))
-	balance, _ = url2.Read(1, "blcc://eth1.0/account/"+alice+"/balance", new(commutative.U256))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(10), true))
+	balance, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/balance", new(commutative.U256))
 
 	balanceAddr = balance.(uint256.Int)
 	if (&balanceAddr).Cmp(uint256.NewInt(43)) != 0 {
-		t.Error("Error: Wrong blcc://eth1.0/account/alice/balance value")
+		t.Error("Error: Wrong blcc://eth1.0/account/alice/balance value", balanceAddr)
 	}
 
-	// records, trans := url2.Export(indexer.Sorter)
-	trans := indexer.Univalues((url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
-	records := indexer.Univalues((url.Export(indexer.Sorter))).To(indexer.ITCAccess{})
+	trans := univalue.Univalues((writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
+	records := univalue.Univalues((writeCache.Export(univalue.Sorter))).To(univalue.ITAccess{})
 
-	indexer.Univalues(trans).Encode()
+	univalue.Univalues(trans).Encode()
 	for _, v := range records {
 		if v.Writes() == v.Reads() && v.Writes() == 0 && v.DeltaWrites() == 0 {
 			t.Error("Error: Write == Reads == DeltaWrites == 0")
@@ -85,25 +91,26 @@ func TestSimpleBalance(t *testing.T) {
 func TestBalance(t *testing.T) {
 	store := chooseDataStore()
 
-	url := ccurl.NewConcurrentUrl(store)
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
 	alice := AliceAccount()
-	if _, err := url.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
 	// create a path
 	path := commutative.NewPath()
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path); err != nil {
 		t.Error(err, " Failed to MakePath: blcc://eth1.0/account/alice/storage/ctrn-0/")
 	}
 
 	// create a noncommutative bigint
 	inV := noncommutative.NewBigint(100)
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0", inV); err != nil {
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0", inV); err != nil {
 		t.Error(err, " Failed to Write: blcc://eth1.0/account/alice/storage/ctrn-0/elem-0")
 	}
 
-	v, _ := url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0", new(noncommutative.Bigint))
+	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0", new(noncommutative.Bigint))
 	outV := v.(big.Int)
 	value := (*big.Int)(inV.(*noncommutative.Bigint))
 	if outV.Cmp(value) != 0 {
@@ -112,100 +119,103 @@ func TestBalance(t *testing.T) {
 
 	// -------------------Create another commutative bigint ------------------------------
 	comtVInit := commutative.NewBoundedU256(&commutative.U256_MIN, &commutative.U256_MAX)
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", comtVInit); err != nil {
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", comtVInit); err != nil {
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256Delta(uint256.NewInt(300), true)); err != nil {
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256Delta(uint256.NewInt(300), true)); err != nil {
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256Delta(uint256.NewInt(1), true)); err != nil {
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256Delta(uint256.NewInt(1), true)); err != nil {
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256Delta(uint256.NewInt(2), true)); err != nil {
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", commutative.NewU256Delta(uint256.NewInt(2), true)); err != nil {
 		t.Error(err, " Failed to Write: "+"/elem-0")
 	}
 
-	v, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", new(commutative.Path))
+	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/comt-0", new(commutative.Path))
 	vAdd := v.(uint256.Int)
 	if vAdd.Cmp(uint256.NewInt(303)) != 0 {
 		t.Error("comt-0 has a wrong returned value")
 	}
 
 	// ----------------------------U256 ---------------------------------------------------
-	if _, err := url.Write(0, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(0), true)); err != nil { //initialization
+	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(0), true)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
 	// Add the first delta
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(22), true)); err != nil {
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(22), true)); err != nil {
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
 	// Add the second delta
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(11), true)); err != nil {
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/balance", commutative.NewU256Delta(uint256.NewInt(11), true)); err != nil {
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
 	// Read alice's balance
-	v, _ = url.Read(1, "blcc://eth1.0/account/"+alice+"/balance", new(commutative.U256))
+	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/balance", new(commutative.U256))
 	vAdd = v.(uint256.Int)
 	if vAdd.Cmp(uint256.NewInt(33)) != 0 {
 		t.Error("blcc://eth1.0/account/" + alice + "/balance")
 	}
 
 	// Export variables
-	transitions := indexer.Univalues((url.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	transitions := univalue.Univalues((writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 	// for i := range transitions {
 	trans := transitions[9]
 
 	_10 := trans.Encode()
 	_10tran := (&univalue.Univalue{}).Decode(_10).(*univalue.Univalue)
 
-	if !trans.(*univalue.Univalue).Equal(_10tran) {
+	if !trans.Equal(_10tran) {
 		t.Error("Accesses don't match", trans, _10tran)
 	}
 }
 
 func TestNonce(t *testing.T) {
 	store := chooseDataStore()
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
 
-	url1 := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
-	if _, err := url1.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
-	if _, err := url1.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewBoundedUint64(0, math.MaxInt64)); err != nil { //initialization
+	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewBoundedUint64(0, math.MaxInt64)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
-	if _, err := url1.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
+	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
-	if _, err := url1.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(2)); err != nil { //initialization
+	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(2)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
-	if _, err := url1.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(3)); err != nil { //initialization
+	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(3)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
-	nonce, _ := url1.Read(0, "blcc://eth1.0/account/"+alice+"/nonce", new(commutative.Uint64))
+	nonce, _, _ := writeCache.Read(0, "blcc://eth1.0/account/"+alice+"/nonce", new(commutative.Uint64))
 	v := nonce.(uint64)
 	if v != 6 {
 		t.Error("Error: blcc://eth1.0/account/alice/nonce should be ", 6)
 	}
 
-	trans := indexer.Univalues((url1.Export(indexer.Sorter))).To(indexer.ITCTransition{})
-	url1.Import(trans)
-	url1.Sort()
-	url1.Commit([]uint32{0})
+	trans := univalue.Univalues((writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
-	nonce, _ = url1.Read(0, "blcc://eth1.0/account/"+alice+"/nonce", new(commutative.Uint64))
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(trans)
+
+	committer.Precommit([]uint32{0})
+	committer.Commit(10)
+	nonce, _, _ = writeCache.Read(0, "blcc://eth1.0/account/"+alice+"/nonce", new(commutative.Uint64))
 	v = nonce.(uint64)
 	if v != 6 {
 		t.Error("Error: blcc://eth1.0/account/alice/nonce ")
@@ -214,80 +224,119 @@ func TestNonce(t *testing.T) {
 
 func TestMultipleNonces(t *testing.T) {
 	store := chooseDataStore()
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+	writeCache := sstore.WriteCache
+	NewAcountsInCache(writeCache, AliceAccount(), BobAccount())
 
-	url0 := ccurl.NewConcurrentUrl(store)
 	alice := AliceAccount()
-	if _, err := url0.NewAccount(ccurlcommon.SYSTEM, alice); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
-	url0.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUnboundedUint64())
-	if _, err := url0.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
+	writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUnboundedUint64())
+	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
-	if _, err := url0.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
+	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+alice+"/balance")
 	}
 
-	// _, trans0 := url0.Export(indexer.Sorter)
-	// ccurltype.SetInvariate(trans0, "nonce")
-	// trans := (url0.Export(indexer.Sorter))
-	trans0 := indexer.Univalues((url0.Export(indexer.Sorter))).To(indexer.ITCTransition{})
+	trans0 := univalue.Univalues((writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
-	url1 := ccurl.NewConcurrentUrl(store)
 	bob := BobAccount()
-	if _, err := url1.NewAccount(ccurlcommon.SYSTEM, bob); err != nil { // NewAccount account structure {
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
-	url0.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUnboundedUint64())
-
-	if _, err := url1.Write(0, "blcc://eth1.0/account/"+bob+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
+	writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/nonce", commutative.NewUnboundedUint64())
+	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+bob+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+bob+"/balance")
 	}
 
-	if _, err := url1.Write(0, "blcc://eth1.0/account/"+bob+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
+	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+bob+"/nonce", commutative.NewUint64Delta(1)); err != nil { //initialization
 		t.Error(err, "blcc://eth1.0/account/"+bob+"/balance")
 	}
 
-	nonce, _ := url1.Read(0, "blcc://eth1.0/account/"+bob+"/nonce", new(commutative.Uint64))
+	nonce, _, _ := writeCache.Read(0, "blcc://eth1.0/account/"+bob+"/nonce", new(commutative.Uint64))
 	bobNonce := nonce.(uint64)
 	if bobNonce != 2 {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
 	}
 
-	raw := (url1.Export(indexer.Sorter))
-	trans1 := indexer.Univalues(raw).To(indexer.ITCTransition{})
-	// ccurltype.SetInvariate(trans1, "nonce")
+	raw := (writeCache.Export(univalue.Sorter))
+	trans1 := univalue.Univalues(raw).To(univalue.ITTransition{})
 
-	nonce, _ = url1.Read(0, "blcc://eth1.0/account/"+bob+"/nonce", new(commutative.Uint64))
+	nonce, _, _ = writeCache.Read(0, "blcc://eth1.0/account/"+bob+"/nonce", new(commutative.Uint64))
 	bobNonce = nonce.(uint64)
 	if bobNonce != 2 {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
 	}
 
-	url0.Import(trans0)
-	url0.Import(trans1)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(trans0)
+	committer.Import(trans1)
 
-	nonce, _ = url1.Read(0, "blcc://eth1.0/account/"+bob+"/nonce", new(commutative.Uint64))
+	nonce, _, _ = writeCache.Read(0, "blcc://eth1.0/account/"+bob+"/nonce", new(commutative.Uint64))
 	bobNonce = nonce.(uint64)
 	if bobNonce != 2 {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be 2", " actual: ", bobNonce)
 	}
 
-	url0.Sort()
-	url0.Commit([]uint32{0})
+	// committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Precommit([]uint32{0, stgcommcommon.SYSTEM})
+	committer.Commit(10)
 
-	nonce, _ = url1.Read(0, "blcc://eth1.0/account/"+bob+"/nonce", new(commutative.Uint64))
+	nonce, _, _ = writeCache.Read(0, "blcc://eth1.0/account/"+bob+"/nonce", new(commutative.Uint64))
 	bobNonce = nonce.(uint64)
 	if bobNonce != 2 {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be 2", " actual: ", bobNonce)
 	}
 
-	nonce, _ = url0.Read(0, "blcc://eth1.0/account/"+bob+"/nonce", new(commutative.Uint64))
+	nonce, _, _ = writeCache.Read(0, "blcc://eth1.0/account/"+bob+"/nonce", new(commutative.Uint64))
 	bobNonce = nonce.(uint64)
 	if bobNonce != 2 {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
 	}
+}
+
+func TestUint64Delta(t *testing.T) {
+	store := stgproxy.NewMemDBStoreProxy()
+	sstore := statestore.NewStateStore(store)
+	writeCache := sstore.WriteCache
+
+	alice := AliceAccount()
+	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+		t.Error(err)
+	}
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(acctTrans).Precommit([]uint32{stgcommcommon.SYSTEM})
+	committer.Commit(stgcommcommon.SYSTEM)
+
+	deltav1 := commutative.NewUint64Delta(11)
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/nonce", deltav1); err != nil {
+		t.Error(err)
+	}
+
+	writeCache2 := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+	deltav2 := commutative.NewUint64Delta(21)
+	if _, err := writeCache2.Write(2, "blcc://eth1.0/account/"+alice+"/nonce", deltav2); err != nil {
+		t.Error(err)
+	}
+
+	acctTrans0 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	acctTrans1 := univalue.Univalues(slice.Clone(writeCache2.Export(univalue.Sorter))).To(univalue.IPTransition{})
+
+	acctTrans0.Print()
+	fmt.Println("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+	acctTrans1.Print()
+
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(acctTrans0)
+	committer.Import(acctTrans1)
+	committer.Precommit([]uint32{1, 2})
+	committer.Commit(10)
+
 }

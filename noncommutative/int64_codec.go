@@ -6,7 +6,7 @@ import (
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/evm/rlp"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 func (this *Int64) Size() uint32 {
@@ -36,12 +36,12 @@ func (this *Int64) Print() {
 	fmt.Println()
 }
 
-func (this *Int64) StorageEncode() []byte {
+func (this *Int64) StorageEncode(_ string) []byte {
 	buffer, _ := rlp.EncodeToBytes(new(big.Int).SetInt64(int64(*this.Value().(*Int64))))
 	return buffer
 }
 
-func (this *Int64) StorageDecode(buffer []byte) interface{} {
+func (this *Int64) StorageDecode(_ string, buffer []byte) interface{} {
 	var v big.Int
 	rlp.DecodeBytes(buffer, &v)
 	return common.New(Int64(v.Uint64()))

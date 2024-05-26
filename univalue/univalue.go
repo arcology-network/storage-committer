@@ -1,74 +1,81 @@
 package univalue
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/concurrenturl/interfaces"
+	"github.com/arcology-network/common-lib/exp/slice"
+	intf "github.com/arcology-network/storage-committer/interfaces"
 )
 
+// THe univalue is a combination of a value and a property field that contains the access information about the value.
 type Univalue struct {
-	Unimeta
+	Property
 	value interface{}
 	cache []byte
 }
 
-// func NewUnivalue
-
 func NewUnivalue(tx uint32, key string, reads, writes uint32, deltaWrites uint32, v interface{}, source interface{}) *Univalue {
 	return &Univalue{
-		Unimeta{
-			vType:       common.IfThenDo1st(v != nil, func() uint8 { return v.(interfaces.Type).TypeID() }, uint8(reflect.Invalid)),
+		Property{
+			vType:       common.IfThenDo1st(v != nil, func() uint8 { return v.(intf.Type).TypeID() }, uint8(reflect.Invalid)),
 			tx:          tx,
 			path:        &key,
 			reads:       reads,
 			writes:      writes,
 			deltaWrites: deltaWrites,
-			preexists:   common.IfThenDo1st(source != nil, func() bool { return (&Unimeta{}).CheckPreexist(key, source) }, false),
+			preexists:   common.IfThenDo1st(source != nil, func() bool { return (&Property{}).CheckPreexist(key, source) }, false),
 		},
 		v,
 		[]byte{},
 	}
 }
 
-func (*Univalue) New(meta, value, cache interface{}) interface{} {
+func (*Univalue) New(meta, value, cache interface{}) *Univalue {
 	return &Univalue{
-		*meta.(*Unimeta),
+		*meta.(*Property),
 		value,
 		cache.([]byte),
 	}
 }
 
-func (this *Univalue) From(v interfaces.Univalue) interface{} { return v }
+func (*Univalue) Reset(this *Univalue) {
+	this.Property.Reset()
+	this.ClearCache()
+	this.value = nil
+}
 
-// func (this *Univalue) Filter() interfaces.Univalue                    { return this }
+func (this *Univalue) From(v *Univalue) interface{} { return v }
 
 // func (this *Univalue) IsHotLoaded() bool             { return this.reads > 1 }
 func (this *Univalue) SetTx(txId uint32)  { this.tx = txId }
 func (this *Univalue) ClearCache()        { this.cache = this.cache[:0] }
 func (this *Univalue) Value() interface{} { return this.value }
-func (this *Univalue) SetValue(newValue interface{}) interfaces.Univalue {
+func (this *Univalue) SetValue(newValue interface{}) *Univalue {
 	if this.value != nil && reflect.TypeOf(this.value) != reflect.TypeOf(newValue) && newValue != nil {
 		panic("Wrong type")
 	}
+
 	this.value = newValue
 	return this
 }
 
-func (this *Univalue) GetUnimeta() interface{} { return &this.Unimeta }
-func (this *Univalue) GetCache() interface{}   { return this.cache }
+func (this *Univalue) GetCache() interface{} { return this.cache }
 
 func (this *Univalue) Init(tx uint32, key string, reads, writes, deltaWrites uint32, v interface{}, args ...interface{}) *Univalue {
-	this.vType = common.IfThenDo1st(v != nil, func() uint8 { return v.(interfaces.Type).TypeID() }, uint8(reflect.Invalid))
+	this.vType = common.IfThenDo1st(v != nil, func() uint8 { return v.(intf.Type).TypeID() }, uint8(reflect.Invalid))
 	this.tx = tx
 	this.path = &key
 	this.reads = reads
 	this.writes = writes
 	this.deltaWrites = deltaWrites
 	this.value = v
-	this.preexists = common.IfThenDo1st(len(args) > 0, func() bool { return (&Unimeta{}).CheckPreexist(key, args[0]) }, false)
+	this.preexists = common.IfThenDo1st(len(args) > 0, func() bool { return (&Property{}).CheckPreexist(key, args[0]) }, false)
 	return this
 }
 
@@ -78,6 +85,9 @@ func (this *Univalue) Reclaim() {
 	}
 }
 
+// This performs the action on the value and returns the result.
+// This function doesnn't make a deep copy of the original value.
+// It should be used for read-only operations ONLY!!!.
 func (this *Univalue) Do(tx uint32, path string, doer interface{}) interface{} {
 	r, w, dw, ret := doer.(func(interface{}) (uint32, uint32, uint32, interface{}))(this)
 	this.reads += r
@@ -88,8 +98,19 @@ func (this *Univalue) Do(tx uint32, path string, doer interface{}) interface{} {
 
 func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{} {
 	if this.value != nil {
-		tempV, r, w := this.value.(interfaces.Type).Get() //RW: Affiliated reads and writes
+		tempV, r, w := this.value.(intf.Type).Get() //RW: Affiliated reads and writes
 		this.reads += r
+
+		// The whole copy mechansim is designed to avoid interference with maximum performance,
+		// so deep copy is made only when necessary. The criteria for making a deep copy are:
+		// 1. The value needs to be updated.
+		// 2. The value is modified for the first time, when writes == 0 && deltaWrites == 0.
+		// So in the following cases, if we record a write with a deep copy, it will effectivly stop making deep copy in the future.
+		// This is problematic because it will change the value in the global object cache as well.
+		if w > 0 {
+			this.MakeDeepCopy(this.value)
+		}
+
 		this.writes += w
 		return tempV
 	}
@@ -97,32 +118,39 @@ func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{
 	return this.value
 }
 
-func (this *Univalue) Merge(writeCache interfaces.WriteCache) {
-	common.IfThenDo(this.writes == 0 && this.deltaWrites == 0,
-		func() { writeCache.Read(this.tx, *this.GetPath(), this.value) }, // Add reads
-		func() { writeCache.Write(this.tx, *this.GetPath(), this.value) },
-	)
+func (this *Univalue) CopyTo(writable interface{}) {
+	writeCache := writable.(interface {
+		Read(uint32, string, interface{}) (interface{}, interface{}, uint64)
+		Write(uint32, string, interface{}) (int64, error)
+		Find(uint32, string, interface{}) (interface{}, interface{})
+	})
 
-	_, univ := writeCache.Peek(*this.GetPath(), nil)
-	readsDiff := this.Reads() - univ.(interfaces.Univalue).Reads()
-	writesDiff := this.Writes() - univ.(interfaces.Univalue).Writes()
-	deltaWriteDiff := this.DeltaWrites() - univ.(interfaces.Univalue).DeltaWrites()
+	if this.writes == 0 && this.deltaWrites == 0 {
+		writeCache.Read(this.tx, *this.GetPath(), this.value)
+	} else {
+		writeCache.Write(this.tx, *this.GetPath(), this.value)
+	}
 
-	univ.(interfaces.Univalue).IncrementReads(readsDiff)
-	univ.(interfaces.Univalue).IncrementWrites(writesDiff)
-	univ.(interfaces.Univalue).IncrementDeltaWrites(deltaWriteDiff)
+	_, univ := writeCache.Find(this.tx, *this.GetPath(), nil)
+	if this == univ {
+		return
+	}
+
+	univ.(*Univalue).IncrementReads(this.Reads())
+	univ.(*Univalue).IncrementWrites(this.Writes())
+	univ.(*Univalue).IncrementDeltaWrites(this.DeltaWrites())
 }
 
-func (this *Univalue) Set(tx uint32, path string, typedV interface{}, indexer interface{}) error { // update the value
+func (this *Univalue) Set(tx uint32, path string, newV interface{}, inCache bool, importer interface{}) error { // update the value
 	this.tx = tx
-	if this.Value() == nil && typedV == nil {
+	if this.value == nil && newV == nil {
 		this.writes++ // Delete an non-existing value
 		return errors.New("Error: The value doesn't exists")
 	}
 
-	if this.Value() == nil { // Added a new value or try to delete an non-existent value
-		this.vType = typedV.(interfaces.Type).TypeID()
-		v, r, w, dw := typedV.(interfaces.Type).CopyTo(typedV)
+	if this.value == nil { // Added a new value or try to delete an non-existent value
+		this.vType = newV.(intf.Type).TypeID()
+		v, r, w, dw := newV.(intf.Type).CopyTo(newV)
 		this.value = v
 		this.writes += w
 		this.reads += r
@@ -130,49 +158,67 @@ func (this *Univalue) Set(tx uint32, path string, typedV interface{}, indexer in
 		return nil
 	}
 
-	if this.writes == 0 && this.value != nil && typedV != nil { // Make a deep copy if haven't done so
-		this.value = this.value.(interfaces.Type).Clone()
-	}
+	// To avoid interference with the value in the global object cache.
+	this.MakeDeepCopy(newV)
 
-	v, r, w, dw, err := this.value.(interfaces.Type).Set(typedV, []interface{}{path, *this.path, tx, indexer}) // Update one the current value
+	oldV := this.value.(intf.Type)
+	v, r, w, dw, err := oldV.Set(newV, []interface{}{path, *this.path, tx, importer}) // Update the current value
 	this.value = v
 	this.writes += w
 	this.reads += r
 	this.deltaWrites += dw
 
-	if typedV == nil && this.Value().(interfaces.Type).IsSelf(path) { // Delete the entry but keep the access record.
+	if newV == nil && this.Value().(intf.Type).IsSelf(path) { // Delete the entry but keep the access record.
 		this.vType = uint8(reflect.Invalid)
-		this.value = typedV // Delete the value
+		this.value = newV // Delete the value
 		this.writes++
 	}
 	return err
 }
 
+// Making a deep copy may be necessary to avoid interference with
+// the value in the global object cache.
+func (this *Univalue) MakeDeepCopy(newV interface{}) {
+	// writes == 0 && deltaWrites == 0 means the value has been modified already.
+	// this.value == nil, this is a new value assignment, so we don't need to make a deep copy.
+	// typedV == nil, this is a delete operation, so we don't need to make a deep copy.
+	// In cascading write cache, the values' access info will stripped off, so it wouldn't introduce interference.
+	if this.writes == 0 && this.deltaWrites == 0 && this.value != nil { // Make a deep copy if has't done so
+		this.value = this.value.(intf.Type).Clone()
+	}
+}
+
 // Check & Merge attributes
-func (this *Univalue) ApplyDelta(v interface{}) error {
-	vec := v.([]interfaces.Univalue)
+func (this *Univalue) ApplyDelta(vec []*Univalue) error {
+	// vec := v.([]*Univalue)
 
 	/* Precheck & Merge attributes*/
 	for i := 0; i < len(vec); i++ {
-		this.PrecheckAttributes(vec[i].(*Univalue))
+		this.PrecheckAttributes(vec[i])
 		this.writes += vec[i].Writes()
 		this.reads += vec[i].Reads()
 		this.deltaWrites += vec[i].DeltaWrites()
 	}
 
 	// Apply transitions
+	typedVals := slice.Transform(vec, func(_ int, v *Univalue) intf.Type {
+		if v.Value() != nil {
+			return v.Value().(intf.Type)
+		}
+		return nil
+	})
+
 	var err error
 	if this.Value() != nil {
-		if this.value, _, err = this.Value().(interfaces.Type).ApplyDelta(v); err != nil {
+		if this.value, _, err = this.Value().(intf.Type).ApplyDelta(typedVals); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (this *Univalue) IsConcurrentWritable() bool { // Call this before setting the value attribute to nil
-	return (this.Writes() == 0 && this.Reads() == 0)
-}
+func (this *Univalue) IsReadOnly() bool       { return (this.writes == 0 && this.deltaWrites == 0) }
+func (this *Univalue) IsDeltaWriteOnly() bool { return (this.reads == 0 && this.writes == 0) }
 
 func (this *Univalue) PrecheckAttributes(other *Univalue) {
 	if other.reads == 0 && other.writes == 0 && other.deltaWrites == 0 {
@@ -183,27 +229,31 @@ func (this *Univalue) PrecheckAttributes(other *Univalue) {
 		panic("Error: Value type mismatched!") // Read only variable should never be here.
 	}
 
-	if this.preexists && this.Value().(interfaces.Type).IsCommutative() && this.Reads() > 0 && this.IsConcurrentWritable() == other.IsConcurrentWritable() {
+	if this.GetTx() != other.GetTx() &&
+		this.preexists &&
+		this.Value().(intf.Type).IsCommutative() &&
+		this.Reads() > 0 &&
+		this.IsDeltaWriteOnly() == other.IsDeltaWriteOnly() {
 		this.Print()
 		fmt.Println("================================================================")
 		other.Print()
 		panic("Error: The composite attribute must match in different transitions")
 	}
 
-	if this.Value() == nil && this.IsConcurrentWritable() {
-		// panic("Error: A deleted value cann't be composite")
+	if this.Value() == nil && this.IsDeltaWriteOnly() {
+		panic("Error: A deleted value cann't be composite")
 	}
 
-	if !this.preexists && this.IsConcurrentWritable() {
+	if !this.preexists && this.IsDeltaWriteOnly() {
 		panic("Error: A new value cann't be composite")
 	}
 }
 
 func (this *Univalue) Clone() interface{} {
 	v := &Univalue{
-		this.Unimeta.Clone(),
-		common.IfThenDo1st(this.value != nil, func() interface{} { return this.value.(interfaces.Type).Clone() }, this.value),
-		common.Clone(this.cache),
+		this.Property.Clone(),
+		common.IfThenDo1st(this.value != nil, func() interface{} { return this.value.(intf.Type).Clone() }, this.value),
+		slice.Clone(this.cache),
 	}
 	return v
 }
@@ -228,6 +278,46 @@ func (this *Univalue) Less(other *Univalue) bool {
 	if (!this.preexists || !other.preexists) && (this.preexists != other.preexists) {
 		return this.preexists
 	}
-
 	return true
+}
+
+func (this *Univalue) Checksum() [32]byte {
+	return sha256.Sum256(this.Encode())
+}
+
+func (this *Univalue) Print() {
+	spaces := " " //fmt.Sprintf("%"+strconv.Itoa(len(strings.Split(*this.path, "/"))*1)+"v", " ")
+	fmt.Print(spaces+"tx: ", this.tx)
+	fmt.Print(spaces+"reads: ", this.reads)
+	fmt.Print(spaces+"writes: ", this.writes)
+	fmt.Print(spaces+"DeltaWrites: ", this.deltaWrites)
+	fmt.Print(spaces+"persistent: ", this.persistent)
+	fmt.Print(spaces+"preexists: ", this.preexists)
+
+	path := *this.path
+	if index := strings.Index(path, "container/"); index != -1 {
+		path = path[:index] + "container/" + hex.EncodeToString([]byte(path[index:]))
+	}
+
+	fmt.Print(spaces+"path: ", path, "      ")
+	common.IfThenDo(this.value != nil, func() { this.value.(intf.Type).Print() }, func() { fmt.Print("nil") })
+	fmt.Println()
+}
+
+func (this *Univalue) Equal(other *Univalue) bool {
+	if this.value == nil && other.Value() == nil {
+		return true
+	}
+
+	if (this.value == nil && other.Value() != nil) || (this.value != nil && other.Value() == nil) {
+		return false
+	}
+
+	vFlag := this.value.(intf.Type).Equal(other.Value().(intf.Type))
+	return this.tx == other.GetTx() &&
+		*this.path == *other.GetPath() &&
+		this.reads == other.Reads() &&
+		this.writes == other.Writes() &&
+		vFlag &&
+		this.preexists == other.Preexist()
 }

@@ -4,12 +4,12 @@ import (
 	"strings"
 
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/concurrenturl/interfaces"
+	intf "github.com/arcology-network/storage-committer/interfaces"
 )
 
 type String string
 
-func NewString(v string) interfaces.Type {
+func NewString(v string) intf.Type {
 	var this String = String(v)
 	return &this
 }
@@ -31,8 +31,9 @@ func (this *String) DeltaSign() bool    { return true } // delta sign
 func (this *String) Min() interface{}   { return nil }
 func (this *String) Max() interface{}   { return nil }
 
-func (this *String) CloneDelta() interface{} { return this.Clone() }
-func (this *String) SetValue(v interface{})  { this.SetDelta(v) }
+func (this *String) CloneDelta() interface{}         { return this.Clone() }
+func (this *String) SetValue(v interface{})          { this.SetDelta(v) }
+func (this *String) Preload(_ string, _ interface{}) {}
 
 func (this *String) IsDeltaApplied() bool       { return true }
 func (this *String) ResetDelta()                { this.SetDelta(common.New[String]("")) }
@@ -57,10 +58,10 @@ func (this *String) Set(value interface{}, source interface{}) (interface{}, uin
 	return this, 0, 1, 0, nil
 }
 
-func (this *String) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
-	vec := v.([]interfaces.Univalue)
-	for i := 0; i < len(vec); i++ {
-		v := vec[i].Value()
+func (this *String) ApplyDelta(typedVals []intf.Type) (intf.Type, int, error) {
+	// vec := v.([]*univalue.Univalue)
+	for _, v := range typedVals {
+		// v := vec[i].Value()
 		if this == nil && v != nil { // New value
 			this = v.(*String)
 		}
@@ -81,5 +82,5 @@ func (this *String) ApplyDelta(v interface{}) (interfaces.Type, int, error) {
 	if this == nil {
 		return nil, 0, nil
 	}
-	return this, len(vec), nil
+	return this, len(typedVals), nil
 }

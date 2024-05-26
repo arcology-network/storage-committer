@@ -1,11 +1,28 @@
+/*
+ *   Copyright (c) 2023 Arcology Network
+
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package commutative
 
 import (
 	"testing"
 
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/concurrenturl/interfaces"
-	"github.com/arcology-network/evm/rlp"
+	"github.com/arcology-network/storage-committer/interfaces"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/holiman/uint256"
 )
 
@@ -42,7 +59,8 @@ func TestU256(t *testing.T) {
 	}
 
 	finalized, _, _ := v.(*U256).Get()
-	if finalized.(*uint256.Int).ToBig().Uint64() != 5 {
+	fv := finalized.(uint256.Int)
+	if fv.ToBig().Uint64() != 5 {
 		t.Error("Error: Should have failed")
 	}
 }
@@ -111,7 +129,8 @@ func TestU256DeltaOutRange(t *testing.T) {
 
 	// v.(*U256).Get().(*uint256.Int).ToBig().Uint64()
 	finalized, _, _ := v.(*U256).Get()
-	if finalized.(*uint256.Int).ToBig().Uint64() != 60 {
+	fv := finalized.(uint256.Int)
+	if fv.ToBig().Uint64() != 60 {
 		t.Error("Error: Should be", 60)
 	}
 
@@ -121,7 +140,8 @@ func TestU256DeltaOutRange(t *testing.T) {
 	}
 
 	finalized, _, _ = v.(*U256).Get()
-	if finalized.(*uint256.Int).ToBig().Uint64() != 60 {
+	fv = finalized.(uint256.Int)
+	if fv.ToBig().Uint64() != 60 {
 		t.Error("Error: Should be", 60)
 	}
 }
