@@ -6,9 +6,9 @@ go 1.22
 
 replace github.com/ethereum/go-ethereum v1.13.1 => ../concurrent-evm/
 
-replace github.com/arcology-network/eu => ../eu
+// replace github.com/arcology-network/eu => ../eu
 
-replace github.com/arcology-network/evm-adaptor => ../evm-adaptor/
+// replace github.com/arcology-network/evm-adaptor => ../evm-adaptor/
 
 require (
 	github.com/elliotchance/orderedmap v1.5.1
@@ -19,8 +19,8 @@ require (
 
 require (
 	github.com/VictoriaMetrics/fastcache v1.12.2
-	github.com/arcology-network/common-lib v0.0.0-00010101000000-000000000000
-	github.com/arcology-network/evm-adaptor v0.0.0-00010101000000-000000000000
+	github.com/arcology-network/common-lib v1.9.1-0.20240526090033-4c2ee0f20f15
+	github.com/arcology-network/evm-adaptor v1.9.1-0.20240526092000-4f22a0702216
 	github.com/cespare/xxhash/v2 v2.2.0
 	golang.org/x/crypto v0.20.0
 	golang.org/x/exp v0.0.0-20231206192017-f3f8817b8deb
