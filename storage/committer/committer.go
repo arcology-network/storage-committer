@@ -129,7 +129,7 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 
 // Only the global write cache needs to be synchronized before the next precommit or commit.
 func (this *StateCommitter) SyncPrecommit() {
-	slice.ParallelForeach(this.writers, 1,
+	slice.ParallelForeach(this.writers, len(this.writers),
 		func(i int, writer *intf.AsyncWriter[*univalue.Univalue]) {
 			if common.IsType[*cache.ExecutionCacheWriter](*writer) {
 				(*writer).Precommit()
