@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	datastore "github.com/arcology-network/storage-committer/storage/ccstorage"
+	datastore "github.com/arcology-network/storage-committer/storage/livestorage"
 )
 
 type ReadonlyServer struct {

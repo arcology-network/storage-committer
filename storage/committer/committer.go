@@ -19,6 +19,9 @@
 package statestore
 
 import (
+	"fmt"
+	"reflect"
+
 	"github.com/arcology-network/common-lib/common"
 	indexer "github.com/arcology-network/common-lib/storage/indexer"
 	intf "github.com/arcology-network/storage-committer/interfaces"
@@ -129,9 +132,10 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 
 // Only the global write cache needs to be synchronized before the next precommit or commit.
 func (this *StateCommitter) SyncPrecommit() {
-	slice.ParallelForeach(this.writers, len(this.writers),
-		func(_ int, writer *intf.AsyncWriter[*univalue.Univalue]) {
-			if common.IsType[*cache.WriteCache](writer) {
+	slice.ParallelForeach(this.writers, 1,
+		func(i int, writer *intf.AsyncWriter[*univalue.Univalue]) {
+			if common.IsType[*cache.ExecutionCacheWriter](*writer) {
+				fmt.Println("SyncPrecommit to the writer", reflect.TypeOf(*writer).String())
 				(*writer).Precommit()
 			}
 		})
@@ -141,7 +145,8 @@ func (this *StateCommitter) SyncPrecommit() {
 func (this *StateCommitter) AsyncPrecommit() {
 	slice.ParallelForeach(this.writers, len(this.writers),
 		func(_ int, writer *intf.AsyncWriter[*univalue.Univalue]) {
-			if !common.IsType[*cache.WriteCache](writer) {
+			if !common.IsType[*cache.ExecutionCacheWriter](*writer) {
+				fmt.Println("AsyncPrecommit to the writer", reflect.TypeOf(*writer).String())
 				(*writer).Precommit()
 			}
 		})
@@ -158,7 +163,8 @@ func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
 func (this *StateCommitter) SyncCommit(blockNum uint64) {
 	slice.ParallelForeach(this.writers, len(this.writers),
 		func(_ int, writer *intf.AsyncWriter[*univalue.Univalue]) {
-			if common.IsType[*cache.WriteCache](writer) || common.IsType[*proxy.ObjectCache](writer) {
+			if common.IsType[*cache.ExecutionCacheWriter](*writer) || common.IsType[*proxy.LiveCacheWriter](*writer) {
+				fmt.Println("SyncCommit to the writer", reflect.TypeOf(*writer).String())
 				(*writer).Commit(blockNum)
 				return
 			}
@@ -169,7 +175,8 @@ func (this *StateCommitter) SyncCommit(blockNum uint64) {
 func (this *StateCommitter) AsyncCommit(blockNum uint64) {
 	slice.ParallelForeach(this.writers, len(this.writers),
 		func(_ int, writer *intf.AsyncWriter[*univalue.Univalue]) {
-			if !common.IsType[*cache.WriteCache](writer) && !common.IsType[*proxy.ObjectCache](writer) {
+			if !common.IsType[*cache.ExecutionCacheWriter](*writer) && !common.IsType[*proxy.LiveCacheWriter](*writer) {
+				fmt.Println("AsyncCommit to the writer", reflect.TypeOf(*writer).String())
 				(*writer).Commit(blockNum)
 				return
 			}

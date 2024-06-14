@@ -26,22 +26,22 @@ import (
 	"github.com/arcology-network/storage-committer/univalue"
 )
 
-type AsyncWriter struct {
+type EthStorageWriter struct {
 	*EthIndexer
 	buffer   []*EthIndexer
 	ethStore *EthDataStore
 	Err      error
 }
 
-func NewAsyncWriter(ethStore *EthDataStore, version int64) *AsyncWriter {
-	return &AsyncWriter{
+func NewEthStorageWriter(ethStore *EthDataStore, version int64) *EthStorageWriter {
+	return &EthStorageWriter{
 		EthIndexer: NewEthIndexer(ethStore, version),
 		ethStore:   ethStore,
 		buffer:     []*EthIndexer{},
 	}
 }
 
-func (this *AsyncWriter) Precommit() {
+func (this *EthStorageWriter) Precommit() {
 	this.EthIndexer.Finalize() // Remove the nil transitions
 	this.buffer = append(this.buffer, this.EthIndexer)
 
@@ -70,7 +70,7 @@ func (this *AsyncWriter) Precommit() {
 }
 
 // Signals a block is completed, time to write to the db.
-func (this *AsyncWriter) Commit(version uint64) {
+func (this *EthStorageWriter) Commit(version uint64) {
 	mergedIdxer := new(EthIndexer).Merge(this.buffer[:]) // Merge all the indexers together to commit to the db at once.
 	this.ethStore.WriteToEthStorage(uint64(mergedIdxer.Version), mergedIdxer.dirtyAccounts)
 	this.buffer = this.buffer[:0]

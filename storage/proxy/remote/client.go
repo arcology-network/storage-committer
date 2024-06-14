@@ -7,7 +7,7 @@ import (
 	"net/url"
 
 	addrcompressor "github.com/arcology-network/common-lib/addrcompressor"
-	datastore "github.com/arcology-network/storage-committer/storage/ccstorage"
+	datastore "github.com/arcology-network/storage-committer/storage/livestorage"
 )
 
 type ReadonlyClient struct {
