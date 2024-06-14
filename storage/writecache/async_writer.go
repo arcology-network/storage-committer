@@ -17,22 +17,22 @@
 
 package cache
 
-// AsyncWriter is a struct that contains data strucuture and methods for writing data to cache.
+// ExecutionCacheWriter is a struct that contains data strucuture and methods for writing data to cache.
 // The indexer is used to index the input transitions as they are received, in a way that they can be committed efficiently later.
-type AsyncWriter struct {
+type ExecutionCacheWriter struct {
 	*WriteCacheIndexer
 	*WriteCache
 }
 
-func NewAsyncWriter(writeCache *WriteCache, version int64) *AsyncWriter {
-	return &AsyncWriter{
+func NewExecutionCacheWriter(writeCache *WriteCache, version int64) *ExecutionCacheWriter {
+	return &ExecutionCacheWriter{
 		WriteCacheIndexer: NewWriteCacheIndexer(nil, int64(version)),
 		WriteCache:        writeCache,
 	}
 }
 
 // write cache updates itself every generation. It doesn't need to write to the database.
-func (this *AsyncWriter) Precommit() {
+func (this *ExecutionCacheWriter) Precommit() {
 	this.WriteCacheIndexer.Finalize() // Remove the nil transitions
 	for i := range this.WriteCacheIndexer.buffer {
 		this.WriteCache.kvDict[*this.WriteCacheIndexer.buffer[i].GetPath()] = this.WriteCacheIndexer.buffer[i]
@@ -43,7 +43,7 @@ func (this *AsyncWriter) Precommit() {
 
 // The generation cache is transient and will clear itself when all the transitions are committed to
 // the database.
-func (this *AsyncWriter) Commit(_ uint64) {
+func (this *ExecutionCacheWriter) Commit(_ uint64) {
 	this.WriteCache.Clear()
 	this.WriteCacheIndexer.buffer = this.WriteCacheIndexer.buffer[:0]
 }

@@ -22,10 +22,10 @@ import (
 	policy "github.com/arcology-network/common-lib/storage/policy"
 	intf "github.com/arcology-network/storage-committer/interfaces"
 	platform "github.com/arcology-network/storage-committer/platform"
-	"github.com/arcology-network/storage-committer/storage/ccstorage"
-	ccstg "github.com/arcology-network/storage-committer/storage/ccstorage"
 	"github.com/arcology-network/storage-committer/storage/ethstorage"
 	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
+	ccstg "github.com/arcology-network/storage-committer/storage/livestorage"
+	ccstorage "github.com/arcology-network/storage-committer/storage/livestorage"
 	"github.com/arcology-network/storage-committer/univalue"
 )
 
@@ -119,8 +119,8 @@ func (this *StorageProxy) Retrive(key string, v any) (interface{}, error) {
 // Get the stores that can be
 func (this *StorageProxy) GetWriters() []intf.AsyncWriter[*univalue.Univalue] {
 	return []intf.AsyncWriter[*univalue.Univalue]{
-		NewAsyncWriter(this.unifiedCache, -1),
-		ethstorage.NewAsyncWriter(this.ethDataStore, -1),
-		ccstorage.NewAsyncWriter(this.ccDataStore, -1),
+		NewLiveCacheWriter(this.unifiedCache, -1),
+		ethstorage.NewEthStorageWriter(this.ethDataStore, -1),
+		ccstorage.NewLiveStorageWriter(this.ccDataStore, -1),
 	}
 }

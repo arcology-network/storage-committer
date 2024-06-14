@@ -17,16 +17,16 @@
 
 package ccstorage
 
-// AsyncWriter is a struct that contains data strucuture and methods for writing data to concurrent storage.
-type AsyncWriter struct {
+// LiveStorageWriter is a struct that contains data strucuture and methods for writing data to concurrent storage.
+type LiveStorageWriter struct {
 	*CCIndexer
 	buffer  []*CCIndexer
 	store   *DataStore
 	version int64
 }
 
-func NewAsyncWriter(store *DataStore, version int64) *AsyncWriter {
-	return &AsyncWriter{
+func NewLiveStorageWriter(store *DataStore, version int64) *LiveStorageWriter {
+	return &LiveStorageWriter{
 		CCIndexer: NewCCIndexer(store, 0),
 		buffer:    []*CCIndexer{},
 		store:     store,
@@ -36,14 +36,14 @@ func NewAsyncWriter(store *DataStore, version int64) *AsyncWriter {
 
 // Send the data to the downstream processor. This can be called multiple times
 // before calling Await to commit the data to the state db.
-func (this *AsyncWriter) Precommit() {
+func (this *LiveStorageWriter) Precommit() {
 	this.CCIndexer.Finalize() // Remove the nil transitions
 	this.buffer = append(this.buffer, this.CCIndexer)
 	this.CCIndexer = NewCCIndexer(this.store, -1)
 }
 
 // Await commits the data to the state db.
-func (this *AsyncWriter) Commit(_ uint64) {
+func (this *LiveStorageWriter) Commit(_ uint64) {
 	mergedIdxer := new(CCIndexer).Merge(this.buffer)
 	var err error
 	if this.store.db != nil {

@@ -17,16 +17,15 @@
 
 package proxy
 
-// AsyncWriter is a struct that contains data strucuture and methods for writing data to cache.
-// The indexer is used to index the input transitions as they are received, in a way that they can be committed efficiently later.
-type AsyncWriter struct {
+// LiveCacheWriter writes to the OBJECT cache.
+type LiveCacheWriter struct {
 	*CacheIndexer
 	store  *ObjectCache
 	buffer []*CacheIndexer
 }
 
-func NewAsyncWriter(cache *ObjectCache, version int64) *AsyncWriter {
-	return &AsyncWriter{
+func NewLiveCacheWriter(cache *ObjectCache, version int64) *LiveCacheWriter {
+	return &LiveCacheWriter{
 		CacheIndexer: NewCacheIndexer(cache, version),
 		store:        cache,
 		buffer:       make([]*CacheIndexer, 0),
@@ -36,14 +35,14 @@ func NewAsyncWriter(cache *ObjectCache, version int64) *AsyncWriter {
 // Send the data to the downstream processor, this is called for each generation.
 // If there are multiple generations, this can be called multiple times before Await.
 // Each generation
-func (this *AsyncWriter) Precommit() {
+func (this *LiveCacheWriter) Precommit() {
 	this.CacheIndexer.Finalize()                         // Remove the nil transitions
 	this.buffer = append(this.buffer, this.CacheIndexer) // Append the indexer to the buffer
 	this.CacheIndexer = NewCacheIndexer(this.store, -1)  // Reset the indexer with a default version number
 }
 
 // Triggered by the block commit.
-func (this *AsyncWriter) Commit(version uint64) {
+func (this *LiveCacheWriter) Commit(version uint64) {
 	mergedIdxer := new(CacheIndexer).Merge(this.buffer)       // Merge indexers
 	this.store.BatchSet(mergedIdxer.keys, mergedIdxer.values) // update the local cache with the new values in the indexer
 	this.buffer = make([]*CacheIndexer, 0)
