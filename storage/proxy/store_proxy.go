@@ -18,6 +18,7 @@
 package proxy
 
 import (
+	ccbadger "github.com/arcology-network/common-lib/storage/badger"
 	memdb "github.com/arcology-network/common-lib/storage/memdb"
 	policy "github.com/arcology-network/common-lib/storage/policy"
 	intf "github.com/arcology-network/storage-committer/interfaces"
@@ -60,7 +61,9 @@ func NewLevelDBStoreProxy(dbpath string) *StorageProxy {
 		ethDataStore: ethstg.NewLevelDBDataStore(dbpath), //ethstg.NewParallelEthMemDataStore(),
 		ccDataStore: ccstg.NewDataStore(
 			policy.NewCachePolicy(0, 1), // Don't cache anything in the underlying storage, the cache is managed by the router
-			memdb.NewMemoryDB(),
+			// memdb.NewMemoryDB(),
+			ccbadger.NewBadgerDB(dbpath+"_badager"),
+			// ccbadger.NewParaBadgerDB(dbpath+"_pbadager", common.Remainder),
 			platform.Codec{}.Encode,
 			platform.Codec{}.Decode,
 		),
