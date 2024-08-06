@@ -21,7 +21,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"math/big"
 	"strings"
 
 	"github.com/VictoriaMetrics/fastcache"
@@ -43,7 +42,8 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/trie"
 	ethmpt "github.com/ethereum/go-ethereum/trie"
-	"github.com/ethereum/go-ethereum/trie/triedb/hashdb"
+	"github.com/ethereum/go-ethereum/triedb"
+	"github.com/ethereum/go-ethereum/triedb/hashdb"
 	"github.com/holiman/uint256"
 	"golang.org/x/crypto/sha3"
 )
@@ -57,7 +57,7 @@ type Account struct {
 	storageTrie  *ethmpt.Trie // account storage trie
 	StorageDirty bool
 
-	ethdb        *ethmpt.Database
+	ethdb        *triedb.Database
 	diskdbShards [16]ethdb.Database
 	err          error
 }
@@ -93,19 +93,19 @@ func NewAccountWithSharedCache(addr ethcommon.Address, diskdbs [16]ethdb.Databas
 func EmptyAccountState() types.StateAccount {
 	return ethtypes.StateAccount{
 		Nonce:    0,
-		Balance:  big.NewInt(0),
+		Balance:  uint256.NewInt(0),
 		Root:     types.EmptyRootHash,
 		CodeHash: codec.Bytes32(crypto.Keccak256Hash(nil)).Encode(),
 	}
 }
 
-func LoadTrie(diskdbs [16]ethdb.Database, root ethcommon.Hash) (*ethmpt.Database, *trie.Trie, error) {
+func LoadTrie(diskdbs [16]ethdb.Database, root ethcommon.Hash) (*triedb.Database, *trie.Trie, error) {
 	ethdb := ethmpt.NewParallelDatabase(diskdbs, nil)
 	trie, err := ethmpt.NewParallel(ethmpt.TrieID(root), ethdb)
 	return ethdb, trie, err
 }
 
-func LoadTrieWithSharedCache(diskdbs [16]ethdb.Database, root ethcommon.Hash, dbConfig interface{}, sharedCache *fastcache.Cache) (*ethmpt.Database, *trie.Trie, error) {
+func LoadTrieWithSharedCache(diskdbs [16]ethdb.Database, root ethcommon.Hash, dbConfig interface{}, sharedCache *fastcache.Cache) (*triedb.Database, *trie.Trie, error) {
 	ethdb := ethmpt.NewParallelDatabaseWithSharedCache(diskdbs, sharedCache, nil)
 	trie, err := ethmpt.NewParallel(ethmpt.TrieID(root), ethdb)
 	return ethdb, trie, err
@@ -199,7 +199,7 @@ func (this *Account) Has(key string) bool {
 
 func (this *Account) Retrive(key string, T any) (interface{}, error) {
 	if strings.HasSuffix(key, "/balance") {
-		balance, _ := uint256.FromBig(this.StateAccount.Balance)
+		balance := this.StateAccount.Balance
 		v := commutative.NewUnboundedU256()
 		v.SetValue(*balance)
 		return v, nil
@@ -248,7 +248,7 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Typ
 
 	if pos, _ := slice.FindFirstIf(keys, func(_ int, k string) bool { return strings.HasSuffix(k, "/balance") }); pos >= 0 {
 		balance := typedVals[pos].Value().(uint256.Int)
-		this.Balance = balance.ToBig()
+		this.Balance = &balance
 		slice.RemoveAt(&keys, pos)
 		slice.RemoveAt(&typedVals, pos)
 	}

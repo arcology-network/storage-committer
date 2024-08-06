@@ -26,6 +26,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	"github.com/ethereum/go-ethereum/rlp"
 	ethmpt "github.com/ethereum/go-ethereum/trie"
+	"github.com/ethereum/go-ethereum/triedb"
 	// ethapi "github.com/ethereum/go-ethereum/internal/ethapi"
 )
 
@@ -34,10 +35,10 @@ type ProofProvider struct {
 	totalVisits uint64 // Total number of times all the merkle trees have been accessed since this Merkle tree is created.
 	visits      int    // Number of times this merkle Merkle has been accessed.
 	DataStore   *EthDataStore
-	Ethdb       *ethmpt.Database
+	Ethdb       *triedb.Database
 }
 
-func NewProofProvider(ethdb *ethmpt.Database, root [32]byte) (*ProofProvider, error) {
+func NewProofProvider(ethdb *triedb.Database, root [32]byte) (*ProofProvider, error) {
 	store, err := LoadEthDataStore(ethdb, root)
 	if err != nil {
 		return nil, err
@@ -128,7 +129,7 @@ func (this *ProofProvider) GetProof(acctAddr ethcommon.Address, storageKeys []st
 	return &AccountResult{
 		Address:      acctAddr,
 		AccountProof: accountProof,
-		Balance:      (*hexutil.Big)(account.StateAccount.Balance),
+		Balance:      (*hexutil.Big)(account.StateAccount.Balance.ToBig()),
 		CodeHash:     codeHash,
 		Nonce:        hexutil.Uint64(account.StateAccount.Nonce),
 		StorageHash:  storageHash,

@@ -22,7 +22,7 @@ import (
 
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/slice"
-	ethmpt "github.com/ethereum/go-ethereum/trie"
+	"github.com/ethereum/go-ethereum/triedb"
 	// ethapi "github.com/ethereum/go-ethereum/internal/ethapi"
 )
 
@@ -32,13 +32,13 @@ import (
 type MerkleProofCache struct {
 	maxCached  int                         // max number of merkle proofs to keep in memory
 	merkleDict map[[32]byte]*ProofProvider // The merkle tree for each root.
-	db         *ethmpt.Database
+	db         *triedb.Database
 	lock       sync.Mutex
 }
 
 // NewMerkleProofCache creates a new MerkleProofCache, which keeps a cache of merkle trees in memory.
 // When the cache is full, the merkle tree with the lowest ratio of visits/totalVisits will be removed.
-func NewMerkleProofCache(maxCached int, db *ethmpt.Database) *MerkleProofCache {
+func NewMerkleProofCache(maxCached int, db *triedb.Database) *MerkleProofCache {
 	return &MerkleProofCache{
 		maxCached:  maxCached,
 		merkleDict: map[[32]byte]*ProofProvider{},

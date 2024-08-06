@@ -37,7 +37,8 @@ import (
 	ethdb "github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/rlp"
 	ethmpt "github.com/ethereum/go-ethereum/trie"
-	"github.com/ethereum/go-ethereum/trie/triedb/hashdb"
+	"github.com/ethereum/go-ethereum/triedb"
+	"github.com/ethereum/go-ethereum/triedb/hashdb"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -50,7 +51,7 @@ type EthDataStore struct {
 	accountCacheEnabled bool
 	accountCache        map[ethcommon.Address]*Account // Account cache holds the accountCache that are being accessed in the current cycle.
 
-	ethdb   *ethmpt.Database
+	ethdb   *triedb.Database
 	diskdbs [16]ethdb.Database
 
 	lock     sync.RWMutex
@@ -66,7 +67,7 @@ type EthDataStore struct {
 }
 
 // LoadEthDataStore loads the trie from the database with the root provided.
-func LoadEthDataStore(triedb *ethmpt.Database, root [32]byte) (*EthDataStore, error) {
+func LoadEthDataStore(triedb *triedb.Database, root [32]byte) (*EthDataStore, error) {
 	trie, err := ethmpt.New(ethmpt.TrieID(root), triedb)
 	if err != nil {
 		return nil, err
@@ -80,7 +81,7 @@ func LoadEthDataStore(triedb *ethmpt.Database, root [32]byte) (*EthDataStore, er
 	return NewEthDataStore(trie, triedb, diskdb), nil
 }
 
-func NewEthDataStore(trie *ethmpt.Trie, triedb *ethmpt.Database, diskdb [16]ethdb.Database) *EthDataStore {
+func NewEthDataStore(trie *ethmpt.Trie, triedb *triedb.Database, diskdb [16]ethdb.Database) *EthDataStore {
 	trieDbConfig := &hashdb.Config{CleanCacheSize: 1024 * 1024 * 100} // 100MB of the shared cache
 	return &EthDataStore{
 		rootDict:       map[uint64][32]byte{},
@@ -340,7 +341,7 @@ func (this *EthDataStore) DiskDBs() [16]ethdb.Database {
 func (this *EthDataStore) Root() [32]byte                                    { return this.worldStateTrie.Hash() }
 func (this *EthDataStore) Encoder(any) func(string, interface{}) []byte      { return this.encoder }
 func (this *EthDataStore) Decoder(any) func(string, []byte, any) interface{} { return this.decoder }
-func (this *EthDataStore) EthDB() *ethmpt.Database                           { return this.ethdb }
+func (this *EthDataStore) EthDB() *triedb.Database                           { return this.ethdb }
 func (this *EthDataStore) Trie() *ethmpt.Trie                                { return this.worldStateTrie }
 func (this *EthDataStore) UpdateCacheStats([]interface{})                    {}
 func (this *EthDataStore) Print()                                            {}
