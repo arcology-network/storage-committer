@@ -107,7 +107,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	t0 := time.Now()
 	numAccounts := 25000
 	for i := 0; i < numAccounts; i++ {
-		buf := sha3.Sum256([]byte(fmt.Sprint(rand.Int())))
+		buf := sha3.Sum256([]byte(fmt.Sprint(i)))
 		acct := hexutil.Encode(buf[:20])
 
 		// writeCache := committer.WriteCache()
@@ -120,7 +120,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 			b.Error(err)
 		}
 
-		for j := 0; j < 4; j++ {
+		for j := 0; j < 40; j++ {
 			if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-0"+fmt.Sprint(j), noncommutative.NewString(string(acct))); err != nil { /* The first Element */
 				b.Error(err)
 			}
@@ -148,6 +148,8 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	t0 = time.Now()
 	committer.Precommit([]uint32{0})
 	fmt.Println("Precommit:", time.Since(t0))
+
+	fmt.Println("Root: ", sstore.Backend().EthStore().LatestWorldTrieRoot())
 
 	t0 = time.Now()
 	committer.Commit(10)

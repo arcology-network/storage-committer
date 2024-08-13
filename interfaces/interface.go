@@ -17,14 +17,13 @@
 
 package interfaces
 
-const (
-	MAX_DEPTH            uint8 = 12
-	ETH10_ACCOUNT_LENGTH uint8 = 40
-)
+// const (
+// 	MAX_DEPTH            uint8 = 12
+// 	ETH10_ACCOUNT_LENGTH uint8 = 40
+// )
 
 type Platform interface { // value type
 	IsSysPath(string) bool
-	// Eth10Account() string
 }
 
 type Type interface { // value type
