@@ -21,9 +21,9 @@ import (
 
 	indexer "github.com/arcology-network/common-lib/storage/indexer"
 
+	stgtype "github.com/arcology-network/common-lib/types/storage"
+	"github.com/arcology-network/common-lib/types/storage/univalue"
 	interfaces "github.com/arcology-network/storage-committer/interfaces"
-	intf "github.com/arcology-network/storage-committer/interfaces"
-	"github.com/arcology-network/storage-committer/univalue"
 )
 
 // An index by path, transitions have the same path will be put together in a list
@@ -39,7 +39,7 @@ func PathIndexer(store interfaces.ReadOnlyStore) *indexer.UnorderedIndexer[strin
 
 		func(k string, v *univalue.Univalue) []*univalue.Univalue {
 			if v.Value() != nil {
-				v.Value().(intf.Type).Preload(k, store)
+				v.Value().(stgtype.Type).Preload(k, store)
 			}
 			return []*univalue.Univalue{v}
 		},

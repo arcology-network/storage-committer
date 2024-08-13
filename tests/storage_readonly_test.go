@@ -24,9 +24,9 @@ package committertest
 // 	"time"
 
 // 	storage "github.com/arcology-network/common-lib/storage"
-// 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
+// 	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
 // 	storage "github.com/arcology-network/storage-committer/storage/proxy"
-// 	univalue "github.com/arcology-network/storage-committer/univalue"
+// 	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
 // )
 
 // func TestReadonlyStorageLocal(t *testing.T) {

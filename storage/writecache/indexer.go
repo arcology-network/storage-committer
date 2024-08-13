@@ -18,8 +18,8 @@ package cache
 
 import (
 	"github.com/arcology-network/common-lib/exp/slice"
+	"github.com/arcology-network/common-lib/types/storage/univalue"
 	intf "github.com/arcology-network/storage-committer/interfaces"
-	"github.com/arcology-network/storage-committer/univalue"
 )
 
 // WriteCacheIndexer is simpliest  of indexers. It does not index anything, just stores the transitions.

@@ -21,15 +21,15 @@ import (
 	"testing"
 
 	"github.com/arcology-network/common-lib/exp/slice"
+	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	statestore "github.com/arcology-network/storage-committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
-	commutative "github.com/arcology-network/storage-committer/commutative"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 
-	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
+	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
+	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
-	univalue "github.com/arcology-network/storage-committer/univalue"
 )
 
 func TestMultiBatchPrecommitWithSingleCommit(t *testing.T) {

@@ -26,7 +26,7 @@ package committertest
 // 	stgcomm "github.com/arcology-network/storage-committer"
 // 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 // 	importer "github.com/arcology-network/storage-committer/storage/committer"
-// 	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
+// 	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
 // 	storage "github.com/arcology-network/storage-committer/storage/proxy"
 // )
 

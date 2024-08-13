@@ -27,8 +27,8 @@ import (
 
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/slice"
+	platform "github.com/arcology-network/storage-committer/common"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
-	platform "github.com/arcology-network/storage-committer/platform"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/rawdb"

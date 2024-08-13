@@ -28,12 +28,14 @@ import (
 	"github.com/arcology-network/common-lib/codec"
 	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/slice"
+	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
+	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
+	"github.com/arcology-network/common-lib/types/storage/univalue"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
-	commutative "github.com/arcology-network/storage-committer/commutative"
-	"github.com/arcology-network/storage-committer/interfaces"
-	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
-	platform "github.com/arcology-network/storage-committer/platform"
-	"github.com/arcology-network/storage-committer/univalue"
+
+	// "github.com/arcology-network/storage-committer/interfaces"
+	stgtype "github.com/arcology-network/common-lib/types/storage"
+	platform "github.com/arcology-network/storage-committer/common"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -231,10 +233,10 @@ func (this *Account) Retrive(key string, T any) (interface{}, error) {
 		return T, nil
 	}
 
-	return T.(interfaces.Type).StorageDecode(key, buffer), err
+	return T.(stgtype.Type).StorageDecode(key, buffer), err
 }
 
-func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Type) error {
+func (this *Account) UpdateAccountTrie(keys []string, typedVals []stgtype.Type) error {
 	if pos, _ := slice.FindFirstIf(keys, func(_ int, k string) bool { return len(k) == stgcommcommon.ETH10_ACCOUNT_FULL_LENGTH+1 }); pos >= 0 {
 		slice.RemoveAt(&keys, pos)
 		slice.RemoveAt(&typedVals, pos)
@@ -271,7 +273,7 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Typ
 	})
 
 	// Encode the values
-	encodedVals := slice.ParallelTransform(typedVals, numThd, func(i int, _ interfaces.Type) []byte {
+	encodedVals := slice.ParallelTransform(typedVals, numThd, func(i int, _ stgtype.Type) []byte {
 		return common.IfThenDo1st(typedVals[i] != nil, func() []byte {
 			return typedVals[i].StorageEncode(keys[i])
 		}, []byte{})
@@ -292,9 +294,9 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []interfaces.Typ
 }
 
 // Write the account changes to theirs Eth Trie
-func (this *Account) ApplyChanges(transitions [][]*univalue.Univalue, getter func([]*univalue.Univalue) (string, interfaces.Type)) ([]string, []interfaces.Type) {
+func (this *Account) ApplyChanges(transitions [][]*univalue.Univalue, getter func([]*univalue.Univalue) (string, stgtype.Type)) ([]string, []stgtype.Type) {
 	keys := make([]string, len(transitions))
-	typedVals := slice.Transform(transitions, func(i int, vals []*univalue.Univalue) interfaces.Type {
+	typedVals := slice.Transform(transitions, func(i int, vals []*univalue.Univalue) stgtype.Type {
 		_, v := getter(vals)
 		keys[i] = *vals[i].GetPath()
 		return v

@@ -21,9 +21,9 @@ import (
 	"runtime"
 
 	"github.com/arcology-network/common-lib/exp/slice"
+	"github.com/arcology-network/common-lib/types/storage/univalue"
+	platform "github.com/arcology-network/storage-committer/common"
 	intf "github.com/arcology-network/storage-committer/interfaces"
-	"github.com/arcology-network/storage-committer/platform"
-	"github.com/arcology-network/storage-committer/univalue"
 )
 
 // An index by account address, transitions have the same Eth account address will be put together in a list

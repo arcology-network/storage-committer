@@ -28,13 +28,11 @@ import (
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	mempool "github.com/arcology-network/common-lib/exp/mempool"
 	slice "github.com/arcology-network/common-lib/exp/slice"
+	stgtype "github.com/arcology-network/common-lib/types/storage"
+	"github.com/arcology-network/common-lib/types/storage/commutative"
+	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
 	committercommon "github.com/arcology-network/storage-committer/common"
-	platform "github.com/arcology-network/storage-committer/platform"
-
-	"github.com/arcology-network/storage-committer/commutative"
-	"github.com/arcology-network/storage-committer/interfaces"
 	intf "github.com/arcology-network/storage-committer/interfaces"
-	univalue "github.com/arcology-network/storage-committer/univalue"
 )
 
 // WriteCache is a read-only data backend used for caching.
@@ -51,7 +49,7 @@ func NewWriteCache(backend intf.ReadOnlyStore, perPage int, numPages int, args .
 	return &WriteCache{
 		backend:  backend,
 		kvDict:   make(map[string]*univalue.Univalue),
-		platform: platform.NewPlatform(),
+		platform: committercommon.NewPlatform(),
 		pool: mempool.NewMempool(perPage, numPages, func() *univalue.Univalue {
 			return new(univalue.Univalue)
 		}, (&univalue.Univalue{}).Reset),
@@ -108,7 +106,7 @@ func (this *WriteCache) write(tx uint32, path string, value interface{}) error {
 
 func (this *WriteCache) Write(tx uint32, path string, value interface{}) (int64, error) {
 	fee := int64(0) //Fee{}.Writer(path, value, this.writeCache)
-	if value == nil || (value != nil && value.(interfaces.Type).TypeID() != uint8(reflect.Invalid)) {
+	if value == nil || (value != nil && value.(stgtype.Type).TypeID() != uint8(reflect.Invalid)) {
 		return fee, this.write(tx, path, value)
 	}
 	return fee, errors.New("Error: Unknown data type !")
@@ -148,7 +146,7 @@ func (this *WriteCache) Find(tx uint32, path string, T any) (interface{}, interf
 // Users need to track the access count themselves.
 func (this *WriteCache) Retrive(path string, T any) (interface{}, error) {
 	typedv, _ := this.Find(committercommon.SYSTEM, path, T)
-	if typedv == nil || typedv.(intf.Type).IsDeltaApplied() {
+	if typedv == nil || typedv.(stgtype.Type).IsDeltaApplied() {
 		return typedv, nil
 	}
 
@@ -161,8 +159,8 @@ func (this *WriteCache) Retrive(path string, T any) (interface{}, error) {
 	}
 
 	// Make a Deep copy of the original value.
-	rawv, _, _ := typedv.(intf.Type).Get()
-	return typedv.(intf.Type).New(rawv, nil, nil, typedv.(intf.Type).Min(), typedv.(intf.Type).Max()), nil // Clone the value
+	rawv, _, _ := typedv.(stgtype.Type).Get()
+	return typedv.(stgtype.Type).New(rawv, nil, nil, typedv.(stgtype.Type).Min(), typedv.(stgtype.Type).Max()), nil // Clone the value
 }
 
 func (this *WriteCache) IfExists(path string) bool {
@@ -276,12 +274,12 @@ func (this *WriteCache) ExportAll(preprocs ...func([]*univalue.Univalue) []*univ
 	return accesses, transitions
 }
 
-func (this *WriteCache) KVs() ([]string, []intf.Type) {
+func (this *WriteCache) KVs() ([]string, []stgtype.Type) {
 	transitions := univalue.Univalues(slice.Clone(this.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
-	values := make([]intf.Type, len(transitions))
+	values := make([]stgtype.Type, len(transitions))
 	keys := slice.ParallelTransform(transitions, 4, func(i int, v *univalue.Univalue) string {
-		values[i] = v.Value().(intf.Type)
+		values[i] = v.Value().(stgtype.Type)
 		return *v.GetPath()
 	})
 	return keys, values

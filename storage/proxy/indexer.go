@@ -20,8 +20,8 @@ import (
 	"runtime"
 
 	"github.com/arcology-network/common-lib/exp/slice"
-	intf "github.com/arcology-network/storage-committer/interfaces"
-	"github.com/arcology-network/storage-committer/univalue"
+	stgtype "github.com/arcology-network/common-lib/types/storage"
+	"github.com/arcology-network/common-lib/types/storage/univalue"
 )
 
 // CacheIndexer is simpliest  of indexers. It does not index anything, just stores the transitions.
@@ -29,7 +29,7 @@ type CacheIndexer struct {
 	Version int64
 	buffer  []*univalue.Univalue
 	keys    []string
-	values  []intf.Type
+	values  []stgtype.Type
 }
 
 func NewCacheIndexer(store *ObjectCache, Version int64) *CacheIndexer {
@@ -37,7 +37,7 @@ func NewCacheIndexer(store *ObjectCache, Version int64) *CacheIndexer {
 		Version: Version,
 		buffer:  []*univalue.Univalue{},
 		keys:    []string{},
-		values:  []intf.Type{},
+		values:  []stgtype.Type{},
 	}
 }
 
@@ -51,10 +51,10 @@ func (this *CacheIndexer) Finalize() {
 	slice.RemoveIf((*[]*univalue.Univalue)(&this.buffer), func(i int, v *univalue.Univalue) bool { return v.GetPath() == nil })
 
 	this.keys = make([]string, len(this.buffer))
-	this.values = slice.ParallelTransform(this.buffer, runtime.NumCPU(), func(i int, v *univalue.Univalue) intf.Type {
+	this.values = slice.ParallelTransform(this.buffer, runtime.NumCPU(), func(i int, v *univalue.Univalue) stgtype.Type {
 		this.keys[i] = *v.GetPath()
 		if v.Value() != nil {
-			return v.Value().(intf.Type)
+			return v.Value().(stgtype.Type)
 		}
 		return nil // A deletion
 	})
@@ -74,7 +74,7 @@ func (this *CacheIndexer) Merge(idxers []*CacheIndexer) *CacheIndexer {
 
 	this.values = slice.ConcateDo(idxers,
 		func(idxer *CacheIndexer) uint64 { return uint64(len(idxer.values)) },
-		func(idxer *CacheIndexer) []intf.Type { return idxer.values })
+		func(idxer *CacheIndexer) []stgtype.Type { return idxer.values })
 
 	return this
 }

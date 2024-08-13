@@ -20,8 +20,8 @@ import (
 	commonlibcommon "github.com/arcology-network/common-lib/common"
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	slice "github.com/arcology-network/common-lib/exp/slice"
+	"github.com/arcology-network/common-lib/types/storage/univalue"
 	ccurlcommon "github.com/arcology-network/storage-committer/common"
-	"github.com/arcology-network/storage-committer/univalue"
 )
 
 // WriteCacheFilter is a post processing filter for WriteCache.

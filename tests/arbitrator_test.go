@@ -25,15 +25,15 @@ import (
 
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/slice"
+	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
+	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
+	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	statestore "github.com/arcology-network/storage-committer"
 	arbitrator "github.com/arcology-network/storage-committer/arbitrator"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
-	commutative "github.com/arcology-network/storage-committer/commutative"
-	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	"github.com/arcology-network/storage-committer/storage/proxy"
-	univalue "github.com/arcology-network/storage-committer/univalue"
 )
 
 func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {

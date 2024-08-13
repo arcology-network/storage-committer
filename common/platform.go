@@ -15,7 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package platform
+package common
 
 import (
 	"strings"
@@ -23,9 +23,8 @@ import (
 	common "github.com/arcology-network/common-lib/common"
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/slice"
-	stgcommcommon "github.com/arcology-network/storage-committer/common"
-	commutative "github.com/arcology-network/storage-committer/commutative"
-	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
+	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
+	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
 )
 
 type Platform struct {
@@ -70,18 +69,18 @@ func (this *Platform) GetBuiltins(acct string) ([]string, []uint8) {
 	slice.SortBy1st(paths, typeIds, func(lhv, rhv string) bool { return lhv < rhv })
 
 	for i, path := range paths {
-		paths[i] = stgcommcommon.ETH10_ACCOUNT_PREFIX + acct + path
+		paths[i] = ETH10_ACCOUNT_PREFIX + acct + path
 	}
 	return paths, typeIds
 }
 
 // These paths won't keep the sub elements
 func (this *Platform) IsSysPath(path string) bool {
-	if len(path) <= stgcommcommon.ETH10_ACCOUNT_FULL_LENGTH {
-		return path == stgcommcommon.ETH10 || path == stgcommcommon.ETH10_ACCOUNT_PREFIX
+	if len(path) <= ETH10_ACCOUNT_FULL_LENGTH {
+		return path == ETH10 || path == ETH10_ACCOUNT_PREFIX
 	}
 
-	subPath := path[stgcommcommon.ETH10_ACCOUNT_FULL_LENGTH:] // Removed the shared part
+	subPath := path[ETH10_ACCOUNT_FULL_LENGTH:] // Removed the shared part
 	_, ok := this.syspaths[subPath]
 	return ok
 }
@@ -92,28 +91,28 @@ func (this *Platform) GetSysPaths() []string {
 
 func (this *Platform) Builtins(acct string, idx int) string {
 	paths, _ := common.MapKVs(this.syspaths)
-	return stgcommcommon.ETH10_ACCOUNT_PREFIX + acct + paths[idx]
+	return ETH10_ACCOUNT_PREFIX + acct + paths[idx]
 }
 
 func ParseAccountAddr(acct string) (string, string, string) {
-	if len(acct) < stgcommcommon.ETH10_ACCOUNT_PREFIX_LENGTH+stgcommcommon.ETH10_ACCOUNT_LENGTH {
+	if len(acct) < ETH10_ACCOUNT_PREFIX_LENGTH+ETH10_ACCOUNT_LENGTH {
 		return acct, "", ""
 	}
-	return acct[:stgcommcommon.ETH10_ACCOUNT_PREFIX_LENGTH],
-		acct[stgcommcommon.ETH10_ACCOUNT_PREFIX_LENGTH : stgcommcommon.ETH10_ACCOUNT_PREFIX_LENGTH+stgcommcommon.ETH10_ACCOUNT_LENGTH],
-		acct[stgcommcommon.ETH10_ACCOUNT_PREFIX_LENGTH+stgcommcommon.ETH10_ACCOUNT_LENGTH:]
+	return acct[:ETH10_ACCOUNT_PREFIX_LENGTH],
+		acct[ETH10_ACCOUNT_PREFIX_LENGTH : ETH10_ACCOUNT_PREFIX_LENGTH+ETH10_ACCOUNT_LENGTH],
+		acct[ETH10_ACCOUNT_PREFIX_LENGTH+ETH10_ACCOUNT_LENGTH:]
 }
 
 func GetAccountAddr(acct string) string {
-	if len(acct) < stgcommcommon.ETH10_ACCOUNT_PREFIX_LENGTH+stgcommcommon.ETH10_ACCOUNT_LENGTH {
+	if len(acct) < ETH10_ACCOUNT_PREFIX_LENGTH+ETH10_ACCOUNT_LENGTH {
 		return acct
 	}
-	return acct[stgcommcommon.ETH10_ACCOUNT_PREFIX_LENGTH : stgcommcommon.ETH10_ACCOUNT_PREFIX_LENGTH+stgcommcommon.ETH10_ACCOUNT_LENGTH]
+	return acct[ETH10_ACCOUNT_PREFIX_LENGTH : ETH10_ACCOUNT_PREFIX_LENGTH+ETH10_ACCOUNT_LENGTH]
 }
 
 func GetPathUnder(key, prefix string) string {
-	if len(key) > stgcommcommon.ETH10_ACCOUNT_PREFIX_LENGTH+stgcommcommon.ETH10_ACCOUNT_LENGTH {
-		subKey := key[stgcommcommon.ETH10_ACCOUNT_PREFIX_LENGTH+stgcommcommon.ETH10_ACCOUNT_LENGTH:]
+	if len(key) > ETH10_ACCOUNT_PREFIX_LENGTH+ETH10_ACCOUNT_LENGTH {
+		subKey := key[ETH10_ACCOUNT_PREFIX_LENGTH+ETH10_ACCOUNT_LENGTH:]
 		if subKey != prefix && strings.HasPrefix(subKey, prefix) {
 			return subKey[len(prefix):]
 		}
@@ -125,5 +124,5 @@ func GetPathUnder(key, prefix string) string {
 func IsEthPath(path string) bool {
 	return true
 	return !strings.Contains(path, "container/") &&
-		len(path) > stgcommcommon.ETH10_ACCOUNT_PREFIX_LENGTH
+		len(path) > ETH10_ACCOUNT_PREFIX_LENGTH
 }

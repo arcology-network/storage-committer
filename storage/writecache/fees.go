@@ -19,8 +19,8 @@ package cache
 
 import (
 	common "github.com/arcology-network/common-lib/common"
-	intf "github.com/arcology-network/storage-committer/interfaces"
-	"github.com/arcology-network/storage-committer/univalue"
+	stgtype "github.com/arcology-network/common-lib/types/storage"
+	"github.com/arcology-network/common-lib/types/storage/univalue"
 )
 
 const (
@@ -36,7 +36,7 @@ func (Fee) Reader(v interface{}) uint64 { // Call this before setting the value 
 	}
 
 	typedv := v.(*univalue.Univalue).Value()
-	dataSize := common.IfThenDo1st(typedv != nil, func() uint64 { return uint64(typedv.(intf.Type).MemSize()) }, 0)
+	dataSize := common.IfThenDo1st(typedv != nil, func() uint64 { return uint64(typedv.(stgtype.Type).MemSize()) }, 0)
 	return common.IfThen(
 		v.(*univalue.Univalue).Reads() > 1, // Is hot loaded
 		common.Max(dataSize/32, 1)*3,
@@ -51,10 +51,10 @@ func (Fee) Writer(key string, v interface{}, writecache *WriteCache) int64 { // 
 	if data, ok := committedv.([]byte); ok {
 		committedSize = uint64(len(data))
 	} else {
-		committedSize = common.IfThenDo1st(committedv != nil, func() uint64 { return uint64(committedv.(intf.Type).MemSize()) }, 0)
+		committedSize = common.IfThenDo1st(committedv != nil, func() uint64 { return uint64(committedv.(stgtype.Type).MemSize()) }, 0)
 	}
 
-	dataSize := common.IfThenDo1st(v != nil, func() uint64 { return uint64(v.(intf.Type).Size()) }, 0)
+	dataSize := common.IfThenDo1st(v != nil, func() uint64 { return uint64(v.(stgtype.Type).Size()) }, 0)
 	return common.IfThen(
 		committedSize > 0,
 		common.Max(int64(dataSize/32), 1)*20000,

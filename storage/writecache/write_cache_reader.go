@@ -25,10 +25,10 @@ import (
 
 	common "github.com/arcology-network/common-lib/common"
 	deltaset "github.com/arcology-network/common-lib/exp/deltaset"
+	stgtype "github.com/arcology-network/common-lib/types/storage"
+	"github.com/arcology-network/common-lib/types/storage/commutative"
+	"github.com/arcology-network/common-lib/types/storage/univalue"
 	committercommon "github.com/arcology-network/storage-committer/common"
-	"github.com/arcology-network/storage-committer/commutative"
-	"github.com/arcology-network/storage-committer/interfaces"
-	"github.com/arcology-network/storage-committer/univalue"
 )
 
 // Get the index of a given key under a path.
@@ -68,7 +68,7 @@ func (this *WriteCache) KeyAt(tx uint32, path string, index interface{}, T any) 
 // Peek the value under a path. The difference between Peek and Read is that Peek does not have access metadata attached.
 func (this *WriteCache) Peek(path string, T any) (interface{}, uint64) {
 	_, univ := this.Find(committercommon.SYSTEM, path, T)
-	v, _, _ := univ.(*univalue.Univalue).Value().(interfaces.Type).Get()
+	v, _, _ := univ.(*univalue.Univalue).Value().(stgtype.Type).Get()
 	return v, Fee{}.Reader(univ)
 }
 

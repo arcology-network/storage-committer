@@ -23,15 +23,15 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
+	stgtype "github.com/arcology-network/common-lib/types/storage"
+	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
+	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
+	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	statestore "github.com/arcology-network/storage-committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
-	commutative "github.com/arcology-network/storage-committer/commutative"
-	"github.com/arcology-network/storage-committer/interfaces"
-	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	"github.com/arcology-network/storage-committer/storage/proxy"
-	univalue "github.com/arcology-network/storage-committer/univalue"
 )
 
 func TestAuxTrans(t *testing.T) {
@@ -101,7 +101,7 @@ func TestAuxTrans(t *testing.T) {
 	}
 
 	transitions := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
-	if len(transitions) == 0 || !reflect.DeepEqual(transitions[0].Value().(interfaces.Type).Delta().(*deltaset.DeltaSet[string]).Updated().Elements(), []string{"elem-000"}) {
+	if len(transitions) == 0 || !reflect.DeepEqual(transitions[0].Value().(stgtype.Type).Delta().(*deltaset.DeltaSet[string]).Updated().Elements(), []string{"elem-000"}) {
 		t.Error("keys don't match")
 	}
 

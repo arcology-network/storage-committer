@@ -27,7 +27,7 @@ package ccstorage
 // 	merkle "github.com/arcology-network/common-lib/merkle"
 // 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 // 	"github.com/arcology-network/storage-committer/interfaces"
-// 	univalue "github.com/arcology-network/storage-committer/univalue"
+// 	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
 // )
 
 // const (

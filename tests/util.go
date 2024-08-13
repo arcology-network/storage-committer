@@ -26,6 +26,7 @@ import (
 	"time"
 
 	slice "github.com/arcology-network/common-lib/exp/slice"
+	"github.com/arcology-network/common-lib/types/storage/univalue"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	statestore "github.com/arcology-network/storage-committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
@@ -36,7 +37,6 @@ import (
 	"github.com/arcology-network/storage-committer/storage/proxy"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
 	cache "github.com/arcology-network/storage-committer/storage/writecache"
-	"github.com/arcology-network/storage-committer/univalue"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	rlp "github.com/ethereum/go-ethereum/rlp"

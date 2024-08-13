@@ -21,11 +21,11 @@ package statestore
 import (
 	"github.com/arcology-network/common-lib/common"
 	indexer "github.com/arcology-network/common-lib/storage/indexer"
+	"github.com/arcology-network/common-lib/types/storage/univalue"
+	platform "github.com/arcology-network/storage-committer/common"
 	intf "github.com/arcology-network/storage-committer/interfaces"
-	platform "github.com/arcology-network/storage-committer/platform"
 	"github.com/arcology-network/storage-committer/storage/proxy"
 	cache "github.com/arcology-network/storage-committer/storage/writecache"
-	"github.com/arcology-network/storage-committer/univalue"
 
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/slice"

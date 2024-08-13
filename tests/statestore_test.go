@@ -24,12 +24,12 @@ import (
 	"github.com/arcology-network/common-lib/exp/slice"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 
+	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
+	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
 	statestore "github.com/arcology-network/storage-committer"
 	stgcomm "github.com/arcology-network/storage-committer/common"
-	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
-	univalue "github.com/arcology-network/storage-committer/univalue"
 )
 
 func commitToStateStore(sstore *statestore.StateStore, t *testing.T) {

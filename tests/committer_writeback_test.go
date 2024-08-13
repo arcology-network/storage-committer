@@ -23,16 +23,16 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
+	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
+	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
+	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	statestore "github.com/arcology-network/storage-committer"
+	platform "github.com/arcology-network/storage-committer/common"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
-	commutative "github.com/arcology-network/storage-committer/commutative"
-	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
-	platform "github.com/arcology-network/storage-committer/platform"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	"github.com/arcology-network/storage-committer/storage/proxy"
 	cache "github.com/arcology-network/storage-committer/storage/writecache"
-	univalue "github.com/arcology-network/storage-committer/univalue"
 	"github.com/holiman/uint256"
 )
 

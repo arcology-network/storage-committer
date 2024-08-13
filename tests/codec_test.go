@@ -26,8 +26,8 @@ import (
 
 	codec "github.com/arcology-network/common-lib/codec"
 
-	commutative "github.com/arcology-network/storage-committer/commutative"
-	noncommutative "github.com/arcology-network/storage-committer/noncommutative"
+	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
+	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
 	rlp "github.com/ethereum/go-ethereum/rlp"
 )
 

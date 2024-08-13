@@ -27,16 +27,16 @@ import (
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
+	stgtype "github.com/arcology-network/common-lib/types/storage"
+	"github.com/arcology-network/common-lib/types/storage/commutative"
+	"github.com/arcology-network/common-lib/types/storage/noncommutative"
+	"github.com/arcology-network/common-lib/types/storage/univalue"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	statestore "github.com/arcology-network/storage-committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
-	"github.com/arcology-network/storage-committer/commutative"
-	"github.com/arcology-network/storage-committer/interfaces"
-	"github.com/arcology-network/storage-committer/noncommutative"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	"github.com/arcology-network/storage-committer/storage/proxy"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
-	"github.com/arcology-network/storage-committer/univalue"
 	"github.com/holiman/uint256"
 )
 
@@ -456,8 +456,8 @@ func TestBasic(t *testing.T) {
 	trans := slice.Clone(writeCache.Export(univalue.Sorter))
 	transitions := univalue.Univalues(trans).To(univalue.ITTransition{})
 
-	if !reflect.DeepEqual(transitions[0].Value().(interfaces.Type).Delta().(*deltaset.DeltaSet[string]).Updated().Elements(), []string{"elem-000", "elem-111"}) {
-		t.Error("Error: keys are missing from the Updated buffer!", transitions[0].Value().(interfaces.Type).Delta().(*deltaset.DeltaSet[string]).Updated())
+	if !reflect.DeepEqual(transitions[0].Value().(stgtype.Type).Delta().(*deltaset.DeltaSet[string]).Updated().Elements(), []string{"elem-000", "elem-111"}) {
+		t.Error("Error: keys are missing from the Updated buffer!", transitions[0].Value().(stgtype.Type).Delta().(*deltaset.DeltaSet[string]).Updated())
 	}
 
 	value := transitions[1].Value()
@@ -577,7 +577,7 @@ func TestCommitter(t *testing.T) {
 	// 	t.Error("Error: keys don't match")
 	// }
 
-	addedkeys := codec.Strings(transitions[2].Value().(interfaces.Type).Delta().(*deltaset.DeltaSet[string]).Updated().Elements()).Sort()
+	addedkeys := codec.Strings(transitions[2].Value().(stgtype.Type).Delta().(*deltaset.DeltaSet[string]).Updated().Elements()).Sort()
 	if !reflect.DeepEqual([]string(addedkeys), []string{"elem-0", "elem-000", "elem-001", "elem-002"}) {
 		t.Error("Error: keys don't match", addedkeys)
 	}

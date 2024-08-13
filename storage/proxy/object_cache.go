@@ -20,6 +20,7 @@ import (
 	"github.com/arcology-network/common-lib/exp/associative"
 	cache "github.com/arcology-network/common-lib/storage/cache"
 	policy "github.com/arcology-network/common-lib/storage/policy"
+	stgtype "github.com/arcology-network/common-lib/types/storage"
 	intf "github.com/arcology-network/storage-committer/interfaces"
 	"github.com/cespare/xxhash/v2"
 )
@@ -27,15 +28,15 @@ import (
 // ReadCache is a wrapper around cache.ReadCache with some extra methods provided
 // by the intf.Datastore interface to work with the storage-committer.
 type ObjectCache struct {
-	*cache.ReadCache[string, intf.Type] // Provide Readonly interface
-	queue                               chan *associative.Pair[[]string, []intf.Type]
+	*cache.ReadCache[string, stgtype.Type] // Provide Readonly interface
+	queue                                  chan *associative.Pair[[]string, []stgtype.Type]
 }
 
 func NewReadCache(store intf.ReadOnlyStore) *ObjectCache {
 	return &ObjectCache{
-		cache.NewReadCache[string, intf.Type](
+		cache.NewReadCache[string, stgtype.Type](
 			4096, // 4096 shards to avoid lock contention
-			func(v intf.Type) bool {
+			func(v stgtype.Type) bool {
 				return v == nil
 			},
 			func(k string) uint64 {
@@ -43,6 +44,6 @@ func NewReadCache(store intf.ReadOnlyStore) *ObjectCache {
 			},
 			policy.NewCachePolicy(0, 0),
 		),
-		make(chan *associative.Pair[[]string, []intf.Type], 16),
+		make(chan *associative.Pair[[]string, []stgtype.Type], 16),
 	}
 }

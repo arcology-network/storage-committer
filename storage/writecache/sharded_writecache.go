@@ -23,8 +23,9 @@ import (
 	"runtime"
 
 	slice "github.com/arcology-network/common-lib/exp/slice"
+	stgtype "github.com/arcology-network/common-lib/types/storage"
+	"github.com/arcology-network/common-lib/types/storage/univalue"
 	intf "github.com/arcology-network/storage-committer/interfaces"
-	"github.com/arcology-network/storage-committer/univalue"
 )
 
 const (
@@ -124,8 +125,8 @@ func (this *ShardedWriteCache) Equal(other *ShardedWriteCache) bool {
 	return true
 }
 
-func (this *ShardedWriteCache) KVs() ([][]string, [][]intf.Type) {
-	keySet, valueSet := make([][]string, len(this.caches)), make([][]intf.Type, len(this.caches))
+func (this *ShardedWriteCache) KVs() ([][]string, [][]stgtype.Type) {
+	keySet, valueSet := make([][]string, len(this.caches)), make([][]stgtype.Type, len(this.caches))
 	for i := 0; i < len(this.caches); i++ {
 		keySet[i], valueSet[i] = this.caches[i].KVs()
 	}

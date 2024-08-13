@@ -21,9 +21,10 @@ import (
 	"sort"
 
 	"github.com/arcology-network/common-lib/exp/slice"
+	stgtype "github.com/arcology-network/common-lib/types/storage"
+	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	intf "github.com/arcology-network/storage-committer/interfaces"
-	univalue "github.com/arcology-network/storage-committer/univalue"
 )
 
 type DeltaSequence []*univalue.Univalue
@@ -74,9 +75,9 @@ func (this DeltaSequence) Finalized() *univalue.Univalue { return this[0] }
 
 type DeltaSequencesV2 []DeltaSequence
 
-func (this DeltaSequencesV2) Finalized() []intf.Type {
-	return slice.Transform(this, func(_ int, v DeltaSequence) intf.Type {
-		return v[0].Value().(intf.Type)
+func (this DeltaSequencesV2) Finalized() []stgtype.Type {
+	return slice.Transform(this, func(_ int, v DeltaSequence) stgtype.Type {
+		return v[0].Value().(stgtype.Type)
 	})
 }
 
