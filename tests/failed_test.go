@@ -21,10 +21,10 @@ import (
 	"testing"
 
 	"github.com/arcology-network/common-lib/exp/slice"
+	stgcommcommon "github.com/arcology-network/common-lib/types/storage/common"
 	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	statestore "github.com/arcology-network/storage-committer"
-	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 
 	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"

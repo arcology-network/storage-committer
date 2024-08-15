@@ -20,7 +20,7 @@ import (
 	"runtime"
 
 	"github.com/arcology-network/common-lib/exp/slice"
-	stgtype "github.com/arcology-network/common-lib/types/storage"
+	stgtype "github.com/arcology-network/common-lib/types/storage/common"
 	"github.com/arcology-network/common-lib/types/storage/univalue"
 )
 

@@ -22,7 +22,9 @@ import (
 	memdb "github.com/arcology-network/common-lib/storage/memdb"
 	policy "github.com/arcology-network/common-lib/storage/policy"
 	"github.com/arcology-network/common-lib/types/storage/univalue"
-	intf "github.com/arcology-network/storage-committer/interfaces"
+
+	// intf "github.com/arcology-network/storage-committer/interfaces"
+	intf "github.com/arcology-network/common-lib/types/storage/common"
 
 	stgtypcodec "github.com/arcology-network/common-lib/types/storage/codec"
 	"github.com/arcology-network/storage-committer/storage/ethstorage"

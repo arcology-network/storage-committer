@@ -20,8 +20,10 @@ import (
 	"github.com/arcology-network/common-lib/exp/associative"
 	cache "github.com/arcology-network/common-lib/storage/cache"
 	policy "github.com/arcology-network/common-lib/storage/policy"
-	stgtype "github.com/arcology-network/common-lib/types/storage"
-	intf "github.com/arcology-network/storage-committer/interfaces"
+	stgtype "github.com/arcology-network/common-lib/types/storage/common"
+
+	// intf "github.com/arcology-network/storage-committer/interfaces"
+	intf "github.com/arcology-network/common-lib/types/storage/common"
 	"github.com/cespare/xxhash/v2"
 )
 

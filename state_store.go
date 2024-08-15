@@ -18,11 +18,12 @@
 package statestore
 
 import (
+	intf "github.com/arcology-network/common-lib/types/storage/common"
 	"github.com/arcology-network/common-lib/types/storage/univalue"
-	intf "github.com/arcology-network/storage-committer/interfaces"
 	stgcomm "github.com/arcology-network/storage-committer/storage/committer"
+
+	writecache "github.com/arcology-network/common-lib/types/storage/writecache"
 	proxy "github.com/arcology-network/storage-committer/storage/proxy"
-	writecache "github.com/arcology-network/storage-committer/storage/writecache"
 	"github.com/cespare/xxhash/v2"
 	//  "github.com/arcology-network/storage-committer/storage/proxy"
 )

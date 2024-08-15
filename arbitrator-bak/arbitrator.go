@@ -22,8 +22,9 @@ import (
 
 	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/slice"
+	stgcommcommon "github.com/arcology-network/common-lib/types/storage/common"
 	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
-	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	// github.com/arcology-network/common-lib/types/storage/common
 )
 
 type Arbitrator struct {

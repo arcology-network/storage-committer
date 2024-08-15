@@ -22,9 +22,9 @@ import (
 	"sort"
 
 	"github.com/arcology-network/common-lib/exp/slice"
-	intf "github.com/arcology-network/common-lib/types/storage"
+	intf "github.com/arcology-network/common-lib/types/storage/common"
+	stgcommcommon "github.com/arcology-network/common-lib/types/storage/common"
 	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
-	stgcommcommon "github.com/arcology-network/storage-committer/common"
 )
 
 // Accumualator is dedicatd to cumulative numeric variables. It check if the value is out of limits defined by

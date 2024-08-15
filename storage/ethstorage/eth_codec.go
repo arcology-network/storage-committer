@@ -18,7 +18,7 @@
 package ethstorage
 
 import (
-	stgtype "github.com/arcology-network/common-lib/types/storage"
+	stgtype "github.com/arcology-network/common-lib/types/storage/common"
 )
 
 type Rlp struct{}

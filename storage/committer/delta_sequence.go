@@ -21,10 +21,10 @@ import (
 	"sort"
 
 	"github.com/arcology-network/common-lib/exp/slice"
-	stgtype "github.com/arcology-network/common-lib/types/storage"
+	intf "github.com/arcology-network/common-lib/types/storage/common"
+	stgcommcommon "github.com/arcology-network/common-lib/types/storage/common"
+	stgtype "github.com/arcology-network/common-lib/types/storage/common"
 	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
-	stgcommcommon "github.com/arcology-network/storage-committer/common"
-	intf "github.com/arcology-network/storage-committer/interfaces"
 )
 
 type DeltaSequence []*univalue.Univalue

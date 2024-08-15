@@ -21,6 +21,7 @@ require (
 	github.com/VictoriaMetrics/fastcache v1.12.2
 	github.com/arcology-network/common-lib v1.9.1-0.20240526090033-4c2ee0f20f15
 	github.com/arcology-network/evm-adaptor v0.0.0-00010101000000-000000000000
+	github.com/arcology-network/scheduler v0.0.0-20240815215301-5db83de42803
 	github.com/cespare/xxhash/v2 v2.2.0
 	golang.org/x/crypto v0.20.0
 	golang.org/x/exp v0.0.0-20231206192017-f3f8817b8deb

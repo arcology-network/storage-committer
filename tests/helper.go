@@ -27,9 +27,11 @@ import (
 	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
 	"github.com/arcology-network/common-lib/types/storage/univalue"
 	statestore "github.com/arcology-network/storage-committer"
-	"github.com/arcology-network/storage-committer/interfaces"
+
+	// "github.com/arcology-network/storage-committer/interfaces"
+	interfaces "github.com/arcology-network/common-lib/types/storage/common"
+	cache "github.com/arcology-network/common-lib/types/storage/writecache"
 	"github.com/arcology-network/storage-committer/storage/proxy"
-	cache "github.com/arcology-network/storage-committer/storage/writecache"
 )
 
 func Create_Ctrn_0(account string, store interfaces.ReadOnlyStore) ([]byte, []*univalue.Univalue, error) {

@@ -24,12 +24,12 @@ import (
 
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/exp/slice"
+	common "github.com/arcology-network/common-lib/types/storage/common"
 	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
 	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
 	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	statestore "github.com/arcology-network/storage-committer"
-	common "github.com/arcology-network/storage-committer/common"
 	opadapter "github.com/arcology-network/storage-committer/op"
 	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
 	"github.com/arcology-network/storage-committer/storage/proxy"
