@@ -47,7 +47,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/trie"
-	ethmpt "github.com/ethereum/go-ethereum/trie"
+	triedb "github.com/ethereum/go-ethereum/triedb"
 	"github.com/holiman/uint256"
 )
 
@@ -435,7 +435,7 @@ func TestLevelDBBasic(t *testing.T) {
 
 	diskdbs := [16]ethdb.Database{}
 	slice.Fill(diskdbs[:], leveldb)
-	db := ethmpt.NewParallelDatabase(diskdbs, nil)
+	db := triedb.NewParallelDatabase(diskdbs, nil)
 
 	// db := trie.NewDatabase(leveldb)
 	trie := trie.NewEmptyParallel(db)
@@ -474,7 +474,7 @@ func BenchmarkLevelDBPerformance1M(t *testing.B) {
 
 	diskdbs := [16]ethdb.Database{}
 	slice.Fill(diskdbs[:], leveldb)
-	db := ethmpt.NewParallelDatabase(diskdbs, nil)
+	db := triedb.NewParallelDatabase(diskdbs, nil)
 
 	trie := trie.NewEmptyParallel(db)
 	res := trie.Hash()

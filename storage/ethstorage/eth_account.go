@@ -21,7 +21,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"math/big"
 	"strings"
 
 	"github.com/VictoriaMetrics/fastcache"
@@ -45,7 +44,8 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/trie"
 	ethmpt "github.com/ethereum/go-ethereum/trie"
-	"github.com/ethereum/go-ethereum/trie/triedb/hashdb"
+	tridb "github.com/ethereum/go-ethereum/triedb"
+	"github.com/ethereum/go-ethereum/triedb/hashdb"
 	"github.com/holiman/uint256"
 	"golang.org/x/crypto/sha3"
 )
@@ -59,7 +59,7 @@ type Account struct {
 	storageTrie  *ethmpt.Trie // account storage trie
 	StorageDirty bool
 
-	ethdb        *ethmpt.Database
+	ethdb        *tridb.Database
 	diskdbShards [16]ethdb.Database
 	err          error
 }
@@ -95,20 +95,20 @@ func NewAccountWithSharedCache(addr ethcommon.Address, diskdbs [16]ethdb.Databas
 func EmptyAccountState() types.StateAccount {
 	return ethtypes.StateAccount{
 		Nonce:    0,
-		Balance:  big.NewInt(0),
+		Balance:  uint256.NewInt(0),
 		Root:     types.EmptyRootHash,
 		CodeHash: codec.Bytes32(crypto.Keccak256Hash(nil)).Encode(),
 	}
 }
 
-func LoadTrie(diskdbs [16]ethdb.Database, root ethcommon.Hash) (*ethmpt.Database, *trie.Trie, error) {
-	ethdb := ethmpt.NewParallelDatabase(diskdbs, nil)
+func LoadTrie(diskdbs [16]ethdb.Database, root ethcommon.Hash) (*tridb.Database, *trie.Trie, error) {
+	ethdb := tridb.NewParallelDatabase(diskdbs, nil)
 	trie, err := ethmpt.NewParallel(ethmpt.TrieID(root), ethdb)
 	return ethdb, trie, err
 }
 
-func LoadTrieWithSharedCache(diskdbs [16]ethdb.Database, root ethcommon.Hash, dbConfig interface{}, sharedCache *fastcache.Cache) (*ethmpt.Database, *trie.Trie, error) {
-	ethdb := ethmpt.NewParallelDatabaseWithSharedCache(diskdbs, sharedCache, nil)
+func LoadTrieWithSharedCache(diskdbs [16]ethdb.Database, root ethcommon.Hash, dbConfig interface{}, sharedCache *fastcache.Cache) (*tridb.Database, *trie.Trie, error) {
+	ethdb := tridb.NewParallelDatabaseWithSharedCache(diskdbs, sharedCache, nil)
 	trie, err := ethmpt.NewParallel(ethmpt.TrieID(root), ethdb)
 	return ethdb, trie, err
 }
@@ -201,7 +201,7 @@ func (this *Account) Has(key string) bool {
 
 func (this *Account) Retrive(key string, T any) (interface{}, error) {
 	if strings.HasSuffix(key, "/balance") {
-		balance, _ := uint256.FromBig(this.StateAccount.Balance)
+		balance, _ := uint256.FromBig(this.StateAccount.Balance.ToBig())
 		v := commutative.NewUnboundedU256()
 		v.SetValue(*balance)
 		return v, nil
@@ -250,7 +250,7 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []stgtype.Type) 
 
 	if pos, _ := slice.FindFirstIf(keys, func(_ int, k string) bool { return strings.HasSuffix(k, "/balance") }); pos >= 0 {
 		balance := typedVals[pos].Value().(uint256.Int)
-		this.Balance = balance.ToBig()
+		this.Balance = balance.Clone()
 		slice.RemoveAt(&keys, pos)
 		slice.RemoveAt(&typedVals, pos)
 	}
@@ -294,7 +294,7 @@ func (this *Account) UpdateAccountTrie(keys []string, typedVals []stgtype.Type) 
 }
 
 // Write the account changes to theirs Eth Trie
-func (this *Account) ApplyChanges(transitions [][]*univalue.Univalue, getter func([]*univalue.Univalue) (string, stgtype.Type)) ([]string, []stgtype.Type) {
+func (this *Account) ApplyChanges(transitions [][]*univalue.Univalue, getter func([]*univalue.Univalue) (string, stgtype.Type)) ([]string, []stgtype.Type, error) {
 	keys := make([]string, len(transitions))
 	typedVals := slice.Transform(transitions, func(i int, vals []*univalue.Univalue) stgtype.Type {
 		_, v := getter(vals)
@@ -303,7 +303,7 @@ func (this *Account) ApplyChanges(transitions [][]*univalue.Univalue, getter fun
 	})
 
 	this.err = this.UpdateAccountTrie(keys, typedVals)
-	return keys, typedVals
+	return keys, typedVals, this.err
 }
 
 func (this *Account) Encode() []byte {
