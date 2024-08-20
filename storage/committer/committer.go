@@ -22,7 +22,7 @@ import (
 	"github.com/arcology-network/common-lib/common"
 	indexer "github.com/arcology-network/common-lib/storage/indexer"
 	stgcommon "github.com/arcology-network/common-lib/types/storage/common"
-	platform "github.com/arcology-network/common-lib/types/storage/eth"
+	platform "github.com/arcology-network/common-lib/types/storage/platform"
 	"github.com/arcology-network/common-lib/types/storage/univalue"
 	cache "github.com/arcology-network/common-lib/types/storage/writecache"
 	"github.com/arcology-network/storage-committer/storage/proxy"

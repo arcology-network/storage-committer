@@ -34,7 +34,7 @@ import (
 
 	// "github.com/arcology-network/storage-committer/interfaces"
 	stgtype "github.com/arcology-network/common-lib/types/storage/common"
-	platform "github.com/arcology-network/common-lib/types/storage/eth"
+	platform "github.com/arcology-network/common-lib/types/storage/platform"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"

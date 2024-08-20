@@ -21,7 +21,7 @@ import (
 	"runtime"
 
 	"github.com/arcology-network/common-lib/exp/slice"
-	platform "github.com/arcology-network/common-lib/types/storage/eth"
+	platform "github.com/arcology-network/common-lib/types/storage/platform"
 	"github.com/arcology-network/common-lib/types/storage/univalue"
 
 	// intf "github.com/arcology-network/storage-committer/interfaces"

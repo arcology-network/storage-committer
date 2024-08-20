@@ -49,3 +49,14 @@ func NewReadCache(store intf.ReadOnlyStore) *ObjectCache {
 		make(chan *associative.Pair[[]string, []stgtype.Type], 16),
 	}
 }
+
+func (this *ObjectCache) CacheChecksum() [32]byte {
+	encoders := func(k string, v intf.Type) ([]byte, []byte) {
+		return []byte(k), v.Encode()
+	}
+
+	less := func(k0, k1 string) bool {
+		return k0 < k1
+	}
+	return this.Checksum(less, encoders)
+}

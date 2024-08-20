@@ -26,7 +26,7 @@ import (
 	// intf "github.com/arcology-network/storage-committer/interfaces"
 	intf "github.com/arcology-network/common-lib/types/storage/common"
 
-	stgtypcodec "github.com/arcology-network/common-lib/types/storage/codec"
+	stgtypcodec "github.com/arcology-network/common-lib/types/storage/platform"
 	"github.com/arcology-network/storage-committer/storage/ethstorage"
 	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
 	ccstg "github.com/arcology-network/storage-committer/storage/livestorage"
@@ -80,7 +80,7 @@ func NewLevelDBStoreProxy(dbpath string) *StorageProxy {
 // 	return NewLevelDBStoreProxy("/tmp")
 // }
 
-func (this *StorageProxy) Cache() interface{} {
+func (this *StorageProxy) Cache() *ObjectCache {
 	return this.unifiedCache
 }
 

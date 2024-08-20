@@ -28,8 +28,8 @@ import (
 
 	stgcommcommon "github.com/arcology-network/common-lib/types/storage/common"
 	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
-	platform "github.com/arcology-network/common-lib/types/storage/eth"
 	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
+	platform "github.com/arcology-network/common-lib/types/storage/platform"
 	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
 	cache "github.com/arcology-network/common-lib/types/storage/writecache"
 	statestore "github.com/arcology-network/storage-committer"

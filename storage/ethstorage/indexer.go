@@ -21,7 +21,7 @@ import (
 	"github.com/arcology-network/common-lib/exp/associative"
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/common-lib/storage/indexer"
-	platform "github.com/arcology-network/common-lib/types/storage/eth"
+	platform "github.com/arcology-network/common-lib/types/storage/platform"
 	"github.com/arcology-network/common-lib/types/storage/univalue"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
