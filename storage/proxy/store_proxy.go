@@ -29,12 +29,13 @@ import (
 	stgtypcodec "github.com/arcology-network/common-lib/types/storage/platform"
 	"github.com/arcology-network/storage-committer/storage/ethstorage"
 	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
+	livecache "github.com/arcology-network/storage-committer/storage/livecache"
 	ccstg "github.com/arcology-network/storage-committer/storage/livestorage"
 	ccstorage "github.com/arcology-network/storage-committer/storage/livestorage"
 )
 
 type StorageProxy struct {
-	unifiedCache *ObjectCache // An object cache for the backend storage, only updated once at the end of the block.
+	unifiedCache *livecache.LiveCache // An object cache for the backend storage, only updated once at the end of the block.
 	ethDataStore *ethstg.EthDataStore
 	ccDataStore  *ccstg.DataStore
 }
@@ -49,7 +50,7 @@ func NewCacheOnlyStoreProxy() *StorageProxy {
 			stgtypcodec.Codec{}.Decode,
 		),
 	}
-	proxy.unifiedCache = NewReadCache(proxy)
+	proxy.unifiedCache = livecache.NewReadCache(proxy)
 	return proxy
 }
 
@@ -71,7 +72,7 @@ func NewLevelDBStoreProxy(dbpath string) *StorageProxy {
 			stgtypcodec.Codec{}.Decode,
 		),
 	}
-	proxy.unifiedCache = NewReadCache(proxy)
+	proxy.unifiedCache = livecache.NewReadCache(proxy)
 	return proxy
 }
 
@@ -80,7 +81,7 @@ func NewLevelDBStoreProxy(dbpath string) *StorageProxy {
 // 	return NewLevelDBStoreProxy("/tmp")
 // }
 
-func (this *StorageProxy) Cache() *ObjectCache {
+func (this *StorageProxy) Cache() *livecache.LiveCache {
 	return this.unifiedCache
 }
 
@@ -125,7 +126,7 @@ func (this *StorageProxy) Retrive(key string, v any) (interface{}, error) {
 // Get the stores that can be
 func (this *StorageProxy) GetWriters() []intf.AsyncWriter[*univalue.Univalue] {
 	return []intf.AsyncWriter[*univalue.Univalue]{
-		NewLiveCacheWriter(this.unifiedCache, -1),
+		livecache.NewLiveCacheWriter(this.unifiedCache, -1),
 		ethstorage.NewEthStorageWriter(this.ethDataStore, -1),
 		ccstorage.NewLiveStorageWriter(this.ccDataStore, -1),
 	}

@@ -35,10 +35,12 @@ func PathIndexer(store interfaces.ReadOnlyStore) *indexer.UnorderedIndexer[strin
 	return indexer.NewUnorderedIndexer(
 		nil,
 
+		// Return the key for the path if it is missing.
 		func(v *univalue.Univalue) (string, bool) {
 			return *v.GetPath(), true
 		},
 
+		// The function to update the value when it exists.
 		func(k string, v *univalue.Univalue) []*univalue.Univalue {
 			if v.Value() != nil {
 				v.Value().(stgtype.Type).Preload(k, store)

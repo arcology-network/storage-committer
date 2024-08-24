@@ -14,7 +14,7 @@
 *   You should have received a copy of the GNU General Public License
 *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package proxy
+package livecache
 
 import (
 	"runtime"
@@ -32,7 +32,7 @@ type CacheIndexer struct {
 	values  []stgtype.Type
 }
 
-func NewCacheIndexer(store *ObjectCache, Version int64) *CacheIndexer {
+func NewCacheIndexer(store *LiveCache, Version int64) *CacheIndexer {
 	return &CacheIndexer{
 		Version: Version,
 		buffer:  []*univalue.Univalue{},

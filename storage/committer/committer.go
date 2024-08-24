@@ -25,10 +25,10 @@ import (
 	platform "github.com/arcology-network/common-lib/types/storage/platform"
 	"github.com/arcology-network/common-lib/types/storage/univalue"
 	cache "github.com/arcology-network/common-lib/types/storage/writecache"
-	"github.com/arcology-network/storage-committer/storage/proxy"
 
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/slice"
+	livecache "github.com/arcology-network/storage-committer/storage/livecache"
 )
 
 // StateCommitter represents a storage committer.
@@ -110,9 +110,11 @@ func (this *StateCommitter) Finalize(txs []uint32) {
 	this.byPath.ParallelForeachDo(func(_ string, v *[]*univalue.Univalue) {
 		slice.RemoveIf(v, func(_ int, val *univalue.Univalue) bool { return val.GetPath() == nil }) // Remove conflicting ones.
 		if len(*v) > 0 {
-			DeltaSequence(*v).Finalize(this.readonlyStore) // Finalize the transitions and flag the merged ones.
+			// Finalize the transitions and flag the merged ones.
+			DeltaSequence(*v).Finalize(this.readonlyStore)
 		}
 	})
+
 	this.byPath.Clear()
 	this.byTxID.Clear()
 }
@@ -158,7 +160,7 @@ func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
 func (this *StateCommitter) SyncCommit(blockNum uint64) {
 	slice.ParallelForeach(this.writers, len(this.writers),
 		func(_ int, writer *stgcommon.AsyncWriter[*univalue.Univalue]) {
-			if common.IsType[*cache.ExecutionCacheWriter](*writer) || common.IsType[*proxy.LiveCacheWriter](*writer) {
+			if common.IsType[*cache.ExecutionCacheWriter](*writer) || common.IsType[*livecache.LiveCacheWriter](*writer) {
 				(*writer).Commit(blockNum)
 				return
 			}
@@ -169,7 +171,7 @@ func (this *StateCommitter) SyncCommit(blockNum uint64) {
 func (this *StateCommitter) AsyncCommit(blockNum uint64) {
 	slice.ParallelForeach(this.writers, len(this.writers),
 		func(_ int, writer *stgcommon.AsyncWriter[*univalue.Univalue]) {
-			if !common.IsType[*cache.ExecutionCacheWriter](*writer) && !common.IsType[*proxy.LiveCacheWriter](*writer) {
+			if !common.IsType[*cache.ExecutionCacheWriter](*writer) && !common.IsType[*livecache.LiveCacheWriter](*writer) {
 				(*writer).Commit(blockNum)
 				return
 			}

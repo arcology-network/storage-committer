@@ -15,16 +15,16 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package proxy
+package livecache
 
 // LiveCacheWriter writes to the OBJECT cache.
 type LiveCacheWriter struct {
 	*CacheIndexer
-	store  *ObjectCache
+	store  *LiveCache
 	buffer []*CacheIndexer
 }
 
-func NewLiveCacheWriter(cache *ObjectCache, version int64) *LiveCacheWriter {
+func NewLiveCacheWriter(cache *LiveCache, version int64) *LiveCacheWriter {
 	return &LiveCacheWriter{
 		CacheIndexer: NewCacheIndexer(cache, version),
 		store:        cache,

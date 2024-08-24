@@ -14,10 +14,9 @@
 *   You should have received a copy of the GNU General Public License
 *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package proxy
+package livecache
 
 import (
-	"github.com/arcology-network/common-lib/exp/associative"
 	cache "github.com/arcology-network/common-lib/storage/cache"
 	policy "github.com/arcology-network/common-lib/storage/policy"
 	stgtype "github.com/arcology-network/common-lib/types/storage/common"
@@ -29,13 +28,13 @@ import (
 
 // ReadCache is a wrapper around cache.ReadCache with some extra methods provided
 // by the intf.Datastore interface to work with the storage-committer.
-type ObjectCache struct {
+type LiveCache struct {
 	*cache.ReadCache[string, stgtype.Type] // Provide Readonly interface
-	queue                                  chan *associative.Pair[[]string, []stgtype.Type]
+	// queue                                  chan *associative.Pair[[]string, []stgtype.Type]
 }
 
-func NewReadCache(store intf.ReadOnlyStore) *ObjectCache {
-	return &ObjectCache{
+func NewReadCache(store intf.ReadOnlyStore) *LiveCache {
+	return &LiveCache{
 		cache.NewReadCache[string, stgtype.Type](
 			4096, // 4096 shards to avoid lock contention
 			func(v stgtype.Type) bool {
@@ -46,11 +45,11 @@ func NewReadCache(store intf.ReadOnlyStore) *ObjectCache {
 			},
 			policy.NewCachePolicy(0, 0),
 		),
-		make(chan *associative.Pair[[]string, []stgtype.Type], 16),
+		// make(chan *associative.Pair[[]string, []stgtype.Type], 16),
 	}
 }
 
-func (this *ObjectCache) CacheChecksum() [32]byte {
+func (this *LiveCache) CacheChecksum() [32]byte {
 	encoders := func(k string, v intf.Type) ([]byte, []byte) {
 		return []byte(k), v.Encode()
 	}

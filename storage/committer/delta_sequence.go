@@ -58,6 +58,8 @@ func (this DeltaSequence) Finalize(store intf.ReadOnlyStore) *univalue.Univalue 
 	}
 
 	this.sort()
+
+	// Use the first transition as the base value to apply the delta sets.
 	if err := this[0].ApplyDelta(this[1:]); err != nil {
 		panic(err)
 	}
