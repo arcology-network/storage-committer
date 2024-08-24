@@ -102,25 +102,35 @@ func (this *Path) New(value, delta, sign, min, max interface{}) interface{} {
 	return deltaSet
 }
 
+// Swap swaps two values.
+func Swap[T any](lhv, rhv *T) {
+	v := *lhv
+	*lhv = *rhv
+	*rhv = v
+}
+
 // ApplyDelta applies all the deltas from the non-conflicting transitions to the original value and returns the new value.
 func (this *Path) ApplyDelta(typedVals []intf.Type) (intf.Type, int, error) {
 	if idx, _ := slice.FindFirst(typedVals, nil); idx >= 0 {
 		return nil, 1, nil //This is a deletion and when this is true, the number of write operations is 1.
 	}
 
-	// Due to the async nature of the importing process, the preloaded value may not be in the first element of the slice.
-	// If this is the case, we need to find the preloaded value and set it to the preloaded field of the first element.
-	if this.preloaded != nil {
-		this.DeltaSet.SetCommitted(this.preloaded)
+	if this.preloaded != nil { // The base element happends to be the first one in the slice.
+		// Set the preloaded value to the committed value so the delta set can be applied on.
+		// Can't do this earlier, because we only know this is the base element when the ApplyDelta is called.
+		this.DeltaSet.SetCommitted(this.preloaded) // Set the delta for the internal funcs of the DeltaSet to apply changes.
 	} else {
+		// Due to the async nature of the importing process, the preloaded value may not be in the first element of the slice.
+		// Find the preloaded value and set it to the the first(base) element.
 		if idx, v := slice.FindFirstIf(typedVals, func(_ int, v intf.Type) bool { return v.(*Path).preloaded != nil }); idx >= 0 {
-			typedVals[idx].(*Path).preloaded = nil
-			this.preloaded = (*v).(*Path).preloaded
+			Swap(&this.preloaded, &(*v).(*Path).preloaded)
+			this.DeltaSet.SetCommitted(this.preloaded)
 		}
+		// If no ones has the preloaded value, then this is a new path, no preloaded value
 	}
 
 	deltaSets := slice.Transform(typedVals, func(_ int, v intf.Type) *deltaset.DeltaSet[string] { return v.(*Path).DeltaSet })
-	this.Commit(deltaSets...)
+	this.Commit(deltaSets...) // Apply the delta sets to the committed value，including its own delta set.
 	return this, len(typedVals), nil
 }
 

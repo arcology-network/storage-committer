@@ -110,7 +110,7 @@ func (this Univalues) Clone() Univalues {
 
 func (this Univalues) SortByKey() Univalues {
 	sort.Slice(this, func(i, j int) bool {
-		if *this[i].GetPath() == *this[j].GetPath() {
+		if *this[i].GetPath() != *this[j].GetPath() {
 			return (*this[i].GetPath()) < (*this[j].GetPath())
 		}
 		return this[i].GetTx() < this[j].GetTx()
