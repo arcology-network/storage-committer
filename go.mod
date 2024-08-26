@@ -6,10 +6,6 @@ replace github.com/arcology-network/common-lib => ../common-lib/
 
 replace github.com/ethereum/go-ethereum v1.13.1 => ../concurrent-evm/
 
-replace github.com/arcology-network/eu => ../eu
-
-replace github.com/arcology-network/evm-adaptor => ../evm-adaptor/
-
 require (
 	github.com/ethereum/go-ethereum v1.13.1
 	github.com/google/btree v1.1.2 // indirect
