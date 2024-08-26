@@ -7,7 +7,7 @@ replace github.com/arcology-network/common-lib => ../common-lib/
 replace github.com/ethereum/go-ethereum v1.14.8 => ../concurrent-evm/
 
 require (
-	github.com/ethereum/go-ethereum v1.13.1
+	github.com/ethereum/go-ethereum v1.14.8
 	github.com/google/btree v1.1.2 // indirect
 	github.com/holiman/uint256 v1.2.4
 )

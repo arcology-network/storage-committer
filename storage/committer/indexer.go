@@ -21,11 +21,11 @@ import (
 
 	indexer "github.com/arcology-network/common-lib/storage/indexer"
 
-	stgtype "github.com/arcology-network/common-lib/types/storage/common"
-	"github.com/arcology-network/common-lib/types/storage/univalue"
+	stgtype "github.com/arcology-network/storage-committer/common"
+	"github.com/arcology-network/storage-committer/type/univalue"
 
 	// interfaces "github.com/arcology-network/storage-committer/interfaces"
-	interfaces "github.com/arcology-network/common-lib/types/storage/common"
+	interfaces "github.com/arcology-network/storage-committer/common"
 )
 
 // An index by path, transitions have the same path will be put together in a list

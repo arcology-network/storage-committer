@@ -20,8 +20,8 @@ import (
 	"runtime"
 
 	"github.com/arcology-network/common-lib/exp/slice"
-	stgtype "github.com/arcology-network/common-lib/types/storage/common"
-	"github.com/arcology-network/common-lib/types/storage/univalue"
+	stgtype "github.com/arcology-network/storage-committer/common"
+	"github.com/arcology-network/storage-committer/type/univalue"
 )
 
 // CacheIndexer is simpliest  of indexers. It does not index anything, just stores the transitions.

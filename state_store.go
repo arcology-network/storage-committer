@@ -18,20 +18,20 @@
 package statestore
 
 import (
-	intf "github.com/arcology-network/common-lib/types/storage/common"
-	"github.com/arcology-network/common-lib/types/storage/univalue"
+	intf "github.com/arcology-network/storage-committer/common"
 	stgcomm "github.com/arcology-network/storage-committer/storage/committer"
+	"github.com/arcology-network/storage-committer/type/univalue"
 
-	writecache "github.com/arcology-network/common-lib/types/storage/writecache"
 	proxy "github.com/arcology-network/storage-committer/storage/proxy"
+	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
 	"github.com/cespare/xxhash/v2"
 	//  "github.com/arcology-network/storage-committer/storage/proxy"
 )
 
 // Buffer is simpliest  of indexers. It does not index anything, just stores the transitions.
 type StateStore struct {
-	// *writecache.ShardedWriteCache
-	*writecache.WriteCache // execution cache
+	// *tempcache.ShardedWriteCache
+	*tempcache.WriteCache // execution cache
 	*stgcomm.StateCommitter
 	backend *proxy.StorageProxy
 }
@@ -40,7 +40,7 @@ type StateStore struct {
 func NewStateStore(backend *proxy.StorageProxy) *StateStore {
 	store := &StateStore{
 		backend: backend,
-		WriteCache: writecache.NewWriteCache(
+		WriteCache: tempcache.NewWriteCache(
 			backend,
 			16,
 			1,
@@ -54,13 +54,13 @@ func NewStateStore(backend *proxy.StorageProxy) *StateStore {
 }
 
 func (this *StateStore) Backend() *proxy.StorageProxy    { return this.backend }
-func (this *StateStore) Cache() *writecache.WriteCache   { return this.WriteCache }
+func (this *StateStore) Cache() *tempcache.WriteCache    { return this.WriteCache }
 func (this *StateStore) Import(trans univalue.Univalues) { this.StateCommitter.Import(trans) }
 func (this *StateStore) Preload(key []byte) interface{}  { return this.backend.Preload(key) }
 func (this *StateStore) Clear()                          { this.WriteCache.Clear() }
 
 func (this *StateStore) GetWriters() []intf.AsyncWriter[*univalue.Univalue] {
 	return append([]intf.AsyncWriter[*univalue.Univalue]{
-		writecache.NewExecutionCacheWriter(this.WriteCache, -1)},
+		tempcache.NewExecutionCacheWriter(this.WriteCache, -1)},
 		this.backend.GetWriters()...)
 }

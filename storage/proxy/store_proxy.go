@@ -21,12 +21,12 @@ import (
 	ccbadger "github.com/arcology-network/common-lib/storage/badger"
 	memdb "github.com/arcology-network/common-lib/storage/memdb"
 	policy "github.com/arcology-network/common-lib/storage/policy"
-	"github.com/arcology-network/common-lib/types/storage/univalue"
+	"github.com/arcology-network/storage-committer/type/univalue"
 
 	// intf "github.com/arcology-network/storage-committer/interfaces"
-	intf "github.com/arcology-network/common-lib/types/storage/common"
+	intf "github.com/arcology-network/storage-committer/common"
 
-	stgtypcodec "github.com/arcology-network/common-lib/types/storage/platform"
+	stgtypcodec "github.com/arcology-network/storage-committer/platform"
 	"github.com/arcology-network/storage-committer/storage/ethstorage"
 	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
 	livecache "github.com/arcology-network/storage-committer/storage/livecache"

@@ -15,21 +15,25 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package ethstorage
+package commutative
 
-import (
-	stgtype "github.com/arcology-network/storage-committer/common"
-)
-
-type Rlp struct{}
-
-func (Rlp) Encode(key string, v interface{}) []byte {
-	if v == nil {
-		return []byte{} // Deletion
-	}
-	return v.(stgtype.Type).StorageEncode(key)
+// A mockWriteCache is a mock implementation of the WriteCache for testing purposes.
+type mockWriteCache struct {
+	dict map[string]interface{}
 }
 
-func (Rlp) Decode(key string, buffer []byte, T any) interface{} {
-	return T.(stgtype.Type).StorageDecode(key, buffer)
+func NewMockWriteCache() *mockWriteCache {
+	return &mockWriteCache{
+		dict: map[string]interface{}{},
+	}
+}
+
+func (this *mockWriteCache) Write(tx uint32, key string, value interface{}) (int64, error) {
+	this.dict[key] = value
+	return 0, nil
+}
+
+func (this *mockWriteCache) InCache(key string) (interface{}, bool) {
+	v, ok := this.dict[key]
+	return v, ok
 }

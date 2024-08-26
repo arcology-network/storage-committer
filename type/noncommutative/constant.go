@@ -15,21 +15,11 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package ethstorage
+package noncommutative
 
-import (
-	stgtype "github.com/arcology-network/storage-committer/common"
+const (
+	INT64  uint8 = 104
+	STRING uint8 = 105
+	BIGINT uint8 = 106
+	BYTES  uint8 = 107
 )
-
-type Rlp struct{}
-
-func (Rlp) Encode(key string, v interface{}) []byte {
-	if v == nil {
-		return []byte{} // Deletion
-	}
-	return v.(stgtype.Type).StorageEncode(key)
-}
-
-func (Rlp) Decode(key string, buffer []byte, T any) interface{} {
-	return T.(stgtype.Type).StorageDecode(key, buffer)
-}

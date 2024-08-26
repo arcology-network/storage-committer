@@ -21,10 +21,10 @@ package statestore
 import (
 	"github.com/arcology-network/common-lib/common"
 	indexer "github.com/arcology-network/common-lib/storage/indexer"
-	stgcommon "github.com/arcology-network/common-lib/types/storage/common"
-	platform "github.com/arcology-network/common-lib/types/storage/platform"
-	"github.com/arcology-network/common-lib/types/storage/univalue"
-	cache "github.com/arcology-network/common-lib/types/storage/writecache"
+	stgcommon "github.com/arcology-network/storage-committer/common"
+	platform "github.com/arcology-network/storage-committer/platform"
+	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
+	"github.com/arcology-network/storage-committer/type/univalue"
 
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/slice"
@@ -133,7 +133,7 @@ func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
 func (this *StateCommitter) SyncPrecommit() {
 	slice.ParallelForeach(this.writers, len(this.writers),
 		func(i int, writer *stgcommon.AsyncWriter[*univalue.Univalue]) {
-			if common.IsType[*cache.ExecutionCacheWriter](*writer) {
+			if common.IsType[*tempcache.ExecutionCacheWriter](*writer) {
 				(*writer).Precommit()
 			}
 		})
@@ -143,7 +143,7 @@ func (this *StateCommitter) SyncPrecommit() {
 func (this *StateCommitter) AsyncPrecommit() {
 	slice.ParallelForeach(this.writers, len(this.writers),
 		func(_ int, writer *stgcommon.AsyncWriter[*univalue.Univalue]) {
-			if !common.IsType[*cache.ExecutionCacheWriter](*writer) {
+			if !common.IsType[*tempcache.ExecutionCacheWriter](*writer) {
 				(*writer).Precommit()
 			}
 		})
@@ -160,7 +160,7 @@ func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
 func (this *StateCommitter) SyncCommit(blockNum uint64) {
 	slice.ParallelForeach(this.writers, len(this.writers),
 		func(_ int, writer *stgcommon.AsyncWriter[*univalue.Univalue]) {
-			if common.IsType[*cache.ExecutionCacheWriter](*writer) || common.IsType[*livecache.LiveCacheWriter](*writer) {
+			if common.IsType[*tempcache.ExecutionCacheWriter](*writer) || common.IsType[*livecache.LiveCacheWriter](*writer) {
 				(*writer).Commit(blockNum)
 				return
 			}
@@ -171,7 +171,7 @@ func (this *StateCommitter) SyncCommit(blockNum uint64) {
 func (this *StateCommitter) AsyncCommit(blockNum uint64) {
 	slice.ParallelForeach(this.writers, len(this.writers),
 		func(_ int, writer *stgcommon.AsyncWriter[*univalue.Univalue]) {
-			if !common.IsType[*cache.ExecutionCacheWriter](*writer) && !common.IsType[*livecache.LiveCacheWriter](*writer) {
+			if !common.IsType[*tempcache.ExecutionCacheWriter](*writer) && !common.IsType[*livecache.LiveCacheWriter](*writer) {
 				(*writer).Commit(blockNum)
 				return
 			}

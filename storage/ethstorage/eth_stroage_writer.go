@@ -23,7 +23,7 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/associative"
 	"github.com/arcology-network/common-lib/exp/slice"
-	"github.com/arcology-network/common-lib/types/storage/univalue"
+	"github.com/arcology-network/storage-committer/type/univalue"
 )
 
 type EthStorageWriter struct {

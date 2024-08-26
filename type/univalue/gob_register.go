@@ -15,21 +15,13 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package ethstorage
+package univalue
 
 import (
-	stgtype "github.com/arcology-network/storage-committer/common"
+	"encoding/gob"
 )
 
-type Rlp struct{}
-
-func (Rlp) Encode(key string, v interface{}) []byte {
-	if v == nil {
-		return []byte{} // Deletion
-	}
-	return v.(stgtype.Type).StorageEncode(key)
-}
-
-func (Rlp) Decode(key string, buffer []byte, T any) interface{} {
-	return T.(stgtype.Type).StorageDecode(key, buffer)
+func init() {
+	gob.Register(&Univalue{})
+	// gob.Register(Univalues{})
 }

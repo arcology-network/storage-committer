@@ -1,5 +1,5 @@
 /*
- *   Copyright (c) 2024 Arcology Network
+ *   Copyright (c) 2023 Arcology Network
 
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -15,21 +15,11 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package ethstorage
+package commutative
 
-import (
-	stgtype "github.com/arcology-network/storage-committer/common"
+const (
+	PATH    uint8 = 100
+	INT64   uint8 = 101
+	UINT64  uint8 = 102
+	UINT256 uint8 = 103
 )
-
-type Rlp struct{}
-
-func (Rlp) Encode(key string, v interface{}) []byte {
-	if v == nil {
-		return []byte{} // Deletion
-	}
-	return v.(stgtype.Type).StorageEncode(key)
-}
-
-func (Rlp) Decode(key string, buffer []byte, T any) interface{} {
-	return T.(stgtype.Type).StorageDecode(key, buffer)
-}

@@ -1,5 +1,5 @@
 /*
- *   Copyright (c) 2024 Arcology Network
+ *   Copyright (c) 2023 Arcology Network
 
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -15,21 +15,35 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package ethstorage
+package commutative
 
 import (
-	stgtype "github.com/arcology-network/storage-committer/common"
+	"fmt"
+	"reflect"
+	"testing"
+
+	"github.com/holiman/uint256"
 )
 
-type Rlp struct{}
+func TestCommutativeCodec(t *testing.T) {
+	/* Noncommutative Path Test*/
+	v := NewBoundedU256(uint256.NewInt(1), uint256.NewInt(400))
+	v.SetValue(*uint256.NewInt(37))
 
-func (Rlp) Encode(key string, v interface{}) []byte {
-	if v == nil {
-		return []byte{} // Deletion
+	buffer := v.StorageEncode("")
+	output := (&U256{}).StorageDecode("", buffer)
+
+	if !reflect.DeepEqual(v, output) {
+		fmt.Println("Error: Missmatched")
 	}
-	return v.(stgtype.Type).StorageEncode(key)
-}
 
-func (Rlp) Decode(key string, buffer []byte, T any) interface{} {
-	return T.(stgtype.Type).StorageDecode(key, buffer)
+	v = NewBoundedUint64(uint64(1), uint64(400))
+	v.SetValue(uint64(37))
+
+	buffer = v.StorageEncode("")
+	output = (&Uint64{}).StorageDecode("", buffer)
+
+	if !reflect.DeepEqual(v, output) {
+		fmt.Println("Error: Missmatched")
+	}
 }
