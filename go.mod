@@ -11,26 +11,21 @@ replace github.com/arcology-network/eu => ../eu
 replace github.com/arcology-network/evm-adaptor => ../evm-adaptor/
 
 require (
-	github.com/elliotchance/orderedmap v1.5.1
 	github.com/ethereum/go-ethereum v1.13.1
-	github.com/google/btree v1.1.2
+	github.com/google/btree v1.1.2 // indirect
 	github.com/holiman/uint256 v1.2.4
 )
 
 require (
 	github.com/VictoriaMetrics/fastcache v1.12.2
 	github.com/arcology-network/common-lib v1.9.1-0.20240526090033-4c2ee0f20f15
-	github.com/arcology-network/evm-adaptor v0.0.0-00010101000000-000000000000
-	github.com/arcology-network/scheduler v0.0.0-20240815215301-5db83de42803
 	github.com/cespare/xxhash/v2 v2.2.0
 	golang.org/x/crypto v0.20.0
-	golang.org/x/exp v0.0.0-20231206192017-f3f8817b8deb
 )
 
 require (
 	github.com/AndreasBriese/bbloom v0.0.0-20190825152654-46b345b51c96 // indirect
 	github.com/DataDog/zstd v1.5.5 // indirect
-	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.10.0 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
@@ -44,7 +39,6 @@ require (
 	github.com/consensys/gnark-crypto v0.12.1 // indirect
 	github.com/crate-crypto/go-ipa v0.0.0-20231025140028-3c0104f4b233 // indirect
 	github.com/crate-crypto/go-kzg-4844 v0.7.0 // indirect
-	github.com/deckarep/golang-set/v2 v2.6.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
 	github.com/dgraph-io/badger v1.6.2 // indirect
 	github.com/dgraph-io/ristretto v0.1.1 // indirect
@@ -60,11 +54,9 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.5-0.20220116011046-fa5810519dcb // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/hashicorp/go-immutable-radix v1.3.0 // indirect
 	github.com/hashicorp/go-memdb v1.3.4 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
-	github.com/holiman/bloomfilter/v2 v2.0.3 // indirect
 	github.com/klauspost/compress v1.17.4 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
@@ -85,12 +77,12 @@ require (
 	github.com/tklauser/go-sysconf v0.3.13 // indirect
 	github.com/tklauser/numcpus v0.7.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
+	golang.org/x/exp v0.0.0-20231206192017-f3f8817b8deb // indirect
 	golang.org/x/mod v0.14.0 // indirect
 	golang.org/x/net v0.21.0 // indirect
 	golang.org/x/sync v0.5.0 // indirect
 	golang.org/x/sys v0.17.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	golang.org/x/tools v0.16.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	rsc.io/tmplfunc v0.0.3 // indirect
