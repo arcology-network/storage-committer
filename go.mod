@@ -4,7 +4,7 @@ go 1.22
 
 replace github.com/arcology-network/common-lib => ../common-lib/
 
-replace github.com/ethereum/go-ethereum v1.13.1 => ../concurrent-evm/
+replace github.com/ethereum/go-ethereum v1.14.8 => ../concurrent-evm/
 
 require (
 	github.com/ethereum/go-ethereum v1.13.1
