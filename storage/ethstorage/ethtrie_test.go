@@ -18,18 +18,18 @@
 package ethstorage
 
 import (
-	"math/big"
 	"testing"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/holiman/uint256"
 )
 
 func TestAccountCode(t *testing.T) {
 	state := &ethtypes.StateAccount{
 		Nonce:    111,
-		Balance:  big.NewInt(99),
+		Balance:  uint256.NewInt(0),
 		Root:     ethcommon.Hash{}, // merkle root of the storage trie
 		CodeHash: []byte{9, 8, 0, 7},
 	}

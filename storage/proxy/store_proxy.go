@@ -21,17 +21,21 @@ import (
 	ccbadger "github.com/arcology-network/common-lib/storage/badger"
 	memdb "github.com/arcology-network/common-lib/storage/memdb"
 	policy "github.com/arcology-network/common-lib/storage/policy"
-	intf "github.com/arcology-network/storage-committer/interfaces"
-	platform "github.com/arcology-network/storage-committer/platform"
+	"github.com/arcology-network/storage-committer/type/univalue"
+
+	// intf "github.com/arcology-network/storage-committer/interfaces"
+	intf "github.com/arcology-network/storage-committer/common"
+
+	stgtypcodec "github.com/arcology-network/storage-committer/platform"
 	"github.com/arcology-network/storage-committer/storage/ethstorage"
 	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
+	livecache "github.com/arcology-network/storage-committer/storage/livecache"
 	ccstg "github.com/arcology-network/storage-committer/storage/livestorage"
 	ccstorage "github.com/arcology-network/storage-committer/storage/livestorage"
-	"github.com/arcology-network/storage-committer/univalue"
 )
 
 type StorageProxy struct {
-	unifiedCache *ObjectCache // An object cache for the backend storage, only updated once at the end of the block.
+	unifiedCache *livecache.LiveCache // An object cache for the backend storage, only updated once at the end of the block.
 	ethDataStore *ethstg.EthDataStore
 	ccDataStore  *ccstg.DataStore
 }
@@ -42,11 +46,11 @@ func NewCacheOnlyStoreProxy() *StorageProxy {
 		ccDataStore: ccstg.NewDataStore(
 			policy.NewCachePolicy(0, 1), // Don't cache anything in the underlying storage, the cache is managed by the router
 			nil,
-			platform.Codec{}.Encode,
-			platform.Codec{}.Decode,
+			stgtypcodec.Codec{}.Encode,
+			stgtypcodec.Codec{}.Decode,
 		),
 	}
-	proxy.unifiedCache = NewReadCache(proxy)
+	proxy.unifiedCache = livecache.NewReadCache(proxy)
 	return proxy
 }
 
@@ -64,11 +68,11 @@ func NewLevelDBStoreProxy(dbpath string) *StorageProxy {
 			// memdb.NewMemoryDB(),
 			ccbadger.NewBadgerDB(dbpath+"_badager"),
 			// ccbadger.NewParaBadgerDB(dbpath+"_pbadager", common.Remainder),
-			platform.Codec{}.Encode,
-			platform.Codec{}.Decode,
+			stgtypcodec.Codec{}.Encode,
+			stgtypcodec.Codec{}.Decode,
 		),
 	}
-	proxy.unifiedCache = NewReadCache(proxy)
+	proxy.unifiedCache = livecache.NewReadCache(proxy)
 	return proxy
 }
 
@@ -77,7 +81,7 @@ func NewLevelDBStoreProxy(dbpath string) *StorageProxy {
 // 	return NewLevelDBStoreProxy("/tmp")
 // }
 
-func (this *StorageProxy) Cache() interface{} {
+func (this *StorageProxy) Cache() *livecache.LiveCache {
 	return this.unifiedCache
 }
 
@@ -122,7 +126,7 @@ func (this *StorageProxy) Retrive(key string, v any) (interface{}, error) {
 // Get the stores that can be
 func (this *StorageProxy) GetWriters() []intf.AsyncWriter[*univalue.Univalue] {
 	return []intf.AsyncWriter[*univalue.Univalue]{
-		NewLiveCacheWriter(this.unifiedCache, -1),
+		livecache.NewLiveCacheWriter(this.unifiedCache, -1),
 		ethstorage.NewEthStorageWriter(this.ethDataStore, -1),
 		ccstorage.NewLiveStorageWriter(this.ccDataStore, -1),
 	}

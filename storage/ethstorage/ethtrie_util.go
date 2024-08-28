@@ -28,11 +28,12 @@ import (
 	"github.com/ethereum/go-ethereum/ethdb/memorydb"
 	ethmpt "github.com/ethereum/go-ethereum/trie"
 	"github.com/ethereum/go-ethereum/trie/trienode"
+	triedb "github.com/ethereum/go-ethereum/triedb"
 )
 
 // ethapi "github.com/ethereum/go-ethereum/internal/ethapi"
 
-func commitToEthDB(trie *ethmpt.Trie, ethdb *ethmpt.Database, block uint64) (*ethmpt.Trie, error) {
+func commitToEthDB(trie *ethmpt.Trie, ethdb *triedb.Database, block uint64) (*ethmpt.Trie, error) {
 	root, nodes, err := trie.Commit(false) // Finalized the trie
 	if err != nil {
 		return nil, errors.Join(errors.New("trie.Commit:"), err)
@@ -54,7 +55,7 @@ func commitToEthDB(trie *ethmpt.Trie, ethdb *ethmpt.Database, block uint64) (*et
 	return newTrie, err
 }
 
-func parallelcommitToEthDB(trie *ethmpt.Trie, ethdb *ethmpt.Database, block uint64) (*ethmpt.Trie, error) {
+func parallelcommitToEthDB(trie *ethmpt.Trie, ethdb *triedb.Database, block uint64) (*ethmpt.Trie, error) {
 	root, nodes, err := trie.Commit(false) // Finalized the trie
 	if err != nil {
 		return nil, err

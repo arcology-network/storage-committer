@@ -22,7 +22,7 @@ import (
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/common-lib/storage/indexer"
 	platform "github.com/arcology-network/storage-committer/platform"
-	"github.com/arcology-network/storage-committer/univalue"
+	"github.com/arcology-network/storage-committer/type/univalue"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
