@@ -21,7 +21,6 @@ import (
 	"runtime"
 
 	"github.com/arcology-network/common-lib/exp/slice"
-	platform "github.com/arcology-network/storage-committer/platform"
 	"github.com/arcology-network/storage-committer/type/univalue"
 
 	// intf "github.com/arcology-network/storage-committer/interfaces"
@@ -30,7 +29,7 @@ import (
 
 // An index by account address, transitions have the same Eth account address will be put together in a list
 // This is for ETH storage, concurrent container related sub-paths won't be put into this index.
-type CCIndexer struct {
+type LiveStgIndexer struct {
 	buffer  []*univalue.Univalue
 	ccstore *DataStore
 
@@ -40,8 +39,8 @@ type CCIndexer struct {
 	encodedBuffer [][]byte //The encoded buffer contains the encoded values
 }
 
-func NewCCIndexer(ccstore intf.ReadOnlyStore, _ int64) *CCIndexer {
-	return &CCIndexer{
+func NewLiveStgIndexer(ccstore intf.ReadOnlyStore, _ int64) *LiveStgIndexer {
+	return &LiveStgIndexer{
 		buffer:  []*univalue.Univalue{},
 		ccstore: ccstore.(*DataStore),
 
@@ -54,15 +53,17 @@ func NewCCIndexer(ccstore intf.ReadOnlyStore, _ int64) *CCIndexer {
 
 // An index by account address, transitions have the same Eth account address will be put together in a list
 // This is for ETH storage, concurrent container related sub-paths won't be put into this index.
-func (this *CCIndexer) Import(trans []*univalue.Univalue) {
-	for _, v := range trans {
-		if v.GetPath() != nil || !platform.IsEthPath(*v.GetPath()) {
-			this.buffer = append(this.buffer, v)
-		}
-	}
+func (this *LiveStgIndexer) Import(trans []*univalue.Univalue) {
+	// for _, v := range trans {
+	// 	if v.GetPath() != nil {
+	// 		this.buffer = append(this.buffer, v)
+	// 	}
+	// }
+	this.buffer = append(this.buffer, trans...)
+	slice.RemoveIf(&this.buffer, func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil })
 }
 
-func (this *CCIndexer) Finalize() {
+func (this *LiveStgIndexer) Finalize() {
 	slice.RemoveIf(&this.buffer, func(_ int, v *univalue.Univalue) bool {
 		return v.GetPath() == nil
 	}) // Remove the transitions that are marked
@@ -84,24 +85,24 @@ func (this *CCIndexer) Finalize() {
 }
 
 // Merge indexers so they can be updated at once.
-func (this *CCIndexer) Merge(idxers []*CCIndexer) *CCIndexer {
+func (this *LiveStgIndexer) Merge(idxers []*LiveStgIndexer) *LiveStgIndexer {
 	slice.Remove(&idxers, nil)
 
 	this.partitionIDs = slice.ConcateDo(idxers,
-		func(idxer *CCIndexer) uint64 { return uint64(len(idxer.partitionIDs)) },
-		func(idxer *CCIndexer) []uint64 { return idxer.partitionIDs })
+		func(idxer *LiveStgIndexer) uint64 { return uint64(len(idxer.partitionIDs)) },
+		func(idxer *LiveStgIndexer) []uint64 { return idxer.partitionIDs })
 
 	this.keyBuffer = slice.ConcateDo(idxers,
-		func(idxer *CCIndexer) uint64 { return uint64(len(idxer.keyBuffer)) },
-		func(idxer *CCIndexer) []string { return idxer.keyBuffer })
+		func(idxer *LiveStgIndexer) uint64 { return uint64(len(idxer.keyBuffer)) },
+		func(idxer *LiveStgIndexer) []string { return idxer.keyBuffer })
 
 	this.valueBuffer = slice.ConcateDo(idxers,
-		func(idxer *CCIndexer) uint64 { return uint64(len(idxer.valueBuffer)) },
-		func(idxer *CCIndexer) []interface{} { return idxer.valueBuffer })
+		func(idxer *LiveStgIndexer) uint64 { return uint64(len(idxer.valueBuffer)) },
+		func(idxer *LiveStgIndexer) []interface{} { return idxer.valueBuffer })
 
 	this.encodedBuffer = slice.ConcateDo(idxers,
-		func(idxer *CCIndexer) uint64 { return uint64(len(idxer.encodedBuffer)) },
-		func(idxer *CCIndexer) [][]byte { return idxer.encodedBuffer })
+		func(idxer *LiveStgIndexer) uint64 { return uint64(len(idxer.encodedBuffer)) },
+		func(idxer *LiveStgIndexer) [][]byte { return idxer.encodedBuffer })
 
 	return this
 }
