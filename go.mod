@@ -2,7 +2,7 @@ module github.com/arcology-network/storage-committer
 
 go 1.22
 
-replace github.com/arcology-network/common-lib => ../common-lib/
+// replace github.com/arcology-network/common-lib => ../common-lib/
 
 replace github.com/ethereum/go-ethereum v1.14.8 => ../concurrent-evm/
 
@@ -14,7 +14,7 @@ require (
 
 require (
 	github.com/VictoriaMetrics/fastcache v1.12.2
-	github.com/arcology-network/common-lib v1.9.1-0.20240526090033-4c2ee0f20f15
+	github.com/arcology-network/common-lib v1.9.1-0.20240828101906-f4d64ec48d31
 	github.com/cespare/xxhash/v2 v2.2.0
 	golang.org/x/crypto v0.20.0
 )
