@@ -17,6 +17,7 @@ require (
 	github.com/arcology-network/common-lib v1.9.1-0.20240828101906-f4d64ec48d31
 	github.com/cespare/xxhash/v2 v2.2.0
 	golang.org/x/crypto v0.20.0
+	
 )
 
 require (
