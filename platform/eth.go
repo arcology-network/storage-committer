@@ -121,9 +121,7 @@ func GetPathUnder(key, prefix string) string {
 	return ""
 }
 
-// Get ths builtin paths
+// IsEthPath checks if the path is an eth path, some paths are not Arcology only.
 func IsEthPath(path string) bool {
-	return true
-	return !strings.Contains(path, "container/") &&
-		len(path) > stgcommon.ETH10_ACCOUNT_PREFIX_LENGTH
+	return !strings.HasSuffix(path, "container/")
 }

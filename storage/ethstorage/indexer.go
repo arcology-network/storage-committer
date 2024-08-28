@@ -62,7 +62,13 @@ func NewEthIndexer(store *EthDataStore, Version int64) *EthIndexer {
 	}
 }
 
-func (this *EthIndexer) Import(v []*univalue.Univalue) { this.UnorderedIndexer.Import(v) }
+func (this *EthIndexer) Import(trans []*univalue.Univalue) {
+	// Only copy Eth transitions.
+	ethTrans := slice.CopyIf(trans, func(_ int, v *univalue.Univalue) bool {
+		return v.GetPath() != nil || platform.IsEthPath(*v.GetPath())
+	})
+	this.UnorderedIndexer.Import(ethTrans)
+}
 
 // Remove the nil transitions from the index, because they are set by
 func (this *EthIndexer) Finalize() {
