@@ -19,32 +19,32 @@ package ccstorage
 
 // LiveStorageWriter is a struct that contains data strucuture and methods for writing data to concurrent storage.
 type LiveStorageWriter struct {
-	*CCIndexer
-	buffer  []*CCIndexer
+	*LiveStgIndexer
+	buffer  []*LiveStgIndexer
 	store   *DataStore
 	version int64
 }
 
 func NewLiveStorageWriter(store *DataStore, version int64) *LiveStorageWriter {
 	return &LiveStorageWriter{
-		CCIndexer: NewCCIndexer(store, 0),
-		buffer:    []*CCIndexer{},
-		store:     store,
-		version:   version,
+		LiveStgIndexer: NewLiveStgIndexer(store, 0),
+		buffer:         []*LiveStgIndexer{},
+		store:          store,
+		version:        version,
 	}
 }
 
 // Send the data to the downstream processor. This can be called multiple times
 // before calling Await to commit the data to the state db.
 func (this *LiveStorageWriter) Precommit() {
-	this.CCIndexer.Finalize() // Remove the nil transitions
-	this.buffer = append(this.buffer, this.CCIndexer)
-	this.CCIndexer = NewCCIndexer(this.store, -1)
+	this.LiveStgIndexer.Finalize() // Remove the nil transitions
+	this.buffer = append(this.buffer, this.LiveStgIndexer)
+	this.LiveStgIndexer = NewLiveStgIndexer(this.store, -1)
 }
 
 // Await commits the data to the state db.
 func (this *LiveStorageWriter) Commit(_ uint64) {
-	mergedIdxer := new(CCIndexer).Merge(this.buffer)
+	mergedIdxer := new(LiveStgIndexer).Merge(this.buffer)
 	var err error
 	if this.store.db != nil {
 		if err = this.store.db.BatchSet(mergedIdxer.keyBuffer, mergedIdxer.encodedBuffer); err != nil {
