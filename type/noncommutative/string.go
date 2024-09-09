@@ -31,7 +31,7 @@ func NewString(v string) intf.Type {
 	return &this
 }
 
-func (this *String) MemSize() uint32                                            { return uint32(len(*this)) }
+func (this *String) MemSize() uint64                                            { return uint64(len(*this)) }
 func (this *String) IsSelf(key interface{}) bool                                { return true }
 func (this *String) TypeID() uint8                                              { return STRING }
 func (this *String) Equal(other interface{}) bool                               { return *this == *(other.(*String)) }

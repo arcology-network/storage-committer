@@ -53,8 +53,8 @@ type Type interface { // value type
 	ApplyDelta([]Type) (Type, int, error)
 	IsSelf(interface{}) bool
 
-	MemSize() uint32 // Size in memory
-	Size() uint32    // Encoded size
+	MemSize() uint64 // Size in memory
+	Size() uint64    // Encoded size
 	Encode() []byte
 	EncodeToBuffer([]byte) int
 	Decode([]byte) interface{}

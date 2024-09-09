@@ -89,7 +89,7 @@ func (this *Int64) SetDeltaSign(v interface{}) {}
 func (this *Int64) SetMin(v interface{})       { this.min = v.(int64) }
 func (this *Int64) SetMax(v interface{})       { this.max = v.(int64) }
 
-func (this *Int64) MemSize() uint32                                            { return 5 * 8 }
+func (this *Int64) MemSize() uint64                                            { return 5 * 8 }
 func (this *Int64) TypeID() uint8                                              { return INT64 }
 func (this *Int64) IsSelf(key interface{}) bool                                { return true }
 func (this *Int64) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }

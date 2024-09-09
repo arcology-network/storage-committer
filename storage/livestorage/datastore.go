@@ -26,7 +26,6 @@ import (
 	slice "github.com/arcology-network/common-lib/exp/slice"
 	cache "github.com/arcology-network/common-lib/storage/cache"
 	commonintf "github.com/arcology-network/common-lib/storage/interface"
-	policy "github.com/arcology-network/common-lib/storage/policy"
 )
 
 type DataStore struct {
@@ -39,7 +38,6 @@ type DataStore struct {
 
 // numShards uint64, isNil func(V) bool, hasher func(K) uint64, cachePolicy *policy.CachePolicy
 func NewDataStore(
-	cachePolicy *policy.CachePolicy,
 	db commonintf.PersistentStorage,
 	encoder func(string, any) []byte,
 	decoder func(string, []byte, any) interface{},
@@ -53,7 +51,6 @@ func NewDataStore(
 			func(k string) uint64 {
 				return uint64(xxhash.Sum64String(k))
 			},
-			cachePolicy,
 		),
 
 		db:      db,

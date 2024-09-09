@@ -63,15 +63,15 @@ func (this *ShardedWriteCache) NewUnivalue(k string) *univalue.Univalue {
 }
 
 // ONLY THE TX WRITECACHE HAS THE NEED TO SUPPORT GET OR NOW
-// func (this *ShardedWriteCache) GetOrNew(tx uint32, path string, T any) (*univalue.Univalue, bool) {
+// func (this *ShardedWriteCache) GetOrNew(tx uint64, path string, T any) (*univalue.Univalue, bool) {
 // 	return this.caches[this.hasher(path)%NUM_SHARDS].GetOrNew(tx, path, T)
 // }
 
-func (this *ShardedWriteCache) Read(tx uint32, path string, T any) (interface{}, interface{}, uint64) {
+func (this *ShardedWriteCache) Read(tx uint64, path string, T any) (interface{}, interface{}, uint64) {
 	return this.caches[this.hasher(path)%NUM_SHARDS].Read(tx, path, T)
 }
 
-func (this *ShardedWriteCache) Write(tx uint32, path string, value interface{}) (int64, error) {
+func (this *ShardedWriteCache) Write(tx uint64, path string, value interface{}) (int64, error) {
 	return this.caches[this.hasher(path)%NUM_SHARDS].Write(tx, path, value)
 }
 

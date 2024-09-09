@@ -25,8 +25,8 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
-func (this *String) Size() uint32 {
-	return uint32(len(*this))
+func (this *String) Size() uint64 {
+	return uint64(len(*this))
 }
 
 func (this *String) Encode() []byte {

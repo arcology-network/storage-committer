@@ -40,7 +40,7 @@ type StateCommitter struct {
 	writers []stgcommon.AsyncWriter[*univalue.Univalue] // db writers
 
 	byPath *indexer.UnorderedIndexer[string, *univalue.Univalue, []*univalue.Univalue]
-	byTxID *indexer.UnorderedIndexer[uint32, *univalue.Univalue, []*univalue.Univalue]
+	byTxID *indexer.UnorderedIndexer[uint64, *univalue.Univalue, []*univalue.Univalue]
 
 	Err error
 }
@@ -85,14 +85,14 @@ func (this *StateCommitter) Import(transitions []*univalue.Univalue) *StateCommi
 }
 
 // Finalize finalizes the transitions in the StateCommitter.
-func (this *StateCommitter) whitelist(txs []uint32) *StateCommitter {
+func (this *StateCommitter) whitelist(txs []uint64) *StateCommitter {
 	if len(txs) == 0 {
 		return this
 	}
 
-	whitelistDict := mapi.FromSlice(txs, func(_ uint32) bool { return true })
-	this.byTxID.ParallelForeachDo(func(txid uint32, vec *[]*univalue.Univalue) {
-		if _, ok := whitelistDict[uint32(txid)]; !ok {
+	whitelistDict := mapi.FromSlice(txs, func(_ uint64) bool { return true })
+	this.byTxID.ParallelForeachDo(func(txid uint64, vec *[]*univalue.Univalue) {
+		if _, ok := whitelistDict[uint64(txid)]; !ok {
 			for _, v := range *vec {
 				v.SetPath(nil) // Mark the transition status, so that it can be removed later.
 			}
@@ -102,7 +102,7 @@ func (this *StateCommitter) whitelist(txs []uint32) *StateCommitter {
 }
 
 // Commit commits the transitions to different stores.
-func (this *StateCommitter) Finalize(txs []uint32) {
+func (this *StateCommitter) Finalize(txs []uint64) {
 	this.whitelist(txs) // Mark the transitions that are not in the whitelist
 
 	// Finalize all the transitions by merging the transitions
@@ -122,7 +122,7 @@ func (this *StateCommitter) Finalize(txs []uint32) {
 // Commit commits the transitions in the StateCommitter.
 // 1. For the block write cache, it commits the transitions to the cache.
 // 2. For the eth storage, it updates the tries without committing the transitions to the DB
-func (this *StateCommitter) Precommit(txs []uint32) [32]byte {
+func (this *StateCommitter) Precommit(txs []uint64) [32]byte {
 	this.Finalize(txs)
 	this.SyncPrecommit()
 	this.AsyncPrecommit()

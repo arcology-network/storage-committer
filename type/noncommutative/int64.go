@@ -30,7 +30,7 @@ func NewInt64(v int64) *Int64 {
 	return &this
 }
 
-func (this *Int64) MemSize() uint32                                            { return 8 }
+func (this *Int64) MemSize() uint64                                            { return 8 }
 func (this *Int64) IsSelf(key interface{}) bool                                { return true }
 func (this *Int64) TypeID() uint8                                              { return INT64 }
 func (this *Int64) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }

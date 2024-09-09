@@ -154,7 +154,7 @@ func (this *U256) SetDeltaSign(v interface{}) { this.deltaPositive = (v.(bool)) 
 func (this *U256) SetMin(v interface{})       { this.min = (v.(uint256.Int)) }
 func (this *U256) SetMax(v interface{})       { this.max = (v.(uint256.Int)) }
 
-func (this *U256) MemSize() uint32                                            { return 16 + 1 } // in bytes
+func (this *U256) MemSize() uint64                                            { return 16 + 1 } // in bytes
 func (this *U256) IsSelf(key interface{}) bool                                { return true }
 func (this *U256) TypeID() uint8                                              { return UINT256 }
 func (this *U256) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }

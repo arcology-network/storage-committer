@@ -32,7 +32,7 @@ import (
 )
 
 // Get the index of a given key under a path.
-func (this *WriteCache) IndexOf(tx uint32, path string, key interface{}, T any) (uint64, uint64) {
+func (this *WriteCache) IndexOf(tx uint64, path string, key interface{}, T any) (uint64, uint64) {
 	if !common.IsPath(path) {
 		return math.MaxUint64, READ_NONEXIST //, errors.New("Error: Not a path!!!")
 	}
@@ -50,7 +50,7 @@ func (this *WriteCache) IndexOf(tx uint32, path string, key interface{}, T any) 
 
 // KeyAt returns the index of a give key and the the opertion fee under a path.
 // If the path does not exist, it returns an error. The second return value is the operation fee.
-func (this *WriteCache) KeyAt(tx uint32, path string, index interface{}, T any) (string, uint64) {
+func (this *WriteCache) KeyAt(tx uint64, path string, index interface{}, T any) (string, uint64) {
 	if !common.IsPath(path) {
 		return "", READ_NONEXIST //, errors.New("Error: Not a path!!!")
 	}
@@ -79,13 +79,13 @@ func (this *WriteCache) PeekCommitted(path string, T any) (interface{}, uint64) 
 }
 
 // This function looks up the value and carries out the operation on the value directly.
-func (this *WriteCache) Do(tx uint32, path string, doer interface{}, T any) (interface{}, error) {
+func (this *WriteCache) Do(tx uint64, path string, doer interface{}, T any) (interface{}, error) {
 	univalue, _ := this.GetOrNew(tx, path, T)
 	return univalue.Do(tx, path, doer), nil
 }
 
 // get the key of the Nth element under a path
-func (this *WriteCache) getKeyByIdx(tx uint32, path string, idx uint64) (interface{}, uint64, error) {
+func (this *WriteCache) getKeyByIdx(tx uint64, path string, idx uint64) (interface{}, uint64, error) {
 	if !common.IsPath(path) {
 		return nil, READ_NONEXIST, errors.New("Error: Not a path!!!")
 	}
@@ -110,7 +110,7 @@ func (this *WriteCache) getKeyByIdx(tx uint32, path string, idx uint64) (interfa
 }
 
 // get the key of the Nth element under a path
-func (this *WriteCache) Min(tx uint32, path string, idx uint64) (interface{}, uint64, error) {
+func (this *WriteCache) Min(tx uint64, path string, idx uint64) (interface{}, uint64, error) {
 	if !common.IsPath(path) {
 		return nil, READ_NONEXIST, errors.New("Error: Not a path!!!")
 	}
@@ -125,7 +125,7 @@ func (this *WriteCache) Min(tx uint32, path string, idx uint64) (interface{}, ui
 }
 
 // get the key of the Nth element under a path
-func (this *WriteCache) Max(tx uint32, path string, idx uint64) (interface{}, uint64, error) {
+func (this *WriteCache) Max(tx uint64, path string, idx uint64) (interface{}, uint64, error) {
 	if !common.IsPath(path) {
 		return nil, READ_NONEXIST, errors.New("Error: Not a path!!!")
 	}
@@ -140,7 +140,7 @@ func (this *WriteCache) Max(tx uint32, path string, idx uint64) (interface{}, ui
 }
 
 // Read th Nth element under a path
-func (this *WriteCache) ReadAt(tx uint32, path string, idx uint64, T any) (interface{}, uint64, error) {
+func (this *WriteCache) ReadAt(tx uint64, path string, idx uint64, T any) (interface{}, uint64, error) {
 	if key, Fee, err := this.getKeyByIdx(tx, path, idx); err == nil && key != nil {
 		v, _, Fee := this.Read(tx, key.(string), T)
 		return v, Fee, nil
@@ -150,7 +150,7 @@ func (this *WriteCache) ReadAt(tx uint32, path string, idx uint64, T any) (inter
 }
 
 // Read th Nth element under a path
-func (this *WriteCache) DoAt(tx uint32, path string, idx uint64, do interface{}, T any) (interface{}, uint64, error) {
+func (this *WriteCache) DoAt(tx uint64, path string, idx uint64, do interface{}, T any) (interface{}, uint64, error) {
 	if key, Fee, err := this.getKeyByIdx(tx, path, idx); err == nil && key != nil {
 		v, err := this.Do(tx, key.(string), do, T)
 		return v, Fee, err
@@ -160,7 +160,7 @@ func (this *WriteCache) DoAt(tx uint32, path string, idx uint64, do interface{},
 }
 
 // Read th Nth element under a path
-func (this *WriteCache) PopBack(tx uint32, path string, T any) (interface{}, int64, error) {
+func (this *WriteCache) PopBack(tx uint64, path string, T any) (interface{}, int64, error) {
 	if !common.IsPath(path) {
 		return nil, int64(READ_NONEXIST), errors.New("Error: Not a path!!!")
 	}
@@ -186,7 +186,7 @@ func (this *WriteCache) PopBack(tx uint32, path string, T any) (interface{}, int
 // Eventually, the key is used to read or write the data. This solution has some issues.
 // To get the key by index, the keys in container must be finalized first. If the path
 // has any update at this moment, this operation will generate a path read with will conflict with the path write.
-func (this *WriteCache) WriteAt(tx uint32, path string, idx uint64, T any) (int64, error) {
+func (this *WriteCache) WriteAt(tx uint64, path string, idx uint64, T any) (int64, error) {
 	if !common.IsPath(path) {
 		return int64(READ_NONEXIST), errors.New("Error: Not a path!!!")
 	}

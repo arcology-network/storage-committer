@@ -27,7 +27,7 @@ import (
 )
 
 func (this Univalues) Size() int {
-	size := (len(this) + 1) * codec.UINT32_LEN
+	size := (len(this) + 1) * codec.UINT64_LEN
 	for _, v := range this {
 		size += int(v.Size())
 	}
@@ -43,7 +43,7 @@ func (this Univalues) Sizes() []int {
 }
 
 func (this Univalues) Encode(selector ...interface{}) []byte {
-	lengths := make([]uint32, len(this))
+	lengths := make([]uint64, len(this))
 	if len(lengths) == 0 {
 		return []byte{}
 	}
@@ -54,17 +54,17 @@ func (this Univalues) Encode(selector ...interface{}) []byte {
 		}
 	})
 
-	offsets := make([]uint32, len(this)+1)
+	offsets := make([]uint64, len(this)+1)
 	for i := 0; i < len(lengths); i++ {
 		offsets[i+1] = offsets[i] + lengths[i]
 	}
 
-	headerLen := uint32((len(this) + 1) * codec.UINT32_LEN)
+	headerLen := uint64((len(this) + 1) * codec.UINT64_LEN)
 	buffer := make([]byte, headerLen+offsets[len(offsets)-1])
 	codec.Uint32(len(this)).EncodeToBuffer(buffer)
 
 	slice.ParallelForeach(this, 6, func(i int, _ **Univalue) {
-		codec.Uint32(offsets[i]).EncodeToBuffer(buffer[(i+1)*codec.UINT32_LEN:])
+		codec.Uint32(offsets[i]).EncodeToBuffer(buffer[(i+1)*codec.UINT64_LEN:])
 		this[i].EncodeToBuffer(buffer[headerLen+offsets[i]:])
 	})
 	return buffer

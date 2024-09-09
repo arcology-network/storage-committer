@@ -46,7 +46,7 @@ func (this *Bytes) Assign(v []byte) {
 	this.value = v
 }
 
-func (this *Bytes) MemSize() uint32             { return uint32(1 + len(this.value)) }
+func (this *Bytes) MemSize() uint64             { return uint64(1 + len(this.value)) }
 func (this *Bytes) IsSelf(key interface{}) bool { return true }
 func (this *Bytes) TypeID() uint8               { return BYTES }
 

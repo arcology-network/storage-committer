@@ -25,7 +25,7 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
-func (this *Bigint) Size() uint32 {
+func (this *Bigint) Size() uint64 {
 	v := codec.Bigint(*this)
 	return v.Size()
 }

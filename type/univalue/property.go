@@ -20,7 +20,7 @@ package univalue
 type Property struct {
 	vType       uint8
 	persistent  bool
-	tx          uint32
+	tx          uint64
 	path        *string
 	reads       uint32
 	writes      uint32
@@ -30,7 +30,7 @@ type Property struct {
 	reclaimFunc func(interface{})
 }
 
-func NewProperty(tx uint32, key string, reads, writes uint32, deltaWrites uint32, vType uint8, persistent, preexists bool) *Property {
+func NewProperty(tx uint64, key string, reads, writes uint32, deltaWrites uint32, vType uint8, persistent, preexists bool) *Property {
 	return &Property{
 		vType:       vType,
 		persistent:  persistent, // Won't be affected by conflict status
@@ -67,8 +67,8 @@ func (this *Property) AppendMsg(msg string) { this.msg = this.msg + "\n" + msg }
 func (this *Property) GetPersistent() bool  { return this.persistent }
 func (this *Property) SetPersistent(v bool) { this.persistent = v }
 
-func (this *Property) GetTx() uint32     { return this.tx }
-func (this *Property) SetTx(txId uint32) { this.tx = txId }
+func (this *Property) GetTx() uint64     { return this.tx }
+func (this *Property) SetTx(txId uint64) { this.tx = txId }
 
 func (this *Property) GetPath() *string     { return this.path }
 func (this *Property) SetPath(path *string) { this.path = path }

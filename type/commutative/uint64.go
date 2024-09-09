@@ -64,7 +64,7 @@ func (this *Uint64) Equal(other interface{}) bool {
 		this.max == other.(*Uint64).max
 }
 
-func (this *Uint64) MemSize() uint32 { return 5 * 8 }
+func (this *Uint64) MemSize() uint64 { return 5 * 8 }
 
 func (this *Uint64) IsNumeric() bool     { return true }
 func (this *Uint64) IsCommutative() bool { return true }

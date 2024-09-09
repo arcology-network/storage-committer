@@ -60,7 +60,8 @@ func (this *CacheIndexer) Finalize() {
 	})
 }
 
-// Merge indexers so they can be updated at once.
+// Merge indexers so they can be updated at once. This is useful when working
+// with multiple indexers at once.
 func (this *CacheIndexer) Merge(idxers []*CacheIndexer) *CacheIndexer {
 	slice.Remove(&idxers, nil)
 

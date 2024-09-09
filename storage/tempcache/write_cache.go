@@ -68,7 +68,7 @@ func (this *WriteCache) Preload([]byte) interface{}            { return nil } //
 func (this *WriteCache) NewUnivalue() *univalue.Univalue       { return this.pool.New() }
 
 // If the access has been recorded
-func (this *WriteCache) GetOrNew(tx uint32, path string, T any) (*univalue.Univalue, bool) {
+func (this *WriteCache) GetOrNew(tx uint64, path string, T any) (*univalue.Univalue, bool) {
 	unival, inCache := this.kvDict[path]
 	if unival == nil { // Not in the kvDict, check the datastore
 		var typedv interface{}
@@ -82,12 +82,12 @@ func (this *WriteCache) GetOrNew(tx uint32, path string, T any) (*univalue.Univa
 	return unival, inCache // From cache
 }
 
-func (this *WriteCache) Read(tx uint32, path string, T any) (interface{}, interface{}, uint64) {
+func (this *WriteCache) Read(tx uint64, path string, T any) (interface{}, interface{}, uint64) {
 	univalue, _ := this.GetOrNew(tx, path, T)
 	return univalue.Get(tx, path, nil), univalue, 0
 }
 
-func (this *WriteCache) write(tx uint32, path string, value interface{}) error {
+func (this *WriteCache) write(tx uint64, path string, value interface{}) error {
 	parentPath := common.GetParentPath(path)
 	if this.IfExists(parentPath) || tx == committercommon.SYSTEM { // The parent path exists or to inject the path directly
 		univalue, inCache := this.GetOrNew(tx, path, value) // Get a univalue wrapper
@@ -105,7 +105,7 @@ func (this *WriteCache) write(tx uint32, path string, value interface{}) error {
 	return errors.New("Error: The parent path " + parentPath + " doesn't exist for " + path)
 }
 
-func (this *WriteCache) Write(tx uint32, path string, value interface{}) (int64, error) {
+func (this *WriteCache) Write(tx uint64, path string, value interface{}) (int64, error) {
 	fee := int64(0) //Fee{}.Writer(path, value, this.writeCache)
 	if value == nil || (value != nil && value.(stgtype.Type).TypeID() != uint8(reflect.Invalid)) {
 		return fee, this.write(tx, path, value)
@@ -114,7 +114,7 @@ func (this *WriteCache) Write(tx uint32, path string, value interface{}) (int64,
 }
 
 // Get data from the DB direcly, still under conflict protection
-func (this *WriteCache) ReadCommitted(tx uint32, key string, T any) (interface{}, uint64) {
+func (this *WriteCache) ReadCommitted(tx uint64, key string, T any) (interface{}, uint64) {
 	if v, _, Fee := this.Read(tx, key, this); v != nil { // For conflict detection
 		return v, Fee
 	}
@@ -133,7 +133,7 @@ func (this *WriteCache) InCache(path string) (interface{}, bool) {
 }
 
 // Get the raw value directly, put it in an empty univalue without recording the access at the univalue level.
-func (this *WriteCache) Find(tx uint32, path string, T any) (interface{}, interface{}) {
+func (this *WriteCache) Find(tx uint64, path string, T any) (interface{}, interface{}) {
 	if univ, ok := this.kvDict[path]; ok {
 		return univ.Value(), univ
 	}

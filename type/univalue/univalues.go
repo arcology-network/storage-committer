@@ -130,13 +130,13 @@ func (this Univalues) SortByDepth() Univalues {
 	return this
 }
 
-func (this Univalues) Sort(groupIDs []uint32) Univalues {
+func (this Univalues) Sort(groupIDs []uint64) Univalues {
 	sortees := make([]struct {
-		groupID uint32
+		groupID uint64
 		length  int
 		str     string
 		bytes   []byte
-		tx      uint32
+		tx      uint64
 		value   *Univalue
 	}, len(this))
 
@@ -146,11 +146,11 @@ func (this Univalues) Sort(groupIDs []uint32) Univalues {
 		bytes := []byte(*str)
 
 		sortees[i] = struct {
-			groupID uint32
+			groupID uint64
 			length  int
 			str     string
 			bytes   []byte
-			tx      uint32
+			tx      uint64
 			value   *Univalue
 		}{
 			groupID: groupIDs[i],

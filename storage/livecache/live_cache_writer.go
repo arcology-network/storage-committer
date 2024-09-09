@@ -20,14 +20,14 @@ package livecache
 // LiveCacheWriter writes to the OBJECT cache.
 type LiveCacheWriter struct {
 	*CacheIndexer
-	store  *LiveCache
-	buffer []*CacheIndexer
+	liveCache *LiveCache
+	buffer    []*CacheIndexer // For multiple generations. Each geneartion has its own indexer.
 }
 
 func NewLiveCacheWriter(cache *LiveCache, version int64) *LiveCacheWriter {
 	return &LiveCacheWriter{
 		CacheIndexer: NewCacheIndexer(cache, version),
-		store:        cache,
+		liveCache:    cache,
 		buffer:       make([]*CacheIndexer, 0),
 	}
 }
@@ -36,14 +36,16 @@ func NewLiveCacheWriter(cache *LiveCache, version int64) *LiveCacheWriter {
 // If there are multiple generations, this can be called multiple times before Await.
 // Each generation
 func (this *LiveCacheWriter) Precommit() {
-	this.CacheIndexer.Finalize()                         // Remove the nil transitions
-	this.buffer = append(this.buffer, this.CacheIndexer) // Append the indexer to the buffer
-	this.CacheIndexer = NewCacheIndexer(this.store, -1)  // Reset the indexer with a default version number
+	this.CacheIndexer.Finalize()                            // Remove the nil transitions
+	this.buffer = append(this.buffer, this.CacheIndexer)    // Append the indexer to the buffer
+	this.CacheIndexer = NewCacheIndexer(this.liveCache, -1) // Reset the indexer with a default version number
 }
 
 // Triggered by the block commit.
 func (this *LiveCacheWriter) Commit(version uint64) {
-	mergedIdxer := new(CacheIndexer).Merge(this.buffer)       // Merge indexers
-	this.store.BatchSet(mergedIdxer.keys, mergedIdxer.values) // update the local cache with the new values in the indexer
-	this.buffer = make([]*CacheIndexer, 0)
+	mergedIdxer := new(CacheIndexer).Merge(this.buffer) // Merge indexers
+	// this.liveCache.Commit(mergedIdxer.keys, mergedIdxer.values) // update the local cache with the new values in the indexer
+	this.buffer = make([]*CacheIndexer, 0) // Reset the indexer buffer
+
+	this.liveCache.Commit(mergedIdxer.keys, mergedIdxer.values, mergedIdxer.buffer) // commit univalues directly
 }

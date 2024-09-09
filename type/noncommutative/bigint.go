@@ -37,7 +37,7 @@ func NewBigint(v int64) interface{} {
 	return &this
 }
 
-func (this *Bigint) MemSize() uint32                                            { return uint32((*big.Int)(this).BitLen()) }
+func (this *Bigint) MemSize() uint64                                            { return uint64((*big.Int)(this).BitLen()) }
 func (this *Bigint) IsSelf(key interface{}) bool                                { return true }
 func (this *Bigint) TypeID() uint8                                              { return BIGINT }
 func (this *Bigint) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }

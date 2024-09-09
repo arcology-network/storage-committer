@@ -31,30 +31,30 @@ func (this *Univalue) Encode() []byte {
 	return buffer
 }
 
-func (this *Univalue) HeaderSize() uint32 {
-	return uint32(3 * codec.UINT32_LEN)
+func (this *Univalue) HeaderSize() uint64 {
+	return uint64(3 * codec.UINT64_LEN)
 }
 
-func (this *Univalue) Sizes() []uint32 {
-	return []uint32{
+func (this *Univalue) Sizes() []uint64 {
+	return []uint64{
 		this.HeaderSize(),
 		this.Property.Size(),
 		this.value.(stgcommon.Type).Size(),
 	}
 }
 
-func (this *Univalue) Size() uint32 {
+func (this *Univalue) Size() uint64 {
 	return this.HeaderSize() +
 		this.Property.Size() +
-		common.IfThenDo1st(this.value != nil, func() uint32 { return this.value.(stgcommon.Type).Size() }, 0)
+		common.IfThenDo1st(this.value != nil, func() uint64 { return this.value.(stgcommon.Type).Size() }, 0)
 }
 
 func (this *Univalue) FillHeader(buffer []byte) int {
 	return codec.Encoder{}.FillHeader(
 		buffer,
-		[]uint32{
+		[]uint64{
 			this.Property.Size(),
-			common.IfThenDo1st(this.value != nil, func() uint32 { return this.value.(stgcommon.Type).Size() }, 0),
+			common.IfThenDo1st(this.value != nil, func() uint64 { return this.value.(stgcommon.Type).Size() }, 0),
 		},
 	)
 }

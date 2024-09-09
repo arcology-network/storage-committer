@@ -20,7 +20,6 @@ package proxy
 import (
 	ccbadger "github.com/arcology-network/common-lib/storage/badger"
 	memdb "github.com/arcology-network/common-lib/storage/memdb"
-	policy "github.com/arcology-network/common-lib/storage/policy"
 	"github.com/arcology-network/storage-committer/type/univalue"
 
 	// intf "github.com/arcology-network/storage-committer/interfaces"
@@ -44,13 +43,13 @@ func NewCacheOnlyStoreProxy() *StorageProxy {
 	proxy := &StorageProxy{
 		ethDataStore: ethstg.NewParallelEthMemDataStore(), //ethstg.NewParallelEthMemDataStore(),
 		ccDataStore: ccstg.NewDataStore(
-			policy.NewCachePolicy(0, 1), // Don't cache anything in the underlying storage, the cache is managed by the router
 			nil,
 			stgtypcodec.Codec{}.Encode,
 			stgtypcodec.Codec{}.Decode,
 		),
 	}
-	proxy.unifiedCache = livecache.NewReadCache(proxy)
+
+	proxy.unifiedCache = livecache.NewLiveCache()
 	return proxy
 }
 
@@ -64,7 +63,6 @@ func NewLevelDBStoreProxy(dbpath string) *StorageProxy {
 	proxy := &StorageProxy{
 		ethDataStore: ethstg.NewLevelDBDataStore(dbpath), //ethstg.NewParallelEthMemDataStore(),
 		ccDataStore: ccstg.NewDataStore(
-			policy.NewCachePolicy(0, 1), // Don't cache anything in the underlying storage, the cache is managed by the router
 			// memdb.NewMemoryDB(),
 			ccbadger.NewBadgerDB(dbpath+"_badager"),
 			// ccbadger.NewParaBadgerDB(dbpath+"_pbadager", common.Remainder),
@@ -72,7 +70,7 @@ func NewLevelDBStoreProxy(dbpath string) *StorageProxy {
 			stgtypcodec.Codec{}.Decode,
 		),
 	}
-	proxy.unifiedCache = livecache.NewReadCache(proxy)
+	proxy.unifiedCache = livecache.NewLiveCache()
 	return proxy
 }
 
@@ -117,8 +115,8 @@ func (this *StorageProxy) Inject(key string, v any) error {
 }
 
 func (this *StorageProxy) Retrive(key string, v any) (interface{}, error) {
-	if v, ok := this.unifiedCache.Get(key); ok { // Get from cache first
-		return *v, nil
+	if retv, ok := this.unifiedCache.Get(key); ok { // Get from cache first
+		return retv, nil
 	}
 	return this.ccDataStore.Retrive(key, v)
 }

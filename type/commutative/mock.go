@@ -28,7 +28,7 @@ func NewMockWriteCache() *mockWriteCache {
 	}
 }
 
-func (this *mockWriteCache) Write(tx uint32, key string, value interface{}) (int64, error) {
+func (this *mockWriteCache) Write(tx uint64, key string, value interface{}) (int64, error) {
 	this.dict[key] = value
 	return 0, nil
 }

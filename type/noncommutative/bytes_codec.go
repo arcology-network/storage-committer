@@ -27,11 +27,11 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
-func (this *Bytes) HeaderSize() uint32 {
-	return 3 * codec.UINT32_LEN
+func (this *Bytes) HeaderSize() uint64 {
+	return 3 * codec.UINT64_LEN
 }
 
-func (this *Bytes) Size() uint32 {
+func (this *Bytes) Size() uint64 {
 	return this.HeaderSize() + this.MemSize()
 }
 

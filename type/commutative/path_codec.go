@@ -26,28 +26,28 @@ import (
 	// performance "github.com/arcology-network/common-lib/mhasher"
 )
 
-func (this *Path) HeaderSize() uint32 {
-	return 4 * codec.UINT32_LEN // number of fields + 1
+func (this *Path) HeaderSize() uint64 {
+	return 4 * codec.UINT64_LEN // number of fields + 1
 }
 
-func (this *Path) Size() uint32 {
+func (this *Path) Size() uint64 {
 	committedEmpty := this.DeltaSet.Committed() != nil
 	appendedEmpty := this.DeltaSet.Updated() != nil
 	removedEmpty := this.DeltaSet.Removed() != nil
 
 	return this.HeaderSize() +
-		common.IfThenDo1st(committedEmpty, func() uint32 { return codec.Strings(this.DeltaSet.Committed().Elements()).Size() }, 0) +
-		common.IfThenDo1st(appendedEmpty, func() uint32 { return codec.Strings(this.DeltaSet.Updated().Elements()).Size() }, 0) +
-		common.IfThenDo1st(removedEmpty, func() uint32 { return codec.Strings(this.DeltaSet.Removed().Elements()).Size() }, 0)
+		common.IfThenDo1st(committedEmpty, func() uint64 { return codec.Strings(this.DeltaSet.Committed().Elements()).Size() }, 0) +
+		common.IfThenDo1st(appendedEmpty, func() uint64 { return codec.Strings(this.DeltaSet.Updated().Elements()).Size() }, 0) +
+		common.IfThenDo1st(removedEmpty, func() uint64 { return codec.Strings(this.DeltaSet.Removed().Elements()).Size() }, 0)
 }
 
 func (this *Path) Encode() []byte {
 	buffer := make([]byte, this.Size()) //  no need to send the committed keys
 	offset := codec.Encoder{}.FillHeader(buffer,
-		[]uint32{
-			common.IfThenDo1st(this.DeltaSet.Committed() != nil, func() uint32 { return codec.Strings(this.DeltaSet.Committed().Elements()).Size() }, 0),
-			common.IfThenDo1st(this.DeltaSet.Updated() != nil, func() uint32 { return codec.Strings(this.DeltaSet.Updated().Elements()).Size() }, 0),
-			common.IfThenDo1st(this.DeltaSet.Removed() != nil, func() uint32 { return codec.Strings(this.DeltaSet.Removed().Elements()).Size() }, 0),
+		[]uint64{
+			common.IfThenDo1st(this.DeltaSet.Committed() != nil, func() uint64 { return codec.Strings(this.DeltaSet.Committed().Elements()).Size() }, 0),
+			common.IfThenDo1st(this.DeltaSet.Updated() != nil, func() uint64 { return codec.Strings(this.DeltaSet.Updated().Elements()).Size() }, 0),
+			common.IfThenDo1st(this.DeltaSet.Removed() != nil, func() uint64 { return codec.Strings(this.DeltaSet.Removed().Elements()).Size() }, 0),
 		},
 	)
 	this.EncodeToBuffer(buffer[offset:])

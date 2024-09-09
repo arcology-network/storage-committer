@@ -26,27 +26,27 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
-func (this *Int64) HeaderSize() uint32 {
-	return 5 * codec.UINT32_LEN //static size only , no header needed,
+func (this *Int64) HeaderSize() uint64 {
+	return 5 * codec.UINT64_LEN //static size only , no header needed,
 }
 
-func (this *Int64) Size() uint32 {
+func (this *Int64) Size() uint64 {
 	return this.HeaderSize() +
-		common.IfThen(this.value != 0, uint32(8), 0) +
-		common.IfThen(this.delta != 0, uint32(8), 0) +
-		common.IfThen(this.min != math.MinInt64, uint32(8), 0) +
-		common.IfThen(this.max != math.MaxInt64, uint32(8), 0)
+		common.IfThen(this.value != 0, uint64(8), 0) +
+		common.IfThen(this.delta != 0, uint64(8), 0) +
+		common.IfThen(this.min != math.MinInt64, uint64(8), 0) +
+		common.IfThen(this.max != math.MaxInt64, uint64(8), 0)
 }
 
 func (this *Int64) Encode() []byte {
 	buffer := make([]byte, this.Size())
 	offset := codec.Encoder{}.FillHeader(
 		buffer,
-		[]uint32{
-			common.IfThen(this.value != 0, uint32(8), 0),
-			common.IfThen(this.delta != 0, uint32(8), 0),
-			common.IfThen(this.min != math.MinInt64, uint32(8), 0),
-			common.IfThen(this.max != math.MaxInt64, uint32(8), 0),
+		[]uint64{
+			common.IfThen(this.value != 0, uint64(8), 0),
+			common.IfThen(this.delta != 0, uint64(8), 0),
+			common.IfThen(this.min != math.MinInt64, uint64(8), 0),
+			common.IfThen(this.max != math.MaxInt64, uint64(8), 0),
 		},
 	)
 	this.EncodeToBuffer(buffer[offset:])

@@ -25,17 +25,17 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
-func (this *U256) HeaderSize() uint32 {
+func (this *U256) HeaderSize() uint64 {
 	return 5 // Total number of fields + offsets of these fields
 }
 
-func (this *U256) Size() uint32 {
+func (this *U256) Size() uint64 {
 	return this.HeaderSize() +
-		common.IfThen(this.value.Eq(&U256_ZERO), 0, uint32(32)) + // Values
-		common.IfThen(this.delta.Eq(&U256_ZERO), 0, uint32(32)) + // delta
-		common.IfThen(this.deltaPositive, 0, uint32(1)) + // delta sign
-		common.IfThen(this.min.Eq(&U256_ZERO), 0, uint32(32)) + // Min
-		common.IfThen(this.max.Eq(&U256_MAX), 0, uint32(32)) // Max
+		common.IfThen(this.value.Eq(&U256_ZERO), 0, uint64(32)) + // Values
+		common.IfThen(this.delta.Eq(&U256_ZERO), 0, uint64(32)) + // delta
+		common.IfThen(this.deltaPositive, 0, uint64(1)) + // delta sign
+		common.IfThen(this.min.Eq(&U256_ZERO), 0, uint64(32)) + // Min
+		common.IfThen(this.max.Eq(&U256_MAX), 0, uint64(32)) // Max
 }
 
 func (this *U256) Encode() []byte {

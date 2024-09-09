@@ -37,7 +37,7 @@ type Univalue struct {
 	cache []byte
 }
 
-func NewUnivalue(tx uint32, key string, reads, writes uint32, deltaWrites uint32, v interface{}, source interface{}) *Univalue {
+func NewUnivalue(tx uint64, key string, reads, writes uint32, deltaWrites uint32, v interface{}, source interface{}) *Univalue {
 	return &Univalue{
 		Property{
 			vType:       common.IfThenDo1st(v != nil, func() uint8 { return v.(intf.Type).TypeID() }, uint8(reflect.Invalid)),
@@ -70,7 +70,7 @@ func (*Univalue) Reset(this *Univalue) {
 func (this *Univalue) From(v *Univalue) interface{} { return v }
 
 // func (this *Univalue) IsHotLoaded() bool             { return this.reads > 1 }
-func (this *Univalue) SetTx(txId uint32)  { this.tx = txId }
+func (this *Univalue) SetTx(txId uint64)  { this.tx = txId }
 func (this *Univalue) ClearCache()        { this.cache = this.cache[:0] }
 func (this *Univalue) Value() interface{} { return this.value }
 func (this *Univalue) SetValue(newValue interface{}) *Univalue {
@@ -84,7 +84,7 @@ func (this *Univalue) SetValue(newValue interface{}) *Univalue {
 
 func (this *Univalue) GetCache() interface{} { return this.cache }
 
-func (this *Univalue) Init(tx uint32, key string, reads, writes, deltaWrites uint32, v interface{}, args ...interface{}) *Univalue {
+func (this *Univalue) Init(tx uint64, key string, reads, writes, deltaWrites uint32, v interface{}, args ...interface{}) *Univalue {
 	this.vType = common.IfThenDo1st(v != nil, func() uint8 { return v.(intf.Type).TypeID() }, uint8(reflect.Invalid))
 	this.tx = tx
 	this.path = &key
@@ -105,7 +105,7 @@ func (this *Univalue) Reclaim() {
 // This performs the action on the value and returns the result.
 // This function doesnn't make a deep copy of the original value.
 // It should be used for read-only operations ONLY!!!.
-func (this *Univalue) Do(tx uint32, path string, doer interface{}) interface{} {
+func (this *Univalue) Do(tx uint64, path string, doer interface{}) interface{} {
 	r, w, dw, ret := doer.(func(interface{}) (uint32, uint32, uint32, interface{}))(this)
 	this.reads += r
 	this.writes += w
@@ -113,7 +113,7 @@ func (this *Univalue) Do(tx uint32, path string, doer interface{}) interface{} {
 	return ret
 }
 
-func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{} {
+func (this *Univalue) Get(tx uint64, path string, source interface{}) interface{} {
 	if this.value != nil {
 		tempV, r, w := this.value.(intf.Type).Get() //RW: Affiliated reads and writes
 		this.reads += r
@@ -137,9 +137,9 @@ func (this *Univalue) Get(tx uint32, path string, source interface{}) interface{
 
 func (this *Univalue) CopyTo(writable interface{}) {
 	writeCache := writable.(interface {
-		Read(uint32, string, interface{}) (interface{}, interface{}, uint64)
-		Write(uint32, string, interface{}) (int64, error)
-		Find(uint32, string, interface{}) (interface{}, interface{})
+		Read(uint64, string, interface{}) (interface{}, interface{}, uint64)
+		Write(uint64, string, interface{}) (int64, error)
+		Find(uint64, string, interface{}) (interface{}, interface{})
 	})
 
 	if this.writes == 0 && this.deltaWrites == 0 {
@@ -158,7 +158,7 @@ func (this *Univalue) CopyTo(writable interface{}) {
 	univ.(*Univalue).IncrementDeltaWrites(this.DeltaWrites())
 }
 
-func (this *Univalue) Set(tx uint32, path string, newV interface{}, inCache bool, importer interface{}) error { // update the value
+func (this *Univalue) Set(tx uint64, path string, newV interface{}, inCache bool, importer interface{}) error { // update the value
 	this.tx = tx
 	if this.value == nil && newV == nil {
 		this.writes++ // Delete an non-existing value

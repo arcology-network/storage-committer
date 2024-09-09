@@ -43,7 +43,7 @@ func NewPath(newPaths ...string) stgintf.Type {
 
 func (this *Path) Length() int                                                { return int(this.DeltaSet.NonNilCount()) }
 func (this *Path) View() *deltaset.DeltaSet[string]                           { return this.DeltaSet }
-func (this *Path) MemSize() uint32                                            { return uint32(this.DeltaSet.NonNilCount()) * 32 * 2 } // Just an estimate, need to update on fly instead of calculating everytime
+func (this *Path) MemSize() uint64                                            { return uint64(this.DeltaSet.NonNilCount()) * 32 * 2 } // Just an estimate, need to update on fly instead of calculating everytime
 func (this *Path) TypeID() uint8                                              { return PATH }
 func (this *Path) IsSelf(key interface{}) bool                                { return common.IsPath(key.(string)) }
 func (this *Path) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }
@@ -133,9 +133,9 @@ func (this *Path) ApplyDelta(typedVals []stgintf.Type) (stgintf.Type, int, error
 func (this *Path) Set(value interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
 	targetPath := source.([]interface{})[0].(string)
 	containerRoot := source.([]interface{})[1].(string)
-	tx := source.([]interface{})[2].(uint32)
+	tx := source.([]interface{})[2].(uint64)
 	writeCache := source.([]interface{})[3].(interface {
-		Write(tx uint32, key string, value interface{}) (int64, error)
+		Write(tx uint64, key string, value interface{}) (int64, error)
 		InCache(path string) (interface{}, bool)
 	})
 
