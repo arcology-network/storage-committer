@@ -69,13 +69,13 @@ func (this *CacheIndexer) Merge(idxers []*CacheIndexer) *CacheIndexer {
 		func(idxer *CacheIndexer) uint64 { return uint64(len(idxer.buffer)) },
 		func(idxer *CacheIndexer) []*univalue.Univalue { return idxer.buffer })
 
-	this.keys = slice.ConcateDo(idxers,
-		func(idxer *CacheIndexer) uint64 { return uint64(len(idxer.keys)) },
-		func(idxer *CacheIndexer) []string { return idxer.keys })
+	// this.keys = slice.ConcateDo(idxers,
+	// 	func(idxer *CacheIndexer) uint64 { return uint64(len(idxer.keys)) },
+	// 	func(idxer *CacheIndexer) []string { return idxer.keys })
 
-	this.values = slice.ConcateDo(idxers,
-		func(idxer *CacheIndexer) uint64 { return uint64(len(idxer.values)) },
-		func(idxer *CacheIndexer) []stgtype.Type { return idxer.values })
+	// this.values = slice.ConcateDo(idxers,
+	// 	func(idxer *CacheIndexer) uint64 { return uint64(len(idxer.values)) },
+	// 	func(idxer *CacheIndexer) []stgtype.Type { return idxer.values })
 
 	return this
 }

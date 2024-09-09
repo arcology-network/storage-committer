@@ -37,7 +37,7 @@ func NewBytes(v []byte) stgtype.Type {
 	b := make([]byte, len(v))
 	copy(b, v)
 	return &Bytes{
-		placeholder: true,
+		placeholder: true, // To separate from nil for encoding and decoding
 		value:       b,
 	}
 }

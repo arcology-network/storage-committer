@@ -17,6 +17,7 @@
 package livecache
 
 import (
+	"fmt"
 	"runtime"
 
 	"github.com/arcology-network/common-lib/exp/associative"
@@ -37,7 +38,7 @@ type LiveCache struct {
 	*CacheUsage                                                       // Memory usage of the cache.
 }
 
-func NewLiveCache() *LiveCache {
+func NewLiveCache(cacheCap uint64) *LiveCache {
 	cache := &LiveCache{
 		ReadCache: cache.NewReadCache[string, *associative.Pair[stgtype.Type, *Usage]](
 			4096, // 4096 shards to avoid lock contention
@@ -50,7 +51,7 @@ func NewLiveCache() *LiveCache {
 		),
 	}
 
-	cache.CacheUsage = NewCacheUsage(cache) // To keep track of the cache memory usage.
+	cache.CacheUsage = NewCacheUsage(cacheCap, cache) // To keep track of the cache memory usage.
 	return cache
 }
 
@@ -77,6 +78,7 @@ func (this *LiveCache) Get(key string) (stgtype.Type, bool) {
 	return (*v).First, ok
 }
 
+// Get the raw value from the cache with the usage information.
 func (this *LiveCache) GetRaw(key string) (*associative.Pair[stgtype.Type, *Usage], bool) {
 	v, ok := this.ReadCache.Get(key)
 	if !ok {
@@ -85,34 +87,16 @@ func (this *LiveCache) GetRaw(key string) (*associative.Pair[stgtype.Type, *Usag
 	return *v, ok
 }
 
-// func (this *LiveCache) Commit(keys []string, values []stgtype.Type) {
-// 	pairedVals := make([]*associative.Pair[stgtype.Type, *Usage], len(values))
-// 	for i, _ := range keys {
-// 		if values[i] != nil {
-// 			continue
-// 		}
-
-// 		memSize := uint64(0)
-// 		if values[i] != nil {
-// 			memSize = values[i].MemSize()
-// 		}
-
-// 		pairedVals[i] = &associative.Pair[stgtype.Type, *Usage]{
-// 			First: values[i],
-// 			Second: &Usage{
-// 				sizeInMem: memSize,
-// 				visits:    1,
-// 			},
-// 		}
-// 	}
-// 	this.ReadCache.Commit(keys, pairedVals) // update the local cache with the new values in the indexer
-// }
-
-func (this *LiveCache) Commit(keys []string, values []stgtype.Type, univals []*univalue.Univalue) {
+func (this *LiveCache) Commit(univals []*univalue.Univalue) {
 	// Prepare the space for the new values in the cache, some univalues may be deleted because of the memory limit.
 	if _, err := this.CacheUsage.PrepareSpace(&univals, this); err != nil {
 		return
 	}
+
+	// Extract the keys and values from the univalues.
+	keys := slice.ParallelTransform(univals, runtime.NumCPU(), func(i int, v *univalue.Univalue) string {
+		return *v.GetPath()
+	})
 
 	pairedVals := slice.ParallelTransform(univals, runtime.NumCPU(), func(i int, v *univalue.Univalue) *associative.Pair[stgtype.Type, *Usage] {
 		if v.Value() == nil {
@@ -120,10 +104,10 @@ func (this *LiveCache) Commit(keys []string, values []stgtype.Type, univals []*u
 		}
 
 		// The entry may already exist in the cache, update the visits.
-		accumVisits := uint64(0)
+		accumVisits := uint64(v.Reads()) + uint64(v.Writes()) + uint64(v.DeltaWrites())
 		metav, _ := this.GetRaw(*v.GetPath())
 		if metav != nil {
-			accumVisits = metav.Second.visits
+			accumVisits += metav.Second.visits
 		}
 
 		return &associative.Pair[stgtype.Type, *Usage]{
@@ -137,4 +121,17 @@ func (this *LiveCache) Commit(keys []string, values []stgtype.Type, univals []*u
 
 	this.UpdateStats(univals)
 	this.ReadCache.Commit(keys, pairedVals) // update the local cache with the new values in the indexer
+}
+
+func (this *LiveCache) Print() {
+	keys, vals := this.ReadCache.KVs()
+	slice.SortBy1st(keys, vals, func(k0, k1 string) bool {
+		return k0 < k1
+	})
+
+	fmt.Println("occupied:", this.liveCache.occupied)
+
+	for i, k := range keys {
+		println(k, "      ", vals[i].First)
+	}
 }

@@ -18,6 +18,7 @@ package livecache
 
 import (
 	"math"
+	"sort"
 	"sync/atomic"
 
 	"github.com/arcology-network/common-lib/common"
@@ -40,30 +41,30 @@ type CacheUsage struct {
 	minScore  float64
 	maxScore  float64
 	dist      [65536]uint64 // size distribution
-	cacheSize uint64        // The total memory used by the cache.
-	hardcap   uint64
+	occupied  uint64        // The total memory used by the cache.
+	maxSize   uint64
 }
 
-func NewCacheUsage(liveCache *LiveCache) *CacheUsage {
+func NewCacheUsage(maxSize uint64, liveCache *LiveCache) *CacheUsage {
 	usage := &CacheUsage{
 		// lookup:   make(map[string]*Usage),
 		liveCache: liveCache,
 		minScore:  0,
 		maxScore:  0,
 		// keys:      paged.NewPagedSlice[*Usage](1024, 100, 0),
-		dist:      [65536]uint64{},
-		cacheSize: 0,
-		hardcap:   uint64(24 * 1024 * 1024 * 1024), // 0.8 of the minimum memory required.
+		dist:     [65536]uint64{},
+		occupied: 0,
+		maxSize:  uint64(24 * 1024 * 1024 * 1024), // 0.8 of the minimum memory required.
 	}
 
 	if v, err := common.GetAvailableMemory(); err == nil {
-		usage.hardcap = uint64(float64(v) * 0.8)
+		usage.maxSize = common.Min(maxSize, uint64(float64(v)*0.8))
 	}
 	return usage
 }
 
 func (this *CacheUsage) MaxScore() float64 { return this.maxScore }
-func (this *CacheUsage) MinScore() uint64  { return this.cacheSize }
+func (this *CacheUsage) MinScore() uint64  { return this.occupied }
 
 // Update updates the cache usage statistics.
 func (this *CacheUsage) UpdateStats(univals []*univalue.Univalue) {
@@ -100,20 +101,28 @@ func (this *CacheUsage) PrepareSpace(univals *[]*univalue.Univalue, liveCache *L
 	if err != nil {
 		return 0, err
 	}
-	availableMemory = common.Min(this.hardcap, availableMemory)
+	actualCap := common.Min(this.maxSize, availableMemory) // The actual cap of the cache.
 
 	// The memory that needs to be freed to store the new values.
-	toFree := uint64(math.Max(float64(totalRequired-availableMemory), float64(0)))
-	if toFree == 0 {
+	toFree := int(totalRequired) - (int(actualCap) - int(this.occupied))
+	if toFree <= 0 {
+		this.occupied = totalRequired
 		return 0, nil // Enough space, no need to free memory.
 	}
 
 	// Check if the cache has enough space to store the new values.
-	freedMemory, _, keysToFree := this.freeCache(toFree)
-	if totalRequired <= availableMemory+freedMemory {
-		liveCache.Delete(keysToFree) // Remove the values to free memory.
-	} else {
-		idx := 0 // Not enough memory for all even after freeing some memory. Some new values won't be stored.
+	// If not, remove the values.
+	freedMemory := this.freeCache(uint64(toFree))
+
+	// Not enough memory for all even after freeing some memory. Some new values won't be stored.
+	// Sort the univalues by size in memory, so the smallest values will still have a chance to be stored.
+	if totalRequired > availableMemory+freedMemory {
+		sort.Slice(*univals, func(i, j int) bool {
+			return (*univals)[i].Value().(stgtype.Type).MemSize() < (*univals)[j].Value().(stgtype.Type).MemSize()
+		})
+
+		// Find the index of the last value that can be stored in the cache.
+		idx := 0
 		accumSize := uint64(0)
 		for i, v := range *univals {
 			accumSize += v.Value().(stgtype.Type).MemSize()
@@ -125,35 +134,33 @@ func (this *CacheUsage) PrepareSpace(univals *[]*univalue.Univalue, liveCache *L
 
 		// Accumulated size minus the last value's size which it isn't stored in the cache.
 		// Because it made the accumulated size exceed the available memory.
-		this.cacheSize = accumSize - (*univals)[idx].Value().(stgtype.Type).MemSize()
-
+		this.occupied = accumSize - (*univals)[idx].Value().(stgtype.Type).MemSize()
 		*univals = (*univals)[:idx] // Some new values won't be stored in cache.
 		return freedMemory, nil
 	}
 
-	this.cacheSize += totalRequired - freedMemory
+	this.occupied += totalRequired - freedMemory
 	return freedMemory, nil
 }
 
 // freeCache frees the required memory.
-func (this *CacheUsage) freeCache(sizeToFree uint64) (uint64, []uint64, []string) {
+func (this *CacheUsage) freeCache(sizeToFree uint64) uint64 {
 	bin := 0
 	for i := 0; i < len(this.dist); i++ {
 		if sizeToFree -= this.dist[i]; sizeToFree <= 0 {
 			bin = i
 		}
 	}
-	threshold := uint64(bin) * uint64(math.MaxUint32/uint32(len(this.dist)))
+	threshold := uint64(bin+1) * uint64(math.MaxUint32/uint32(len(this.dist)))
 
 	// delete the values from the cache and accumulate the freed memory.
 	var totalFreed atomic.Uint64
 	this.liveCache.ConcurrentMap.ParallelDelete(func(_ string, v *associative.Pair[stgtype.Type, *Usage]) bool {
-		if v.Second.visits <= threshold {
-			// sizeToFree += v.Second.sizeInMem
+		if uint64(math.Pow(float64(v.Second.visits), math.E)) <= threshold {
 			totalFreed.Add(v.Second.sizeInMem)
 			return true
 		}
 		return false
 	})
-	return totalFreed.Load(), nil, nil
+	return totalFreed.Load()
 }

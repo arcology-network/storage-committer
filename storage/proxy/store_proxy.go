@@ -18,6 +18,8 @@
 package proxy
 
 import (
+	"math"
+
 	ccbadger "github.com/arcology-network/common-lib/storage/badger"
 	memdb "github.com/arcology-network/common-lib/storage/memdb"
 	"github.com/arcology-network/storage-committer/type/univalue"
@@ -49,7 +51,7 @@ func NewCacheOnlyStoreProxy() *StorageProxy {
 		),
 	}
 
-	proxy.unifiedCache = livecache.NewLiveCache()
+	proxy.unifiedCache = livecache.NewLiveCache(math.MaxUint64)
 	return proxy
 }
 
@@ -70,7 +72,7 @@ func NewLevelDBStoreProxy(dbpath string) *StorageProxy {
 			stgtypcodec.Codec{}.Decode,
 		),
 	}
-	proxy.unifiedCache = livecache.NewLiveCache()
+	proxy.unifiedCache = livecache.NewLiveCache(math.MaxUint64)
 	return proxy
 }
 
