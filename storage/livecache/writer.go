@@ -42,8 +42,8 @@ func (this *LiveCacheWriter) Precommit() {
 }
 
 // Triggered by the block commit.
-func (this *LiveCacheWriter) Commit(version uint64) {
+func (this *LiveCacheWriter) Commit(block uint64) {
 	merged := new(CacheIndexer).Merge(this.buffer) // Merge indexers
-	this.liveCache.Commit(merged.buffer)           // commit univalues directly
+	this.liveCache.Commit(merged.buffer, block)    // commit univalues directly
 	this.buffer = make([]*CacheIndexer, 0)         // Reset the indexer buffer
 }

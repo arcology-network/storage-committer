@@ -34,15 +34,15 @@ import (
 // ReadCache is a wrapper around cache.ReadCache with some extra methods provided
 // by the intf.Datastore interface to work with the storage-committer.
 type LiveCache struct {
-	*cache.ReadCache[string, *associative.Pair[stgtype.Type, *Usage]] // Provide Readonly interface
-	*CacheUsage                                                       // Memory usage of the cache.
+	*cache.ReadCache[string, *associative.Pair[stgtype.Type, *Profile]]               // Provide Readonly interface
+	profile                                                             *CacheProfile // Memory usage of the cache.
 }
 
 func NewLiveCache(cacheCap uint64) *LiveCache {
 	cache := &LiveCache{
-		ReadCache: cache.NewReadCache[string, *associative.Pair[stgtype.Type, *Usage]](
+		ReadCache: cache.NewReadCache[string, *associative.Pair[stgtype.Type, *Profile]](
 			4096, // 4096 shards to avoid lock contention
-			func(v *associative.Pair[stgtype.Type, *Usage]) bool {
+			func(v *associative.Pair[stgtype.Type, *Profile]) bool {
 				return v == nil
 			},
 			func(k string) uint64 {
@@ -51,12 +51,15 @@ func NewLiveCache(cacheCap uint64) *LiveCache {
 		),
 	}
 
-	cache.CacheUsage = NewCacheUsage(cacheCap, cache) // To keep track of the cache memory usage.
+	cache.profile = NewCacheProfile(cacheCap, cache) // To keep track of the cache memory usage.
 	return cache
 }
 
+func (this *LiveCache) Profile() *CacheProfile { return this.profile }
+func (this *LiveCache) Size() uint64           { return this.profile.occupied }
+
 func (this *LiveCache) CacheChecksum() [32]byte {
-	encoders := func(k string, v *associative.Pair[stgtype.Type, *Usage]) ([]byte, []byte) {
+	encoders := func(k string, v *associative.Pair[stgtype.Type, *Profile]) ([]byte, []byte) {
 		return []byte(k), v.First.Encode()
 	}
 
@@ -67,7 +70,7 @@ func (this *LiveCache) CacheChecksum() [32]byte {
 }
 
 func (this *LiveCache) Delete(keys []string) {
-	this.ReadCache.BatchSet(keys, make([]*associative.Pair[stgtype.Type, *Usage], len(keys)))
+	this.ReadCache.BatchSet(keys, make([]*associative.Pair[stgtype.Type, *Profile], len(keys)))
 }
 
 func (this *LiveCache) Get(key string) (stgtype.Type, bool) {
@@ -79,7 +82,7 @@ func (this *LiveCache) Get(key string) (stgtype.Type, bool) {
 }
 
 // Get the raw value from the cache with the usage information.
-func (this *LiveCache) GetRaw(key string) (*associative.Pair[stgtype.Type, *Usage], bool) {
+func (this *LiveCache) GetRaw(key string) (*associative.Pair[stgtype.Type, *Profile], bool) {
 	v, ok := this.ReadCache.Get(key)
 	if !ok {
 		return nil, ok
@@ -87,39 +90,38 @@ func (this *LiveCache) GetRaw(key string) (*associative.Pair[stgtype.Type, *Usag
 	return *v, ok
 }
 
-func (this *LiveCache) Commit(univals []*univalue.Univalue) {
+func (this *LiveCache) Commit(univals []*univalue.Univalue, block uint64) {
 	// Prepare the space for the new values in the cache, some univalues may be deleted because of the memory limit.
-	if _, err := this.CacheUsage.PrepareSpace(&univals, this); err != nil {
-		return
-	}
+	this.profile.PrepareSpace(&univals, this)
 
 	// Extract the keys and values from the univalues.
 	keys := slice.ParallelTransform(univals, runtime.NumCPU(), func(i int, v *univalue.Univalue) string {
 		return *v.GetPath()
 	})
 
-	pairedVals := slice.ParallelTransform(univals, runtime.NumCPU(), func(i int, v *univalue.Univalue) *associative.Pair[stgtype.Type, *Usage] {
+	pairedVals := slice.ParallelTransform(univals, runtime.NumCPU(), func(i int, v *univalue.Univalue) *associative.Pair[stgtype.Type, *Profile] {
 		if v.Value() == nil {
 			return nil
 		}
 
-		// The entry may already exist in the cache, update the visits.
-		accumVisits := uint64(v.Reads()) + uint64(v.Writes()) + uint64(v.DeltaWrites())
-		metav, _ := this.GetRaw(*v.GetPath())
-		if metav != nil {
-			accumVisits += metav.Second.visits
-		}
-
-		return &associative.Pair[stgtype.Type, *Usage]{
+		pair := &associative.Pair[stgtype.Type, *Profile]{
 			First: v.Value().(stgtype.Type),
-			Second: &Usage{
-				sizeInMem: v.Value().(stgtype.Type).MemSize(),
-				visits:    accumVisits,
+			Second: &Profile{
+				sizeInMem:   v.Value().(stgtype.Type).MemSize(),
+				visits:      uint64(v.Reads()) + uint64(v.Writes()) + uint64(v.DeltaWrites()),
+				firstLoaded: uint32(block),
 			},
 		}
+
+		// The entry may already exist in the cache, update the visits.
+		if metav, _ := this.GetRaw(*v.GetPath()); metav != nil {
+			pair.Second.visits += metav.Second.visits
+			pair.Second.firstLoaded = metav.Second.firstLoaded
+		}
+
+		return pair
 	})
 
-	this.UpdateStats(univals)
 	this.ReadCache.Commit(keys, pairedVals) // update the local cache with the new values in the indexer
 }
 
@@ -129,7 +131,7 @@ func (this *LiveCache) Print() {
 		return k0 < k1
 	})
 
-	fmt.Println("occupied:", this.liveCache.occupied)
+	fmt.Println("occupied:", this.profile.occupied)
 
 	for i, k := range keys {
 		println(k, "      ", vals[i].First)
