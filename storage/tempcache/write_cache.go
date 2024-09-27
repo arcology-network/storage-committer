@@ -20,6 +20,7 @@ package cache
 import (
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"sort"
 	"strings"
@@ -71,20 +72,9 @@ func (this *WriteCache) NewUnivalue() *univalue.Univalue       { return this.poo
 func (this *WriteCache) GetOrNew(tx uint64, path string, T any) (*univalue.Univalue, bool) {
 	unival, inCache := this.kvDict[path]
 	if unival == nil { // Not in the kvDict, check the datastore
-		var typedv interface{}
-		if backend := this.ReadOnlyStore(); backend != nil {
-			typedv = common.FilterFirst(backend.Retrive(path, T))
-		}
-
-		unival = this.NewUnivalue().Init(tx, path, 0, 0, 0, typedv, this)
-		this.kvDict[path] = unival // Adding to kvDict
+		unival = this.GetFromStore(tx, path, T)
 	}
 	return unival, inCache // From cache
-}
-
-func (this *WriteCache) Read(tx uint64, path string, T any) (interface{}, interface{}, uint64) {
-	univalue, _ := this.GetOrNew(tx, path, T)
-	return univalue.Get(tx, path, nil), univalue, 0
 }
 
 func (this *WriteCache) write(tx uint64, path string, value interface{}) error {
@@ -105,25 +95,49 @@ func (this *WriteCache) write(tx uint64, path string, value interface{}) error {
 	return errors.New("Error: The parent path " + parentPath + " doesn't exist for " + path)
 }
 
+func (this *WriteCache) Read(tx uint64, path string, T any) (interface{}, interface{}, uint64) {
+	univalue, _ := this.GetOrNew(tx, path, T)
+
+	// need to check if it is in the memory. If so gas price should be 3 instead.
+	gas := uint64(stgtype.GAS_READ)
+	if typedv := univalue.Value(); typedv != nil {
+		gas += (typedv.(stgtype.Type).MemSize() / 32) * stgtype.GAS_READ
+	}
+
+	return univalue.Get(tx, path, nil), univalue, gas
+}
+
 func (this *WriteCache) Write(tx uint64, path string, value interface{}) (int64, error) {
-	fee := int64(0) //Fee{}.Writer(path, value, this.writeCache)
+	oldSize := uint64(stgtype.GAS_WRITE)
+	if v, _ := this.Find(tx, path, value); v != nil {
+		oldSize += v.(stgtype.Type).MemSize()
+	}
+
+	newSize := uint64(0)
+	if value != nil {
+		newSize = value.(stgtype.Type).MemSize()
+	}
+
+	// Could be negative if the value is deleted or replaced by a value with a smaller size.
+	fee := int64(math.Ceil(float64(newSize-oldSize)/32)) * int64(stgtype.GAS_WRITE)
 	if value == nil || (value != nil && value.(stgtype.Type).TypeID() != uint8(reflect.Invalid)) {
 		return fee, this.write(tx, path, value)
 	}
 	return fee, errors.New("Error: Unknown data type !")
 }
 
-// Get data from the DB direcly, still under conflict protection
+// Read the value from the writecache or the backend. This function is used for
+// GetCommittedState() in Eth interface. It is used in gas refund related code.
 func (this *WriteCache) ReadCommitted(tx uint64, key string, T any) (interface{}, uint64) {
-	if v, _, Fee := this.Read(tx, key, this); v != nil { // For conflict detection
-		return v, Fee
+	// Just to leave a record for conflict detection. This is different from the original Ethereum implementation.
+	// In Ethereum, there is no such concept as the multiprocessor，so the committed state can only come from the
+	// previous block or the transactions before the current one. But in the multiprocessor, the committed state
+	// may also come from the parent thread. So we need to leave a record for the conflict detection in case that
+	// threads spawned by multiple parent are trying to access the same path.
+	if v := this.GetFromStore(tx, key, this); v != nil { // Check to see if the path exists in the backend.
+		return v.Get(tx, key, nil), 0
 	}
-
-	v, _ := this.ReadOnlyStore().Retrive(key, T)
-	if v == nil {
-		return v, 0 //Fee{}.Reader(univalue.NewUnivalue(tx, key, 1, 0, 0, v, nil))
-	}
-	return v, 0 //Fee{}.Reader(univalue.NewUnivalue(tx, key, 1, 0, 0, v.(interfaces.Type), nil))
+	return nil, 0
 }
 
 // Get the raw value directly, skip the access counting at the univalue level
@@ -143,7 +157,27 @@ func (this *WriteCache) Find(tx uint64, path string, T any) (interface{}, interf
 	return univ.Value(), univ
 }
 
-// Get the raw value directly whichout tracks the access.
+// The function is used to get the univalue from the backend only.
+func (this *WriteCache) GetFromStore(tx uint64, path string, T any) *univalue.Univalue {
+	var typedv interface{}
+	if backend := this.ReadOnlyStore(); backend != nil {
+		typedv, _ = backend.Retrive(path, T)
+	}
+
+	unival := this.NewUnivalue().Init(tx, path, 0, 0, 0, typedv, this)
+	this.kvDict[path] = unival // Adding to kvDict
+	return unival
+}
+
+// This function specifically retrieves the value from the backend without any tracking.
+func (this *WriteCache) RetriveFromStorage(key string, T any) (interface{}, error) {
+	if this.backend == nil {
+		return nil, errors.New("Error: The backend is nil")
+	}
+	return this.backend.RetriveFromStorage(key, T)
+}
+
+// Get the raw value directly whichout tracking the accessing record.
 // Users need to track the access count themselves.
 func (this *WriteCache) Retrive(path string, T any) (interface{}, error) {
 	typedv, _ := this.Find(committercommon.SYSTEM, path, T)
@@ -152,9 +186,9 @@ func (this *WriteCache) Retrive(path string, T any) (interface{}, error) {
 	}
 
 	// Special treatment for the commutative.Path.
-	// In general, value types'need to be fully cloned as well so they be
-	// manipulated without affecting the original value, except for the commutative.Path, which
-	// inherently has its own change tracking mechanism.
+	// In general, value types need to be fully cloned as well, so they be
+	// manipulated without affecting the original value. But this doesn't apply to the commutative.Path, which
+	// has its own change tracking mechanism.
 	if common.IsType[*commutative.Path](typedv) {
 		return typedv.(*commutative.Path).Clone(), nil
 	}
@@ -164,6 +198,7 @@ func (this *WriteCache) Retrive(path string, T any) (interface{}, error) {
 	return typedv.(stgtype.Type).New(rawv, nil, nil, typedv.(stgtype.Type).Min(), typedv.(stgtype.Type).Max()), nil // Clone the value
 }
 
+// Check if the path exists in the writecache or the backend.
 func (this *WriteCache) IfExists(path string) bool {
 	if committercommon.ETH10_ACCOUNT_PREFIX_LENGTH == len(path) {
 		return true

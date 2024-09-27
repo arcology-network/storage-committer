@@ -28,7 +28,7 @@ import (
 	commonintf "github.com/arcology-network/common-lib/storage/interface"
 )
 
-type DataStore struct {
+type LiveStorage struct {
 	db    commonintf.PersistentStorage
 	cache *cache.ReadCache[string, any]
 
@@ -37,12 +37,12 @@ type DataStore struct {
 }
 
 // numShards uint64, isNil func(V) bool, hasher func(K) uint64, cachePolicy *policy.CachePolicy
-func NewDataStore(
+func NewLiveStorage(
 	db commonintf.PersistentStorage,
 	encoder func(string, any) []byte,
 	decoder func(string, []byte, any) interface{},
-) *DataStore {
-	dataStore := &DataStore{
+) *LiveStorage {
+	LiveStorage := &LiveStorage{
 		cache: cache.NewReadCache(
 			16,
 			func(T any) bool {
@@ -58,32 +58,34 @@ func NewDataStore(
 		decoder: decoder,
 	}
 
-	dataStore.cache.Disable()
-	return dataStore
+	LiveStorage.cache.Disable()
+	return LiveStorage
 }
 
 // Placeholder only
-func (this *DataStore) Preload(data []byte) interface{}                   { return nil }
-func (this *DataStore) Cache(any) interface{}                             { return this.cache }
-func (this *DataStore) Encoder(any) func(string, interface{}) []byte      { return this.encoder }
-func (this *DataStore) Decoder(any) func(string, []byte, any) interface{} { return this.decoder }
+func (this *LiveStorage) Preload(data []byte) interface{}                   { return nil }
+func (this *LiveStorage) Cache(any) interface{}                             { return this.cache }
+func (this *LiveStorage) Encoder(any) func(string, interface{}) []byte      { return this.encoder }
+func (this *LiveStorage) Decoder(any) func(string, []byte, any) interface{} { return this.decoder }
 
-func (this *DataStore) GetDB() commonintf.PersistentStorage   { return this.db }
-func (this *DataStore) SetDB(db commonintf.PersistentStorage) { this.db = db }
+func (this *LiveStorage) GetDB() commonintf.PersistentStorage   { return this.db }
+func (this *LiveStorage) SetDB(db commonintf.PersistentStorage) { this.db = db }
 
-func (this *DataStore) IfExists(key string) bool {
+// func (this *LiveStorage) RetriveFromStorage(key string) bool { return this.IfExists(key) }
+
+func (this *LiveStorage) IfExists(key string) bool {
 	v, _ := this.Retrive(key, nil)
 	return v != nil
 }
 
 // Inject directly to the local cache.
-func (this *DataStore) Inject(key string, v interface{}) error {
+func (this *LiveStorage) Inject(key string, v interface{}) error {
 	this.cache.Set(key, v)
 	return this.db.BatchSet([]string{key}, [][]byte{this.encoder(key, v)})
 }
 
 // Inject directly to the local cache.
-func (this *DataStore) BatchInject(keys []string, values []interface{}) error {
+func (this *LiveStorage) BatchInject(keys []string, values []interface{}) error {
 	this.cache.BatchSet(keys, values) // update the local cache
 	encoded := make([][]byte, len(keys))
 	for i := 0; i < len(keys); i++ {
@@ -92,7 +94,7 @@ func (this *DataStore) BatchInject(keys []string, values []interface{}) error {
 	return this.db.BatchSet(keys, encoded)
 }
 
-func (this *DataStore) retriveFromStorage(key string, T any) (interface{}, error) {
+func (this *LiveStorage) RetriveFromStorage(key string, T any) (interface{}, error) {
 	if this.db == nil {
 		return nil, errors.New("Error: DB not found")
 	}
@@ -107,20 +109,20 @@ func (this *DataStore) retriveFromStorage(key string, T any) (interface{}, error
 	return nil, err
 }
 
-func (this *DataStore) Retrive(key string, T any) (interface{}, error) {
+func (this *LiveStorage) Retrive(key string, T any) (interface{}, error) {
 	// Read from the local cache first
 	if v, _ := this.cache.Get(key); v != nil {
 		return *v, nil
 	}
 
-	v, err := this.retriveFromStorage(key, T)
+	v, err := this.RetriveFromStorage(key, T)
 	if err == nil && T != nil {
 		this.cache.Set(key, v) //update to the local cache and add all the missing values to the cache
 	}
 	return v, err
 }
 
-func (this *DataStore) BatchRetrive(keys []string, T []any) []interface{} {
+func (this *LiveStorage) BatchRetrive(keys []string, T []any) []interface{} {
 	values := common.FilterFirst(this.cache.BatchGet(keys)) // From the local cache first
 	if slice.Count[any](values, nil) == 0 {                 // All found
 		return values

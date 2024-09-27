@@ -31,40 +31,40 @@ import (
 	"github.com/arcology-network/storage-committer/storage/ethstorage"
 	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
 	livecache "github.com/arcology-network/storage-committer/storage/livecache"
-	ccstg "github.com/arcology-network/storage-committer/storage/livestorage"
 	ccstorage "github.com/arcology-network/storage-committer/storage/livestorage"
+	livestg "github.com/arcology-network/storage-committer/storage/livestorage"
 )
 
 type StorageProxy struct {
-	unifiedCache *livecache.LiveCache // An object cache for the backend storage, only updated once at the end of the block.
-	ethDataStore *ethstg.EthDataStore
-	ccDataStore  *ccstg.DataStore
+	execCache   *livecache.LiveCache // An object cache for the backend storage, only updated once at the end of the block.
+	execStorage *livestg.LiveStorage
+	ethStorage  *ethstg.EthDataStore
 }
 
 func NewCacheOnlyStoreProxy() *StorageProxy {
 	proxy := &StorageProxy{
-		ethDataStore: ethstg.NewParallelEthMemDataStore(), //ethstg.NewParallelEthMemDataStore(),
-		ccDataStore: ccstg.NewDataStore(
+		ethStorage: ethstg.NewParallelEthMemDataStore(), //ethstg.NewParallelEthMemDataStore(),
+		execStorage: livestg.NewLiveStorage(
 			nil,
 			stgtypcodec.Codec{}.Encode,
 			stgtypcodec.Codec{}.Decode,
 		),
 	}
 
-	proxy.unifiedCache = livecache.NewLiveCache(math.MaxUint64)
+	proxy.execCache = livecache.NewLiveCache(math.MaxUint64)
 	return proxy
 }
 
 func NewMemDBStoreProxy() *StorageProxy {
 	proxy := NewCacheOnlyStoreProxy()
-	proxy.ccDataStore.SetDB(memdb.NewMemoryDB())
+	proxy.execStorage.SetDB(memdb.NewMemoryDB())
 	return proxy
 }
 
 func NewLevelDBStoreProxy(dbpath string) *StorageProxy {
 	proxy := &StorageProxy{
-		ethDataStore: ethstg.NewLevelDBDataStore(dbpath), //ethstg.NewParallelEthMemDataStore(),
-		ccDataStore: ccstg.NewDataStore(
+		ethStorage: ethstg.NewLevelDBDataStore(dbpath), //ethstg.NewParallelEthMemDataStore(),
+		execStorage: livestg.NewLiveStorage(
 			// memdb.NewMemoryDB(),
 			ccbadger.NewBadgerDB(dbpath+"_badager"),
 			// ccbadger.NewParaBadgerDB(dbpath+"_pbadager", common.Remainder),
@@ -72,7 +72,7 @@ func NewLevelDBStoreProxy(dbpath string) *StorageProxy {
 			stgtypcodec.Codec{}.Decode,
 		),
 	}
-	proxy.unifiedCache = livecache.NewLiveCache(math.MaxUint64)
+	proxy.execCache = livecache.NewLiveCache(math.MaxUint64)
 	return proxy
 }
 
@@ -81,53 +81,60 @@ func NewLevelDBStoreProxy(dbpath string) *StorageProxy {
 // 	return NewLevelDBStoreProxy("/tmp")
 // }
 
-func (this *StorageProxy) Cache() *livecache.LiveCache {
-	return this.unifiedCache
-}
-
 func (this *StorageProxy) EnableCache() *StorageProxy {
-	this.unifiedCache.Enable()
+	this.execCache.Enable()
 	return this
 }
 
 func (this *StorageProxy) DisableCache() *StorageProxy {
-	this.unifiedCache.Disable()
+	this.execCache.Disable()
 	return this
 }
 
-func (this *StorageProxy) ClearCache() { this.unifiedCache.Clear() }
+func (this *StorageProxy) ClearExecCache() { this.execCache.Clear() }
 
-func (this *StorageProxy) EthStore() *ethstg.EthDataStore { return this.ethDataStore } // Eth storage
-func (this *StorageProxy) CCStore() *ccstg.DataStore      { return this.ccDataStore }  // Arcology storage
+func (this *StorageProxy) ExecCache() *livecache.LiveCache { return this.execCache }
+func (this *StorageProxy) ExecStore() *livestg.LiveStorage { return this.execStorage } // Arcology storage
 
-func (this *StorageProxy) Preload(data []byte) interface{} {
-	return this.ethDataStore.Preload(data)
+// Check if the key exists in th storage.
+func (this *StorageProxy) RetriveFromStorage(key string, T any) (interface{}, error) {
+	if v, ok := this.execCache.Get(key); ok { // Check the cache first
+		return v, nil
+	}
+	return this.execStorage.Retrive(key, T)
 }
 
+func (this *StorageProxy) EthStore() *ethstg.EthDataStore { return this.ethStorage } // Eth storage
+
+func (this *StorageProxy) Preload(data []byte) interface{} {
+	return this.ethStorage.Preload(data)
+}
+
+// Check if the key exists in the source, which can be a cache or a storage.
 func (this *StorageProxy) IfExists(key string) bool {
-	if _, ok := this.unifiedCache.Get(key); ok { // Check the cache first
+	if _, ok := this.execCache.Get(key); ok { // Check the cache first
 		return true
 	}
-	return this.ccDataStore.IfExists(key)
+	return this.execStorage.IfExists(key)
 }
 
 // Directly inject the value into the storage, on for the concurrent container storage
 func (this *StorageProxy) Inject(key string, v any) error {
-	return this.ccDataStore.Inject(key, v)
+	return this.execStorage.Inject(key, v)
 }
 
 func (this *StorageProxy) Retrive(key string, v any) (interface{}, error) {
-	if retv, ok := this.unifiedCache.Get(key); ok { // Get from cache first
+	if retv, ok := this.execCache.Get(key); ok { // Get from cache first
 		return retv, nil
 	}
-	return this.ccDataStore.Retrive(key, v)
+	return this.execStorage.Retrive(key, v)
 }
 
 // Get the stores that can be
 func (this *StorageProxy) GetWriters() []intf.AsyncWriter[*univalue.Univalue] {
 	return []intf.AsyncWriter[*univalue.Univalue]{
-		livecache.NewLiveCacheWriter(this.unifiedCache, -1),
-		ethstorage.NewEthStorageWriter(this.ethDataStore, -1),
-		ccstorage.NewLiveStorageWriter(this.ccDataStore, -1),
+		livecache.NewLiveCacheWriter(this.execCache, -1),
+		ethstorage.NewEthStorageWriter(this.ethStorage, -1),
+		ccstorage.NewLiveStorageWriter(this.execStorage, -1),
 	}
 }

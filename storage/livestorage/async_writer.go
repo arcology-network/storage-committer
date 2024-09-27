@@ -21,11 +21,11 @@ package ccstorage
 type LiveStorageWriter struct {
 	*LiveStgIndexer
 	buffer  []*LiveStgIndexer
-	store   *DataStore
+	store   *LiveStorage
 	version int64
 }
 
-func NewLiveStorageWriter(store *DataStore, version int64) *LiveStorageWriter {
+func NewLiveStorageWriter(store *LiveStorage, version int64) *LiveStorageWriter {
 	return &LiveStorageWriter{
 		LiveStgIndexer: NewLiveStgIndexer(store, 0),
 		buffer:         []*LiveStgIndexer{},

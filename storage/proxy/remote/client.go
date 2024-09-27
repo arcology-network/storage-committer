@@ -31,7 +31,7 @@ type ReadonlyClient struct {
 	addr         string
 	path         string
 	uncompressor *addrcompressor.CompressionLut
-	localStore   *datastore.DataStore
+	localStore   *datastore.LiveStorage
 }
 
 func NewReadonlyClient(addr string, path string, lut *addrcompressor.CompressionLut, args ...interface{}) *ReadonlyClient {
@@ -42,7 +42,7 @@ func NewReadonlyClient(addr string, path string, lut *addrcompressor.Compression
 	}
 
 	if len(args) > 0 && args[0] != nil {
-		readonlyClient.localStore = args[0].(*datastore.DataStore)
+		readonlyClient.localStore = args[0].(*datastore.LiveStorage)
 	}
 	return readonlyClient
 }

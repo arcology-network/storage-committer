@@ -19,6 +19,8 @@ package stgtype
 
 import (
 	"math"
+
+	"github.com/ethereum/go-ethereum/params"
 )
 
 const (
@@ -40,7 +42,16 @@ const (
 const (
 	UNKNOWN       uint8 = iota
 	ETH_PATH_TYPE       // 1
-	ACL_PATH_TYPE       // 2
+	ARN_PATH_TYPE       // 2
+)
+
+const (
+	CONTAINER_GAS_READ    = params.SloadGasEIP2200 * 2 // 800 * 2 = 1600, default gas for reading a container.
+	GAS_READ              = params.SloadGasEIP2200 / 2 // 800 / 2 = 400
+	GAS_WRITE             = params.SstoreSetGas / 2    // 20,000 / 2 = 10,000
+	GAS_DELTA_WRITE       = params.SstoreSetGas / 2    // 20,000 / 2 = 10,000
+	GAS_UNCOMMITTED_RESET = params.SstoreSetGas / 4    // 20,000 / 4 = 5,000
+	GAS_COMMITTED_SET     = params.SstoreSetGas / 8    // 20,000 / 8 = 2,500
 )
 
 var WARN_OUT_OF_LOWER_LIMIT string = "Warning: Out of the lower limit!"
@@ -59,5 +70,5 @@ func GetPathType(key string) uint8 {
 			return ETH_PATH_TYPE // Ethereum paths
 		}
 	}
-	return ACL_PATH_TYPE // Arcology paths
+	return ARN_PATH_TYPE // Arcology paths
 }

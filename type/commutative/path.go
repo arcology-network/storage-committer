@@ -156,8 +156,9 @@ func (this *Path) Set(value interface{}, source interface{}) (interface{}, uint3
 	subkey := targetPath[len(targetPath)-(len(targetPath)-len(containerRoot)):] // Extract the sub key from the path
 	ok, _ := this.DeltaSet.Exists(subkey)
 
+	// Update an existing key or delete a non-existent key won't change the delta set. So we return 0, 0, 0.
 	if (ok && value != nil) || (!ok && value == nil) {
-		return this, 0, 0, 0, nil //value update only or delete an non existent entry
+		return this, 0, 0, 0, nil
 	}
 
 	if value == nil {

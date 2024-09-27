@@ -26,12 +26,12 @@ import (
 
 type ReadonlyServer struct {
 	addr      string
-	dataStore *datastore.DataStore
+	dataStore *datastore.LiveStorage
 	encoder   func(interface{}) []byte
 	decoder   func([]byte) (interface{}, error)
 }
 
-func NewReadonlyServer(addr string, encoder func(interface{}) []byte, decoder func([]byte) (interface{}, error), dataStore *datastore.DataStore) *ReadonlyServer {
+func NewReadonlyServer(addr string, encoder func(interface{}) []byte, decoder func([]byte) (interface{}, error), dataStore *datastore.LiveStorage) *ReadonlyServer {
 	return &ReadonlyServer{
 		addr:      addr,
 		dataStore: dataStore,

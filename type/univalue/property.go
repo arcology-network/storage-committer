@@ -17,34 +17,39 @@
 
 package univalue
 
+import "github.com/arcology-network/common-lib/common"
+
 type Property struct {
-	vType       uint8
-	persistent  bool
-	tx          uint64
-	path        *string
-	reads       uint32
-	writes      uint32
-	deltaWrites uint32
-	preexists   bool
-	msg         string
-	reclaimFunc func(interface{})
+	vType         uint8
+	persistent    bool    // If affected by conflict status or not.
+	tx            uint64  // Transaction ID
+	path          *string // Key
+	reads         uint32  // The number of reads
+	writes        uint32  // The number of writes
+	deltaWrites   uint32  // The number of delta writes
+	sizeInStorage uint64  // Size in storage, which is guaranteed to be committed already.
+	preexists     bool    // If the key exists in the source, which can be a cache or a storage.
+	msg           string
+	reclaimFunc   func(interface{})
 }
 
 func NewProperty(tx uint64, key string, reads, writes uint32, deltaWrites uint32, vType uint8, persistent, preexists bool) *Property {
 	return &Property{
-		vType:       vType,
-		persistent:  persistent, // Won't be affected by conflict status
-		tx:          tx,
-		path:        &key,
-		reads:       reads,
-		writes:      writes,
-		deltaWrites: deltaWrites,
+		vType:         vType,
+		sizeInStorage: 0,
+		persistent:    persistent,
+		tx:            tx,
+		path:          &key,
+		reads:         reads,
+		writes:        writes,
+		deltaWrites:   deltaWrites,
 	}
 }
 
 func (this *Property) Reset() {
 	this.vType = 0
-	this.persistent = false // Won't be affected by conflict status
+	this.sizeInStorage = 0
+	this.persistent = false
 	this.tx = 0
 	this.path = nil
 	this.reads = 0
@@ -57,12 +62,14 @@ func (this *Property) Merge(other *Property) {
 	this.reads += other.reads
 	this.writes += other.writes
 	this.deltaWrites += other.deltaWrites
+	this.sizeInStorage = common.Max(this.sizeInStorage, other.sizeInStorage)
 	this.persistent = this.persistent || other.persistent
 }
 
-func (this *Property) GetMsg() string       { return this.msg }
-func (this *Property) SetMsg(msg string)    { this.msg = msg }
-func (this *Property) AppendMsg(msg string) { this.msg = this.msg + "\n" + msg }
+func (this *Property) SizeInStorage() uint64 { return this.sizeInStorage }
+func (this *Property) GetMsg() string        { return this.msg }
+func (this *Property) SetMsg(msg string)     { this.msg = msg }
+func (this *Property) AppendMsg(msg string)  { this.msg = this.msg + "\n" + msg }
 
 func (this *Property) GetPersistent() bool  { return this.persistent }
 func (this *Property) SetPersistent(v bool) { this.persistent = v }
@@ -88,6 +95,9 @@ func (this *Property) IsReadOnly() bool { return this.Writes() == 0 && this.Delt
 func (this *Property) Preexist() bool   { return this.preexists } // Exist in cache as a failed read
 func (this *Property) Persistent() bool { return this.persistent }
 
+// Check if the key exists in the source, which can be a cache or a storage，which isn't guaranteed
+// to be the same as the cache. It is possible that the key exists in the cache but not in the storage.
+// This means that the key is a new key that hasn't been committed to the storage yet.
 func (this *Property) CheckPreexist(key string, source interface{}) bool {
 	return source.(interface{ IfExists(string) bool }).IfExists(key)
 }
@@ -104,14 +114,15 @@ func (this *Property) Equal(other *Property) bool {
 
 func (this *Property) Clone() Property {
 	return Property{
-		vType:       this.vType,
-		tx:          this.tx,
-		path:        this.path,
-		reads:       this.reads,
-		deltaWrites: this.deltaWrites,
-		writes:      this.writes,
-		preexists:   this.preexists,
-		reclaimFunc: this.reclaimFunc,
-		msg:         this.msg,
+		vType:         this.vType,
+		tx:            this.tx,
+		path:          this.path,
+		reads:         this.reads,
+		deltaWrites:   this.deltaWrites,
+		writes:        this.writes,
+		sizeInStorage: this.sizeInStorage,
+		preexists:     this.preexists,
+		reclaimFunc:   this.reclaimFunc,
+		msg:           this.msg,
 	}
 }

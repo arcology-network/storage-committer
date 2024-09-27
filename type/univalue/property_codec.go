@@ -31,7 +31,7 @@ func (this *Property) Encode() []byte {
 }
 
 func (this *Property) HeaderSize() uint64 {
-	return uint64(10 * codec.UINT64_LEN)
+	return uint64(11 * codec.UINT64_LEN)
 }
 
 func (this *Property) Size() uint64 {
@@ -44,9 +44,10 @@ func (this *Property) Size() uint64 {
 		uint64(8) + // codec.Uint64(this.deltaWrites).Size() +
 		uint64(1) + //+  codec.Bool(this.preexists).Size() +
 		uint64(1) + //+  codec.Bool(this.persistent).Size() +
+		uint64(8) + //+  sizeInStorage
 		uint64(len(this.msg))
 }
- 
+
 func (this *Property) FillHeader(buffer []byte) int {
 	return codec.Encoder{}.FillHeader(
 		buffer,
@@ -59,6 +60,7 @@ func (this *Property) FillHeader(buffer []byte) int {
 			codec.Uint64(this.deltaWrites).Size(),
 			codec.Bool(this.preexists).Size(),
 			codec.Bool(this.persistent).Size(),
+			codec.Uint64(this.sizeInStorage).Size(),
 			codec.String(this.msg).Size(),
 		},
 	)
@@ -74,6 +76,7 @@ func (this *Property) EncodeToBuffer(buffer []byte) int {
 	offset += codec.Uint64(this.deltaWrites).EncodeToBuffer(buffer[offset:])
 	offset += codec.Bool(this.preexists).EncodeToBuffer(buffer[offset:])
 	offset += codec.Bool(this.persistent).EncodeToBuffer(buffer[offset:])
+	offset += codec.Uint64(this.sizeInStorage).EncodeToBuffer(buffer[offset:])
 	offset += codec.String(this.msg).EncodeToBuffer(buffer[offset:])
 
 	return offset
@@ -91,10 +94,11 @@ func (this *Property) Decode(buffer []byte) interface{} {
 	this.path = &key
 	this.reads = uint32(codec.Uint64(1).Decode(fields[3]).(codec.Uint64))
 	this.writes = uint32(codec.Uint64(1).Decode(fields[4]).(codec.Uint64))
-	this.deltaWrites = uint32(codec.Uint64(1).Decode(fields[5]).(codec.Uint64))
+	this.deltaWrites = uint32(new(codec.Uint64).Decode(fields[5]).(codec.Uint64))
 	this.preexists = bool(codec.Bool(false).Decode(fields[6]).(codec.Bool))
 	this.persistent = bool(codec.Bool(true).Decode(fields[7]).(codec.Bool))
-	this.msg = string(codec.String("").Decode(bytes.Clone(fields[8])).(codec.String))
+	this.sizeInStorage = uint64(new(codec.Uint64).Decode(fields[8]).(codec.Uint64))
+	this.msg = string(codec.String("").Decode(bytes.Clone(fields[9])).(codec.String))
 	return this
 }
 
@@ -112,6 +116,7 @@ func (this *Property) GobDecode(data []byte) error {
 	this.reads = v.reads
 	this.writes = v.writes
 	this.deltaWrites = v.deltaWrites
+	this.sizeInStorage = v.sizeInStorage
 	this.msg = v.msg
 	return nil
 }

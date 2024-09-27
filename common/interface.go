@@ -76,7 +76,8 @@ type AsyncWriter[T any] interface {
 }
 
 type ReadOnlyStore interface {
-	IfExists(string) bool
+	IfExists(string) bool                                // Check if the key exists in the source, which can be a cache or a storage.
+	RetriveFromStorage(string, any) (interface{}, error) // Check if the key is in the persistent storage.
 	Retrive(string, any) (interface{}, error)
 	Preload([]byte) interface{}
 }

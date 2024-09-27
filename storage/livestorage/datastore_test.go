@@ -49,7 +49,7 @@ func TestDatastoreBasic(t *testing.T) {
 
 	// fileDB.BatchSet(keys, values)
 
-	store := NewDataStore(fileDB, encoder, decoder)
+	store := NewLiveStorage(fileDB, encoder, decoder)
 
 	vs := make([]interface{}, len(values))
 	for i := 0; i < len(values); i++ {
@@ -90,7 +90,7 @@ func TestDatastorePersistentStorage(t *testing.T) {
 
 	// fileDB.BatchSet(keys, values)
 
-	store := NewDataStore(fileDB, encoder, decoder)
+	store := NewLiveStorage(fileDB, encoder, decoder)
 
 	vs := make([]interface{}, len(values))
 	for i := 0; i < len(values); i++ {
@@ -141,7 +141,7 @@ func TestDatastorePrefetch(t *testing.T) {
 	// 	t.Error(err)
 	// }
 
-	store := NewDataStore(fileDB, encoder, decoder)
+	store := NewLiveStorage(fileDB, encoder, decoder)
 
 	vs := make([]interface{}, len(values))
 	for i := 0; i < len(values); i++ {
@@ -187,7 +187,7 @@ func TestAsyncCommitter(t *testing.T) {
 	// 	t.Error(err)
 	// }
 
-	store := NewDataStore(fileDB, encoder, decoder)
+	store := NewLiveStorage(fileDB, encoder, decoder)
 
 	vs := make([]interface{}, len(values))
 	for i := 0; i < len(values); i++ {

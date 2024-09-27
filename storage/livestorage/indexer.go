@@ -22,16 +22,14 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/storage-committer/type/univalue"
-
 	// intf "github.com/arcology-network/storage-committer/interfaces"
-	intf "github.com/arcology-network/storage-committer/common"
 )
 
 // An index by account address, transitions have the same Eth account address will be put together in a list
 // This is for ETH storage, concurrent container related sub-paths won't be put into this index.
 type LiveStgIndexer struct {
 	buffer  []*univalue.Univalue
-	ccstore *DataStore
+	liveStg *LiveStorage
 
 	partitionIDs  []uint64
 	keyBuffer     []string
@@ -39,10 +37,10 @@ type LiveStgIndexer struct {
 	encodedBuffer [][]byte //The encoded buffer contains the encoded values
 }
 
-func NewLiveStgIndexer(ccstore intf.ReadOnlyStore, _ int64) *LiveStgIndexer {
+func NewLiveStgIndexer(liveStg *LiveStorage, _ int64) *LiveStgIndexer {
 	return &LiveStgIndexer{
 		buffer:  []*univalue.Univalue{},
-		ccstore: ccstore.(*DataStore),
+		liveStg: liveStg,
 
 		partitionIDs:  []uint64{},
 		keyBuffer:     []string{},
@@ -79,7 +77,7 @@ func (this *LiveStgIndexer) Finalize() {
 	this.encodedBuffer = make([][]byte, len(this.valueBuffer))
 	for i := 0; i < len(this.valueBuffer); i++ {
 		if this.valueBuffer[i] != nil {
-			this.encodedBuffer[i] = this.ccstore.encoder(this.keyBuffer[i], this.valueBuffer[i])
+			this.encodedBuffer[i] = this.liveStg.encoder(this.keyBuffer[i], this.valueBuffer[i])
 		}
 	}
 }

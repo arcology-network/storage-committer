@@ -26,12 +26,12 @@ import (
 	"github.com/arcology-network/common-lib/exp/slice"
 )
 
-func (this Univalues) Size() int {
+func (this Univalues) Size() uint64 {
 	size := (len(this) + 1) * codec.UINT64_LEN
 	for _, v := range this {
 		size += int(v.Size())
 	}
-	return size
+	return uint64(size)
 }
 
 func (this Univalues) Sizes() []int {

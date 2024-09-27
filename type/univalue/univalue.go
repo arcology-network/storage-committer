@@ -37,20 +37,28 @@ type Univalue struct {
 	cache []byte
 }
 
-func NewUnivalue(tx uint64, key string, reads, writes uint32, deltaWrites uint32, v interface{}, source interface{}) *Univalue {
-	return &Univalue{
+func NewUnivalue(tx uint64, key string, reads, writes uint32, deltaWrites uint32, T any, source interface{}) *Univalue {
+	univ := &Univalue{
 		Property{
-			vType:       common.IfThenDo1st(v != nil, func() uint8 { return v.(intf.Type).TypeID() }, uint8(reflect.Invalid)),
-			tx:          tx,
-			path:        &key,
-			reads:       reads,
-			writes:      writes,
-			deltaWrites: deltaWrites,
-			preexists:   common.IfThenDo1st(source != nil, func() bool { return (&Property{}).CheckPreexist(key, source) }, false),
+			vType:         common.IfThenDo1st(T != nil, func() uint8 { return T.(intf.Type).TypeID() }, uint8(reflect.Invalid)),
+			tx:            tx,
+			path:          &key,
+			reads:         reads,
+			writes:        writes,
+			deltaWrites:   deltaWrites,
+			sizeInStorage: 0,
+			preexists:     common.IfThenDo1st(source != nil, func() bool { return (&Property{}).CheckPreexist(key, source) }, false),
 		},
-		v,
+		T,
 		[]byte{},
 	}
+
+	if source != nil {
+		if v, err := source.(intf.ReadOnlyStore).RetriveFromStorage(key, T); err != nil {
+			univ.sizeInStorage = v.(intf.Type).MemSize()
+		}
+	}
+	return univ
 }
 
 func (*Univalue) New(meta, value, cache interface{}) *Univalue {
@@ -84,7 +92,7 @@ func (this *Univalue) SetValue(newValue interface{}) *Univalue {
 
 func (this *Univalue) GetCache() interface{} { return this.cache }
 
-func (this *Univalue) Init(tx uint64, key string, reads, writes, deltaWrites uint32, v interface{}, args ...interface{}) *Univalue {
+func (this *Univalue) Init(tx uint64, key string, reads, writes, deltaWrites uint32, v interface{}, dataSource ...interface{}) *Univalue {
 	this.vType = common.IfThenDo1st(v != nil, func() uint8 { return v.(intf.Type).TypeID() }, uint8(reflect.Invalid))
 	this.tx = tx
 	this.path = &key
@@ -92,7 +100,13 @@ func (this *Univalue) Init(tx uint64, key string, reads, writes, deltaWrites uin
 	this.writes = writes
 	this.deltaWrites = deltaWrites
 	this.value = v
-	this.preexists = common.IfThenDo1st(len(args) > 0, func() bool { return (&Property{}).CheckPreexist(key, args[0]) }, false)
+	this.preexists = common.IfThenDo1st(len(dataSource) > 0, func() bool { return (&Property{}).CheckPreexist(key, dataSource[0]) }, false)
+
+	this.sizeInStorage = 0
+	if v, _ := dataSource[0].(intf.ReadOnlyStore).RetriveFromStorage(key, v); v != nil {
+		this.sizeInStorage = v.(intf.Type).MemSize()
+	}
+
 	return this
 }
 
@@ -160,12 +174,15 @@ func (this *Univalue) CopyTo(writable interface{}) {
 
 func (this *Univalue) Set(tx uint64, path string, newV interface{}, inCache bool, importer interface{}) error { // update the value
 	this.tx = tx
+
+	// Delete an non-existing value or deleting an entry that has been deleted already.
 	if this.value == nil && newV == nil {
-		this.writes++ // Delete an non-existing value
+		this.writes++
 		return errors.New("Error: The value doesn't exists")
 	}
 
-	if this.value == nil { // Added a new value or try to delete an non-existent value
+	// Added a new value
+	if this.value == nil {
 		this.vType = newV.(intf.Type).TypeID()
 		v, r, w, dw := newV.(intf.Type).CopyTo(newV)
 		this.value = v
