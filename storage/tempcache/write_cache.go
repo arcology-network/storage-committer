@@ -108,36 +108,22 @@ func (this *WriteCache) Read(tx uint64, path string, T any) (interface{}, interf
 }
 
 func (this *WriteCache) Write(tx uint64, path string, value interface{}) (int64, error) {
-	oldSize := uint64(stgtype.GAS_WRITE)
+	oldSize := float64(0)
 	if v, _ := this.Find(tx, path, value); v != nil {
-		oldSize += v.(stgtype.Type).MemSize()
+		oldSize += float64(v.(stgtype.Type).MemSize())
 	}
 
-	newSize := uint64(0)
+	newSize := float64(0)
 	if value != nil {
-		newSize = value.(stgtype.Type).MemSize()
+		newSize = float64(value.(stgtype.Type).MemSize())
 	}
 
 	// Could be negative if the value is deleted or replaced by a value with a smaller size.
-	fee := int64(math.Ceil(float64(newSize-oldSize)/32)) * int64(stgtype.GAS_WRITE)
+	fee := math.Ceil((newSize-oldSize)/32) * float64(stgtype.GAS_WRITE)
 	if value == nil || (value != nil && value.(stgtype.Type).TypeID() != uint8(reflect.Invalid)) {
-		return fee, this.write(tx, path, value)
+		return int64(fee), this.write(tx, path, value)
 	}
-	return fee, errors.New("Error: Unknown data type !")
-}
-
-// Read the value from the writecache or the backend. This function is used for
-// GetCommittedState() in Eth interface. It is used in gas refund related code.
-func (this *WriteCache) ReadCommitted(tx uint64, key string, T any) (interface{}, uint64) {
-	// Just to leave a record for conflict detection. This is different from the original Ethereum implementation.
-	// In Ethereum, there is no such concept as the multiprocessor，so the committed state can only come from the
-	// previous block or the transactions before the current one. But in the multiprocessor, the committed state
-	// may also come from the parent thread. So we need to leave a record for the conflict detection in case that
-	// threads spawned by multiple parent are trying to access the same path.
-	if v := this.GetFromStore(tx, key, this); v != nil { // Check to see if the path exists in the backend.
-		return v.Get(tx, key, nil), 0
-	}
-	return nil, 0
+	return int64(fee), errors.New("Error: Unknown data type !")
 }
 
 // Get the raw value directly, skip the access counting at the univalue level
@@ -342,4 +328,18 @@ func (this *WriteCache) Checksum() [32]byte {
 		return *values[i].GetPath() < *values[j].GetPath()
 	})
 	return univalue.Univalues(values).Checksum()
+}
+
+// Read the value from the writecache or the backend. This function is used for
+// GetCommittedState() in Eth interface. It is used in gas refund related code.
+func (this *WriteCache) ReadCommitted(tx uint64, key string, T any) (interface{}, uint64) {
+	// Just to leave a record for conflict detection. This is different from the original Ethereum implementation.
+	// In Ethereum, there is no such concept as the multiprocessor，so the committed state can only come from the
+	// previous block or the transactions before the current one. But in the multiprocessor, the committed state
+	// may also come from the parent thread. So we need to leave a record for the conflict detection in case that
+	// threads spawned by multiple parent are trying to access the same path.
+	if v := this.GetFromStore(tx, key, this); v != nil { // Check to see if the path exists in the backend.
+		return v.Get(tx, key, nil), 0
+	}
+	return nil, 0
 }

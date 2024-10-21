@@ -29,6 +29,7 @@ type Codec struct {
 
 func (Codec) Encode(_ string, value interface{}) []byte {
 	if value == nil {
+
 		return []byte{} // Deletion
 	}
 

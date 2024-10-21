@@ -32,10 +32,15 @@ import (
 type Path struct {
 	*deltaset.DeltaSet[string]
 	preloaded *orderedset.OrderedSet[string]
+
+	//When it is set to non zero, it can only store one type of data, otherwise it can store multiple types.
+	//This is no type checking, it is up to the developer to make sure the data type is correct.
+	Type uint8
 }
 
 func NewPath(newPaths ...string) stgintf.Type {
 	this := &Path{
+		Type:     0, // The default data type is 0. It can store multiple types of data in the same path.
 		DeltaSet: deltaset.NewDeltaSet("", 1000, nil, newPaths...),
 	}
 	return this

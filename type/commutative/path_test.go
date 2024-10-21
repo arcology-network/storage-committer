@@ -35,8 +35,7 @@ func TestPath(t *testing.T) {
 	inPath.InsertRemoved([]string{"-091", "-0092", "-092", "-092", "-097"})
 
 	// metaout, _, _ := inPath.Get()
-
-	if !slice.EqualSet(inPath.Value().([]string), []string{"e-01", "e-001", "e-002"}) {
+	if !slice.EqualSet(inPath.Value().(*orderedset.OrderedSet[string]).Elements(), []string{"e-01", "e-001", "e-002"}) {
 		t.Error("Error: Don't match!!", inPath.Value().([]string))
 	}
 

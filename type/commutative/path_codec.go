@@ -27,7 +27,7 @@ import (
 )
 
 func (this *Path) HeaderSize() uint64 {
-	return 4 * codec.UINT64_LEN // number of fields + 1
+	return 5 * codec.UINT64_LEN // number of fields + 1
 }
 
 func (this *Path) Size() uint64 {
@@ -38,7 +38,8 @@ func (this *Path) Size() uint64 {
 	return this.HeaderSize() +
 		common.IfThenDo1st(committedEmpty, func() uint64 { return codec.Strings(this.DeltaSet.Committed().Elements()).Size() }, 0) +
 		common.IfThenDo1st(appendedEmpty, func() uint64 { return codec.Strings(this.DeltaSet.Updated().Elements()).Size() }, 0) +
-		common.IfThenDo1st(removedEmpty, func() uint64 { return codec.Strings(this.DeltaSet.Removed().Elements()).Size() }, 0)
+		common.IfThenDo1st(removedEmpty, func() uint64 { return codec.Strings(this.DeltaSet.Removed().Elements()).Size() }, 0) +
+		1 // 1 byte for typeID
 }
 
 func (this *Path) Encode() []byte {
@@ -48,6 +49,7 @@ func (this *Path) Encode() []byte {
 			common.IfThenDo1st(this.DeltaSet.Committed() != nil, func() uint64 { return codec.Strings(this.DeltaSet.Committed().Elements()).Size() }, 0),
 			common.IfThenDo1st(this.DeltaSet.Updated() != nil, func() uint64 { return codec.Strings(this.DeltaSet.Updated().Elements()).Size() }, 0),
 			common.IfThenDo1st(this.DeltaSet.Removed() != nil, func() uint64 { return codec.Strings(this.DeltaSet.Removed().Elements()).Size() }, 0),
+			1,
 		},
 	)
 	this.EncodeToBuffer(buffer[offset:])
@@ -67,6 +69,9 @@ func (this *Path) EncodeToBuffer(buffer []byte) int {
 		return codec.Strings(this.DeltaSet.Removed().Elements()).EncodeToBuffer(buffer[offset:])
 	}, 0)
 
+	buffer[offset] = this.Type
+	offset += 1
+
 	return offset
 }
 
@@ -82,6 +87,7 @@ func (*Path) Decode(buffer []byte) interface{} {
 	path.DeltaSet.InsertCommitted(codec.Strings{}.Decode(fields[0]).(codec.Strings))
 	path.DeltaSet.InsertUpdated(codec.Strings{}.Decode(fields[1]).(codec.Strings))
 	path.DeltaSet.InsertRemoved(codec.Strings{}.Decode(fields[2]).(codec.Strings))
+	path.Type = uint8(fields[3][0])
 	return path
 }
 
@@ -89,6 +95,7 @@ func (this *Path) Print() {
 	fmt.Println("Committed: ", codec.Strings(this.DeltaSet.Committed().Elements()).ToHex())
 	fmt.Println("Updated  ", codec.Strings(this.DeltaSet.Updated().Elements()).ToHex())
 	fmt.Println("Removed: ", codec.Strings(this.DeltaSet.Removed().Elements()).ToHex())
+	fmt.Println("Type: ", codec.Strings(this.DeltaSet.Removed().Elements()).ToHex())
 	fmt.Println()
 }
 

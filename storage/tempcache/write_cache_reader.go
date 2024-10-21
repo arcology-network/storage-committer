@@ -67,10 +67,28 @@ func (this *WriteCache) KeyAt(tx uint64, path string, index interface{}, T any) 
 
 // Peek the value under a path. The difference between Peek and Read is that Peek does not have access metadata attached.
 func (this *WriteCache) Peek(path string, T any) (interface{}, uint64) {
+	// _, univ := this.Find(committercommon.SYSTEM, path, T)
+	// v, _, _ := univ.(*univalue.Univalue).Value().(stgtype.Type).Get()
+	// return v, stgtype.CONTAINER_GAS_READ
+
+	v, fees := this.PeekRaw(path, T)
+	originalV, _, _ := v.(stgtype.Type).Get()
+	return originalV, fees
+}
+
+// Peek the value under a path. The difference between Peek and Read is that Peek does not have access metadata attached.
+func (this *WriteCache) PeekRaw(path string, T any) (interface{}, uint64) {
 	_, univ := this.Find(committercommon.SYSTEM, path, T)
-	v, _, _ := univ.(*univalue.Univalue).Value().(stgtype.Type).Get()
+	v := univ.(*univalue.Univalue).Value()
 	return v, stgtype.CONTAINER_GAS_READ
 }
+
+// // Peek the value under a path. The difference between Peek and Read is that Peek does not have access metadata attached.
+// func (this *WriteCache) PeekExist(path string) (bool, uint64) {
+// 	_, univ := this.Find(committercommon.SYSTEM, path, T)
+// 	v := univ.(*univalue.Univalue).Value()
+// 	return v != nil, stgtype.CONTAINER_GAS_READ
+// }
 
 // This function looks up the committed value in the DB instead of the cache.
 func (this *WriteCache) PeekCommitted(path string, T any) (interface{}, uint64) {
