@@ -211,6 +211,10 @@ func (this *U256) isOverflowed(lhv *uint256.Int, lhvSign bool, rhv *uint256.Int,
 
 // Set delta
 func (this *U256) Set(newDelta interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
+	if newDelta == nil {
+		return this, 0, 1, 0, nil
+	}
+
 	if newDelta.(*U256).delta.Eq(&U256_ZERO) {
 		return this, 0, 0, 0, nil
 	}

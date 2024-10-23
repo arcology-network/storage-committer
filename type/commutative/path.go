@@ -94,6 +94,7 @@ func (this *Path) Clone() interface{} {
 	return &Path{
 		DeltaSet:  this.DeltaSet.Clone(),
 		preloaded: this.preloaded,
+		Type:      this.Type,
 	}
 }
 
@@ -107,6 +108,7 @@ func (this *Path) Get() (interface{}, uint32, uint32) {
 func (this *Path) New(value, delta, sign, min, max interface{}) interface{} {
 	deltaSet := &Path{
 		DeltaSet: this.DeltaSet.CloneDelta(),
+		Type:     this.Type,
 	}
 	return deltaSet
 }
