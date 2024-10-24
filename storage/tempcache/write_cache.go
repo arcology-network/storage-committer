@@ -120,7 +120,7 @@ func (this *WriteCache) Write(tx uint64, path string, value interface{}) (int64,
 
 	// Could be negative if the value is deleted or replaced by a value with a smaller size.
 	fee := math.Ceil((newSize-oldSize)/32) * float64(stgtype.GAS_WRITE)
-	if value == nil || (value != nil && value.(stgtype.Type).TypeID() != uint8(reflect.Invalid)) {
+	if value == nil || value.(stgtype.Type).TypeID() != uint8(reflect.Invalid) {
 		return int64(fee), this.write(tx, path, value)
 	}
 	return int64(fee), errors.New("Error: Unknown data type !")
@@ -185,6 +185,7 @@ func (this *WriteCache) Retrive(path string, T any) (interface{}, error) {
 }
 
 // Check if the path exists in the writecache or the backend.
+// No access count is recorded.
 func (this *WriteCache) IfExists(path string) bool {
 	if committercommon.ETH10_ACCOUNT_PREFIX_LENGTH == len(path) {
 		return true
