@@ -15,7 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package stgtype
+package storagecommon
 
 import (
 	"math"
@@ -72,3 +72,22 @@ func GetPathType(key string) uint8 {
 	}
 	return ARN_PATH_TYPE // Arcology paths
 }
+
+// Execution related
+const (
+	SHORT_CONTRACT_ADDRESS_LENGTH = 8 //8 bytes for address
+	FUNCTION_SIGNATURE_LENGTH     = 4 // 4 bytes for signature
+	CALLEE_ID_LENGTH              = SHORT_CONTRACT_ADDRESS_LENGTH + FUNCTION_SIGNATURE_LENGTH
+	MAX_CONFLICT_RATIO            = 0.5
+	MAX_NUM_CONFLICTS             = 256
+
+	PROPERTY_PATH        = "func/"
+	PROPERTY_PATH_LENGTH = len(PROPERTY_PATH)
+
+	EXECUTION_METHOD   = "execution"
+	EXECUTION_EXCEPTED = "except/"
+	DEFERRED_FUNC      = "defer"
+
+	PARALLEL_EXECUTION   = uint8(0) // The default method
+	SEQUENTIAL_EXECUTION = uint8(255)
+)

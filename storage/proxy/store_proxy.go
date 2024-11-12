@@ -41,6 +41,7 @@ type StorageProxy struct {
 	ethStorage  *ethstg.EthDataStore
 }
 
+// Cache may also have its storeage, this is the cache only store proxy, no storage.
 func NewCacheOnlyStoreProxy() *StorageProxy {
 	proxy := &StorageProxy{
 		ethStorage: ethstg.NewParallelEthMemDataStore(), //ethstg.NewParallelEthMemDataStore(),

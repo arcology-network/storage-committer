@@ -15,7 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package stgtype
+package storagecommon
 
 // type Platform interface { // value type
 // 	IsSysPath(string) bool

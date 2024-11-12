@@ -41,8 +41,8 @@ func NewPlatform() *Platform {
 			"/balance":            commutative.UINT256,
 			"/func/":              commutative.PATH,
 			"/storage/":           commutative.PATH,
-			"/storage/container/": commutative.PATH,
-			"/storage/native/":    commutative.PATH,
+			"/storage/container/": commutative.PATH, // Container storage
+			"/storage/native/":    commutative.PATH, // Native storage
 		},
 	}
 }

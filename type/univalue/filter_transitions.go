@@ -18,8 +18,10 @@
 package univalue
 
 import (
+	"strings"
+
 	common "github.com/arcology-network/common-lib/common"
-	stgintf "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/type/commutative"
 )
 
@@ -45,16 +47,16 @@ func (this IPTransition) From(v *Univalue) *Univalue {
 		return nil
 	}
 
-	typed := v.Value().(stgintf.Type)
+	typed := v.Value().(stgcommon.Type)
 	typed = typed.New(
-		common.IfThen(!v.Value().(stgintf.Type).IsCommutative() || common.IsType[*commutative.Path](v.Value()),
+		common.IfThen(!v.Value().(stgcommon.Type).IsCommutative() || common.IsType[*commutative.Path](v.Value()),
 			nil,
-			v.Value().(stgintf.Type).Value()), // Keep Non-path commutative variables (u256, u64) only
+			v.Value().(stgcommon.Type).Value()), // Keep Non-path commutative variables (u256, u64) only
 		typed.Delta(),
 		typed.DeltaSign(),
 		typed.Min(),
 		typed.Max(),
-	).(stgintf.Type)
+	).(stgcommon.Type)
 
 	return v.New(
 		&v.Property,
@@ -89,7 +91,7 @@ func (this ITTransition) From(v *Univalue) *Univalue {
 		return unival
 	}
 
-	typed := unival.Value().(stgintf.Type) // Get the typed value from the unival
+	typed := unival.Value().(stgcommon.Type) // Get the typed value from the unival
 	typed.SetDelta(typed.CloneDelta())
 	// typedNew := typed.New(
 	// 	nil,
@@ -97,9 +99,27 @@ func (this ITTransition) From(v *Univalue) *Univalue {
 	// 	typed.DeltaSign(),
 	// 	typed.Min(),
 	// 	typed.Max(),
-	// ).(stgintf.Type)
+	// ).(stgcommon.Type)
 
 	// typedNew.SetDelta(codec.Clone(typedNew.Delta()))
 	// converted.SetValue(typed) // Reuse the univalue wrapper
 	return unival
+}
+
+// Get property univalue entries
+type RuntimeProperty struct {
+	*Univalue
+	Err error
+}
+
+func (this RuntimeProperty) From(unival *Univalue) *Univalue {
+	if unival == nil || unival.Value() == nil { // Entry deletion
+		return unival
+	}
+
+	path := *unival.GetPath()
+	if strings.Contains(path[stgcommon.ETH10_ACCOUNT_FULL_LENGTH:], stgcommon.ETH10_FUNC_PROPERTY_PREFIX) {
+		return unival
+	}
+	return nil
 }
