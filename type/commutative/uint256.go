@@ -182,7 +182,7 @@ func (this *U256) Equal(other interface{}) bool {
 
 func (this *U256) Get() (interface{}, uint32, uint32) {
 	if U256_ZERO.Eq(&this.delta) {
-		return *((*uint256.Int)(&this.value)), 1, 0
+		return *((*uint256.Int)(&this.value)), 1, 0 // delta is zero
 	}
 
 	original := this.value.Clone()

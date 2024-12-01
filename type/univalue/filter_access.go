@@ -37,6 +37,7 @@ func (this IPAccess) From(v *Univalue) *Univalue {
 	}
 
 	value := v.Value().(stgintf.Type)
+
 	return v.New(
 		&v.Property,
 		common.IfThen(value.IsCommutative() && value.IsNumeric(), value, nil), // commutative but not meta, for the accumulator
