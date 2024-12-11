@@ -311,10 +311,27 @@ func (this *EthDataStore) WriteToEthStorage(blockNum uint64, dirtyAccounts []*Ac
 	// Write the world root hash to the root hash map.
 	this.rootDict[blockNum] = this.worldStateTrie.Hash() // Store the root hash for the block
 
+	dict := map[ethcommon.Address][]*Account{}
+	for _, acct := range dirtyAccounts {
+		if acct != nil {
+			dict[acct.addr] = []*Account{}
+		}
+		dict[acct.addr] = append((dict[acct.addr]), acct)
+	}
+	_, uniqueDirties := mapi.KVs(dict)
+
 	// Write the world trie
-	slice.ParallelForeach(dirtyAccounts, runtime.NumCPU(), func(_ int, acct **Account) {
-		if err := (**acct).Commit(blockNum); err != nil {
-			panic(err)
+	// slice.ParallelForeach(dirtyAccounts, runtime.NumCPU(), func(_ int, acct **Account) {
+	// 	if err := (**acct).Commit(blockNum); err != nil {
+	// 		panic(err)
+	// 	}
+	// })
+	// Write the world trie
+	slice.ParallelForeach(uniqueDirties, runtime.NumCPU(), func(_ int, dirties *[]*Account) {
+		for _, acct := range *dirties { // There may be multiple updates for the same account.
+			if err := (acct).Commit(blockNum); err != nil {
+				panic(err)
+			}
 		}
 	})
 
