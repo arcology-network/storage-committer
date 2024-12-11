@@ -45,10 +45,11 @@ func (this *EthStorageWriter) Precommit() {
 	this.EthIndexer.Finalize() // Remove the nil transitions
 	this.buffer = append(this.buffer, this.EthIndexer)
 
-	pairs := this.EthIndexer.UnorderedIndexer.Values()
-	this.EthIndexer.dirtyAccounts = (associative.Pairs[*Account, []*univalue.Univalue])(pairs).Firsts()
+	pairs := this.EthIndexer.UnorderedIndexer.Values()                                                  // Export all the pairs to be written to the db
+	this.EthIndexer.dirtyAccounts = (associative.Pairs[*Account, []*univalue.Univalue])(pairs).Firsts() // Get the accounts.
 
-	// Need to check if this is necessary or could be moved to the import phase
+	// Account cache holds the accounts that are being updated in the current block.
+	// TODO: Need to check if this is necessary or could be moved to the import phase instead.
 	slice.Foreach(this.EthIndexer.dirtyAccounts, func(_ int, pair **Account) {
 		this.ethStore.accountCache[(**pair).Address()] = (*pair) // Add the account to the cache
 	})
@@ -58,8 +59,8 @@ func (this *EthStorageWriter) Precommit() {
 			return // All removed
 		}
 
-		keys, vals := univalue.Univalues((*acctTrans).Second).KVs() // Get all transitions under the same account
-		err := this.EthIndexer.dirtyAccounts[i].UpdateAccountTrie(keys, vals)
+		keys, vals := univalue.Univalues((*acctTrans).Second).KVs()           // Get all transitions under the same account
+		err := this.EthIndexer.dirtyAccounts[i].UpdateAccountTrie(keys, vals) //
 		if err != nil {
 			this.ethStore.dbErr = errors.Join(this.ethStore.dbErr, err)
 		}
@@ -67,6 +68,8 @@ func (this *EthStorageWriter) Precommit() {
 
 	this.ethStore.WriteWorldTrie(this.EthIndexer.dirtyAccounts) // Update the world trie
 	this.EthIndexer = NewEthIndexer(this.ethStore, -1)          // Reset the indexer with a default version number.
+
+	this.EthIndexer.UnorderedIndexer.Clear()
 }
 
 // Signals a block is completed, time to write to the db.
