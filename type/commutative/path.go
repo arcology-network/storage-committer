@@ -113,6 +113,13 @@ func (this *Path) New(value, delta, sign, min, max interface{}) interface{} {
 	return deltaSet
 }
 
+// Swap swaps two values.
+func Swap[T any](lhv, rhv *T) {
+	v := *lhv
+	*lhv = *rhv
+	*rhv = v
+}
+
 // ApplyDelta applies all the deltas from the non-conflicting transitions to the original value and returns the new value.
 func (this *Path) ApplyDelta(typedVals []stgintf.Type) (stgintf.Type, int, error) {
 	if idx, _ := slice.FindFirst(typedVals, nil); idx >= 0 {
@@ -128,6 +135,7 @@ func (this *Path) ApplyDelta(typedVals []stgintf.Type) (stgintf.Type, int, error
 			common.Swap(&this.preloaded, &(*v).(*Path).preloaded)
 			this.DeltaSet.SetCommitted(this.preloaded)
 		}
+		// If no ones has the preloaded value, then this is a new path, no preloaded value
 	}
 
 	deltaSets := slice.Transform(typedVals, func(_ int, v stgintf.Type) *deltaset.DeltaSet[string] { return v.(*Path).DeltaSet })

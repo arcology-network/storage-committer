@@ -68,7 +68,6 @@ func (this *EthStorageWriter) Precommit() {
 
 	this.ethStore.WriteWorldTrie(this.EthIndexer.dirtyAccounts) // Update the world trie
 	this.EthIndexer = NewEthIndexer(this.ethStore, -1)          // Reset the indexer with a default version number.
-
 	this.EthIndexer.UnorderedIndexer.Clear()
 }
 
