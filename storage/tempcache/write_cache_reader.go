@@ -21,6 +21,7 @@ package cache
 
 import (
 	"errors"
+	"fmt"
 	"math"
 
 	common "github.com/arcology-network/common-lib/common"
@@ -197,6 +198,31 @@ func (this *WriteCache) PopBack(tx uint64, path string, T any) (interface{}, int
 
 	writeGas, err := this.Write(tx, key, nil)
 	return value, int64(_1stReadGas+_2ndReadGas) + writeGas, err
+}
+
+// Remove all the enties in a path, without a single read operation.
+// The length will stay the same, but the container will be empty. This is useful for avoiding meta level
+// conflicts when the container is appended.
+func (this *WriteCache) EraseAll(tx uint64, path string, T any) (interface{}, int64, error) {
+	if !common.IsPath(path) {
+		return nil, int64(stgtype.CONTAINER_GAS_READ), errors.New("Error: Not a path!!!")
+	}
+
+	meta, metaReadGas := this.Peek(path, T) // read the container meta
+
+	// var accumReadGas uint64
+	var accumWriteGas int64
+
+	for _, subkey := range meta.(*deltaset.DeltaSet[string]).Elements() {
+		key := path + subkey // Concatenate the path and the subkey
+		writeGas, err := this.Write(tx, key, nil)
+		if err != nil {
+			fmt.Printf("----------storage-committer/storage/tempcache/write_cache_reader.go----EraseAll for--key:%v--err:%v \n", key, err)
+			// panic(err)
+		}
+		accumWriteGas += writeGas
+	}
+	return nil, int64(metaReadGas) + accumWriteGas, nil
 }
 
 // Read th Nth element under a path

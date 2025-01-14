@@ -274,6 +274,7 @@ func (this *Univalue) PrecheckAttributes(other *Univalue) {
 
 	if this.GetTx() != other.GetTx() &&
 		this.preexists &&
+		this.Value() != nil &&
 		this.Value().(intf.Type).IsCommutative() &&
 		this.Reads() > 0 &&
 		this.IsDeltaWriteOnly() == other.IsDeltaWriteOnly() {
