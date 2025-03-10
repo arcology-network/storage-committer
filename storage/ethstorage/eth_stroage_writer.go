@@ -41,7 +41,7 @@ func NewEthStorageWriter(ethStore *EthDataStore, version int64) *EthStorageWrite
 	}
 }
 
-func (this *EthStorageWriter) Precommit() {
+func (this *EthStorageWriter) Precommit(isSync bool) {
 	this.EthIndexer.Finalize() // Remove the nil transitions
 	this.buffer = append(this.buffer, this.EthIndexer)
 

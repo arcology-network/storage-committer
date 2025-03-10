@@ -71,7 +71,7 @@ type Type interface { // value type
 
 type AsyncWriter[T any] interface {
 	Import([]T)
-	Precommit()
+	Precommit(bool)
 	Commit(uint64)
 }
 

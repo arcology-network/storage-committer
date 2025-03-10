@@ -36,10 +36,14 @@ func NewLiveStorageWriter(store *LiveStorage, version int64) *LiveStorageWriter 
 
 // Send the data to the downstream processor. This can be called multiple times
 // before calling Await to commit the data to the state db.
-func (this *LiveStorageWriter) Precommit() {
-	this.LiveStgIndexer.Finalize() // Remove the nil transitions
-	this.buffer = append(this.buffer, this.LiveStgIndexer)
-	this.LiveStgIndexer = NewLiveStgIndexer(this.store, -1)
+func (this *LiveStorageWriter) Precommit(isSync bool) {
+	if isSync {
+		this.LiveStgIndexer.PreCommit()
+	} else {
+		this.LiveStgIndexer.Finalize() // Remove the nil transitions
+		this.buffer = append(this.buffer, this.LiveStgIndexer)
+		this.LiveStgIndexer = NewLiveStgIndexer(this.store, -1)
+	}
 }
 
 // Await commits the data to the state db.

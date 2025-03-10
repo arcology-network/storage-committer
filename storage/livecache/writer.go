@@ -35,10 +35,14 @@ func NewLiveCacheWriter(cache *LiveCache, version int64) *LiveCacheWriter {
 // Send the data to the downstream processor, this is called for each generation.
 // If there are multiple generations, this can be called multiple times before Await.
 // Each generation
-func (this *LiveCacheWriter) Precommit() {
-	this.CacheIndexer.Finalize()                            // Remove the nil transitions
-	this.buffer = append(this.buffer, this.CacheIndexer)    // Append the indexer to the buffer
-	this.CacheIndexer = NewCacheIndexer(this.liveCache, -1) // Reset the indexer with a default version number
+func (this *LiveCacheWriter) Precommit(isSync bool) {
+	if isSync {
+		this.CacheIndexer.PreCommit()
+	} else {
+		this.CacheIndexer.Finalize()                            // Remove the nil transitions
+		this.buffer = append(this.buffer, this.CacheIndexer)    // Append the indexer to the buffer
+		this.CacheIndexer = NewCacheIndexer(this.liveCache, -1) // Reset the indexer with a default version number
+	}
 }
 
 // Triggered by the block commit.

@@ -28,8 +28,9 @@ import (
 // An index by account address, transitions have the same Eth account address will be put together in a list
 // This is for ETH storage, concurrent container related sub-paths won't be put into this index.
 type LiveStgIndexer struct {
-	buffer  []*univalue.Univalue
-	liveStg *LiveStorage
+	buffer       []*univalue.Univalue
+	importBuffer []*univalue.Univalue
+	liveStg      *LiveStorage
 
 	partitionIDs  []uint64
 	keyBuffer     []string
@@ -39,8 +40,9 @@ type LiveStgIndexer struct {
 
 func NewLiveStgIndexer(liveStg *LiveStorage, _ int64) *LiveStgIndexer {
 	return &LiveStgIndexer{
-		buffer:  []*univalue.Univalue{},
-		liveStg: liveStg,
+		// buffer:       []*univalue.Univalue{},
+		importBuffer: []*univalue.Univalue{},
+		liveStg:      liveStg,
 
 		partitionIDs:  []uint64{},
 		keyBuffer:     []string{},
@@ -52,13 +54,13 @@ func NewLiveStgIndexer(liveStg *LiveStorage, _ int64) *LiveStgIndexer {
 // An index by account address, transitions have the same Eth account address will be put together in a list
 // This is for ETH storage, concurrent container related sub-paths won't be put into this index.
 func (this *LiveStgIndexer) Import(trans []*univalue.Univalue) {
-	// for _, v := range trans {
-	// 	if v.GetPath() != nil {
-	// 		this.buffer = append(this.buffer, v)
-	// 	}
-	// }
 	this.buffer = append(this.buffer, trans...)
 	slice.RemoveIf(&this.buffer, func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil })
+}
+
+func (this *LiveStgIndexer) PreCommit() {
+	this.buffer = this.importBuffer
+	this.importBuffer = []*univalue.Univalue{}
 }
 
 func (this *LiveStgIndexer) Finalize() {

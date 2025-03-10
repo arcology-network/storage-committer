@@ -26,25 +26,31 @@ import (
 
 // CacheIndexer is simpliest  of indexers. It does not index anything, just stores the transitions.
 type CacheIndexer struct {
-	Version int64
-	buffer  []*univalue.Univalue
-	keys    []string
-	values  []stgtype.Type
+	Version      int64
+	buffer       []*univalue.Univalue
+	importBuffer []*univalue.Univalue
+	keys         []string
+	values       []stgtype.Type
 }
 
 func NewCacheIndexer(store *LiveCache, Version int64) *CacheIndexer {
 	return &CacheIndexer{
-		Version: Version,
-		buffer:  []*univalue.Univalue{},
-		keys:    []string{},
-		values:  []stgtype.Type{},
+		Version:      Version,
+		importBuffer: []*univalue.Univalue{},
+		keys:         []string{},
+		values:       []stgtype.Type{},
 	}
 }
 
 // An index by account address, transitions have the same Eth account address will be put together in a list
 // This is for ETH storage, concurrent container related sub-paths won't be put into this index.
 func (this *CacheIndexer) Import(transitions []*univalue.Univalue) {
-	this.buffer = append(this.buffer, transitions...)
+	this.importBuffer = append(this.importBuffer, transitions...)
+}
+
+func (this *CacheIndexer) PreCommit() {
+	this.buffer = this.importBuffer
+	this.importBuffer = []*univalue.Univalue{}
 }
 
 func (this *CacheIndexer) Finalize() {

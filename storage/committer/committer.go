@@ -28,6 +28,7 @@ import (
 
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/slice"
+	"github.com/arcology-network/storage-committer/storage/ethstorage"
 	livecache "github.com/arcology-network/storage-committer/storage/livecache"
 )
 
@@ -133,8 +134,8 @@ func (this *StateCommitter) Precommit(txs []uint64) [32]byte {
 func (this *StateCommitter) SyncPrecommit() {
 	slice.ParallelForeach(this.writers, len(this.writers),
 		func(i int, writer *stgcommon.AsyncWriter[*univalue.Univalue]) {
-			if common.IsType[*tempcache.ExecutionCacheWriter](*writer) {
-				(*writer).Precommit()
+			if !common.IsType[*ethstorage.EthStorageWriter](*writer) {
+				(*writer).Precommit(true)
 			}
 		})
 }
@@ -144,7 +145,7 @@ func (this *StateCommitter) AsyncPrecommit() {
 	slice.ParallelForeach(this.writers, len(this.writers),
 		func(_ int, writer *stgcommon.AsyncWriter[*univalue.Univalue]) {
 			if !common.IsType[*tempcache.ExecutionCacheWriter](*writer) {
-				(*writer).Precommit()
+				(*writer).Precommit(false)
 			}
 		})
 }
