@@ -252,7 +252,7 @@ func (this *WriteCache) Insert(transitions []*univalue.Univalue) *WriteCache {
 }
 
 // Reset the writecache to the initial state for the next round of processing.
-func (this *WriteCache) Clear() *WriteCache {
+func (this *WriteCache) Reset() *WriteCache {
 	this.pool.Reset()
 	clear(this.kvDict)
 	return this

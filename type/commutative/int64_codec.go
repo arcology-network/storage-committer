@@ -107,3 +107,5 @@ func (*Int64) StorageDecode(_ string, buffer []byte) interface{} {
 	}
 	return this
 }
+
+func (*Int64) AffliatedDeletes() []string { return nil }

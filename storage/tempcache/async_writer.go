@@ -17,7 +17,7 @@
 
 package cache
 
-// ExecutionCacheWriter is a struct that contains data strucuture and methods for writing data to cache.
+// ExecutionCacheWriter is a struct that contains data strucuture and methods for writing inter-generational data to cache.
 // The indexer is used to index the input transitions as they are received, in a way that they can be committed efficiently later.
 type ExecutionCacheWriter struct {
 	*WriteCacheIndexer
@@ -34,16 +34,15 @@ func NewExecutionCacheWriter(writeCache *WriteCache, version int64) *ExecutionCa
 // write cache updates itself every generation. It doesn't need to write to the database.
 func (this *ExecutionCacheWriter) Precommit() {
 	this.WriteCacheIndexer.Finalize() // Remove the nil transitions
-	for i := range this.WriteCacheIndexer.buffer {
-		this.WriteCache.kvDict[*this.WriteCacheIndexer.buffer[i].GetPath()] = this.WriteCacheIndexer.buffer[i]
+	for _, univ := range this.WriteCacheIndexer.buffer {
+		this.WriteCache.kvDict[*(univ.GetPath())] = univ
 	}
 	this.WriteCacheIndexer = NewWriteCacheIndexer(nil, -1)
-
 }
 
 // The generation cache is transient and will clear itself when all the transitions are committed to
 // the database.
 func (this *ExecutionCacheWriter) Commit(_ uint64) {
-	this.WriteCache.Clear()
+	this.WriteCache.Reset()
 	this.WriteCacheIndexer.buffer = this.WriteCacheIndexer.buffer[:0]
 }

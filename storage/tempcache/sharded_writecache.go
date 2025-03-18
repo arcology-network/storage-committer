@@ -109,9 +109,9 @@ func (this *ShardedWriteCache) Import(transitions []*univalue.Univalue) *Sharded
 // Reset the writecache to the initial state for the next round of processing.
 // func (this *ShardedWriteCache) Precommit([]uint32) [32]byte { return [32]byte{} }
 
-func (this *ShardedWriteCache) Clear() *ShardedWriteCache {
+func (this *ShardedWriteCache) Reset() *ShardedWriteCache {
 	slice.ParallelForeach(this.caches[:], runtime.NumCPU(), func(i int, wcache **WriteCache) {
-		(*wcache).Clear()
+		(*wcache).Reset()
 	})
 	return this
 }

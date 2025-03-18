@@ -73,6 +73,8 @@ func (this *Bigint) SetDeltaSign(v interface{}) {}
 func (this *Bigint) SetMin(v interface{})       {}
 func (this *Bigint) SetMax(v interface{})       {}
 
+func (*Bigint) AffliatedDeletes() []string { return nil }
+
 func (this *Bigint) Get() (interface{}, uint32, uint32) { return *((*big.Int)(this)), 1, 0 }
 
 func (this *Bigint) New(_, delta, _, _, _ interface{}) interface{} {

@@ -48,6 +48,8 @@ func (this *Int64) DeltaSign() bool    { return true } // delta sign
 func (this *Int64) Min() interface{}   { return nil }
 func (this *Int64) Max() interface{}   { return nil }
 
+func (*Int64) AffliatedDeletes() []string { return nil }
+
 func (this *Int64) CloneDelta() interface{}         { return this.Clone() }
 func (this *Int64) SetValue(v interface{})          { this.SetDelta(v) }
 func (this *Int64) Preload(_ string, _ interface{}) {}

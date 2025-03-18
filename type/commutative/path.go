@@ -46,40 +46,40 @@ func NewPath(newPaths ...string) stgintf.Type {
 	return this
 }
 
-func (this *Path) Length() int                                                { return int(this.DeltaSet.NonNilCount()) }
-func (this *Path) View() *deltaset.DeltaSet[string]                           { return this.DeltaSet }
-func (this *Path) MemSize() uint64                                            { return uint64(this.DeltaSet.NonNilCount()) * 32 * 2 } // Just an estimate, need to update on fly instead of calculating everytime
-func (this *Path) TypeID() uint8                                              { return PATH }
-func (this *Path) IsSelf(key interface{}) bool                                { return common.IsPath(key.(string)) }
-func (this *Path) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }
+func (this *Path) Length() int                                { return int(this.DeltaSet.NonNilCount()) }
+func (this *Path) View() *deltaset.DeltaSet[string]           { return this.DeltaSet }
+func (this *Path) MemSize() uint64                            { return uint64(this.DeltaSet.NonNilCount()) * 32 * 2 } // Just an estimate, need to update on fly instead of calculating everytime
+func (this *Path) TypeID() uint8                              { return PATH }
+func (this *Path) IsSelf(key any) bool                        { return common.IsPath(key.(string)) }
+func (this *Path) CopyTo(v any) (any, uint32, uint32, uint32) { return v, 0, 1, 0 }
 
 func (this *Path) IsNumeric() bool     { return false }
 func (this *Path) IsCommutative() bool { return true }
 func (this *Path) IsBounded() bool     { return true }
 
-func (this *Path) Value() interface{} { return this.DeltaSet.Committed() }
-func (this *Path) Delta() interface{} { return this.DeltaSet.Delta() }
-func (this *Path) DeltaSign() bool    { return true }
-func (this *Path) Min() interface{}   { return nil }
-func (this *Path) Max() interface{}   { return nil }
+func (this *Path) Value() any      { return this.DeltaSet.Committed() }
+func (this *Path) Delta() any      { return this.DeltaSet.Delta() }
+func (this *Path) DeltaSign() bool { return true }
+func (this *Path) Min() any        { return nil }
+func (this *Path) Max() any        { return nil }
 
-func (this *Path) CloneDelta() interface{} { return this.DeltaSet.CloneDelta() }
+func (this *Path) CloneDelta() any { return this.DeltaSet.CloneDelta() }
 
-func (this *Path) IsDeltaApplied() bool       { return this.IsDirty() }
-func (this *Path) SetValue(v interface{})     { this.DeltaSet = v.(*deltaset.DeltaSet[string]) }
-func (this *Path) ResetDelta()                { this.DeltaSet.ResetDelta() }
-func (this *Path) SetDelta(v interface{})     { this.DeltaSet.SetDelta(v.(*deltaset.DeltaSet[string])) }
-func (this *Path) SetDeltaSign(v interface{}) {}
-func (this *Path) SetMin(v interface{})       {}
-func (this *Path) SetMax(v interface{})       {}
+func (this *Path) IsDeltaApplied() bool { return this.IsDirty() }
+func (this *Path) SetValue(v any)       { this.DeltaSet = v.(*deltaset.DeltaSet[string]) }
+func (this *Path) ResetDelta()          { this.DeltaSet.ResetDelta() }
+func (this *Path) SetDelta(v any)       { this.DeltaSet.SetDelta(v.(*deltaset.DeltaSet[string])) }
+func (this *Path) SetDeltaSign(v any)   {}
+func (this *Path) SetMin(v any)         {}
+func (this *Path) SetMax(v any)         {}
 
-func (this *Path) Preload(k string, arg interface{}) {
+func (this *Path) Preload(k string, arg any) {
 	if this.preloaded != nil { // Already preloaded
 		return
 	}
 
 	store := arg.(interface {
-		Retrive(string, any) (interface{}, error)
+		Retrive(string, any) (any, error)
 	})
 
 	if v, err := store.Retrive(k, new(Path)); v != nil && err == nil && v.(*Path).Committed().Length() > 0 {
@@ -90,7 +90,7 @@ func (this *Path) Preload(k string, arg interface{}) {
 // Clone creates a new Path object with the same committed and delta sets.
 // the delta set is a deep copy of the original delta set, but the committed set is a shallow copy.
 // This is because the committed set should never be modified until the commit time.
-func (this *Path) Clone() interface{} {
+func (this *Path) Clone() any {
 	return &Path{
 		DeltaSet:  this.DeltaSet.Clone(),
 		preloaded: this.preloaded,
@@ -98,14 +98,14 @@ func (this *Path) Clone() interface{} {
 	}
 }
 
-func (this *Path) Equal(other interface{}) bool { return this.DeltaSet.Equal(other.(*Path).DeltaSet) }
+func (this *Path) Equal(other any) bool { return this.DeltaSet.Equal(other.(*Path).DeltaSet) }
 
-func (this *Path) Get() (interface{}, uint32, uint32) {
+func (this *Path) Get() (any, uint32, uint32) {
 	return this.DeltaSet, 1, common.IfThen(this.DeltaSet.IsDirty(), uint32(1), uint32(0))
 }
 
 // For the codec only
-func (this *Path) New(value, delta, sign, min, max interface{}) interface{} {
+func (this *Path) New(value, delta, sign, min, max any) any {
 	deltaSet := &Path{
 		DeltaSet: this.DeltaSet.CloneDelta(),
 		Type:     this.Type,
@@ -137,13 +137,13 @@ func (this *Path) ApplyDelta(typedVals []stgintf.Type) (stgintf.Type, int, error
 
 // Set sets the value of the key to the given value and returns the new value, the number of keys added, the number of
 // keys removed and the number of keys updated.
-func (this *Path) Set(value interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
-	targetPath := source.([]interface{})[0].(string)
-	containerRoot := source.([]interface{})[1].(string)
-	tx := source.([]interface{})[2].(uint64)
-	writeCache := source.([]interface{})[3].(interface {
-		Write(tx uint64, key string, value interface{}) (int64, error)
-		InCache(path string) (interface{}, bool)
+func (this *Path) Set(value any, source any) (any, uint32, uint32, uint32, error) {
+	targetPath := source.([]any)[0].(string)
+	containerRoot := source.([]any)[1].(string)
+	tx := source.([]any)[2].(uint64)
+	writeCache := source.([]any)[3].(interface {
+		Write(tx uint64, key string, value any) (int64, error)
+		InCache(path string) (any, bool)
 	})
 
 	// Delete or rewrite the path. A rewrite is generally not allowed.
@@ -187,12 +187,17 @@ func (this *Path) Hash(hasher func([]byte) []byte) []byte {
 	return hasher(this.Encode())
 }
 
+// AffliatedDeletes returns the keys to be deleted when the path is deleted.
+func (this *Path) AffliatedDeletes() []string {
+	return this.DeltaSet.Committed().Elements()
+}
+
 // For Debug
 func (this *Path) SetSubPaths(keys []string)   { this.DeltaSet.InsertCommitted(keys) }
 func (this *Path) SetAdded(keys []string)      { this.DeltaSet.InsertUpdated(keys) }
 func (this *Path) InsertRemoved(keys []string) { this.DeltaSet.InsertRemoved(keys) }
 
-func (this *Path) Keys() []string { // Committed keys
+func (this *Path) CommittedKeys() []string { // Committed keys
 	return common.IfThenDo1st(this.DeltaSet.Committed() != nil, func() []string { return this.DeltaSet.Committed().Elements() }, []string{})
 }
 

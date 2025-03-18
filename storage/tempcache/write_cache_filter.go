@@ -77,3 +77,17 @@ func (this *WriteCacheFilter) ByType() ([]*univalue.Univalue, []*univalue.Unival
 	accesses, transitions := this.ExportAll()
 	return this.filterByAddress(&accesses), this.filterByAddress(&transitions)
 }
+
+func (this *WriteCacheFilter) CopyPropertyTransitions(transitions *[]*univalue.Univalue) []*univalue.Univalue {
+	if len(this.ignoreAddresses) == 0 {
+		return *transitions
+	}
+
+	out := slice.RemoveIf(transitions, func(_ int, v *univalue.Univalue) bool {
+		address := (*v.GetPath())[stgcommon.ETH10_ACCOUNT_PREFIX_LENGTH : stgcommon.ETH10_ACCOUNT_PREFIX_LENGTH+stgcommon.ETH10_ACCOUNT_LENGTH]
+		_, ok := this.ignoreAddresses[address]
+		return ok
+	})
+
+	return out
+}

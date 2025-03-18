@@ -177,26 +177,51 @@ func (this *WriteCache) DoAt(tx uint64, path string, idx uint64, do interface{},
 	}
 }
 
-// Read th Nth element under a path
+// Pop the last element under a path
 func (this *WriteCache) PopBack(tx uint64, path string, T any) (interface{}, int64, error) {
 	if !common.IsPath(path) {
 		return nil, int64(stgtype.CONTAINER_GAS_READ), errors.New("Error: Not a path!!!")
 	}
 
-	meta, _, _1stReadGas := this.Read(tx, path, T) // read the container meta
+	meta, _, metaReadGas := this.Read(tx, path, T) // read the container meta
 	subkey, ok := meta.(*deltaset.DeltaSet[string]).Last()
 	if !ok {
-		return nil, int64(_1stReadGas), errors.New("Error: The path is either empty or doesn't exist")
+		return nil, int64(metaReadGas), errors.New("Error: The path is either empty or doesn't exist")
 	}
 
 	key := path + subkey // Concatenate the path and the subkey
-	value, _, _2ndReadGas := this.Read(tx, key, T)
+	value, _, vReadGas := this.Read(tx, key, T)
 	if value == nil {
-		return nil, int64(_1stReadGas + _2ndReadGas), errors.New("Error: Empty container!")
+		return nil, int64(metaReadGas + vReadGas), errors.New("Error: Empty container!")
 	}
 
 	writeGas, err := this.Write(tx, key, nil)
-	return value, int64(_1stReadGas+_2ndReadGas) + writeGas, err
+	return value, int64(metaReadGas+vReadGas) + writeGas, err
+}
+
+// Remove all the enties in a path, without a single read operation.
+// The length will stay the same, but the container will be empty. This is useful for avoiding meta level
+// conflicts when the container is appended.
+func (this *WriteCache) EraseAll(tx uint64, path string, T any) (interface{}, int64, error) {
+	if !common.IsPath(path) {
+		return nil, int64(stgtype.CONTAINER_GAS_READ), errors.New("Error: Not a path!!!")
+	}
+
+	meta, metaReadGas := this.Peek(path, T) // read the container meta
+
+	// var accumReadGas uint64
+	var accumWriteGas int64
+	for {
+		subkey, ok := meta.(*deltaset.DeltaSet[string]).Last()
+		if !ok {
+			return nil, int64(metaReadGas) + accumWriteGas, errors.New("Error: Path Empty!!!")
+		}
+
+		key := path + subkey // Concatenate the path and the subkey
+
+		writeGas, _ := this.Write(tx, key, nil)
+		accumWriteGas += writeGas
+	}
 }
 
 // Read th Nth element under a path

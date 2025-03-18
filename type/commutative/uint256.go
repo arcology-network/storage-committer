@@ -142,6 +142,8 @@ func (this *U256) DeltaSign() bool    { return this.deltaPositive }
 func (this *U256) Min() interface{}   { return this.min }
 func (this *U256) Max() interface{}   { return this.max }
 
+func (*U256) AffliatedDeletes() []string { return nil }
+
 func (this *U256) CloneDelta() interface{}         { return *this.delta.Clone() }
 func (this *U256) ToAbsolute() interface{}         { return this.value }
 func (this *U256) SetValue(v interface{})          { this.value = (v.(uint256.Int)) }

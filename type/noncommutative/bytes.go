@@ -88,6 +88,8 @@ func (this *Bytes) SetMin(v interface{})               {}
 func (this *Bytes) SetMax(v interface{})               {}
 func (this *Bytes) Get() (interface{}, uint32, uint32) { return []byte(this.value), 1, 0 }
 
+func (*Bytes) AffliatedDeletes() []string { return nil }
+
 func (this *Bytes) New(_, delta, _, _, _ interface{}) interface{} {
 	v := common.IfThenDo1st(delta != nil && delta.(codec.Bytes) != nil, func() codec.Bytes { return delta.(codec.Bytes).Clone().(codec.Bytes) }, this.value)
 	return &Bytes{

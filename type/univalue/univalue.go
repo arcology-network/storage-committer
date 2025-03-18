@@ -253,11 +253,17 @@ func (this *Univalue) ApplyDelta(vec []*Univalue) error {
 
 func (this *Univalue) IsReadOnly() bool       { return (this.writes == 0 && this.deltaWrites == 0) }
 func (this *Univalue) IsDeltaWriteOnly() bool { return (this.reads == 0 && this.writes == 0) }
+
 func (this *Univalue) IsDeleteOnly() bool {
-	return this.reads == 0 && this.deltaWrites == 0 && this.Value() == nil
+	return this.reads == 0 && this.Value() == nil
 }
 
-// Commutative write is no longer treated as a conflict with read.
+func (this *Univalue) IsIdempotentWriteOnly() bool {
+	return this.IsDeleteOnly()
+}
+
+// Commutative write is no longer treated as a conflict with multiple new actions, which
+//
 // Write without read happens when a new value is created.
 func (this *Univalue) IsCommutativeWriteOnly() bool {
 	return this.Value() != nil && this.Value().(intf.Type).IsCommutative() && this.Value().(intf.Type).IsNumeric() && this.Reads() == 0
