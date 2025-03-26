@@ -33,12 +33,12 @@ import (
 )
 
 // Get the index of a given key under a path.
-func (this *WriteCache) IndexOf(tx uint64, path string, key interface{}, T any) (uint64, uint64) {
+func (this *WriteCache) IndexOf(tx uint64, path string, key any, T any) (uint64, uint64) {
 	if !common.IsPath(path) {
 		return math.MaxUint64, stgtype.CONTAINER_GAS_READ //, errors.New("Error: Not a path!!!")
 	}
 
-	getter := func(v interface{}) (uint32, uint32, uint32, interface{}) { return 1, 0, 0, v }
+	getter := func(v any) (uint32, uint32, uint32, any) { return 1, 0, 0, v }
 	if v, err := this.Do(tx, path, getter, T); err == nil {
 		pathInfo := v.(*univalue.Univalue).Value()
 		if common.IsType[*commutative.Path](pathInfo) && common.IsType[string](key) {
@@ -51,12 +51,12 @@ func (this *WriteCache) IndexOf(tx uint64, path string, key interface{}, T any) 
 
 // KeyAt returns the index of a give key and the the opertion fee under a path.
 // If the path does not exist, it returns an error. The second return value is the operation fee.
-func (this *WriteCache) KeyAt(tx uint64, path string, index interface{}, T any) (string, uint64) {
+func (this *WriteCache) KeyAt(tx uint64, path string, index any, T any) (string, uint64) {
 	if !common.IsPath(path) {
 		return "", stgtype.CONTAINER_GAS_READ //, errors.New("Error: Not a path!!!")
 	}
 
-	getter := func(v interface{}) (uint32, uint32, uint32, interface{}) { return 1, 0, 0, v }
+	getter := func(v any) (uint32, uint32, uint32, any) { return 1, 0, 0, v }
 	if v, err := this.Do(tx, path, getter, T); err == nil {
 		pathInfo := v.(*univalue.Univalue).Value()
 		if common.IsType[*commutative.Path](pathInfo) && common.IsType[uint64](index) {
@@ -67,7 +67,7 @@ func (this *WriteCache) KeyAt(tx uint64, path string, index interface{}, T any) 
 }
 
 // Peek the value under a path. The difference between Peek and Read is that Peek does not have access metadata attached.
-func (this *WriteCache) Peek(path string, T any) (interface{}, uint64) {
+func (this *WriteCache) Peek(path string, T any) (any, uint64) {
 	// _, univ := this.Find(committercommon.SYSTEM, path, T)
 	// v, _, _ := univ.(*univalue.Univalue).Value().(stgtype.Type).Get()
 	// return v, stgtype.CONTAINER_GAS_READ
@@ -78,7 +78,7 @@ func (this *WriteCache) Peek(path string, T any) (interface{}, uint64) {
 }
 
 // Peek the value under a path. The difference between Peek and Read is that Peek does not have access metadata attached.
-func (this *WriteCache) PeekRaw(path string, T any) (interface{}, uint64) {
+func (this *WriteCache) PeekRaw(path string, T any) (any, uint64) {
 	_, univ := this.Find(committercommon.SYSTEM, path, T)
 	v := univ.(*univalue.Univalue).Value()
 	return v, stgtype.CONTAINER_GAS_READ
@@ -92,19 +92,19 @@ func (this *WriteCache) PeekRaw(path string, T any) (interface{}, uint64) {
 // }
 
 // This function looks up the committed value in the DB instead of the cache.
-func (this *WriteCache) PeekCommitted(path string, T any) (interface{}, uint64) {
+func (this *WriteCache) PeekCommitted(path string, T any) (any, uint64) {
 	v, _ := this.backend.Retrive(path, T)
 	return v, stgtype.CONTAINER_GAS_READ
 }
 
 // This function looks up the value and carries out the operation on the value directly.
-func (this *WriteCache) Do(tx uint64, path string, doer interface{}, T any) (interface{}, error) {
+func (this *WriteCache) Do(tx uint64, path string, doer any, T any) (any, error) {
 	univalue, _ := this.GetOrNew(tx, path, T)
 	return univalue.Do(tx, path, doer), nil
 }
 
 // get the key of the Nth element under a path
-func (this *WriteCache) getKeyByIdx(tx uint64, path string, idx uint64) (interface{}, uint64, error) {
+func (this *WriteCache) getKeyByIdx(tx uint64, path string, idx uint64) (any, uint64, error) {
 	if !common.IsPath(path) {
 		return nil, stgtype.CONTAINER_GAS_READ, errors.New("Error: Not a path!!!")
 	}
@@ -123,13 +123,13 @@ func (this *WriteCache) getKeyByIdx(tx uint64, path string, idx uint64) (interfa
 	return common.IfThen(meta == nil,
 		meta,
 		common.IfThenDo1st(idx < length,
-			func() interface{} { return path + meta.(*deltaset.DeltaSet[string]).KeyAt(idx) },
+			func() any { return path + meta.(*deltaset.DeltaSet[string]).KeyAt(idx) },
 			nil),
 	), gas, nil
 }
 
 // get the key of the Nth element under a path
-func (this *WriteCache) Min(tx uint64, path string, idx uint64) (interface{}, uint64, error) {
+func (this *WriteCache) Min(tx uint64, path string, idx uint64) (any, uint64, error) {
 	if !common.IsPath(path) {
 		return nil, stgtype.CONTAINER_GAS_READ, errors.New("Error: Not a path!!!")
 	}
@@ -144,7 +144,7 @@ func (this *WriteCache) Min(tx uint64, path string, idx uint64) (interface{}, ui
 }
 
 // get the key of the Nth element under a path
-func (this *WriteCache) Max(tx uint64, path string, idx uint64) (interface{}, uint64, error) {
+func (this *WriteCache) Max(tx uint64, path string, idx uint64) (any, uint64, error) {
 	if !common.IsPath(path) {
 		return nil, stgtype.CONTAINER_GAS_READ, errors.New("Error: Not a path!!!")
 	}
@@ -159,7 +159,7 @@ func (this *WriteCache) Max(tx uint64, path string, idx uint64) (interface{}, ui
 }
 
 // Read th Nth element under a path
-func (this *WriteCache) ReadAt(tx uint64, path string, idx uint64, T any) (interface{}, uint64, error) {
+func (this *WriteCache) ReadAt(tx uint64, path string, idx uint64, T any) (any, uint64, error) {
 	if key, gas, err := this.getKeyByIdx(tx, path, idx); err == nil && key != nil {
 		v, _, readGas := this.Read(tx, key.(string), T)
 		return v, gas + readGas, nil
@@ -169,7 +169,7 @@ func (this *WriteCache) ReadAt(tx uint64, path string, idx uint64, T any) (inter
 }
 
 // Read th Nth element under a path
-func (this *WriteCache) DoAt(tx uint64, path string, idx uint64, do interface{}, T any) (interface{}, uint64, error) {
+func (this *WriteCache) DoAt(tx uint64, path string, idx uint64, do any, T any) (any, uint64, error) {
 	if key, gas, err := this.getKeyByIdx(tx, path, idx); err == nil && key != nil {
 		v, err := this.Do(tx, key.(string), do, T)
 		return v, gas, err
@@ -179,7 +179,7 @@ func (this *WriteCache) DoAt(tx uint64, path string, idx uint64, do interface{},
 }
 
 // Read th Nth element under a path
-func (this *WriteCache) PopBack(tx uint64, path string, T any) (interface{}, int64, error) {
+func (this *WriteCache) PopBack(tx uint64, path string, T any) (any, int64, error) {
 	if !common.IsPath(path) {
 		return nil, int64(stgtype.CONTAINER_GAS_READ), errors.New("Error: Not a path!!!")
 	}
@@ -203,7 +203,7 @@ func (this *WriteCache) PopBack(tx uint64, path string, T any) (interface{}, int
 // Remove all the enties in a path, without a single read operation.
 // The length will stay the same, but the container will be empty. This is useful for avoiding meta level
 // conflicts when the container is appended.
-func (this *WriteCache) EraseAll(tx uint64, path string, T any) (interface{}, int64, error) {
+func (this *WriteCache) EraseAll(tx uint64, path string, T any) (any, int64, error) {
 	if !common.IsPath(path) {
 		return nil, int64(stgtype.CONTAINER_GAS_READ), errors.New("Error: Not a path!!!")
 	}

@@ -41,7 +41,7 @@ type Type interface { // value type
 
 	SetValue(v interface{})
 	IsDeltaApplied() bool
-	ResetDelta()
+	// ResetDelta()
 	SetDelta(v interface{})
 	SetDeltaSign(v interface{})
 	SetMin(v interface{})
@@ -65,7 +65,7 @@ type Type interface { // value type
 	Preload(string, interface{})
 
 	Hash(func([]byte) []byte) []byte
-	Reset()
+	// Reset()
 	Print()
 }
 

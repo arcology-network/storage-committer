@@ -18,8 +18,10 @@
 package commutative
 
 const (
+	UNKNOWN uint8 = 0
 	PATH    uint8 = 100
 	INT64   uint8 = 101
 	UINT64  uint8 = 102
 	UINT256 uint8 = 103
+	BYTES   uint8 = 104
 )

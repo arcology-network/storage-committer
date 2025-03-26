@@ -116,6 +116,22 @@ func (this *StateCommitter) Finalize(txs []uint64) {
 		}
 	})
 
+	// When deleting a path, all the sub paths are also deleted. But deleted sub paths aren't part of the transitions.
+	// to save bandwidth, we need generate these transitions here.
+	// affiliatedDeletes := []*univalue.Univalue{}
+	// this.byPath.ForeachDo(func(_ string, v []*univalue.Univalue) {
+	// 	if v[0].TypeID() == commutative.PATH && v[0].Value() == nil {
+	// 		for _, k := range v[0].Value().(*deltaset.DeltaSet[string]).Elements() {
+	// 			key := *(v[0].Property.GetPath()) + k // Concatenate the path and the subkey
+	// 			v := univalue.NewUnivalue(v[0].GetTx(), key, 0, 1, 0, nil, nil)
+	// 			affiliatedDeletes = append(affiliatedDeletes, v)
+	// 		}
+	// 	}
+	// })
+
+	// Import the affiliated deletes, no need to finalize them because they are already finalized.
+	// this.Import(affiliatedDeletes)
+
 	this.byPath.Clear()
 	this.byTxID.Clear()
 }

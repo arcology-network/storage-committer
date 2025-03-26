@@ -181,7 +181,7 @@ func (this *Univalue) Set(tx uint64, path string, newV interface{}, inCache bool
 		return errors.New("Error: The value doesn't exists")
 	}
 
-	// Added a new value
+	// Write a new value
 	if this.value == nil {
 		this.vType = newV.(intf.Type).TypeID()
 		v, r, w, dw := newV.(intf.Type).CopyTo(newV)
@@ -196,7 +196,7 @@ func (this *Univalue) Set(tx uint64, path string, newV interface{}, inCache bool
 	this.MakeDeepCopy(newV)
 
 	oldV := this.value.(intf.Type)
-	v, r, w, dw, err := oldV.Set(newV, []interface{}{path, *this.path, tx, importer}) // Update the current value
+	v, r, w, dw, err := oldV.Set(newV, []any{path, *this.path, tx, importer}) // Update the current value
 	this.value = v
 	this.writes += w
 	this.reads += r
@@ -206,13 +206,14 @@ func (this *Univalue) Set(tx uint64, path string, newV interface{}, inCache bool
 		this.vType = uint8(reflect.Invalid)
 		this.value = newV // Delete the value
 		this.writes++
+		this.isDeleted = true // This is a delete operation
 	}
 	return err
 }
 
 // Making a deep copy may be necessary to avoid interference with
 // the value in the global object cache.
-func (this *Univalue) MakeDeepCopy(newV interface{}) {
+func (this *Univalue) MakeDeepCopy(newV any) {
 	// writes == 0 && deltaWrites == 0 means the value has been modified already.
 	// this.value == nil, this is a new value assignment, so we don't need to make a deep copy.
 	// typedV == nil, this is a delete operation, so we don't need to make a deep copy.
@@ -254,7 +255,7 @@ func (this *Univalue) ApplyDelta(vec []*Univalue) error {
 func (this *Univalue) IsReadOnly() bool       { return (this.writes == 0 && this.deltaWrites == 0) }
 func (this *Univalue) IsDeltaWriteOnly() bool { return (this.reads == 0 && this.writes == 0) }
 func (this *Univalue) IsDeleteOnly() bool {
-	return this.reads == 0 && this.deltaWrites == 0 && this.Value() == nil
+	return this.isDeleted && this.reads == 0 && this.deltaWrites == 0
 }
 
 // Commutative write is no longer treated as a conflict with read.

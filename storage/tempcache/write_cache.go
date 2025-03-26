@@ -81,7 +81,7 @@ func (this *WriteCache) write(tx uint64, path string, value interface{}) error {
 	parentPath := common.GetParentPath(path)
 	if this.IfExists(parentPath) || tx == committercommon.SYSTEM { // The parent path exists or to inject the path directly
 		univalue, inCache := this.GetOrNew(tx, path, value) // Get a univalue wrapper
-		err := univalue.Set(tx, path, value, inCache, this)
+		err := univalue.Set(tx, path, value, inCache, this) // set the new value
 
 		// Update the parent path meta
 		if err == nil {

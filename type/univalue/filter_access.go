@@ -22,6 +22,8 @@ import (
 	stgintf "github.com/arcology-network/storage-committer/common"
 )
 
+// IPAccess is purely for inter-process communication, the valuee get copied in
+// the process of serialization anyway.
 type IPAccess struct {
 	*Univalue
 	Err error
@@ -47,6 +49,9 @@ func (this IPAccess) From(v *Univalue) *Univalue {
 
 type ITAccess struct{ IPAccess }
 
+// The biggest difference between ITAccess and IPAccess is that ITAccess needs to
+// make a deep copy of the value, while IPAccess does not. Because IPAccess is purely
+// for inter-process communication, the valu get copied in the process of serialization anyway.
 func (this ITAccess) From(v *Univalue) *Univalue {
 	value := this.IPAccess.From(v)
 	// converted := common.IfThenDo1st(value != nil, func() *Univalue { return value.(*Univalue) }, nil)

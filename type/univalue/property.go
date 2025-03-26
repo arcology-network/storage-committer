@@ -27,6 +27,7 @@ type Property struct {
 	reads         uint32  // The number of reads
 	writes        uint32  // The number of writes
 	deltaWrites   uint32  // The number of delta writes
+	isDeleted     bool    // If the value is deleted. Without this the conflict detection will mixed deletes up with normal wirtes whose values are removed for serialization speed.
 	sizeInStorage uint64  // Size in storage, which is guaranteed to be committed already.
 	preexists     bool    // If the key exists in the source, which can be a cache or a storage.
 	msg           string
@@ -43,6 +44,7 @@ func NewProperty(tx uint64, key string, reads, writes uint32, deltaWrites uint32
 		reads:         reads,
 		writes:        writes,
 		deltaWrites:   deltaWrites,
+		isDeleted:     false,
 	}
 }
 
@@ -55,6 +57,7 @@ func (this *Property) Reset() {
 	this.reads = 0
 	this.writes = 0
 	this.deltaWrites = 0
+	this.isDeleted = false
 	this.reclaimFunc = nil
 }
 
@@ -109,6 +112,7 @@ func (this *Property) Equal(other *Property) bool {
 		this.reads == other.reads &&
 		this.writes == other.writes &&
 		this.deltaWrites == other.deltaWrites &&
+		this.isDeleted == other.isDeleted &&
 		this.msg == other.msg
 }
 
@@ -120,6 +124,7 @@ func (this *Property) Clone() Property {
 		reads:         this.reads,
 		deltaWrites:   this.deltaWrites,
 		writes:        this.writes,
+		isDeleted:     this.isDeleted,
 		sizeInStorage: this.sizeInStorage,
 		preexists:     this.preexists,
 		reclaimFunc:   this.reclaimFunc,

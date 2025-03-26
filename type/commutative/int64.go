@@ -83,7 +83,7 @@ func (this *Int64) SetValue(v interface{})          { this.value = v.(int64) }
 func (this *Int64) Preload(_ string, _ interface{}) {}
 
 func (this *Int64) IsDeltaApplied() bool       { return this.delta == 0 }
-func (this *Int64) ResetDelta()                { this.SetDelta(common.New[int64](0)) }
+func (this *Int64) ResetDelta()                { this.delta = 0 }
 func (this *Int64) SetDelta(v interface{})     { this.delta = (v.(int64)) }
 func (this *Int64) SetDeltaSign(v interface{}) {}
 func (this *Int64) SetMin(v interface{})       { this.min = v.(int64) }
@@ -93,7 +93,10 @@ func (this *Int64) MemSize() uint64                                            {
 func (this *Int64) TypeID() uint8                                              { return INT64 }
 func (this *Int64) IsSelf(key interface{}) bool                                { return true }
 func (this *Int64) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }
-func (this *Int64) Reset()                                                     { this.delta = 0 }
+func (this *Int64) Reset() {
+	this.value = 0
+	this.delta = 0
+}
 
 func (this *Int64) Get() (interface{}, uint32, uint32) {
 	return int64(this.value + this.delta), 1, common.IfThen(this.delta == 0, uint32(0), uint32(1))

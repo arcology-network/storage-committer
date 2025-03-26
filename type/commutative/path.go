@@ -188,6 +188,7 @@ func (this *Path) Set(value interface{}, source interface{}) (interface{}, uint3
 
 // data cleaning before saving to storage
 func (this *Path) Reset() {
+	// this.DeltaSet.Reset()
 	this.DeltaSet.ResetDelta() // The committed keys are not reset.
 }
 

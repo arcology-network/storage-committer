@@ -19,6 +19,7 @@ package commutative
 
 import stgintf "github.com/arcology-network/storage-committer/common"
 
+// Generic function to apply a delta to a value.
 func ApplyDelta[T any](initv stgintf.Type, typedVals []stgintf.Type) (interface{}, int, error) {
 	for i, v := range typedVals {
 		// v := vec[i].Value()
