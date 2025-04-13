@@ -29,6 +29,7 @@ type Property struct {
 	deltaWrites   uint32  // The number of delta writes
 	isDeleted     bool    // If the value is deleted. Without this the conflict detection will mixed deletes up with normal wirtes whose values are removed for serialization speed.
 	sizeInStorage uint64  // Size in storage, which is guaranteed to be committed already.
+	gasUsed       uint64  // Gas used up to this point.
 	preexists     bool    // If the key exists in the source, which can be a cache or a storage.
 	msg           string
 	reclaimFunc   func(interface{})
@@ -57,6 +58,7 @@ func (this *Property) Reset() {
 	this.reads = 0
 	this.writes = 0
 	this.deltaWrites = 0
+	this.gasUsed = 0
 	this.isDeleted = false
 	this.reclaimFunc = nil
 }
@@ -65,6 +67,7 @@ func (this *Property) Merge(other *Property) {
 	this.reads += other.reads
 	this.writes += other.writes
 	this.deltaWrites += other.deltaWrites
+	this.gasUsed += other.gasUsed
 	this.sizeInStorage = common.Max(this.sizeInStorage, other.sizeInStorage)
 	this.persistent = this.persistent || other.persistent
 }
@@ -98,11 +101,14 @@ func (this *Property) IsReadOnly() bool { return this.Writes() == 0 && this.Delt
 func (this *Property) Preexist() bool   { return this.preexists } // Exist in cache as a failed read
 func (this *Property) Persistent() bool { return this.persistent }
 
+// This is for debugging purposes only, do not use it in production code!!!
+func (this *Property) SetIsDeleted(flag bool) { this.isDeleted = flag }
+
 // Check if the key exists in the source, which can be a cache or a storage，which isn't guaranteed
 // to be the same as the cache. It is possible that the key exists in the cache but not in the storage.
 // This means that the key is a new key that hasn't been committed to the storage yet.
 func (this *Property) CheckPreexist(key string, source interface{}) bool {
-	return source.(interface{ IfExists(string) bool }).IfExists(key)
+	return source.(interface{ PeekIfExists(string) bool }).PeekIfExists(key)
 }
 
 func (this *Property) Equal(other *Property) bool {
@@ -125,6 +131,7 @@ func (this *Property) Clone() Property {
 		deltaWrites:   this.deltaWrites,
 		writes:        this.writes,
 		isDeleted:     this.isDeleted,
+		gasUsed:       this.gasUsed,
 		sizeInStorage: this.sizeInStorage,
 		preexists:     this.preexists,
 		reclaimFunc:   this.reclaimFunc,
