@@ -108,7 +108,7 @@ func (this *Property) SetIsDeleted(flag bool) { this.isDeleted = flag }
 // to be the same as the cache. It is possible that the key exists in the cache but not in the storage.
 // This means that the key is a new key that hasn't been committed to the storage yet.
 func (this *Property) CheckPreexist(key string, source interface{}) bool {
-	return source.(interface{ PeekIfExists(string) bool }).PeekIfExists(key)
+	return source.(interface{ IfExists(string) bool }).IfExists(key)
 }
 
 func (this *Property) Equal(other *Property) bool {
