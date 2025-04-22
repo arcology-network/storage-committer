@@ -31,7 +31,7 @@ func (this *Property) Encode() []byte {
 }
 
 func (this *Property) HeaderSize() uint64 {
-	return uint64(13 * codec.UINT64_LEN)
+	return uint64(14 * codec.UINT64_LEN)
 }
 
 func (this *Property) Size() uint64 {
@@ -39,6 +39,7 @@ func (this *Property) Size() uint64 {
 		uint64(1) + // codec.Uint8(this.vType).Size() +
 		uint64(8) + // codec.Uint64(uint64(this.tx)).Size() +
 		uint64(len(*this.path)) + // codec.String(*this.path).Size() +
+		uint64(8) + // codec.Uint64(this.keyHash).Size() +
 		uint64(8) + // codec.Uint64(this.reads).Size() +
 		uint64(8) + // codec.Uint64(this.writes).Size() +
 		uint64(8) + // codec.Uint64(this.deltaWrites).Size() +
@@ -57,6 +58,7 @@ func (this *Property) FillHeader(buffer []byte) int {
 			uint64(codec.Uint8(this.vType).Size()),
 			codec.Uint64(this.tx).Size(),
 			codec.String(*this.path).Size(),
+			codec.Uint64(this.keyHash).Size(),
 			codec.Uint64(this.reads).Size(),
 			codec.Uint64(this.writes).Size(),
 			codec.Uint64(this.deltaWrites).Size(),
@@ -75,6 +77,7 @@ func (this *Property) EncodeToBuffer(buffer []byte) int {
 	offset += codec.Uint8(this.vType).EncodeToBuffer(buffer[offset:])
 	offset += codec.Uint64(this.tx).EncodeToBuffer(buffer[offset:])
 	offset += codec.String(*this.path).EncodeToBuffer(buffer[offset:])
+	offset += codec.Uint64(this.keyHash).EncodeToBuffer(buffer[offset:])
 	offset += codec.Uint64(this.reads).EncodeToBuffer(buffer[offset:])
 	offset += codec.Uint64(this.writes).EncodeToBuffer(buffer[offset:])
 	offset += codec.Uint64(this.deltaWrites).EncodeToBuffer(buffer[offset:])
@@ -88,7 +91,7 @@ func (this *Property) EncodeToBuffer(buffer []byte) int {
 	return offset
 }
 
-func (this *Property) Decode(buffer []byte) interface{} {
+func (this *Property) Decode(buffer []byte) any {
 	fields := codec.Byteset{}.Decode(buffer).(codec.Byteset)
 	if len(fields) == 1 {
 		return this
@@ -98,15 +101,16 @@ func (this *Property) Decode(buffer []byte) interface{} {
 	this.tx = uint64(codec.Uint64(0).Decode(fields[1]).(codec.Uint64))
 	key := string(codec.String("").Decode(bytes.Clone(fields[2])).(codec.String))
 	this.path = &key
-	this.reads = uint32(codec.Uint64(1).Decode(fields[3]).(codec.Uint64))
-	this.writes = uint32(codec.Uint64(1).Decode(fields[4]).(codec.Uint64))
-	this.deltaWrites = uint32(new(codec.Uint64).Decode(fields[5]).(codec.Uint64))
-	this.gasUsed = uint64(new(codec.Uint64).Decode(fields[6]).(codec.Uint64))
-	this.isDeleted = bool(codec.Bool(false).Decode(fields[7]).(codec.Bool))
-	this.preexists = bool(codec.Bool(false).Decode(fields[8]).(codec.Bool))
-	this.persistent = bool(codec.Bool(true).Decode(fields[9]).(codec.Bool))
-	this.sizeInStorage = uint64(new(codec.Uint64).Decode(fields[10]).(codec.Uint64))
-	this.msg = string(codec.String("").Decode(bytes.Clone(fields[11])).(codec.String))
+	this.keyHash = uint64(codec.Uint64(0).Decode(fields[3]).(codec.Uint64))
+	this.reads = uint32(codec.Uint64(1).Decode(fields[4]).(codec.Uint64))
+	this.writes = uint32(codec.Uint64(1).Decode(fields[5]).(codec.Uint64))
+	this.deltaWrites = uint32(new(codec.Uint64).Decode(fields[6]).(codec.Uint64))
+	this.gasUsed = uint64(new(codec.Uint64).Decode(fields[7]).(codec.Uint64))
+	this.isDeleted = bool(codec.Bool(false).Decode(fields[8]).(codec.Bool))
+	this.preexists = bool(codec.Bool(false).Decode(fields[9]).(codec.Bool))
+	this.persistent = bool(codec.Bool(true).Decode(fields[10]).(codec.Bool))
+	this.sizeInStorage = uint64(new(codec.Uint64).Decode(fields[11]).(codec.Uint64))
+	this.msg = string(codec.String("").Decode(bytes.Clone(fields[12])).(codec.String))
 	return this
 }
 
@@ -118,6 +122,7 @@ func (this *Property) GobDecode(data []byte) error {
 	v := this.Decode(data).(*Property)
 	this.vType = v.vType
 	this.path = v.path
+	this.keyHash = v.keyHash
 	this.preexists = v.preexists
 	this.persistent = v.persistent
 	this.tx = v.tx

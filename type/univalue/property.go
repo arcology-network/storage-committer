@@ -17,13 +17,17 @@
 
 package univalue
 
-import "github.com/arcology-network/common-lib/common"
+import (
+	"github.com/arcology-network/common-lib/common"
+	"github.com/cespare/xxhash"
+)
 
 type Property struct {
 	vType         uint8
 	persistent    bool    // If affected by conflict status or not.
 	tx            uint64  // Transaction ID
 	path          *string // Key
+	keyHash       uint64  // keyHash of the key, for faster comparison
 	reads         uint32  // The number of reads
 	writes        uint32  // The number of writes
 	deltaWrites   uint32  // The number of delta writes
@@ -32,7 +36,7 @@ type Property struct {
 	gasUsed       uint64  // Gas used up to this point.
 	preexists     bool    // If the key exists in the source, which can be a cache or a storage.
 	msg           string
-	reclaimFunc   func(interface{})
+	reclaimFunc   func(any)
 }
 
 func NewProperty(tx uint64, key string, reads, writes uint32, deltaWrites uint32, vType uint8, persistent, preexists bool) *Property {
@@ -42,6 +46,7 @@ func NewProperty(tx uint64, key string, reads, writes uint32, deltaWrites uint32
 		persistent:    persistent,
 		tx:            tx,
 		path:          &key,
+		keyHash:       xxhash.Sum64String(key),
 		reads:         reads,
 		writes:        writes,
 		deltaWrites:   deltaWrites,
@@ -55,6 +60,7 @@ func (this *Property) Reset() {
 	this.persistent = false
 	this.tx = 0
 	this.path = nil
+	this.keyHash = 0
 	this.reads = 0
 	this.writes = 0
 	this.deltaWrites = 0
@@ -63,13 +69,14 @@ func (this *Property) Reset() {
 	this.reclaimFunc = nil
 }
 
-func (this *Property) Merge(other *Property) {
+func (this *Property) Merge(other *Property) bool {
 	this.reads += other.reads
 	this.writes += other.writes
 	this.deltaWrites += other.deltaWrites
 	this.gasUsed += other.gasUsed
 	this.sizeInStorage = common.Max(this.sizeInStorage, other.sizeInStorage)
 	this.persistent = this.persistent || other.persistent
+	return this.keyHash == other.keyHash
 }
 
 func (this *Property) SizeInStorage() uint64 { return this.sizeInStorage }
@@ -114,6 +121,7 @@ func (this *Property) CheckPreexist(key string, source interface{}) bool {
 func (this *Property) Equal(other *Property) bool {
 	return this.vType == other.vType &&
 		this.tx == other.tx &&
+		this.keyHash == other.keyHash && // compare the key hashes first for faster comparison.
 		*this.path == *other.path &&
 		this.reads == other.reads &&
 		this.writes == other.writes &&
@@ -127,6 +135,7 @@ func (this *Property) Clone() Property {
 		vType:         this.vType,
 		tx:            this.tx,
 		path:          this.path,
+		keyHash:       this.keyHash,
 		reads:         this.reads,
 		deltaWrites:   this.deltaWrites,
 		writes:        this.writes,

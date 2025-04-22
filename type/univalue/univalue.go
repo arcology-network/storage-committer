@@ -28,21 +28,23 @@ import (
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/slice"
 	intf "github.com/arcology-network/storage-committer/common"
+	"github.com/cespare/xxhash"
 )
 
 // THe univalue is a combination of a value and a property field that contains the access information about the value.
 type Univalue struct {
 	Property
-	value interface{}
+	value any
 	cache []byte
 }
 
-func NewUnivalue(tx uint64, key string, reads, writes uint32, deltaWrites uint32, T any, source interface{}) *Univalue {
+func NewUnivalue(tx uint64, key string, reads, writes uint32, deltaWrites uint32, T any, source any) *Univalue {
 	univ := &Univalue{
 		Property{
 			vType:         common.IfThenDo1st(T != nil, func() uint8 { return T.(intf.Type).TypeID() }, uint8(reflect.Invalid)),
 			tx:            tx,
 			path:          &key,
+			keyHash:       xxhash.Sum64String(key),
 			reads:         reads,
 			writes:        writes,
 			deltaWrites:   deltaWrites,
@@ -61,7 +63,7 @@ func NewUnivalue(tx uint64, key string, reads, writes uint32, deltaWrites uint32
 	return univ
 }
 
-func (*Univalue) New(meta, value, cache interface{}) *Univalue {
+func (*Univalue) New(meta, value, cache any) *Univalue {
 	return &Univalue{
 		*meta.(*Property),
 		value,
@@ -75,13 +77,13 @@ func (*Univalue) Reset(this *Univalue) {
 	this.value = nil
 }
 
-func (this *Univalue) From(v *Univalue) interface{} { return v }
+func (this *Univalue) From(v *Univalue) any { return v }
 
 // func (this *Univalue) IsHotLoaded() bool             { return this.reads > 1 }
-func (this *Univalue) SetTx(txId uint64)  { this.tx = txId }
-func (this *Univalue) ClearCache()        { this.cache = this.cache[:0] }
-func (this *Univalue) Value() interface{} { return this.value }
-func (this *Univalue) SetValue(newValue interface{}) *Univalue {
+func (this *Univalue) SetTx(txId uint64) { this.tx = txId }
+func (this *Univalue) ClearCache()       { this.cache = this.cache[:0] }
+func (this *Univalue) Value() any        { return this.value }
+func (this *Univalue) SetValue(newValue any) *Univalue {
 	if this.value != nil && reflect.TypeOf(this.value) != reflect.TypeOf(newValue) && newValue != nil {
 		panic("Wrong type")
 	}
@@ -90,12 +92,13 @@ func (this *Univalue) SetValue(newValue interface{}) *Univalue {
 	return this
 }
 
-func (this *Univalue) GetCache() interface{} { return this.cache }
+func (this *Univalue) GetCache() any { return this.cache }
 
-func (this *Univalue) Init(tx uint64, key string, reads, writes, deltaWrites uint32, v interface{}, dataSource ...interface{}) *Univalue {
+func (this *Univalue) Init(tx uint64, key string, reads, writes, deltaWrites uint32, v any, dataSource ...any) *Univalue {
 	this.vType = common.IfThenDo1st(v != nil, func() uint8 { return v.(intf.Type).TypeID() }, uint8(reflect.Invalid))
 	this.tx = tx
 	this.path = &key
+	this.keyHash = xxhash.Sum64String(key)
 	this.reads = reads
 	this.writes = writes
 	this.deltaWrites = deltaWrites
@@ -119,15 +122,15 @@ func (this *Univalue) Reclaim() {
 // This performs the action on the value and returns the result.
 // This function doesnn't make a deep copy of the original value.
 // It should be used for read-only operations ONLY!!!.
-func (this *Univalue) Do(tx uint64, path string, doer interface{}) interface{} {
-	r, w, dw, ret := doer.(func(interface{}) (uint32, uint32, uint32, interface{}))(this)
+func (this *Univalue) Do(tx uint64, path string, doer any) any {
+	r, w, dw, ret := doer.(func(any) (uint32, uint32, uint32, any))(this)
 	this.reads += r
 	this.writes += w
 	this.deltaWrites += dw
 	return ret
 }
 
-func (this *Univalue) Get(tx uint64, path string, source interface{}) interface{} {
+func (this *Univalue) Get(tx uint64, path string, source any) any {
 	if this.value != nil {
 		tempV, r, w := this.value.(intf.Type).Get() //RW: Affiliated reads and writes
 		this.reads += r
@@ -149,11 +152,11 @@ func (this *Univalue) Get(tx uint64, path string, source interface{}) interface{
 	return this.value
 }
 
-func (this *Univalue) CopyTo(writable interface{}) {
+func (this *Univalue) CopyTo(writable any) {
 	writeCache := writable.(interface {
-		Read(uint64, string, interface{}) (interface{}, interface{}, uint64)
-		Write(uint64, string, interface{}) (int64, error)
-		Find(uint64, string, interface{}) (interface{}, interface{})
+		Read(uint64, string, any) (any, any, uint64)
+		Write(uint64, string, any) (int64, error)
+		Find(uint64, string, any) (any, any)
 	})
 
 	if this.writes == 0 && this.deltaWrites == 0 {
@@ -172,7 +175,7 @@ func (this *Univalue) CopyTo(writable interface{}) {
 	univ.(*Univalue).IncrementDeltaWrites(this.DeltaWrites())
 }
 
-func (this *Univalue) Set(tx uint64, path string, newV interface{}, inCache bool, importer interface{}) error { // update the value
+func (this *Univalue) Set(tx uint64, path string, newV any, inCache bool, importer any) error { // update the value
 	this.tx = tx
 
 	// Delete an non-existing value or deleting an entry that has been deleted already.
@@ -253,15 +256,23 @@ func (this *Univalue) ApplyDelta(vec []*Univalue) error {
 }
 
 func (this *Univalue) IsReadOnly() bool       { return (this.writes == 0 && this.deltaWrites == 0) }
+func (this *Univalue) IsWriteOnly() bool      { return (this.reads == 0 && this.deltaWrites == 0) }
 func (this *Univalue) IsDeltaWriteOnly() bool { return (this.reads == 0 && this.writes == 0) }
 func (this *Univalue) IsDeleteOnly() bool {
-	return this.isDeleted && this.reads == 0 && this.deltaWrites == 0
+	return this.isDeleted && this.reads == 0 && this.deltaWrites == 0 // Cannot just use value == nil, because it may be a new value.
+}
+
+func (this *Univalue) IsNilInitOnly() bool {
+	return this.Value() == nil && !this.isDeleted && this.reads == 0 && this.deltaWrites == 0
 }
 
 // Commutative write is no longer treated as a conflict with read.
 // Write without read happens when a new value is created.
-func (this *Univalue) IsCommutativeWriteOnly() bool {
-	return this.Value() != nil && this.Value().(intf.Type).IsCommutative() && this.Value().(intf.Type).IsNumeric() && this.Reads() == 0
+func (this *Univalue) IsCommutativeInitOnly() bool {
+	return this.Value() != nil &&
+		this.Value().(intf.Type).IsCommutative() &&
+		this.Value().(intf.Type).IsNumeric() &&
+		this.Reads() == 0
 }
 
 func (this *Univalue) PrecheckAttributes(other *Univalue) {
@@ -294,10 +305,10 @@ func (this *Univalue) PrecheckAttributes(other *Univalue) {
 	}
 }
 
-func (this *Univalue) Clone() interface{} {
+func (this *Univalue) Clone() any {
 	v := &Univalue{
 		this.Property.Clone(),
-		common.IfThenDo1st(this.value != nil, func() interface{} { return this.value.(intf.Type).Clone() }, this.value),
+		common.IfThenDo1st(this.value != nil, func() any { return this.value.(intf.Type).Clone() }, this.value),
 		slice.Clone(this.cache),
 	}
 	return v

@@ -22,6 +22,7 @@ import (
 	"crypto/sha256"
 	"sort"
 	"strings"
+	"unsafe"
 
 	"github.com/arcology-network/common-lib/exp/slice"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
@@ -133,46 +134,37 @@ func (this Univalues) SortByDepth() Univalues {
 func (this Univalues) Sort(groupIDs []uint64) Univalues {
 	sortees := make([]struct {
 		groupID uint64
-		length  int
-		str     string
 		bytes   []byte
-		tx      uint64
 		value   *Univalue
 	}, len(this))
 
-	// t0 := time.Now()
-	for i := 0; i < len(this); i++ {
-		str := this[i].GetPath()
-		bytes := []byte(*str)
-
-		sortees[i] = struct {
-			groupID uint64
-			length  int
-			str     string
-			bytes   []byte
-			tx      uint64
-			value   *Univalue
-		}{
-			groupID: groupIDs[i],
-			length:  len(bytes),
-			str:     *str,
-			bytes:   bytes[stgcommcommon.ETH10_ACCOUNT_PREFIX_LENGTH:],
-			tx:      this[i].GetTx(),
-			value:   this[i],
-		}
-	}
+	slice.ParallelForeach(this, 4,
+		func(i int, _ **Univalue) {
+			str := this[i].GetPath()
+			bytes := unsafe.Slice(unsafe.StringData(*str), len(*str))
+			sortees[i] = struct {
+				groupID uint64
+				bytes   []byte
+				value   *Univalue
+			}{
+				groupID: groupIDs[i],
+				bytes:   bytes[stgcommcommon.ETH10_ACCOUNT_PREFIX_LENGTH:],
+				value:   this[i],
+			}
+		},
+	)
 
 	sorter := func(i, j int) bool {
-		if sortees[i].length != sortees[j].length {
-			return sortees[i].length < sortees[j].length
+		if sortees[i].value.keyHash != sortees[j].value.keyHash {
+			return sortees[i].value.keyHash < sortees[j].value.keyHash
 		}
 
-		if sortees[i].str != sortees[j].str {
-			return bytes.Compare(sortees[i].bytes, sortees[j].bytes) < 0
+		if flag := bytes.Compare(sortees[i].bytes, sortees[j].bytes); flag != 0 {
+			return flag < 0
 		}
 
-		if sortees[i].tx != sortees[j].tx {
-			return sortees[i].tx < sortees[j].tx
+		if sortees[i].value.tx != sortees[j].value.tx {
+			return sortees[i].value.tx < sortees[j].value.tx
 		}
 
 		if sortees[i].groupID != sortees[j].groupID {

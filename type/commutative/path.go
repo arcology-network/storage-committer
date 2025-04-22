@@ -53,9 +53,10 @@ func (this *Path) TypeID() uint8                                              { 
 func (this *Path) IsSelf(key interface{}) bool                                { return common.IsPath(key.(string)) }
 func (this *Path) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }
 
-func (this *Path) IsNumeric() bool     { return false }
-func (this *Path) IsCommutative() bool { return true }
-func (this *Path) IsBounded() bool     { return true }
+func (this *Path) IsNumeric() bool         { return false }
+func (this *Path) IsCommutative() bool     { return true }
+func (this *Path) IsIdempotent(v any) bool { return false } // To expensive to check, so we just return false.
+func (this *Path) IsBounded() bool         { return true }
 
 func (this *Path) Value() interface{} { return this.DeltaSet.Committed() }
 func (this *Path) Delta() interface{} { return this.DeltaSet.Delta() }

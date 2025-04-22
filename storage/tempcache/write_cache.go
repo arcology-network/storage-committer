@@ -63,7 +63,7 @@ func (this *WriteCache) SetReadOnlyBackend(backend intf.ReadOnlyStore) *WriteCac
 	return this
 }
 
-func (this *WriteCache) readOnlyStore() intf.ReadOnlyStore     { return this.backend }
+func (this *WriteCache) ReadOnlyStore() intf.ReadOnlyStore     { return this.backend }
 func (this *WriteCache) Cache() *map[string]*univalue.Univalue { return &this.kvDict }
 func (this *WriteCache) Preload([]byte) interface{}            { return nil } // Placeholder
 func (this *WriteCache) NewUnivalue() *univalue.Univalue       { return this.pool.New() }
@@ -138,7 +138,7 @@ func (this *WriteCache) Find(tx uint64, path string, T any) (interface{}, interf
 		return univ.Value(), univ
 	}
 
-	v, _ := this.readOnlyStore().Retrive(path, T)
+	v, _ := this.ReadOnlyStore().Retrive(path, T)
 	univ := univalue.NewUnivalue(tx, path, 0, 0, 0, v, nil)
 	return univ.Value(), univ
 }
@@ -146,7 +146,7 @@ func (this *WriteCache) Find(tx uint64, path string, T any) (interface{}, interf
 // The function is used to get the univalue from the backend only.
 func (this *WriteCache) GetFromStore(tx uint64, path string, T any) *univalue.Univalue {
 	var typedv interface{}
-	if backend := this.readOnlyStore(); backend != nil {
+	if backend := this.ReadOnlyStore(); backend != nil {
 		typedv, _ = backend.Retrive(path, T)
 	}
 

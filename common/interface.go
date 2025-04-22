@@ -24,45 +24,44 @@ package storagecommon
 
 type Type interface { // value type
 	TypeID() uint8
-	Equal(interface{}) bool
-	Clone() interface{}
+	Equal(any) bool
+	Clone() any
 
 	IsNumeric() bool
-	IsCommutative() bool
+	IsCommutative() bool // If the type is commutative, the order of the operands does not matter.
 	IsBounded() bool
 
-	Value() interface{} // Get() - read/write count
-	Delta() interface{}
+	Value() any // Get() - read/write count
+	Delta() any
 	DeltaSign() bool
-	CloneDelta() interface{}
-	Min() interface{}
-	Max() interface{}
-	New(interface{}, interface{}, interface{}, interface{}, interface{}) interface{}
+	CloneDelta() any
+	Min() any
+	Max() any
+	New(any, any, any, any, any) any
 
-	SetValue(v interface{})
+	SetValue(v any)
 	IsDeltaApplied() bool
-	// ResetDelta()
-	SetDelta(v interface{})
-	SetDeltaSign(v interface{})
-	SetMin(v interface{})
-	SetMax(v interface{})
+	SetDelta(v any)
+	SetDeltaSign(v any)
+	SetMin(v any)
+	SetMax(v any)
 
-	Get() (interface{}, uint32, uint32) // Value, reads and writes, no deltawrites.
-	Set(interface{}, interface{}) (interface{}, uint32, uint32, uint32, error)
-	CopyTo(interface{}) (interface{}, uint32, uint32, uint32)
+	Get() (any, uint32, uint32) // Value, reads and writes, no deltawrites.
+	Set(any, any) (any, uint32, uint32, uint32, error)
+	CopyTo(any) (any, uint32, uint32, uint32)
 	ApplyDelta([]Type) (Type, int, error)
-	IsSelf(interface{}) bool
+	IsSelf(any) bool
 
 	MemSize() uint64 // Size in memory
 	Size() uint64    // Encoded size
 	Encode() []byte
 	EncodeToBuffer([]byte) int
-	Decode([]byte) interface{}
+	Decode([]byte) any
 
 	StorageEncode(string) []byte
-	StorageDecode(string, []byte) interface{}
+	StorageDecode(string, []byte) any
 
-	Preload(string, interface{})
+	Preload(string, any)
 
 	Hash(func([]byte) []byte) []byte
 	// Reset()
@@ -76,10 +75,10 @@ type AsyncWriter[T any] interface {
 }
 
 type ReadOnlyStore interface {
-	IfExists(string) bool                                // Check if the key exists in the source, which can be a cache or a storage.
-	RetriveFromStorage(string, any) (interface{}, error) // Check if the key is in the persistent storage.
-	Retrive(string, any) (interface{}, error)
-	Preload([]byte) interface{}
+	IfExists(string) bool                        // Check if the key exists in the source, which can be a cache or a storage.
+	RetriveFromStorage(string, any) (any, error) // Check if the key is in the persistent storage.
+	Retrive(string, any) (any, error)
+	Preload([]byte) any
 }
 
 type Hasher func(Type) []byte
