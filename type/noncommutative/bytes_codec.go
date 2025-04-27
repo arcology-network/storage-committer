@@ -19,6 +19,7 @@ package noncommutative
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 	"math/big"
 
@@ -64,6 +65,12 @@ func (this *Bytes) Reset() {}
 
 func (this *Bytes) Hash(hasher func([]byte) []byte) []byte {
 	return hasher(this.Encode())
+}
+
+func (this *Bytes) ShortHash() (uint64, bool) {
+	v := uint64(0)
+	binary.LittleEndian.PutUint64(this.value[:min(8, len(this.value))], v)
+	return v, len(this.value) <= 8
 }
 
 func (this *Bytes) Print() {

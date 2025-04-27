@@ -72,6 +72,14 @@ func (this *Bigint) Hash(hasher func([]byte) []byte) []byte {
 	return hasher(this.Encode())
 }
 
+func (this *Bigint) ShortHash() (uint64, bool) {
+	v := big.Int(*this)
+	if v.IsUint64() {
+		return v.Uint64(), true
+	}
+	return 0, false
+}
+
 func (this *Bigint) Print() {
 	fmt.Println(*this)
 	fmt.Println()

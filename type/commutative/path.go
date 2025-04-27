@@ -173,8 +173,10 @@ func (this *Path) Set(value interface{}, source interface{}) (interface{}, uint3
 	ok, _ := this.DeltaSet.Exists(subkey)
 
 	// Update an existing key or delete a non-existent key won't change the delta set. So we return 0, 0, 0.
+	// This as to be this way otherwise it will cause a lot of conflicts, when multiple transactions are trying
+	// to update the same key. It is also logically correct.
 	if (ok && value != nil) || (!ok && value == nil) {
-		return this, 0, 0, 0, nil
+		return this, 1, 0, 0, nil
 	}
 
 	if value == nil {
@@ -195,6 +197,13 @@ func (this *Path) Reset() {
 
 func (this *Path) Hash(hasher func([]byte) []byte) []byte {
 	return hasher(this.Encode())
+}
+
+// This function is mainly for fast comparison.
+// The second return value is to tell if the first return value is 100% accurate. If it is not, then the first return value
+// is just an estimate. you need to use other function to do comparison
+func (this *Path) ShortHash() (uint64, bool) {
+	return 0, this.DeltaSet.IsEmpty()
 }
 
 // For Debug

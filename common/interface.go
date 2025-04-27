@@ -64,6 +64,7 @@ type Type interface { // value type
 	Preload(string, any)
 
 	Hash(func([]byte) []byte) []byte
+	ShortHash() (uint64, bool) // For fast comparison only.
 	// Reset()
 	Print()
 }
