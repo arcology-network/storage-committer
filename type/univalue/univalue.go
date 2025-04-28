@@ -262,6 +262,12 @@ func (this *Univalue) ApplyDelta(vec []*Univalue) error {
 func (this *Univalue) PathLookupOnly() bool {
 	return this.reads == 0 && this.deltaWrites == 0 && this.writes == 0
 }
+
+// This is a path lookup operation, which means that the nothing is written to the path itself.
+func (this *Univalue) IsPathLookup() bool {
+	return this.writes == 0 && this.deltaWrites == 0 && this.Reads() == 0
+}
+
 func (this *Univalue) IsReadOnly() bool       { return (this.writes == 0 && this.deltaWrites == 0) }
 func (this *Univalue) IsWriteOnly() bool      { return (this.reads == 0 && this.deltaWrites == 0) }
 func (this *Univalue) IsDeltaWriteOnly() bool { return (this.reads == 0 && this.writes == 0) }
