@@ -22,10 +22,8 @@ import (
 	"crypto/sha256"
 	"sort"
 	"strings"
-	"unsafe"
 
 	"github.com/arcology-network/common-lib/exp/slice"
-	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	stgintf "github.com/arcology-network/storage-committer/common"
 )
 
@@ -131,52 +129,34 @@ func (this Univalues) SortByDepth() Univalues {
 	return this
 }
 
-func (this Univalues) Sort(groupIDs []uint64) Univalues {
-	sortees := make([]struct {
-		groupID uint64
-		bytes   []byte
-		value   *Univalue
-	}, len(this))
-
-	slice.ParallelForeach(this, 4,
-		func(i int, _ **Univalue) {
-			str := this[i].GetPath()
-			bytes := unsafe.Slice(unsafe.StringData(*str), len(*str))
-			sortees[i] = struct {
-				groupID uint64
-				bytes   []byte
-				value   *Univalue
-			}{
-				groupID: groupIDs[i],
-				bytes:   bytes[stgcommcommon.ETH10_ACCOUNT_PREFIX_LENGTH:],
-				value:   this[i],
-			}
-		},
-	)
+func (this Univalues) Sort(jobSeqIDs []uint64) Univalues {
+	for i := range jobSeqIDs {
+		this[i].sequence = jobSeqIDs[i]
+	}
 
 	sorter := func(i, j int) bool {
-		if sortees[i].value.keyHash != sortees[j].value.keyHash {
-			return sortees[i].value.keyHash < sortees[j].value.keyHash
+		if this[i].keyHash != this[j].keyHash {
+			return this[i].keyHash < this[j].keyHash
 		}
 
-		if flag := bytes.Compare(sortees[i].bytes, sortees[j].bytes); flag != 0 {
+		if flag := bytes.Compare(this[i].pathBytes, this[j].pathBytes); flag != 0 {
 			return flag < 0
 		}
 
-		if sortees[i].value.tx != sortees[j].value.tx {
-			return sortees[i].value.tx < sortees[j].value.tx
+		if this[i].tx != this[j].tx {
+			return this[i].tx < this[j].tx
 		}
 
-		if sortees[i].groupID != sortees[j].groupID {
-			return sortees[i].groupID < sortees[j].groupID
+		if this[i].sequence != this[j].sequence {
+			return this[i].sequence < this[j].sequence
 		}
 		return (this[i]).Less(this[j])
 	}
 
-	sort.Slice(sortees, sorter)
-	for i := 0; i < len(sortees); i++ {
-		this[i] = sortees[i].value
-		groupIDs[i] = sortees[i].groupID
+	sort.Slice(this, sorter)
+	for i := 0; i < len(this); i++ {
+		// this[i].se = this[i].value
+		jobSeqIDs[i] = this[i].sequence
 	}
 	return this
 }

@@ -276,13 +276,17 @@ func (this *Univalue) IsDeleteOnly() bool {
 }
 
 func (this *Univalue) IsNilInitOnly() bool {
-	return this.Value() == nil && !this.isDeleted && this.reads == 0 && this.deltaWrites == 0
+	return this.reads == 0 &&
+		!this.isDeleted &&
+		this.Value() != nil &&
+		this.Value().(intf.Type).IsCommutative() // Must be commutative
 }
 
 // Commutative write is no longer treated as a conflict with read.
 // Write without read happens when a new value is created.
-func (this *Univalue) IsCommutativeInitOrWriteOnly(other *Univalue) bool {
-	return this.Value() != nil &&
+func (this *Univalue) IsCumulativeWriteOnly(other *Univalue) bool {
+	return this.reads == 0 &&
+		this.Value() != nil &&
 		this.Value().(intf.Type).IsCommutative() &&
 		this.Value().(intf.Type).IsNumeric() &&
 		this.Value().(intf.Type).Min() == other.Value().(intf.Type).Min() &&
