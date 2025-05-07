@@ -140,7 +140,7 @@ func (this *Path) ApplyDelta(typedVals []stgintf.Type) (stgintf.Type, int, error
 	}
 
 	deltaSets := slice.Transform(typedVals, func(_ int, v stgintf.Type) *deltaset.DeltaSet[string] { return v.(*Path).DeltaSet })
-	this.Commit(deltaSets...) // Apply the delta sets to the committed value，including its own delta set.
+	this.Commit(deltaSets) // Apply the delta sets to the committed value，including its own delta set.
 	return this, len(typedVals), nil
 }
 
