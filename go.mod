@@ -14,11 +14,16 @@ require (
 
 require (
 	github.com/VictoriaMetrics/fastcache v1.12.2
-	github.com/arcology-network/common-lib v1.9.1-0.20250310070859-c426a24990fb
+	// github.com/arcology-network/common-lib v1.9.1-0.20250310070859-c426a24990fb
 	github.com/cespare/xxhash/v2 v2.2.0
 	github.com/emirpasic/gods/v2 v2.0.0-alpha
 	golang.org/x/crypto v0.20.0
 	golang.org/x/exp v0.0.0-20231206192017-f3f8817b8deb
+)
+
+require (
+	github.com/arcology-network/common-lib v0.0.0-00010101000000-000000000000
+	github.com/cespare/xxhash v1.1.0
 )
 
 require (
@@ -28,7 +33,6 @@ require (
 	github.com/bits-and-blooms/bitset v1.10.0 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1 // indirect
-	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cockroachdb/errors v1.11.1 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/pebble v1.1.0 // indirect
