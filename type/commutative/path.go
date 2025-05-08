@@ -176,7 +176,7 @@ func (this *Path) Set(value interface{}, source interface{}) (interface{}, uint3
 	// This as to be this way otherwise it will cause a lot of conflicts, when multiple transactions are trying
 	// to update the same key. It is also logically correct.
 	if (ok && value != nil) || (!ok && value == nil) {
-		return this, 1, 0, 0, nil
+		return this, 0, 0, 0, nil
 	}
 
 	if value == nil {
