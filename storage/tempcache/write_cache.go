@@ -283,7 +283,9 @@ func (this *WriteCache) Export(preprocs ...func([]*univalue.Univalue) []*univalu
 		}, buffer)
 	}
 
-	slice.RemoveIf(&buffer, func(_ int, v *univalue.Univalue) bool { return v.Reads() == 0 && v.IsReadOnly() }) // Remove peeks
+	slice.RemoveIf(&buffer, func(_ int, v *univalue.Univalue) bool {
+		return v.PathLookupOnly() || (v.Reads() == 0 && v.IsReadOnly()) // Remove peeks
+	})
 	return buffer
 }
 

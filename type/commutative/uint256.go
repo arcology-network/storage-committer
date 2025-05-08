@@ -161,6 +161,7 @@ func (this *U256) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { 
 
 func (this *U256) Reset()                                 { slice.Fill(this.delta[:], 0) } // reset delta}
 func (this *U256) Hash(hasher func([]byte) []byte) []byte { return hasher(this.Encode()) }
+func (this *U256) ShortHash() (uint64, bool)              { return 0, false }
 
 func (this *U256) Clone() interface{} {
 	return &U256{

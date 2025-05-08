@@ -19,7 +19,9 @@ package noncommutative
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
+	"unsafe"
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -61,6 +63,14 @@ func (*String) Reset() {}
 
 func (this *String) Hash(hasher func([]byte) []byte) []byte {
 	return hasher(this.Encode())
+}
+
+func (this *String) ShortHash() (uint64, bool) {
+	buffer := unsafe.Slice(unsafe.StringData(string(*this)), len(*this))
+
+	v := uint64(0)
+	binary.LittleEndian.PutUint64(buffer[:min(8, len(buffer))], v)
+	return v, len(buffer) <= 8
 }
 
 func (this *String) Print() {

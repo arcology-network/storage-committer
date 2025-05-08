@@ -44,9 +44,8 @@ func (*Int64) Decode(bytes []byte) interface{} {
 
 func (this *Int64) Reset() {}
 
-func (this *Int64) Hash(hasher func([]byte) []byte) []byte {
-	return hasher(this.Encode())
-}
+func (this *Int64) Hash(hasher func([]byte) []byte) []byte { return hasher(this.Encode()) }
+func (this *Int64) ShortHash() (uint64, bool)              { return uint64(*this) ^ (1 << 63), true }
 
 func (this *Int64) Print() {
 	fmt.Println(*this)
