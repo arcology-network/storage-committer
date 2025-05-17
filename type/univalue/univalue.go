@@ -255,17 +255,6 @@ func (this *Univalue) ApplyDelta(vec []*Univalue) error {
 	return nil
 }
 
-// Commutative write is no longer treated as a conflict with read.
-// Write without read happens when a new value is created.
-func (this *Univalue) IsCommutativeInitOrWriteOnly(other *Univalue) bool {
-	return this.Value() != nil &&
-		this.Value().(intf.Type).IsCommutative() &&
-		this.Value().(intf.Type).IsNumeric() &&
-		this.Value().(intf.Type).Min() == other.Value().(intf.Type).Min() &&
-		this.Value().(intf.Type).Max() == other.Value().(intf.Type).Max() &&
-		this.Reads() == 0
-}
-
 // when a key is looked up, it will be checked if its parent path exists and it will generate a path access record.
 // This record will have zero reads, writes and deltaWrites because isn't a real access to the path itself.
 // It may be a read access to the sub key, but it has been already recorded in the sub key record. In addition, it doesn't
