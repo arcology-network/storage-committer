@@ -161,23 +161,6 @@ func (this Univalues) Sort(jobSeqIDs []uint64) Univalues {
 	return this
 }
 
-// func (this Univalues) CompressKeys(dict *stgcommcommon.Dict) {
-// 	for i, univ := range this {
-// 		compressedKey := (*univ.GetPath())[stgcommcommon.ETH10_ACCOUNT_PREFIX_LENGTH:stgcommcommon.ETH10_ACCOUNT_FULL_LENGTH]
-// 		newKey := dict.Compress(compressedKey, nil) + (*univ.GetPath())[stgcommcommon.ETH10_ACCOUNT_FULL_LENGTH:]
-// 		this[i].SetPath(&newKey)
-// 	}
-// }
-
-// func (this Univalues) DecompressKeys(dict *stgcommcommon.Dict) {
-// 	for i := range this {
-// 		key := *this[i].GetPath()
-// 		idx := strings.Index(*this[i].GetPath(), "/")
-// 		newKey := stgcommcommon.ETH10 + dict.Decompress(key[:idx]) + key[idx:]
-// 		this[i].SetPath(&newKey)
-// 	}
-// }
-
 func Sorter(univals []*Univalue) []*Univalue {
 	sort.SliceStable(univals, func(i, j int) bool {
 		lhs := (*(univals[i].GetPath()))
