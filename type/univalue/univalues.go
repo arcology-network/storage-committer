@@ -157,6 +157,10 @@ func (this Univalues) Sort() Univalues {
 	return this
 }
 
+func (this Univalues) SortByTx() {
+	sort.Slice(this, func(i, j int) bool { return this[i].tx < this[j].tx })
+}
+
 func Sorter(univals []*Univalue) []*Univalue {
 	sort.SliceStable(univals, func(i, j int) bool {
 		lhs := (*(univals[i].GetPath()))
