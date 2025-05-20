@@ -99,6 +99,9 @@ func (this *Property) SetPersistent(v bool) { this.persistent = v }
 func (this *Property) GetTx() uint64     { return this.tx }
 func (this *Property) SetTx(txId uint64) { this.tx = txId }
 
+func (this *Property) GetGeneration() uint64 { return this.generation }
+func (this *Property) Getsequence() uint64   { return this.sequence }
+
 func (this *Property) SetGeneration(id uint64) { this.generation = id }
 func (this *Property) Setsequence(id uint64)   { this.sequence = id }
 

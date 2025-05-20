@@ -129,11 +129,7 @@ func (this Univalues) SortByDepth() Univalues {
 	return this
 }
 
-func (this Univalues) Sort(jobSeqIDs []uint64) Univalues {
-	for i := range jobSeqIDs {
-		this[i].sequence = jobSeqIDs[i]
-	}
-
+func (this Univalues) Sort() Univalues {
 	sorter := func(i, j int) bool {
 		if this[i].keyHash != this[j].keyHash {
 			return this[i].keyHash < this[j].keyHash
@@ -154,10 +150,10 @@ func (this Univalues) Sort(jobSeqIDs []uint64) Univalues {
 	}
 
 	sort.Slice(this, sorter)
-	for i := 0; i < len(this); i++ {
-		// this[i].se = this[i].value
-		jobSeqIDs[i] = this[i].sequence
-	}
+	// for i := 0; i < len(this); i++ {
+	// 	// this[i].se = this[i].value
+	// 	jobSeqIDs[i] = this[i].sequence
+	// }
 	return this
 }
 
