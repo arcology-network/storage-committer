@@ -363,6 +363,7 @@ func (this *Univalue) Checksum() [32]byte {
 func (this *Univalue) Print() {
 	spaces := " " //fmt.Sprintf("%"+strconv.Itoa(len(strings.Split(*this.path, "/"))*1)+"v", " ")
 	fmt.Print(spaces+"tx: ", this.tx)
+	fmt.Print(spaces+"sequence: ", this.sequence)
 	fmt.Print(spaces+"reads: ", this.reads)
 	fmt.Print(spaces+"writes: ", this.writes)
 	fmt.Print(spaces+"DeltaWrites: ", this.deltaWrites)
