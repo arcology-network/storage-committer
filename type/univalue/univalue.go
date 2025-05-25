@@ -333,6 +333,8 @@ func (this *Univalue) Clone() any {
 	return v
 }
 
+func LessByTx(this, other *Univalue) bool { return this.tx < other.tx }
+
 func (this *Univalue) Less(other *Univalue) bool {
 	if (this.value == nil || other.value == nil) && (this.value != other.value) {
 		return this.value == nil
