@@ -51,3 +51,5 @@ func (this *LiveCacheWriter) Commit(block uint64) {
 	this.liveCache.Commit(merged.buffer, block)    // commit univalues directly
 	this.buffer = make([]*CacheIndexer, 0)         // Reset the indexer buffer
 }
+
+func (this *LiveCacheWriter) Name() string { return "Live Cache Writer" }

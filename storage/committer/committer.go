@@ -102,7 +102,7 @@ func (this *StateCommitter) whitelist(txs []uint64) *StateCommitter {
 	return this
 }
 
-// Commit commits the transitions to different stores.
+// Commit commits the transitions to stores.
 func (this *StateCommitter) Finalize(txs []uint64) {
 	this.whitelist(txs) // Mark the transitions that are not in the whitelist
 
@@ -167,6 +167,8 @@ func (this *StateCommitter) AsyncPrecommit() {
 }
 
 // Commit commits the transitions to different stores.
+// This is mainly for degugging purposes. The two functions should
+// be called separately, one for synchronous commit and one for asynchronous commit.
 func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
 	this.SyncCommit(blockNum)
 	this.AsyncCommit(blockNum)
@@ -186,10 +188,11 @@ func (this *StateCommitter) SyncCommit(blockNum uint64) {
 
 // Only the global write cache needs to be synchronized before the next precommit.
 func (this *StateCommitter) AsyncCommit(blockNum uint64) {
-	slice.ParallelForeach(this.writers, len(this.writers),
+	slice.ParallelForeach(this.writers, 1,
 		func(_ int, writer *stgcommon.AsyncWriter[*univalue.Univalue]) {
 			if !common.IsType[*tempcache.ExecutionCacheWriter](*writer) && !common.IsType[*livecache.LiveCacheWriter](*writer) {
 				(*writer).Commit(blockNum)
+				// fmt.Println("Commit to", (*writer).Name(), "at block", blockNum)
 				return
 			}
 		})

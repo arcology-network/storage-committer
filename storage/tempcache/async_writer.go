@@ -47,3 +47,5 @@ func (this *ExecutionCacheWriter) Commit(_ uint64) {
 	this.WriteCache.Clear()
 	this.WriteCacheIndexer.buffer = this.WriteCacheIndexer.buffer[:0]
 }
+
+func (this *ExecutionCacheWriter) Name() string { return "Execution Cache Writer" }
