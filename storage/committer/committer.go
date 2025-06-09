@@ -188,7 +188,7 @@ func (this *StateCommitter) SyncCommit(blockNum uint64) {
 
 // Only the global write cache needs to be synchronized before the next precommit.
 func (this *StateCommitter) AsyncCommit(blockNum uint64) {
-	slice.ParallelForeach(this.writers, 1,
+	slice.ParallelForeach(this.writers, len(this.writers),
 		func(_ int, writer *stgcommon.AsyncWriter[*univalue.Univalue]) {
 			if !common.IsType[*tempcache.ExecutionCacheWriter](*writer) && !common.IsType[*livecache.LiveCacheWriter](*writer) {
 				(*writer).Commit(blockNum)
