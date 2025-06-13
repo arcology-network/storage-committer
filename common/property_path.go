@@ -24,6 +24,10 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
+func SponsoredGasPath(source evmcommon.Address) string {
+	return ETH10_ACCOUNT_PREFIX + hexutil.Encode(source[:]) + "/sponsoredGas"
+}
+
 func PropertyPath(source evmcommon.Address) string {
 	return ETH10_ACCOUNT_PREFIX + hexutil.Encode(source[:]) + "/"
 }

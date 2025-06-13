@@ -141,7 +141,7 @@ func (this Univalues) Print(condition ...func(v *Univalue) bool) {
 }
 
 // Print the univalues if the satisfied the existing condition
-func (this Univalues) PrintUnsorted(condition ...func(v *Univalue) bool) {
+func (this Univalues) PrintUnsorted() {
 	for i, v := range this {
 		fmt.Print(i, ": ")
 		v.Print()

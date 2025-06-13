@@ -35,10 +35,14 @@ type Platform struct {
 func NewPlatform() *Platform {
 	return &Platform{
 		map[string]uint8{
-			"/":                   commutative.PATH,
-			"/code":               noncommutative.BYTES,
-			"/nonce":              commutative.UINT64,
-			"/balance":            commutative.UINT256,
+			"/":        commutative.PATH,
+			"/code":    noncommutative.BYTES,
+			"/nonce":   commutative.UINT64,
+			"/balance": commutative.UINT256,
+
+			// Arcology specific paths
+			"/sponsoredGas": commutative.UINT256, // Gas reserved
+			// "/sponsor/":           commutative.PATH,    // Sponsor account for execution
 			"/func/":              commutative.PATH,
 			"/storage/":           commutative.PATH,
 			"/storage/container/": commutative.PATH, // Container storage

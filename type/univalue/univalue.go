@@ -377,7 +377,7 @@ func (this *Univalue) Print() {
 		path = path[:index] + "container/" + hex.EncodeToString([]byte(path[index:]))
 	}
 
-	fmt.Print(spaces+"path: ", path, "      ")
+	fmt.Print(spaces+"path: ", *this.path, "      ")
 	common.IfThenDo(this.value != nil, func() { this.value.(intf.Type).Print() }, func() { fmt.Print("nil") })
 	fmt.Println()
 }

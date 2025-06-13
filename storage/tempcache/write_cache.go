@@ -95,7 +95,7 @@ func (this *WriteCache) write(tx uint64, path string, value interface{}) error {
 	return errors.New("Error: The parent path " + parentPath + " doesn't exist for " + path)
 }
 
-func (this *WriteCache) Read(tx uint64, path string, T any) (interface{}, interface{}, uint64) {
+func (this *WriteCache) Read(tx uint64, path string, T any) (any, any, uint64) {
 	univalue, _ := this.GetOrNew(tx, path, T)
 
 	// need to check if it is in the memory. If so gas price should be 3 instead.
@@ -107,7 +107,7 @@ func (this *WriteCache) Read(tx uint64, path string, T any) (interface{}, interf
 	return univalue.Get(tx, path, nil), univalue, gas
 }
 
-func (this *WriteCache) Write(tx uint64, path string, value interface{}) (int64, error) {
+func (this *WriteCache) Write(tx uint64, path string, value any) (int64, error) {
 	oldSize := float64(0)
 	if v, _ := this.Find(tx, path, value); v != nil {
 		oldSize += float64(v.(stgtype.Type).MemSize())
@@ -133,7 +133,7 @@ func (this *WriteCache) InCache(path string) (interface{}, bool) {
 }
 
 // Get the raw value directly, put it in an empty univalue without recording the access at the univalue level.
-func (this *WriteCache) Find(tx uint64, path string, T any) (interface{}, interface{}) {
+func (this *WriteCache) Find(tx uint64, path string, T any) (any, any) {
 	if univ, ok := this.kvDict[path]; ok {
 		return univ.Value(), univ
 	}
@@ -282,10 +282,11 @@ func (this *WriteCache) Export(preprocs ...func([]*univalue.Univalue) []*univalu
 			return proc(buffer)
 		}, buffer)
 	}
-
 	slice.RemoveIf(&buffer, func(_ int, v *univalue.Univalue) bool {
 		return v.PathLookupOnly() || (v.Reads() == 0 && v.IsReadOnly()) // Remove peeks
 	})
+
+	// univalue.Univalues(buffer).PrintUnsorted() // For debugging purpose
 	return buffer
 }
 
