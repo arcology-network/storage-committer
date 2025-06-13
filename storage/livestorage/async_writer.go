@@ -58,3 +58,5 @@ func (this *LiveStorageWriter) Commit(_ uint64) {
 	this.store.cache.BatchSet(mergedIdxer.keyBuffer, mergedIdxer.valueBuffer) // update the local cache
 	this.buffer = this.buffer[:0]
 }
+
+func (this *LiveStorageWriter) Name() string { return "Live Storage Writer" }

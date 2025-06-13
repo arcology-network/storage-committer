@@ -160,6 +160,10 @@ func (this *Int64) ApplyDelta(typedVals []stgintf.Type) (stgintf.Type, int, erro
 	return this, len(typedVals), nil
 }
 
+func (this *Int64) ShortHash() (uint64, bool) {
+	return uint64(this.value) ^ (1 << 63), true
+}
+
 func (this *Int64) Hash(hasher func([]byte) []byte) []byte {
 	return hasher(this.Encode())
 }

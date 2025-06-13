@@ -64,6 +64,7 @@ type Type interface { // value type
 	Preload(string, any)
 
 	Hash(func([]byte) []byte) []byte
+	ShortHash() (uint64, bool) // For fast comparison only.
 	// Reset()
 	Print()
 }
@@ -72,6 +73,7 @@ type AsyncWriter[T any] interface {
 	Import([]T)
 	Precommit(bool)
 	Commit(uint64)
+	Name() string
 }
 
 type ReadOnlyStore interface {

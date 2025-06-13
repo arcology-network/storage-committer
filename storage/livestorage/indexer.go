@@ -54,8 +54,8 @@ func NewLiveStgIndexer(liveStg *LiveStorage, _ int64) *LiveStgIndexer {
 // An index by account address, transitions have the same Eth account address will be put together in a list
 // This is for ETH storage, concurrent container related sub-paths won't be put into this index.
 func (this *LiveStgIndexer) Import(trans []*univalue.Univalue) {
-	this.buffer = append(this.buffer, trans...)
-	slice.RemoveIf(&this.buffer, func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil })
+	this.importBuffer = append(this.importBuffer, trans...)
+	slice.RemoveIf(&this.importBuffer, func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil })
 }
 
 func (this *LiveStgIndexer) PreCommit() {

@@ -80,6 +80,17 @@ func NewU256Delta(delta *uint256.Int, deltaPositive bool) stgintf.Type {
 	}
 }
 
+func NewBoundedU256Delta(min, max *uint256.Int, delta *uint256.Int, deltaPositive bool) stgintf.Type {
+	v := &U256{
+		delta:         (*delta),
+		deltaPositive: deltaPositive,
+	}
+
+	v.min = *min
+	v.max = *max
+	return v
+}
+
 func NewU256DeltaFromU64(delta uint64, deltaPositive bool) stgintf.Type {
 	return &U256{
 		delta:         *uint256.NewInt(delta),
@@ -147,8 +158,9 @@ func (this *U256) ToAbsolute() interface{}         { return this.value }
 func (this *U256) SetValue(v interface{})          { this.value = (v.(uint256.Int)) }
 func (this *U256) Preload(_ string, _ interface{}) {}
 
-func (this *U256) IsDeltaApplied() bool       { return this.delta.Eq(&U256_ZERO) }
-func (this *U256) ResetDelta()                { this.SetDelta(*U256_ZERO.Clone()) }
+func (this *U256) IsDeltaApplied() bool { return this.delta.Eq(&U256_ZERO) }
+func (this *U256) ResetDelta()          { this.SetDelta(*U256_ZERO.Clone()) }
+
 func (this *U256) SetDelta(v interface{})     { this.delta = (v.(uint256.Int)) }
 func (this *U256) SetDeltaSign(v interface{}) { this.deltaPositive = (v.(bool)) }
 func (this *U256) SetMin(v interface{})       { this.min = (v.(uint256.Int)) }
@@ -159,8 +171,13 @@ func (this *U256) IsSelf(key interface{}) bool                                { 
 func (this *U256) TypeID() uint8                                              { return UINT256 }
 func (this *U256) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }
 
-func (this *U256) Reset()                                 { slice.Fill(this.delta[:], 0) } // reset delta}
+func (this *U256) Reset() { // Reset to its default value
+	slice.Fill(this.delta[:], 0)
+	slice.Fill(this.value[:], 0)
+}
+
 func (this *U256) Hash(hasher func([]byte) []byte) []byte { return hasher(this.Encode()) }
+func (this *U256) ShortHash() (uint64, bool)              { return 0, false }
 
 func (this *U256) Clone() interface{} {
 	return &U256{

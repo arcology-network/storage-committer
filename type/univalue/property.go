@@ -18,6 +18,8 @@
 package univalue
 
 import (
+	"unsafe"
+
 	"github.com/arcology-network/common-lib/common"
 	"github.com/cespare/xxhash"
 )
@@ -26,7 +28,10 @@ type Property struct {
 	vType         uint8
 	persistent    bool    // If affected by conflict status or not.
 	tx            uint64  // Transaction ID
+	generation    uint64  // Generation ID
+	sequence      uint64  // Sequence ID
 	path          *string // Key
+	pathBytes     []byte  // for fast path comparison in sorin
 	keyHash       uint64  // keyHash of the key, for faster comparison
 	reads         uint32  // The number of reads
 	writes        uint32  // The number of writes
@@ -45,12 +50,14 @@ func NewProperty(tx uint64, key string, reads, writes uint32, deltaWrites uint32
 		sizeInStorage: 0,
 		persistent:    persistent,
 		tx:            tx,
-		path:          &key,
-		keyHash:       xxhash.Sum64String(key),
-		reads:         reads,
-		writes:        writes,
-		deltaWrites:   deltaWrites,
-		isDeleted:     false,
+
+		path:        &key,
+		pathBytes:   unsafe.Slice(unsafe.StringData(key), len(key)),
+		keyHash:     xxhash.Sum64String(key),
+		reads:       reads,
+		writes:      writes,
+		deltaWrites: deltaWrites,
+		isDeleted:   false,
 	}
 }
 
@@ -59,6 +66,8 @@ func (this *Property) Reset() {
 	this.sizeInStorage = 0
 	this.persistent = false
 	this.tx = 0
+	this.generation = 0
+	this.sequence = 0
 	this.path = nil
 	this.keyHash = 0
 	this.reads = 0
@@ -89,6 +98,12 @@ func (this *Property) SetPersistent(v bool) { this.persistent = v }
 
 func (this *Property) GetTx() uint64     { return this.tx }
 func (this *Property) SetTx(txId uint64) { this.tx = txId }
+
+func (this *Property) GetGeneration() uint64 { return this.generation }
+func (this *Property) Getsequence() uint64   { return this.sequence }
+
+func (this *Property) SetGeneration(id uint64) { this.generation = id }
+func (this *Property) Setsequence(id uint64)   { this.sequence = id }
 
 func (this *Property) GetPath() *string     { return this.path }
 func (this *Property) SetPath(path *string) { this.path = path }
@@ -121,6 +136,8 @@ func (this *Property) CheckPreexist(key string, source interface{}) bool {
 func (this *Property) Equal(other *Property) bool {
 	return this.vType == other.vType &&
 		this.tx == other.tx &&
+		this.generation == other.generation &&
+		this.sequence == other.sequence &&
 		this.keyHash == other.keyHash && // compare the key hashes first for faster comparison.
 		*this.path == *other.path &&
 		this.reads == other.reads &&
@@ -134,6 +151,8 @@ func (this *Property) Clone() Property {
 	return Property{
 		vType:         this.vType,
 		tx:            this.tx,
+		generation:    this.generation,
+		sequence:      this.sequence,
 		path:          this.path,
 		keyHash:       this.keyHash,
 		reads:         this.reads,

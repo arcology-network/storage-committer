@@ -255,15 +255,17 @@ func (this *Univalue) ApplyDelta(vec []*Univalue) error {
 	return nil
 }
 
-// Commutative write is no longer treated as a conflict with read.
-// Write without read happens when a new value is created.
-func (this *Univalue) IsCommutativeInitOrWriteOnly(other *Univalue) bool {
-	return this.Value() != nil &&
-		this.Value().(intf.Type).IsCommutative() &&
-		this.Value().(intf.Type).IsNumeric() &&
-		this.Value().(intf.Type).Min() == other.Value().(intf.Type).Min() &&
-		this.Value().(intf.Type).Max() == other.Value().(intf.Type).Max() &&
-		this.Reads() == 0
+// when a key is looked up, it will be checked if its parent path exists and it will generate a path access record.
+// This record will have zero reads, writes and deltaWrites because isn't a real access to the path itself.
+// It may be a read access to the sub key, but it has been already recorded in the sub key record. In addition, it doesn't
+// conflict with other path access like read/write/deltaWrite to the path.
+func (this *Univalue) PathLookupOnly() bool {
+	return this.reads == 0 && this.deltaWrites == 0 && this.writes == 0
+}
+
+// This is a path lookup operation, which means that the nothing is written to the path itself.
+func (this *Univalue) IsPathLookup() bool {
+	return this.writes == 0 && this.deltaWrites == 0 && this.Reads() == 0
 }
 
 func (this *Univalue) IsReadOnly() bool       { return (this.writes == 0 && this.deltaWrites == 0) }
@@ -274,15 +276,21 @@ func (this *Univalue) IsDeleteOnly() bool {
 }
 
 func (this *Univalue) IsNilInitOnly() bool {
-	return this.Value() == nil && !this.isDeleted && this.reads == 0 && this.deltaWrites == 0
+	return this.reads == 0 &&
+		!this.isDeleted &&
+		this.Value() != nil &&
+		this.Value().(intf.Type).IsCommutative() // Must be commutative
 }
 
 // Commutative write is no longer treated as a conflict with read.
 // Write without read happens when a new value is created.
-func (this *Univalue) IsCommutativeInitOnly() bool {
-	return this.Value() != nil &&
+func (this *Univalue) IsCumulativeWriteOnly(other *Univalue) bool {
+	return this.reads == 0 &&
+		this.Value() != nil &&
 		this.Value().(intf.Type).IsCommutative() &&
 		this.Value().(intf.Type).IsNumeric() &&
+		this.Value().(intf.Type).Min() == other.Value().(intf.Type).Min() &&
+		this.Value().(intf.Type).Max() == other.Value().(intf.Type).Max() &&
 		this.Reads() == 0
 }
 
@@ -325,6 +333,8 @@ func (this *Univalue) Clone() any {
 	return v
 }
 
+func LessByTx(this, other *Univalue) bool { return this.tx < other.tx }
+
 func (this *Univalue) Less(other *Univalue) bool {
 	if (this.value == nil || other.value == nil) && (this.value != other.value) {
 		return this.value == nil
@@ -355,6 +365,7 @@ func (this *Univalue) Checksum() [32]byte {
 func (this *Univalue) Print() {
 	spaces := " " //fmt.Sprintf("%"+strconv.Itoa(len(strings.Split(*this.path, "/"))*1)+"v", " ")
 	fmt.Print(spaces+"tx: ", this.tx)
+	fmt.Print(spaces+"sequence: ", this.sequence)
 	fmt.Print(spaces+"reads: ", this.reads)
 	fmt.Print(spaces+"writes: ", this.writes)
 	fmt.Print(spaces+"DeltaWrites: ", this.deltaWrites)

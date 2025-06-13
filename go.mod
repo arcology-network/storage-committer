@@ -2,7 +2,7 @@ module github.com/arcology-network/storage-committer
 
 go 1.22
 
-replace github.com/arcology-network/common-lib => ../common-lib/
+// replace github.com/arcology-network/common-lib => ../common-lib/
 
 replace github.com/ethereum/go-ethereum v1.14.8 => ../concurrent-evm/
 
@@ -21,7 +21,7 @@ require (
 )
 
 require (
-	github.com/arcology-network/common-lib v1.9.1-0.20250506135036-0987f5477aab
+	github.com/arcology-network/common-lib v1.9.1-0.20250613001412-0529984b08ff
 	github.com/cespare/xxhash v1.1.0
 )
 

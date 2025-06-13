@@ -30,7 +30,7 @@ type IPAccess struct {
 }
 
 func (this IPAccess) From(v *Univalue) *Univalue {
-	if this.Err != nil || v.Persistent() {
+	if this.Err != nil || v.Persistent() || v.IsPathLookup() {
 		return nil
 	}
 
@@ -47,11 +47,15 @@ func (this IPAccess) From(v *Univalue) *Univalue {
 	)
 }
 
-type ITAccess struct{ IPAccess }
+// ITAccess is used to filter out the fields that are not needed in inter-thread
+// transitions to save time spent on encoding and decoding.
 
 // The biggest difference between ITAccess and IPAccess is that ITAccess needs to
 // make a deep copy of the value, while IPAccess does not. Because IPAccess is purely
 // for inter-process communication, the valu get copied in the process of serialization anyway.
+
+type ITAccess struct{ IPAccess }
+
 func (this ITAccess) From(v *Univalue) *Univalue {
 	value := this.IPAccess.From(v)
 	// converted := common.IfThenDo1st(value != nil, func() *Univalue { return value.(*Univalue) }, nil)

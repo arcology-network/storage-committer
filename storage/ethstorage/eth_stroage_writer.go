@@ -77,3 +77,5 @@ func (this *EthStorageWriter) Commit(version uint64) {
 	this.ethStore.WriteToEthStorage(uint64(mergedIdxer.Version), mergedIdxer.dirtyAccounts)
 	this.buffer = this.buffer[:0]
 }
+
+func (this *EthStorageWriter) Name() string { return "Eth Storage Writer" }

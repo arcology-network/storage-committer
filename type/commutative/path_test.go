@@ -20,7 +20,6 @@ package commutative
 import (
 	"testing"
 
-	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/orderedset"
 	"github.com/arcology-network/common-lib/exp/slice"
 )
@@ -115,7 +114,7 @@ func TestCodecPathMeta(t *testing.T) {
 	buffer = in.Encode()
 	out = (&Path{}).Decode(buffer).(*Path)
 
-	out.Commit([]*deltaset.DeltaSet[string]{})
+	out.Commit(nil)
 
 	if !slice.EqualSet(out.Value().(*orderedset.OrderedSet[string]).Elements(), []string{"+01", "+001", "+002"}) {
 		t.Error("Error: Don't match!! Error: Should have gone!", out.Value().([]string))
