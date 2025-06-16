@@ -121,7 +121,7 @@ func (this *Property) IncrementDeltaWrites(deltaWrites uint32) { this.deltaWrite
 
 func (this *Property) IsReadOnly() bool { return this.Writes() == 0 && this.DeltaWrites() == 0 }
 func (this *Property) Preexist() bool   { return this.preexists } // Exist in cache as a failed read
-func (this *Property) Persistent() bool { return this.persistent }
+// func (this *Property) Persistent() bool { return this.persistent }
 
 // This is for debugging purposes only, do not use it in production code!!!
 func (this *Property) SetIsDeleted(flag bool) { this.isDeleted = flag }

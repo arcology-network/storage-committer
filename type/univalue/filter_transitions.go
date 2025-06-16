@@ -43,7 +43,7 @@ func (this IPTransition) From(v *Univalue) *Univalue {
 		return v
 	}
 
-	if this.Err != nil && !v.Persistent() { // Keep balance and nonce transitions for failed ones.
+	if this.Err != nil && !v.GetPersistent() { // Keep balance and nonce transitions for failed ones.
 		return nil
 	}
 

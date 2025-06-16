@@ -146,13 +146,13 @@ func (this *Path) ApplyDelta(typedVals []stgintf.Type) (stgintf.Type, int, error
 
 // Set sets the value of the key to the given value and returns the new value, the number of keys added, the number of
 // keys removed and the number of keys updated.
-func (this *Path) Set(value interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
-	targetPath := source.([]interface{})[0].(string)
-	containerRoot := source.([]interface{})[1].(string)
-	tx := source.([]interface{})[2].(uint64)
+func (this *Path) Set(value any, source interface{}) (any, uint32, uint32, uint32, error) {
+	targetPath := source.([]any)[0].(string)
+	containerRoot := source.([]any)[1].(string)
+	tx := source.([]any)[2].(uint64)
 	writeCache := source.([]interface{})[3].(interface {
-		Write(tx uint64, key string, value interface{}) (int64, error)
-		InCache(path string) (interface{}, bool)
+		Write(uint64, string, any, ...any) (int64, error)
+		InCache(string) (any, bool)
 	})
 
 	// Delete or rewrite the path. A rewrite is generally not allowed.

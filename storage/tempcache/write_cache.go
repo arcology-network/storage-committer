@@ -77,22 +77,23 @@ func (this *WriteCache) GetOrNew(tx uint64, path string, T any) (*univalue.Univa
 	return unival, inCache // From cache
 }
 
-func (this *WriteCache) write(tx uint64, path string, value interface{}) error {
+func (this *WriteCache) write(tx uint64, path string, value any) (*univalue.Univalue, error) {
 	parentPath := common.GetParentPath(path)
+	var univ *univalue.Univalue
 	if this.IfExists(parentPath) || tx == committercommon.SYSTEM { // The parent path exists or to inject the path directly
-		univalue, inCache := this.GetOrNew(tx, path, value) // Get a univalue wrapper
-		err := univalue.Set(tx, path, value, inCache, this) // set the new value
+		univ, inCache := this.GetOrNew(tx, path, value) // Get a univalue wrapper
+		err := univ.Set(tx, path, value, inCache, this) // set the new value
 
 		// Update the parent path meta
 		if err == nil {
 			if strings.HasSuffix(parentPath, "/container/") || !this.platform.IsSysPath(parentPath) && tx != committercommon.SYSTEM { // Don't keep track of the system children
 				parentMeta, inCache := this.GetOrNew(tx, parentPath, new(commutative.Path))
-				err = parentMeta.Set(tx, path, univalue.Value(), inCache, this)
+				err = parentMeta.Set(tx, path, univ.Value(), inCache, this)
 			}
 		}
-		return err
+		return univ, err
 	}
-	return errors.New("Error: The parent path " + parentPath + " doesn't exist for " + path)
+	return univ, errors.New("Error: The parent path " + parentPath + " doesn't exist for " + path)
 }
 
 func (this *WriteCache) Read(tx uint64, path string, T any) (any, any, uint64) {
@@ -107,23 +108,41 @@ func (this *WriteCache) Read(tx uint64, path string, T any) (any, any, uint64) {
 	return univalue.Get(tx, path, nil), univalue, gas
 }
 
-func (this *WriteCache) Write(tx uint64, path string, value any) (int64, error) {
-	oldSize := float64(0)
-	if v, _ := this.Find(tx, path, value); v != nil {
-		oldSize += float64(v.(stgtype.Type).MemSize())
+func (this *WriteCache) DiffSize(tx uint64, path string, newVal any) int64 {
+	oldSize := int64(0)
+	if oldVal, _ := this.Find(tx, path, newVal); oldVal != nil {
+		oldSize += int64(oldVal.(stgtype.Type).MemSize())
 	}
 
-	newSize := float64(0)
-	if value != nil {
-		newSize = float64(value.(stgtype.Type).MemSize())
+	newSize := int64(0)
+	if newVal != nil {
+		newSize = int64(newVal.(stgtype.Type).MemSize())
 	}
+
+	return newSize - oldSize
+}
+
+func (this *WriteCache) Write(tx uint64, path string, newVal any, args ...any) (int64, error) {
+	sizeDif := this.DiffSize(tx, path, newVal) // Update the size difference
 
 	// Could be negative if the value is deleted or replaced by a value with a smaller size.
-	fee := math.Ceil((newSize-oldSize)/32) * float64(stgtype.GAS_WRITE)
-	if value == nil || value.(stgtype.Type).TypeID() != uint8(reflect.Invalid) {
-		return int64(fee), this.write(tx, path, value)
+	fee := math.Ceil(float64(sizeDif)/32) * float64(stgtype.GAS_WRITE)
+	if newVal == nil || newVal.(stgtype.Type).TypeID() != uint8(reflect.Invalid) {
+		univ, err := this.write(tx, path, newVal)
+		if len(args) > 0 && args[0] != nil {
+			args[0].(func(*univalue.Univalue))(univ) // Call the callback function if provided
+		}
+
+		return int64(fee), err
 	}
 	return int64(fee), errors.New("Error: Unknown data type !")
+}
+
+func (this *WriteCache) WritePersistent(tx uint64, path string, newVal any, args ...any) (int64, error) {
+	setter := func(univ *univalue.Univalue) {
+		univ.SetPersistent(true) // Set the persistent flag to true
+	}
+	return this.Write(tx, path, newVal, setter) // Write to the cache first
 }
 
 // Get the raw value directly, skip the access counting at the univalue level
