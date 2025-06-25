@@ -47,3 +47,7 @@ func ExceptPaths(source evmcommon.Address, sourceFun [4]byte) string {
 func DeferrablePath(source evmcommon.Address, sourceFun [4]byte) string {
 	return FuncPropertyPath(source, sourceFun) + DEFERRED_FUNC
 }
+
+func PrepaidGasPath(source evmcommon.Address, sourceFun [4]byte) string {
+	return FuncPropertyPath(source, sourceFun) + PREPAID_GAS
+}

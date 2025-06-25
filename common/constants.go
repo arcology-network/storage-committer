@@ -87,6 +87,7 @@ const (
 	EXECUTION_METHOD   = "execution"
 	EXECUTION_EXCEPTED = "except/"
 	DEFERRED_FUNC      = "defer"
+	PREPAID_GAS        = "prepaidGas"
 
 	PARALLEL_EXECUTION   = uint8(0) // The default method
 	SEQUENTIAL_EXECUTION = uint8(255)
