@@ -20,7 +20,6 @@ package cache
 import (
 	"errors"
 	"fmt"
-	"math"
 	"reflect"
 	"sort"
 	"strings"
@@ -29,9 +28,7 @@ import (
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	mempool "github.com/arcology-network/common-lib/exp/mempool"
 	slice "github.com/arcology-network/common-lib/exp/slice"
-	committercommon "github.com/arcology-network/storage-committer/common"
-	intf "github.com/arcology-network/storage-committer/common"
-	stgtype "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	stgeth "github.com/arcology-network/storage-committer/platform"
 	"github.com/arcology-network/storage-committer/type/commutative"
 	univalue "github.com/arcology-network/storage-committer/type/univalue"
@@ -39,7 +36,7 @@ import (
 
 // WriteCache is a read-only data backend used for caching.
 type WriteCache struct {
-	backend  intf.ReadOnlyStore
+	backend  stgcommon.ReadOnlyStore
 	kvDict   map[string]*univalue.Univalue // Local KV lookup
 	platform stgeth.Platform
 	pool     *mempool.Mempool[*univalue.Univalue]
@@ -47,7 +44,7 @@ type WriteCache struct {
 
 // NewWriteCache creates a new instance of WriteCache; the backend can be another instance of WriteCache,
 // resulting in a cascading-like structure.
-func NewWriteCache(backend intf.ReadOnlyStore, perPage int, numPages int, args ...interface{}) *WriteCache {
+func NewWriteCache(backend stgcommon.ReadOnlyStore, perPage int, numPages int, args ...interface{}) *WriteCache {
 	return &WriteCache{
 		backend:  backend,
 		kvDict:   make(map[string]*univalue.Univalue),
@@ -58,15 +55,15 @@ func NewWriteCache(backend intf.ReadOnlyStore, perPage int, numPages int, args .
 	}
 }
 
-func (this *WriteCache) SetReadOnlyBackend(backend intf.ReadOnlyStore) *WriteCache {
+func (this *WriteCache) SetReadOnlyBackend(backend stgcommon.ReadOnlyStore) *WriteCache {
 	this.backend = backend
 	return this
 }
 
-func (this *WriteCache) ReadOnlyStore() intf.ReadOnlyStore     { return this.backend }
-func (this *WriteCache) Cache() *map[string]*univalue.Univalue { return &this.kvDict }
-func (this *WriteCache) Preload([]byte) interface{}            { return nil } // Placeholder
-func (this *WriteCache) NewUnivalue() *univalue.Univalue       { return this.pool.New() }
+func (this *WriteCache) ReadOnlyStore() stgcommon.ReadOnlyStore { return this.backend }
+func (this *WriteCache) Cache() *map[string]*univalue.Univalue  { return &this.kvDict }
+func (this *WriteCache) Preload([]byte) interface{}             { return nil } // Placeholder
+func (this *WriteCache) NewUnivalue() *univalue.Univalue        { return this.pool.New() }
 
 // If the access has been recorded
 func (this *WriteCache) GetOrNew(tx uint64, path string, T any) (*univalue.Univalue, bool) {
@@ -80,13 +77,13 @@ func (this *WriteCache) GetOrNew(tx uint64, path string, T any) (*univalue.Univa
 func (this *WriteCache) write(tx uint64, path string, value any) (*univalue.Univalue, error) {
 	parentPath := common.GetParentPath(path)
 	var univ *univalue.Univalue
-	if this.IfExists(parentPath) || tx == committercommon.SYSTEM { // The parent path exists or to inject the path directly
+	if this.IfExists(parentPath) || tx == stgcommon.SYSTEM { // The parent path exists or to inject the path directly
 		univ, inCache := this.GetOrNew(tx, path, value) // Get a univalue wrapper
 		err := univ.Set(tx, path, value, inCache, this) // set the new value
 
 		// Update the parent path meta
 		if err == nil {
-			if strings.HasSuffix(parentPath, "/container/") || !this.platform.IsSysPath(parentPath) && tx != committercommon.SYSTEM { // Don't keep track of the system children
+			if strings.HasSuffix(parentPath, "/container/") || !this.platform.IsSysPath(parentPath) && tx != stgcommon.SYSTEM { // Don't keep track of the system children
 				parentMeta, inCache := this.GetOrNew(tx, parentPath, new(commutative.Path))
 				err = parentMeta.Set(tx, path, univ.Value(), inCache, this)
 			}
@@ -100,23 +97,23 @@ func (this *WriteCache) Read(tx uint64, path string, T any) (any, any, uint64) {
 	univalue, _ := this.GetOrNew(tx, path, T)
 
 	// need to check if it is in the memory. If so gas price should be 3 instead.
-	gas := uint64(stgtype.GAS_READ)
+	dataSize := stgcommon.MIN_READ_SIZE
 	if typedv := univalue.Value(); typedv != nil {
-		gas += (typedv.(stgtype.Type).MemSize() / 32) * stgtype.GAS_READ
+		dataSize = typedv.(stgcommon.Type).MemSize()
 	}
 
-	return univalue.Get(tx, path, nil), univalue, gas
+	return univalue.Get(tx, path, nil), univalue, dataSize
 }
 
 func (this *WriteCache) DiffSize(tx uint64, path string, newVal any) int64 {
 	oldSize := int64(0)
 	if oldVal, _ := this.Find(tx, path, newVal); oldVal != nil {
-		oldSize += int64(oldVal.(stgtype.Type).MemSize())
+		oldSize += int64(oldVal.(stgcommon.Type).MemSize())
 	}
 
 	newSize := int64(0)
 	if newVal != nil {
-		newSize = int64(newVal.(stgtype.Type).MemSize())
+		newSize = int64(newVal.(stgcommon.Type).MemSize())
 	}
 
 	return newSize - oldSize
@@ -126,16 +123,15 @@ func (this *WriteCache) Write(tx uint64, path string, newVal any, args ...any) (
 	sizeDif := this.DiffSize(tx, path, newVal) // Update the size difference
 
 	// Could be negative if the value is deleted or replaced by a value with a smaller size.
-	fee := math.Ceil(float64(sizeDif)/32) * float64(stgtype.GAS_WRITE)
-	if newVal == nil || newVal.(stgtype.Type).TypeID() != uint8(reflect.Invalid) {
+	dataSize := sizeDif
+	if newVal == nil || newVal.(stgcommon.Type).TypeID() != uint8(reflect.Invalid) {
 		univ, err := this.write(tx, path, newVal)
 		if len(args) > 0 && args[0] != nil {
 			args[0].(func(*univalue.Univalue))(univ) // Call the callback function if provided
 		}
-
-		return int64(fee), err
+		return dataSize, err
 	}
-	return int64(fee), errors.New("Error: Unknown data type !")
+	return dataSize, errors.New("Error: Unknown data type !")
 }
 
 func (this *WriteCache) WritePersistent(tx uint64, path string, newVal any, args ...any) (int64, error) {
@@ -164,7 +160,7 @@ func (this *WriteCache) Find(tx uint64, path string, T any) (any, any) {
 
 // The function is used to get the univalue from the backend only.
 func (this *WriteCache) GetFromStore(tx uint64, path string, T any) *univalue.Univalue {
-	var typedv interface{}
+	var typedv any
 	if backend := this.ReadOnlyStore(); backend != nil {
 		typedv, _ = backend.Retrive(path, T)
 	}
@@ -185,8 +181,8 @@ func (this *WriteCache) RetriveFromStorage(key string, T any) (interface{}, erro
 // Get the raw value directly whichout tracking the accessing record.
 // Users need to track the access count themselves.
 func (this *WriteCache) Retrive(path string, T any) (interface{}, error) {
-	typedv, _ := this.Find(committercommon.SYSTEM, path, T)
-	if typedv == nil || typedv.(stgtype.Type).IsDeltaApplied() {
+	typedv, _ := this.Find(stgcommon.SYSTEM, path, T)
+	if typedv == nil || typedv.(stgcommon.Type).IsDeltaApplied() {
 		return typedv, nil
 	}
 
@@ -199,14 +195,14 @@ func (this *WriteCache) Retrive(path string, T any) (interface{}, error) {
 	}
 
 	// Make a Deep copy of the original value.
-	rawv, _, _ := typedv.(stgtype.Type).Get()
-	return typedv.(stgtype.Type).New(rawv, nil, nil, typedv.(stgtype.Type).Min(), typedv.(stgtype.Type).Max()), nil // Clone the value
+	rawv, _, _ := typedv.(stgcommon.Type).Get()
+	return typedv.(stgcommon.Type).New(rawv, nil, nil, typedv.(stgcommon.Type).Min(), typedv.(stgcommon.Type).Max()), nil // Clone the value
 }
 
 // Check if the path exists in the writecache or the backend.
 // No access count is recorded.
 func (this *WriteCache) IfExists(path string) bool {
-	if committercommon.ETH10_ACCOUNT_PREFIX_LENGTH == len(path) {
+	if stgcommon.ETH10_ACCOUNT_PREFIX_LENGTH == len(path) {
 		return true
 	}
 
@@ -319,12 +315,12 @@ func (this *WriteCache) ExportAll(preprocs ...func([]*univalue.Univalue) []*univ
 	return accesses, transitions
 }
 
-func (this *WriteCache) KVs() ([]string, []stgtype.Type) {
+func (this *WriteCache) KVs() ([]string, []stgcommon.Type) {
 	transitions := univalue.Univalues(slice.Clone(this.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
-	values := make([]stgtype.Type, len(transitions))
+	values := make([]stgcommon.Type, len(transitions))
 	keys := slice.ParallelTransform(transitions, 4, func(i int, v *univalue.Univalue) string {
-		values[i] = v.Value().(stgtype.Type)
+		values[i] = v.Value().(stgcommon.Type)
 		return *v.GetPath()
 	})
 	return keys, values

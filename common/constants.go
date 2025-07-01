@@ -19,8 +19,6 @@ package storagecommon
 
 import (
 	"math"
-
-	"github.com/ethereum/go-ethereum/params"
 )
 
 const (
@@ -46,12 +44,8 @@ const (
 )
 
 const (
-	CONTAINER_GAS_READ    = params.SloadGasEIP2200 * 2 // 800 * 2 = 1600, default gas for reading a container.
-	GAS_READ              = params.SloadGasEIP2200 / 2 // 800 / 2 = 400
-	GAS_WRITE             = params.SstoreSetGas / 2    // 20,000 / 2 = 10,000
-	GAS_DELTA_WRITE       = params.SstoreSetGas / 2    // 20,000 / 2 = 10,000
-	GAS_UNCOMMITTED_RESET = params.SstoreSetGas / 4    // 20,000 / 4 = 5,000
-	GAS_COMMITTED_SET     = params.SstoreSetGas / 8    // 20,000 / 8 = 2,500
+	MIN_READ_SIZE  uint64 = 32
+	MIN_WRITE_SIZE uint64 = 32
 )
 
 var WARN_OUT_OF_LOWER_LIMIT string = "Warning: Out of the lower limit!"
