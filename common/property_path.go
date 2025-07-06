@@ -36,8 +36,8 @@ func FuncPropertyPath(source evmcommon.Address, sourceFun [4]byte) string {
 	return PropertyPath(source) + PROPERTY_PATH + hex.EncodeToString(sourceFun[:]) + "/"
 }
 
-func ExecutionMethodPath(source evmcommon.Address, sourceFun [4]byte) string {
-	return FuncPropertyPath(source, sourceFun) + EXECUTION_METHOD
+func ExecutionParallelism(source evmcommon.Address, sourceFun [4]byte) string {
+	return FuncPropertyPath(source, sourceFun) + EXECUTION_PARALLELISM
 }
 
 func ExceptPaths(source evmcommon.Address, sourceFun [4]byte) string {
@@ -45,7 +45,7 @@ func ExceptPaths(source evmcommon.Address, sourceFun [4]byte) string {
 }
 
 func DeferrablePath(source evmcommon.Address, sourceFun [4]byte) string {
-	return FuncPropertyPath(source, sourceFun) + DEFERRED_FUNC
+	return FuncPropertyPath(source, sourceFun) + DEFERRED
 }
 
 func PrepaidGasPath(source evmcommon.Address, sourceFun [4]byte) string {

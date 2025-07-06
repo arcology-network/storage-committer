@@ -33,8 +33,6 @@ const (
 	ETH10_STORAGE_PREFIX               = ETH10_ACCOUNT_PREFIX + "storage/"
 	ETH10_STORAGE_PREFIX_LENGTH        = len(ETH10_STORAGE_PREFIX) + ETH10_ACCOUNT_LENGTH
 	ETH10_STORAGE_NATIVE_PREFIX_LENGTH = ETH10_STORAGE_PREFIX_LENGTH + len("/native/")
-
-	ETH10_FUNC_PROPERTY_PREFIX = "/func/"
 )
 
 const (
@@ -76,13 +74,14 @@ const (
 	MAX_NUM_CONFLICTS             = 256
 
 	PROPERTY_PATH        = "func/"
+	PROPERTY_PATH_PREFIX = "/" + PROPERTY_PATH
 	PROPERTY_PATH_LENGTH = len(PROPERTY_PATH)
 
-	EXECUTION_METHOD   = "execution"
-	EXECUTION_EXCEPTED = "except/"
-	DEFERRED_FUNC      = "defer"
-	PREPAID_GAS        = "prepaidGas"
-
+	EXECUTION_PARALLELISM = "parallelism/" // The execution parallelism of the function, either parallel or sequential
+	EXECUTION_EXCEPTED    = "except/"
+	DEFERRED              = "defer"
+	PREPAID_GAS           = "prepaidGas" // Amount of gas prepaid for the function's deferred execution
+	// PREPAYEE              = "prepayee"   // The address of the prepayee for the prepaid gas
 	PARALLEL_EXECUTION   = uint8(0) // The default method
 	SEQUENTIAL_EXECUTION = uint8(255)
 )

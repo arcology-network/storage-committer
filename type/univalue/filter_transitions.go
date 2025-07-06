@@ -118,7 +118,7 @@ func (this RuntimeProperty) From(unival *Univalue) *Univalue {
 	}
 
 	path := *unival.GetPath()
-	if strings.Contains(path[stgcommon.ETH10_ACCOUNT_FULL_LENGTH:], stgcommon.ETH10_FUNC_PROPERTY_PREFIX) {
+	if strings.Contains(path[stgcommon.ETH10_ACCOUNT_FULL_LENGTH:], stgcommon.PROPERTY_PATH_PREFIX) {
 		return unival
 	}
 	return nil
