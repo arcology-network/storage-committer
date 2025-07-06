@@ -45,10 +45,10 @@ func NewBoundedUint64(min, max uint64) stgintf.Type {
 	return NewUnboundedUint64()
 }
 
-func (this *Uint64) Clone() interface{} { return common.New(*this) }
+func (this *Uint64) Clone() any { return common.New(*this) }
 
 // For the codec only, don't use it for other purposes
-func (this *Uint64) New(value, delta, _, min, max interface{}) interface{} {
+func (this *Uint64) New(value, delta, _, min, max any) any {
 	return &Uint64{
 		common.IfThenDo1st(value != nil, func() uint64 { return value.(uint64) }, 0),
 		common.IfThenDo1st(delta != nil, func() uint64 { return delta.(uint64) }, 0),
@@ -57,7 +57,7 @@ func (this *Uint64) New(value, delta, _, min, max interface{}) interface{} {
 	}
 }
 
-func (this *Uint64) Equal(other interface{}) bool {
+func (this *Uint64) Equal(other any) bool {
 	return this.value == other.(*Uint64).value &&
 		this.delta == other.(*Uint64).delta &&
 		this.min == other.(*Uint64).min &&
@@ -70,33 +70,33 @@ func (this *Uint64) IsNumeric() bool     { return true }
 func (this *Uint64) IsCommutative() bool { return true }
 func (this *Uint64) IsBounded() bool     { return this.min != 0 || this.max != math.MaxInt64 }
 
-func (this *Uint64) Value() interface{} { return this.value }
-func (this *Uint64) Delta() interface{} { return this.delta }
-func (this *Uint64) DeltaSign() bool    { return true }
-func (this *Uint64) Min() interface{}   { return this.min }
-func (this *Uint64) Max() interface{}   { return this.max }
+func (this *Uint64) Value() any      { return this.value }
+func (this *Uint64) Delta() any      { return this.delta }
+func (this *Uint64) DeltaSign() bool { return true }
+func (this *Uint64) Min() any        { return this.min }
+func (this *Uint64) Max() any        { return this.max }
 
-func (this *Uint64) Reset()                          { this.delta = 0 }
-func (this *Uint64) IsDeltaApplied() bool            { return this.delta == 0 }
-func (this *Uint64) CloneDelta() interface{}         { return this.delta }
-func (this *Uint64) ResetDelta()                     { this.SetDelta(common.New[codec.Uint64](0)) }
-func (this *Uint64) Preload(_ string, _ interface{}) {}
+func (this *Uint64) Reset()                  { this.delta = 0 }
+func (this *Uint64) IsDeltaApplied() bool    { return this.delta == 0 }
+func (this *Uint64) CloneDelta() any         { return this.delta }
+func (this *Uint64) ResetDelta()             { this.SetDelta(common.New[codec.Uint64](0)) }
+func (this *Uint64) Preload(_ string, _ any) {}
 
-func (this *Uint64) SetValue(v interface{})     { this.value = v.(uint64) }
-func (this *Uint64) SetDelta(v interface{})     { this.delta = v.(uint64) }
-func (this *Uint64) SetDeltaSign(v interface{}) {}
-func (this *Uint64) SetMin(v interface{})       { this.min = v.(uint64) }
-func (this *Uint64) SetMax(v interface{})       { this.max = v.(uint64) }
+func (this *Uint64) SetValue(v any)     { this.value = v.(uint64) }
+func (this *Uint64) SetDelta(v any)     { this.delta = v.(uint64) }
+func (this *Uint64) SetDeltaSign(v any) {}
+func (this *Uint64) SetMin(v any)       { this.min = v.(uint64) }
+func (this *Uint64) SetMax(v any)       { this.max = v.(uint64) }
 
-func (this *Uint64) TypeID() uint8                                              { return UINT64 }
-func (this *Uint64) IsSelf(key interface{}) bool                                { return true }
-func (this *Uint64) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }
+func (this *Uint64) TypeID() uint8                              { return UINT64 }
+func (this *Uint64) IsSelf(key any) bool                        { return true }
+func (this *Uint64) CopyTo(v any) (any, uint32, uint32, uint32) { return v, 0, 1, 0 }
 
-func (this *Uint64) Get() (interface{}, uint32, uint32) {
+func (this *Uint64) Get() (any, uint32, uint32) {
 	return this.value + this.delta, 1, common.IfThen(this.delta == 0, uint32(0), uint32(1))
 }
 
-func (this *Uint64) Set(v interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
+func (this *Uint64) Set(v any, source any) (any, uint32, uint32, uint32, error) {
 	if (this.max < v.(*Uint64).delta) || (this.max-v.(*Uint64).delta < this.value+this.delta) {
 		return this, 0, 1, 0, errors.New("Error: Value out of range!!")
 	}

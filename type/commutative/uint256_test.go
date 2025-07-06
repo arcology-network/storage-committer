@@ -189,12 +189,12 @@ func TestCodec(t *testing.T) {
 }
 
 type Rlp struct {
-	Val interface{}
-	Min interface{}
-	Max interface{}
+	Val any
+	Min any
+	Max any
 }
 
-func (this Rlp) Encode(v interface{}) []byte {
+func (this Rlp) Encode(v any) []byte {
 	this.Val = v.(stgintf.Type).Value()
 	if !v.(stgintf.Type).IsBounded() {
 		this.Min = v.(stgintf.Type).Min()

@@ -40,7 +40,7 @@ func (this *Bigint) EncodeToBuffer(buffer []byte) int {
 	return v.EncodeToBuffer(buffer)
 }
 
-func (this *Bigint) Decode(buffer []byte) interface{} {
+func (this *Bigint) Decode(buffer []byte) any {
 	if len(buffer) == 0 {
 		return this
 	}
@@ -52,7 +52,7 @@ func (this *Bigint) Decode(buffer []byte) interface{} {
 // 	return this.Encode()
 // }
 
-// func (this *Bigint) DecodeCompact(bytes []byte) interface{} {
+// func (this *Bigint) DecodeCompact(bytes []byte) any {
 // 	return this.Decode(bytes)
 // }
 
@@ -61,7 +61,7 @@ func (this *Bigint) StorageEncode(_ string) []byte {
 	return buffer
 }
 
-func (this *Bigint) StorageDecode(_ string, buffer []byte) interface{} {
+func (this *Bigint) StorageDecode(_ string, buffer []byte) any {
 	rlp.DecodeBytes(buffer, this)
 	return this
 }

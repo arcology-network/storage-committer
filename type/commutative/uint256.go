@@ -98,7 +98,7 @@ func NewU256DeltaFromU64(delta uint64, deltaPositive bool) stgintf.Type {
 	}
 }
 
-func NewU256DeltaFromBigInt(delta *big.Int) (interface{}, bool) {
+func NewU256DeltaFromBigInt(delta *big.Int) (any, bool) {
 	sign := delta.Sign()
 	deltaV, overflowed := uint256.FromBig(delta.Abs(delta))
 	if overflowed {
@@ -133,7 +133,7 @@ func (*U256) NewBoundedU256FromUint64(value, delta, min, max int64, sign bool) *
 	return u256Value
 }
 
-func (this *U256) New(value, delta, sign, min, max interface{}) interface{} {
+func (this *U256) New(value, delta, sign, min, max any) any {
 	return &U256{
 		value:         common.IfThenDo1st(value != nil, func() uint256.Int { return value.(uint256.Int) }, *U256_ZERO.Clone()),
 		delta:         common.IfThenDo1st(delta != nil, func() uint256.Int { return delta.(uint256.Int) }, *U256_ZERO.Clone()),
@@ -147,29 +147,29 @@ func (this *U256) IsNumeric() bool     { return true }
 func (this *U256) IsCommutative() bool { return true }
 func (this *U256) IsBounded() bool     { return !this.min.Eq(&U256_ZERO) || !this.max.Eq(&U256_MAX) }
 
-func (this *U256) Value() interface{} { return this.value }
-func (this *U256) Delta() interface{} { return this.delta }
-func (this *U256) DeltaSign() bool    { return this.deltaPositive }
-func (this *U256) Min() interface{}   { return this.min }
-func (this *U256) Max() interface{}   { return this.max }
+func (this *U256) Value() any      { return this.value }
+func (this *U256) Delta() any      { return this.delta }
+func (this *U256) DeltaSign() bool { return this.deltaPositive }
+func (this *U256) Min() any        { return this.min }
+func (this *U256) Max() any        { return this.max }
 
-func (this *U256) CloneDelta() interface{}         { return *this.delta.Clone() }
-func (this *U256) ToAbsolute() interface{}         { return this.value }
-func (this *U256) SetValue(v interface{})          { this.value = (v.(uint256.Int)) }
-func (this *U256) Preload(_ string, _ interface{}) {}
+func (this *U256) CloneDelta() any         { return *this.delta.Clone() }
+func (this *U256) ToAbsolute() any         { return this.value }
+func (this *U256) SetValue(v any)          { this.value = (v.(uint256.Int)) }
+func (this *U256) Preload(_ string, _ any) {}
 
 func (this *U256) IsDeltaApplied() bool { return this.delta.Eq(&U256_ZERO) }
 func (this *U256) ResetDelta()          { this.SetDelta(*U256_ZERO.Clone()) }
 
-func (this *U256) SetDelta(v interface{})     { this.delta = (v.(uint256.Int)) }
-func (this *U256) SetDeltaSign(v interface{}) { this.deltaPositive = (v.(bool)) }
-func (this *U256) SetMin(v interface{})       { this.min = (v.(uint256.Int)) }
-func (this *U256) SetMax(v interface{})       { this.max = (v.(uint256.Int)) }
+func (this *U256) SetDelta(v any)     { this.delta = (v.(uint256.Int)) }
+func (this *U256) SetDeltaSign(v any) { this.deltaPositive = (v.(bool)) }
+func (this *U256) SetMin(v any)       { this.min = (v.(uint256.Int)) }
+func (this *U256) SetMax(v any)       { this.max = (v.(uint256.Int)) }
 
-func (this *U256) MemSize() uint64                                            { return 16 + 1 } // in bytes
-func (this *U256) IsSelf(key interface{}) bool                                { return true }
-func (this *U256) TypeID() uint8                                              { return UINT256 }
-func (this *U256) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }
+func (this *U256) MemSize() uint64                            { return 16 + 1 } // in bytes
+func (this *U256) IsSelf(key any) bool                        { return true }
+func (this *U256) TypeID() uint8                              { return UINT256 }
+func (this *U256) CopyTo(v any) (any, uint32, uint32, uint32) { return v, 0, 1, 0 }
 
 func (this *U256) Reset() { // Reset to its default value
 	slice.Fill(this.delta[:], 0)
@@ -179,7 +179,7 @@ func (this *U256) Reset() { // Reset to its default value
 func (this *U256) Hash(hasher func([]byte) []byte) []byte { return hasher(this.Encode()) }
 func (this *U256) ShortHash() (uint64, bool)              { return 0, false }
 
-func (this *U256) Clone() interface{} {
+func (this *U256) Clone() any {
 	return &U256{
 		value:         *this.value.Clone(),
 		delta:         *this.delta.Clone(),
@@ -189,7 +189,7 @@ func (this *U256) Clone() interface{} {
 	}
 }
 
-func (this *U256) Equal(other interface{}) bool {
+func (this *U256) Equal(other any) bool {
 	return this.value.Eq(&other.(*U256).value) &&
 		this.delta.Eq(&other.(*U256).delta) &&
 		this.deltaPositive == other.(*U256).deltaPositive &&
@@ -197,7 +197,7 @@ func (this *U256) Equal(other interface{}) bool {
 		this.max.Eq(&other.(*U256).max)
 }
 
-func (this *U256) Get() (interface{}, uint32, uint32) {
+func (this *U256) Get() (any, uint32, uint32) {
 	if U256_ZERO.Eq(&this.delta) {
 		return *((*uint256.Int)(&this.value)), 1, 0 // delta is zero
 	}
@@ -227,7 +227,7 @@ func (this *U256) isOverflowed(lhv *uint256.Int, lhvSign bool, rhv *uint256.Int,
 }
 
 // Set delta
-func (this *U256) Set(newDelta interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
+func (this *U256) Set(newDelta any, source any) (any, uint32, uint32, uint32, error) {
 	if newDelta == nil {
 		return this, 0, 1, 0, nil
 	}

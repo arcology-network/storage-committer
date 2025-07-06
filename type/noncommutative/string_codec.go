@@ -39,7 +39,7 @@ func (this *String) EncodeToBuffer(buffer []byte) int {
 	return codec.String(*this).EncodeToBuffer(buffer)
 }
 
-func (this *String) Decode(buffer []byte) interface{} {
+func (this *String) Decode(buffer []byte) any {
 	if len(buffer) == 0 {
 		return this
 	}
@@ -53,7 +53,7 @@ func (this *String) StorageEncode(_ string) []byte {
 	return buffer
 }
 
-func (this *String) StorageDecode(_ string, buffer []byte) interface{} {
+func (this *String) StorageDecode(_ string, buffer []byte) any {
 	var v String
 	rlp.DecodeBytes(buffer, &v)
 	return &v

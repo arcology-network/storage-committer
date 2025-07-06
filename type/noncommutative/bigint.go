@@ -30,23 +30,23 @@ import (
 
 type Bigint big.Int
 
-func NewBigint(v int64) interface{} {
+func NewBigint(v int64) any {
 	var value big.Int
 	value.SetInt64(v)
 	this := Bigint(value)
 	return &this
 }
 
-func (this *Bigint) MemSize() uint64                                            { return uint64((*big.Int)(this).BitLen()) }
-func (this *Bigint) IsSelf(key interface{}) bool                                { return true }
-func (this *Bigint) TypeID() uint8                                              { return BIGINT }
-func (this *Bigint) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }
+func (this *Bigint) MemSize() uint64                            { return uint64((*big.Int)(this).BitLen()) }
+func (this *Bigint) IsSelf(key any) bool                        { return true }
+func (this *Bigint) TypeID() uint8                              { return BIGINT }
+func (this *Bigint) CopyTo(v any) (any, uint32, uint32, uint32) { return v, 0, 1, 0 }
 
-func (this *Bigint) Equal(other interface{}) bool {
+func (this *Bigint) Equal(other any) bool {
 	return bytes.Equal((*big.Int)(this).Bytes(), (*big.Int)(other.(*Bigint)).Bytes())
 }
 
-func (this *Bigint) Clone() interface{} {
+func (this *Bigint) Clone() any {
 	v := big.Int(*this)
 	return (*Bigint)(new(big.Int).Set(&v))
 }
@@ -55,31 +55,31 @@ func (this *Bigint) IsNumeric() bool     { return true }
 func (this *Bigint) IsCommutative() bool { return false }
 func (this *Bigint) IsBounded() bool     { return false }
 
-func (this *Bigint) Value() interface{} { return (this) }
-func (this *Bigint) Delta() interface{} { return (this) }
-func (this *Bigint) DeltaSign() bool    { return true } // delta sign
-func (this *Bigint) Min() interface{}   { return nil }
-func (this *Bigint) Max() interface{}   { return nil }
+func (this *Bigint) Value() any      { return (this) }
+func (this *Bigint) Delta() any      { return (this) }
+func (this *Bigint) DeltaSign() bool { return true } // delta sign
+func (this *Bigint) Min() any        { return nil }
+func (this *Bigint) Max() any        { return nil }
 
-func (this *Bigint) CloneDelta() interface{} { return this.Clone() }
+func (this *Bigint) CloneDelta() any { return this.Clone() }
 
-func (this *Bigint) SetValue(v interface{})          { this.SetDelta(v) }
-func (this *Bigint) Preload(_ string, _ interface{}) {}
+func (this *Bigint) SetValue(v any)          { this.SetDelta(v) }
+func (this *Bigint) Preload(_ string, _ any) {}
 
-func (this *Bigint) IsDeltaApplied() bool       { return true }
-func (this *Bigint) ResetDelta()                { this.SetDelta(big.NewInt(0)) }
-func (this *Bigint) SetDelta(v interface{})     { (*big.Int)(this).Set((*big.Int)(v.(*Bigint))) }
-func (this *Bigint) SetDeltaSign(v interface{}) {}
-func (this *Bigint) SetMin(v interface{})       {}
-func (this *Bigint) SetMax(v interface{})       {}
+func (this *Bigint) IsDeltaApplied() bool { return true }
+func (this *Bigint) ResetDelta()          { this.SetDelta(big.NewInt(0)) }
+func (this *Bigint) SetDelta(v any)       { (*big.Int)(this).Set((*big.Int)(v.(*Bigint))) }
+func (this *Bigint) SetDeltaSign(v any)   {}
+func (this *Bigint) SetMin(v any)         {}
+func (this *Bigint) SetMax(v any)         {}
 
-func (this *Bigint) Get() (interface{}, uint32, uint32) { return *((*big.Int)(this)), 1, 0 }
+func (this *Bigint) Get() (any, uint32, uint32) { return *((*big.Int)(this)), 1, 0 }
 
-func (this *Bigint) New(_, delta, _, _, _ interface{}) interface{} {
-	return common.IfThenDo1st(delta != nil && delta.(*Bigint) != nil, func() interface{} { return delta.(*Bigint).Clone() }, interface{}(this))
+func (this *Bigint) New(_, delta, _, _, _ any) any {
+	return common.IfThenDo1st(delta != nil && delta.(*Bigint) != nil, func() any { return delta.(*Bigint).Clone() }, any(this))
 }
 
-func (this *Bigint) Set(value interface{}, _ interface{}) (interface{}, uint32, uint32, uint32, error) {
+func (this *Bigint) Set(value any, _ any) (any, uint32, uint32, uint32, error) {
 	if value != nil {
 		*this = *(value.(*Bigint))
 	}

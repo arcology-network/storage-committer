@@ -37,7 +37,7 @@ func (this *Int64) EncodeToBuffer(buffer []byte) int {
 	return codec.Int64(*this).EncodeToBuffer(buffer)
 }
 
-func (*Int64) Decode(bytes []byte) interface{} {
+func (*Int64) Decode(bytes []byte) any {
 	this := Int64(codec.Int64(0).Decode(bytes).(codec.Int64))
 	return &this
 }
@@ -57,7 +57,7 @@ func (this *Int64) StorageEncode(_ string) []byte {
 	return buffer
 }
 
-func (this *Int64) StorageDecode(_ string, buffer []byte) interface{} {
+func (this *Int64) StorageDecode(_ string, buffer []byte) any {
 	var v big.Int
 	rlp.DecodeBytes(buffer, &v)
 	return common.New(Int64(v.Uint64()))

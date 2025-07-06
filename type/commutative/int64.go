@@ -32,7 +32,7 @@ type Int64 struct {
 	max   int64
 }
 
-func NewInt64(min, max int64) interface{} {
+func NewInt64(min, max int64) any {
 	if min > max {
 		return nil
 	}
@@ -45,11 +45,11 @@ func NewInt64(min, max int64) interface{} {
 	}
 }
 
-func NewInt64Delta(delta int64) interface{} {
+func NewInt64Delta(delta int64) any {
 	return &Int64{delta: delta}
 }
 
-func (this *Int64) New(value, delta, sign, min, max interface{}) interface{} {
+func (this *Int64) New(value, delta, sign, min, max any) any {
 	return &Int64{
 		common.IfThenDo1st(value != nil, func() int64 { return value.(int64) }, 0),
 		common.IfThenDo1st(delta != nil, func() int64 { return delta.(int64) }, 0),
@@ -58,7 +58,7 @@ func (this *Int64) New(value, delta, sign, min, max interface{}) interface{} {
 	}
 }
 
-func (this *Int64) Clone() interface{} {
+func (this *Int64) Clone() any {
 	return &Int64{
 		value: this.value,
 		delta: this.delta,
@@ -67,42 +67,42 @@ func (this *Int64) Clone() interface{} {
 	}
 }
 
-func (this *Int64) Equal(other interface{}) bool { return *this == *other.(*Int64) }
-func (this *Int64) IsNumeric() bool              { return true }
-func (this *Int64) IsCommutative() bool          { return true }
-func (this *Int64) IsBounded() bool              { return this.min != math.MinInt64 || this.max != math.MaxInt64 }
+func (this *Int64) Equal(other any) bool { return *this == *other.(*Int64) }
+func (this *Int64) IsNumeric() bool      { return true }
+func (this *Int64) IsCommutative() bool  { return true }
+func (this *Int64) IsBounded() bool      { return this.min != math.MinInt64 || this.max != math.MaxInt64 }
 
-func (this *Int64) Value() interface{} { return this.value }
-func (this *Int64) Delta() interface{} { return this.delta }
-func (this *Int64) DeltaSign() bool    { return this.delta >= 0 }
-func (this *Int64) Min() interface{}   { return this.min }
-func (this *Int64) Max() interface{}   { return this.max }
+func (this *Int64) Value() any      { return this.value }
+func (this *Int64) Delta() any      { return this.delta }
+func (this *Int64) DeltaSign() bool { return this.delta >= 0 }
+func (this *Int64) Min() any        { return this.min }
+func (this *Int64) Max() any        { return this.max }
 
-func (this *Int64) CloneDelta() interface{}         { return (this.delta) }
-func (this *Int64) SetValue(v interface{})          { this.value = v.(int64) }
-func (this *Int64) Preload(_ string, _ interface{}) {}
+func (this *Int64) CloneDelta() any         { return (this.delta) }
+func (this *Int64) SetValue(v any)          { this.value = v.(int64) }
+func (this *Int64) Preload(_ string, _ any) {}
 
-func (this *Int64) IsDeltaApplied() bool       { return this.delta == 0 }
-func (this *Int64) ResetDelta()                { this.delta = 0 }
-func (this *Int64) SetDelta(v interface{})     { this.delta = (v.(int64)) }
-func (this *Int64) SetDeltaSign(v interface{}) {}
-func (this *Int64) SetMin(v interface{})       { this.min = v.(int64) }
-func (this *Int64) SetMax(v interface{})       { this.max = v.(int64) }
+func (this *Int64) IsDeltaApplied() bool { return this.delta == 0 }
+func (this *Int64) ResetDelta()          { this.delta = 0 }
+func (this *Int64) SetDelta(v any)       { this.delta = (v.(int64)) }
+func (this *Int64) SetDeltaSign(v any)   {}
+func (this *Int64) SetMin(v any)         { this.min = v.(int64) }
+func (this *Int64) SetMax(v any)         { this.max = v.(int64) }
 
-func (this *Int64) MemSize() uint64                                            { return 5 * 8 }
-func (this *Int64) TypeID() uint8                                              { return INT64 }
-func (this *Int64) IsSelf(key interface{}) bool                                { return true }
-func (this *Int64) CopyTo(v interface{}) (interface{}, uint32, uint32, uint32) { return v, 0, 1, 0 }
+func (this *Int64) MemSize() uint64                            { return 5 * 8 }
+func (this *Int64) TypeID() uint8                              { return INT64 }
+func (this *Int64) IsSelf(key any) bool                        { return true }
+func (this *Int64) CopyTo(v any) (any, uint32, uint32, uint32) { return v, 0, 1, 0 }
 func (this *Int64) Reset() {
 	this.value = 0
 	this.delta = 0
 }
 
-func (this *Int64) Get() (interface{}, uint32, uint32) {
+func (this *Int64) Get() (any, uint32, uint32) {
 	return int64(this.value + this.delta), 1, common.IfThen(this.delta == 0, uint32(0), uint32(1))
 }
 
-func (this *Int64) Set(v interface{}, source interface{}) (interface{}, uint32, uint32, uint32, error) {
+func (this *Int64) Set(v any, source any) (any, uint32, uint32, uint32, error) {
 	if this.isUnderflow(int64(v.(*Int64).delta)) || this.isOverflow(int64(v.(*Int64).delta)) {
 		return this, 0, 1, 0, errors.New("Error: Value out of range!!")
 	}
