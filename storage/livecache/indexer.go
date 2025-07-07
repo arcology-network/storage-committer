@@ -20,7 +20,7 @@ import (
 	"runtime"
 
 	"github.com/arcology-network/common-lib/exp/slice"
-	stgtype "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/type/univalue"
 )
 
@@ -30,7 +30,7 @@ type CacheIndexer struct {
 	buffer       []*univalue.Univalue
 	importBuffer []*univalue.Univalue
 	keys         []string
-	values       []stgtype.Type
+	values       []stgcommon.Type
 }
 
 func NewCacheIndexer(store *LiveCache, Version int64) *CacheIndexer {
@@ -38,7 +38,7 @@ func NewCacheIndexer(store *LiveCache, Version int64) *CacheIndexer {
 		Version:      Version,
 		importBuffer: []*univalue.Univalue{},
 		keys:         []string{},
-		values:       []stgtype.Type{},
+		values:       []stgcommon.Type{},
 	}
 }
 
@@ -57,10 +57,10 @@ func (this *CacheIndexer) Finalize() {
 	slice.RemoveIf((*[]*univalue.Univalue)(&this.buffer), func(i int, v *univalue.Univalue) bool { return v.GetPath() == nil })
 
 	this.keys = make([]string, len(this.buffer))
-	this.values = slice.ParallelTransform(this.buffer, runtime.NumCPU(), func(i int, v *univalue.Univalue) stgtype.Type {
+	this.values = slice.ParallelTransform(this.buffer, runtime.NumCPU(), func(i int, v *univalue.Univalue) stgcommon.Type {
 		this.keys[i] = *v.GetPath()
 		if v.Value() != nil {
-			return v.Value().(stgtype.Type)
+			return v.Value().(stgcommon.Type)
 		}
 		return nil // A deletion
 	})
@@ -81,7 +81,7 @@ func (this *CacheIndexer) Merge(idxers []*CacheIndexer) *CacheIndexer {
 
 	// this.values = slice.ConcateDo(idxers,
 	// 	func(idxer *CacheIndexer) uint64 { return uint64(len(idxer.values)) },
-	// 	func(idxer *CacheIndexer) []stgtype.Type { return idxer.values })
+	// 	func(idxer *CacheIndexer) []stgcommon.Type { return idxer.values })
 
 	return this
 }

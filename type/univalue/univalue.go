@@ -205,7 +205,7 @@ func (this *Univalue) Set(tx uint64, path string, newV any, inCache bool, import
 	this.reads += r
 	this.deltaWrites += dw
 
-	if newV == nil && this.Value().(intf.Type).IsSelf(path) { // Delete the entry but keep the access record.
+	if newV == nil && this.Value().(intf.Type).CanApply(path) { // Delete the entry but keep the access record.
 		this.vType = uint8(reflect.Invalid)
 		this.value = newV // Delete the value
 		this.writes++
@@ -285,12 +285,17 @@ func (this *Univalue) IsNilInitOnly() bool {
 // Commutative write is no longer treated as a conflict with read.
 // Write without read happens when a new value is created.
 func (this *Univalue) IsCumulativeWriteOnly(other *Univalue) bool {
+	if this.Value() == nil {
+		return false
+	}
+
+	min, max := this.Value().(intf.Type).Limits()
+	otherMin, otherMax := other.Value().(intf.Type).Limits()
 	return this.reads == 0 &&
-		this.Value() != nil &&
 		this.Value().(intf.Type).IsCommutative() &&
 		this.Value().(intf.Type).IsNumeric() &&
-		this.Value().(intf.Type).Min() == other.Value().(intf.Type).Min() &&
-		this.Value().(intf.Type).Max() == other.Value().(intf.Type).Max() &&
+		min == otherMin &&
+		max == otherMax &&
 		this.Reads() == 0
 }
 

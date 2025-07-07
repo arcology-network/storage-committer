@@ -22,8 +22,7 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/slice"
 	intf "github.com/arcology-network/storage-committer/common"
-	stgcommcommon "github.com/arcology-network/storage-committer/common"
-	stgtype "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	univalue "github.com/arcology-network/storage-committer/type/univalue"
 )
 
@@ -35,11 +34,11 @@ func (this DeltaSequence) sort() DeltaSequence {
 	}
 
 	sort.SliceStable(this, func(i, j int) bool {
-		if this[i].GetTx() == stgcommcommon.SYSTEM {
+		if this[i].GetTx() == stgcommon.SYSTEM {
 			return true
 		}
 
-		if this[j].GetTx() == stgcommcommon.SYSTEM {
+		if this[j].GetTx() == stgcommon.SYSTEM {
 			return false
 		}
 		return this[i].GetTx() < this[j].GetTx()
@@ -77,9 +76,9 @@ func (this DeltaSequence) Finalized() *univalue.Univalue { return this[0] }
 
 type DeltaSequencesV2 []DeltaSequence
 
-func (this DeltaSequencesV2) Finalized() []stgtype.Type {
-	return slice.Transform(this, func(_ int, v DeltaSequence) stgtype.Type {
-		return v[0].Value().(stgtype.Type)
+func (this DeltaSequencesV2) Finalized() []stgcommon.Type {
+	return slice.Transform(this, func(_ int, v DeltaSequence) stgcommon.Type {
+		return v[0].Value().(stgcommon.Type)
 	})
 }
 

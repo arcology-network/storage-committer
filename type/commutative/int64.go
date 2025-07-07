@@ -22,7 +22,7 @@ import (
 	"math"
 
 	"github.com/arcology-network/common-lib/common"
-	stgintf "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 )
 
 type Int64 struct {
@@ -72,26 +72,23 @@ func (this *Int64) IsNumeric() bool      { return true }
 func (this *Int64) IsCommutative() bool  { return true }
 func (this *Int64) IsBounded() bool      { return this.min != math.MinInt64 || this.max != math.MaxInt64 }
 
-func (this *Int64) Value() any      { return this.value }
-func (this *Int64) Delta() any      { return this.delta }
-func (this *Int64) DeltaSign() bool { return this.delta >= 0 }
-func (this *Int64) Min() any        { return this.min }
-func (this *Int64) Max() any        { return this.max }
+func (this *Int64) Value() any         { return this.value }
+func (this *Int64) Delta() (any, bool) { return this.delta, this.delta >= 0 }
+func (this *Int64) DeltaSign() bool    { return this.delta >= 0 }
+func (this *Int64) Limits() (any, any) { return this.min, this.max }
 
-func (this *Int64) CloneDelta() any         { return (this.delta) }
+func (this *Int64) CloneDelta() (any, bool) { return (this.delta), this.delta >= 0 }
 func (this *Int64) SetValue(v any)          { this.value = v.(int64) }
 func (this *Int64) Preload(_ string, _ any) {}
 
-func (this *Int64) IsDeltaApplied() bool { return this.delta == 0 }
-func (this *Int64) ResetDelta()          { this.delta = 0 }
-func (this *Int64) SetDelta(v any)       { this.delta = (v.(int64)) }
-func (this *Int64) SetDeltaSign(v any)   {}
-func (this *Int64) SetMin(v any)         { this.min = v.(int64) }
-func (this *Int64) SetMax(v any)         { this.max = v.(int64) }
+func (this *Int64) IsDeltaApplied() bool   { return this.delta == 0 }
+func (this *Int64) ResetDelta()            { this.delta = 0 }
+func (this *Int64) SetDelta(v any, _ bool) { this.delta = (v.(int64)) }
+func (this *Int64) SetDeltaSign(v any)     {}
 
 func (this *Int64) MemSize() uint64                            { return 5 * 8 }
 func (this *Int64) TypeID() uint8                              { return INT64 }
-func (this *Int64) IsSelf(key any) bool                        { return true }
+func (this *Int64) CanApply(key any) bool                      { return true }
 func (this *Int64) CopyTo(v any) (any, uint32, uint32, uint32) { return v, 0, 1, 0 }
 func (this *Int64) Reset() {
 	this.value = 0
@@ -128,16 +125,10 @@ func (this *Int64) isUnderflow(delta int64) bool {
 		(this.min > delta || flag)
 }
 
-func (this *Int64) ApplyDelta(typedVals []stgintf.Type) (stgintf.Type, int, error) {
-	// vec := v.([]*univalue.Univalue)
+func (this *Int64) ApplyDelta(typedVals []stgcommon.Type) (stgcommon.Type, int, error) {
 	for i, v := range typedVals {
-		// v := typedVals[i].Value()
 		if this == nil && v != nil { // New value
 			this = v.(*Int64)
-		}
-
-		if this == nil && v == nil {
-			this = nil
 		}
 
 		if this != nil && v != nil {

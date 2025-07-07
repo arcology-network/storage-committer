@@ -18,7 +18,6 @@
 package commutative
 
 const (
-	UNKNOWN uint8 = 0
 	PATH    uint8 = 100
 	INT64   uint8 = 101
 	UINT64  uint8 = 102

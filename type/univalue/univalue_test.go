@@ -24,7 +24,7 @@ import (
 	"github.com/arcology-network/common-lib/addrcompressor"
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
-	stgintf "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
 	"github.com/holiman/uint256"
 )
@@ -85,9 +85,12 @@ func TestUnivalueCodecU256(t *testing.T) {
 	raw := in.Value().(*commutative.U256).Value().(uint256.Int)
 
 	outV := out.(*commutative.U256).Value().(uint256.Int)
-	deltaV := in.Value().(*commutative.U256).Delta().(uint256.Int)
+	dv, _ := in.Value().(*commutative.U256).Delta()
+	deltaV := dv.(uint256.Int)
 
-	otherv := out.(*commutative.U256).Delta().(uint256.Int)
+	odv, _ := out.(*commutative.U256).Delta()
+	otherv := odv.(uint256.Int)
+
 	flag := (&deltaV).Cmp(&(otherv)) != 0
 	if raw.Cmp((*uint256.Int)(&outV)) != 0 || flag {
 		t.Error("Error")
@@ -124,11 +127,11 @@ func TestUnivalueCodeMeta(t *testing.T) {
 	in.writes = 2
 	in.deltaWrites = 3
 
-	inKeys, _, _ := in.Value().(stgintf.Type).Get()
+	inKeys, _, _ := in.Value().(stgcommon.Type).Get()
 
 	bytes := in.Encode()
 	out := (&Univalue{}).Decode(bytes).(*Univalue)
-	outKeys, _, _ := out.Value().(stgintf.Type).Get()
+	outKeys, _, _ := out.Value().(stgcommon.Type).Get()
 
 	if !slice.EqualSet(inKeys.(*deltaset.DeltaSet[string]).Elements(), outKeys.(*deltaset.DeltaSet[string]).Elements()) {
 		t.Error("Error")

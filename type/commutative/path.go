@@ -24,7 +24,7 @@ import (
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/orderedset"
 	"github.com/arcology-network/common-lib/exp/slice"
-	stgintf "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 )
 
 // The Path type is a special commutative type that represents a path in the concurrent storage.
@@ -38,7 +38,7 @@ type Path struct {
 	Type uint8
 }
 
-func NewPath(newPaths ...string) stgintf.Type {
+func NewPath(newPaths ...string) stgcommon.Type {
 	this := &Path{
 		Type:     0, // The default data type is 0. It can store multiple types of data in the same path.
 		DeltaSet: deltaset.NewDeltaSet("", 1000, nil, newPaths...),
@@ -50,7 +50,7 @@ func (this *Path) Length() int                                { return int(this.
 func (this *Path) View() *deltaset.DeltaSet[string]           { return this.DeltaSet }
 func (this *Path) MemSize() uint64                            { return uint64(this.DeltaSet.NonNilCount()) * 32 * 2 } // Just an estimate, need to update on fly instead of calculating everytime
 func (this *Path) TypeID() uint8                              { return PATH }
-func (this *Path) IsSelf(key any) bool                        { return common.IsPath(key.(string)) }
+func (this *Path) CanApply(key any) bool                      { return common.IsPath(key.(string)) }
 func (this *Path) CopyTo(v any) (any, uint32, uint32, uint32) { return v, 0, 1, 0 }
 
 func (this *Path) IsNumeric() bool         { return false }
@@ -58,21 +58,20 @@ func (this *Path) IsCommutative() bool     { return true }
 func (this *Path) IsIdempotent(v any) bool { return false } // To expensive to check, so we just return false.
 func (this *Path) IsBounded() bool         { return true }
 
-func (this *Path) Value() any      { return this.DeltaSet.Committed() }
-func (this *Path) Delta() any      { return this.DeltaSet.Delta() }
-func (this *Path) DeltaSign() bool { return true }
-func (this *Path) Min() any        { return nil }
-func (this *Path) Max() any        { return nil }
+func (this *Path) Value() any { return this.DeltaSet.Committed() }
+func (this *Path) Delta() (any, bool) {
+	return this.DeltaSet.Delta(), (this.DeltaSet.SizeAdded() - this.DeltaSet.SizeRemoved()) > 0
+}
 
-func (this *Path) CloneDelta() any { return this.DeltaSet.CloneDelta() }
+func (this *Path) Limits() (any, any) { return nil, nil }
 
-func (this *Path) IsDeltaApplied() bool { return this.IsDirty() }
-func (this *Path) SetValue(v any)       { this.DeltaSet = v.(*deltaset.DeltaSet[string]) }
-func (this *Path) ResetDelta()          { this.DeltaSet.ResetDelta() }
-func (this *Path) SetDelta(v any)       { this.DeltaSet.SetDelta(v.(*deltaset.DeltaSet[string])) }
-func (this *Path) SetDeltaSign(v any)   {}
-func (this *Path) SetMin(v any)         {}
-func (this *Path) SetMax(v any)         {}
+func (this *Path) CloneDelta() (any, bool) { return this.DeltaSet.CloneDelta(), true }
+
+func (this *Path) IsDeltaApplied() bool   { return this.IsDirty() }
+func (this *Path) SetValue(v any)         { this.DeltaSet = v.(*deltaset.DeltaSet[string]) }
+func (this *Path) ResetDelta()            { this.DeltaSet.ResetDelta() }
+func (this *Path) SetDelta(v any, _ bool) { this.DeltaSet.SetDelta(v.(*deltaset.DeltaSet[string])) }
+func (this *Path) SetDeltaSign(v any)     {}
 
 func (this *Path) Preload(k string, arg any) {
 	if this.preloaded != nil { // Already preloaded
@@ -122,7 +121,7 @@ func Swap[T any](lhv, rhv *T) {
 }
 
 // ApplyDelta applies all the deltas from the non-conflicting transitions to the original value and returns the new value.
-func (this *Path) ApplyDelta(typedVals []stgintf.Type) (stgintf.Type, int, error) {
+func (this *Path) ApplyDelta(typedVals []stgcommon.Type) (stgcommon.Type, int, error) {
 	if idx, _ := slice.FindFirst(typedVals, nil); idx >= 0 {
 		return nil, 1, nil //This is a deletion and when this is true, the number of write operations is 1.
 	}
@@ -132,14 +131,14 @@ func (this *Path) ApplyDelta(typedVals []stgintf.Type) (stgintf.Type, int, error
 	if this.preloaded != nil {
 		this.DeltaSet.SetCommitted(this.preloaded) // Set the preloaded value to the committed value so the delta set can be applied on.
 	} else {
-		if idx, v := slice.FindFirstIf(typedVals, func(_ int, v stgintf.Type) bool { return v.(*Path).preloaded != nil }); idx >= 0 {
+		if idx, v := slice.FindFirstIf(typedVals, func(_ int, v stgcommon.Type) bool { return v.(*Path).preloaded != nil }); idx >= 0 {
 			common.Swap(&this.preloaded, &(*v).(*Path).preloaded)
 			this.DeltaSet.SetCommitted(this.preloaded)
 		}
 		// If no ones has the preloaded value, then this is a new path, no preloaded value
 	}
 
-	deltaSets := slice.Transform(typedVals, func(_ int, v stgintf.Type) *deltaset.DeltaSet[string] { return v.(*Path).DeltaSet })
+	deltaSets := slice.Transform(typedVals, func(_ int, v stgcommon.Type) *deltaset.DeltaSet[string] { return v.(*Path).DeltaSet })
 	this.Commit(deltaSets) // Apply the delta sets to the committed value，including its own delta set.
 	return this, len(typedVals), nil
 }
@@ -208,7 +207,7 @@ func (this *Path) ShortHash() (uint64, bool) {
 
 // For Debug
 func (this *Path) SetSubPaths(keys []string)   { this.DeltaSet.InsertCommitted(keys) }
-func (this *Path) SetAdded(keys []string)      { this.DeltaSet.InsertUpdated(keys) }
+func (this *Path) SetAdded(keys []string)      { this.DeltaSet.InsertAdded(keys) }
 func (this *Path) InsertRemoved(keys []string) { this.DeltaSet.InsertRemoved(keys) }
 
 func (this *Path) Keys() []string { // Committed keys
@@ -216,7 +215,7 @@ func (this *Path) Keys() []string { // Committed keys
 }
 
 func (this *Path) Added() []string {
-	return common.IfThenDo1st(this.DeltaSet.Updated() != nil, func() []string { return this.DeltaSet.Updated().Elements() }, []string{})
+	return common.IfThenDo1st(this.DeltaSet.Added() != nil, func() []string { return this.DeltaSet.Added().Elements() }, []string{})
 }
 
 func (this *Path) Removed() []string {

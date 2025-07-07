@@ -23,7 +23,7 @@ import (
 
 	codec "github.com/arcology-network/common-lib/codec"
 	common "github.com/arcology-network/common-lib/common"
-	stgintf "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 )
 
 // type Selector []bool
@@ -35,10 +35,10 @@ type Uint64 struct {
 	max   uint64
 }
 
-func NewUnboundedUint64() stgintf.Type         { return &Uint64{min: 0, max: math.MaxUint64} }
-func NewUint64Delta(delta uint64) stgintf.Type { return &Uint64{delta: delta} }
+func NewUnboundedUint64() stgcommon.Type         { return &Uint64{min: 0, max: math.MaxUint64} }
+func NewUint64Delta(delta uint64) stgcommon.Type { return &Uint64{delta: delta} }
 
-func NewBoundedUint64(min, max uint64) stgintf.Type {
+func NewBoundedUint64(min, max uint64) stgcommon.Type {
 	if max >= min {
 		return &Uint64{min: min, max: max}
 	}
@@ -70,26 +70,22 @@ func (this *Uint64) IsNumeric() bool     { return true }
 func (this *Uint64) IsCommutative() bool { return true }
 func (this *Uint64) IsBounded() bool     { return this.min != 0 || this.max != math.MaxInt64 }
 
-func (this *Uint64) Value() any      { return this.value }
-func (this *Uint64) Delta() any      { return this.delta }
-func (this *Uint64) DeltaSign() bool { return true }
-func (this *Uint64) Min() any        { return this.min }
-func (this *Uint64) Max() any        { return this.max }
+func (this *Uint64) Value() any         { return this.value }
+func (this *Uint64) Delta() (any, bool) { return this.delta, true }
+func (this *Uint64) DeltaSign() bool    { return true }
+func (this *Uint64) Limits() (any, any) { return this.min, this.max }
 
 func (this *Uint64) Reset()                  { this.delta = 0 }
 func (this *Uint64) IsDeltaApplied() bool    { return this.delta == 0 }
-func (this *Uint64) CloneDelta() any         { return this.delta }
-func (this *Uint64) ResetDelta()             { this.SetDelta(common.New[codec.Uint64](0)) }
+func (this *Uint64) CloneDelta() (any, bool) { return this.delta, true }
+func (this *Uint64) ResetDelta()             { this.SetDelta(common.New[codec.Uint64](0), true) }
 func (this *Uint64) Preload(_ string, _ any) {}
 
-func (this *Uint64) SetValue(v any)     { this.value = v.(uint64) }
-func (this *Uint64) SetDelta(v any)     { this.delta = v.(uint64) }
-func (this *Uint64) SetDeltaSign(v any) {}
-func (this *Uint64) SetMin(v any)       { this.min = v.(uint64) }
-func (this *Uint64) SetMax(v any)       { this.max = v.(uint64) }
+func (this *Uint64) SetValue(v any)            { this.value = v.(uint64) }
+func (this *Uint64) SetDelta(v any, sign bool) { this.delta = v.(uint64) }
 
 func (this *Uint64) TypeID() uint8                              { return UINT64 }
-func (this *Uint64) IsSelf(key any) bool                        { return true }
+func (this *Uint64) CanApply(key any) bool                      { return true }
 func (this *Uint64) CopyTo(v any) (any, uint32, uint32, uint32) { return v, 0, 1, 0 }
 
 func (this *Uint64) Get() (any, uint32, uint32) {
@@ -105,16 +101,12 @@ func (this *Uint64) Set(v any, source any) (any, uint32, uint32, uint32, error) 
 	return this, 0, 0, 1, nil
 }
 
-func (this *Uint64) ApplyDelta(typedVals []stgintf.Type) (stgintf.Type, int, error) {
-	// vec := v.([]*univalue.Univalue)
+func (this *Uint64) ApplyDelta(typedVals []stgcommon.Type) (stgcommon.Type, int, error) {
+
 	for i, v := range typedVals {
-		// v := vec[i].Value()
+
 		if this == nil && v != nil { // New value
 			this = v.(*Uint64)
-		}
-
-		if this == nil && v == nil {
-			this = nil
 		}
 
 		if this != nil && v != nil {

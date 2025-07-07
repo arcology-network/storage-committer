@@ -44,7 +44,7 @@ type WriteCache struct {
 
 // NewWriteCache creates a new instance of WriteCache; the backend can be another instance of WriteCache,
 // resulting in a cascading-like structure.
-func NewWriteCache(backend stgcommon.ReadOnlyStore, perPage int, numPages int, args ...interface{}) *WriteCache {
+func NewWriteCache(backend stgcommon.ReadOnlyStore, perPage int, numPages int, args ...any) *WriteCache {
 	return &WriteCache{
 		backend:  backend,
 		kvDict:   make(map[string]*univalue.Univalue),
@@ -62,7 +62,7 @@ func (this *WriteCache) SetReadOnlyBackend(backend stgcommon.ReadOnlyStore) *Wri
 
 func (this *WriteCache) ReadOnlyStore() stgcommon.ReadOnlyStore { return this.backend }
 func (this *WriteCache) Cache() *map[string]*univalue.Univalue  { return &this.kvDict }
-func (this *WriteCache) Preload([]byte) interface{}             { return nil } // Placeholder
+func (this *WriteCache) Preload([]byte) any                     { return nil } // Placeholder
 func (this *WriteCache) NewUnivalue() *univalue.Univalue        { return this.pool.New() }
 
 // If the access has been recorded
@@ -142,7 +142,7 @@ func (this *WriteCache) WritePersistent(tx uint64, path string, newVal any, args
 }
 
 // Get the raw value directly, skip the access counting at the univalue level
-func (this *WriteCache) InCache(path string) (interface{}, bool) {
+func (this *WriteCache) InCache(path string) (any, bool) {
 	univ, ok := this.kvDict[path]
 	return univ, ok
 }
@@ -171,7 +171,7 @@ func (this *WriteCache) GetFromStore(tx uint64, path string, T any) *univalue.Un
 }
 
 // This function specifically retrieves the value from the backend without any tracking.
-func (this *WriteCache) RetriveFromStorage(key string, T any) (interface{}, error) {
+func (this *WriteCache) RetriveFromStorage(key string, T any) (any, error) {
 	if this.backend == nil {
 		return nil, errors.New("Error: The backend is nil")
 	}
@@ -180,7 +180,7 @@ func (this *WriteCache) RetriveFromStorage(key string, T any) (interface{}, erro
 
 // Get the raw value directly whichout tracking the accessing record.
 // Users need to track the access count themselves.
-func (this *WriteCache) Retrive(path string, T any) (interface{}, error) {
+func (this *WriteCache) Retrive(path string, T any) (any, error) {
 	typedv, _ := this.Find(stgcommon.SYSTEM, path, T)
 	if typedv == nil || typedv.(stgcommon.Type).IsDeltaApplied() {
 		return typedv, nil
@@ -196,7 +196,8 @@ func (this *WriteCache) Retrive(path string, T any) (interface{}, error) {
 
 	// Make a Deep copy of the original value.
 	rawv, _, _ := typedv.(stgcommon.Type).Get()
-	return typedv.(stgcommon.Type).New(rawv, nil, nil, typedv.(stgcommon.Type).Min(), typedv.(stgcommon.Type).Max()), nil // Clone the value
+	min, max := typedv.(stgcommon.Type).Limits()
+	return typedv.(stgcommon.Type).New(rawv, nil, nil, min, max), nil // Clone the value
 }
 
 // Check if the path exists in the writecache or the backend.
@@ -351,7 +352,7 @@ func (this *WriteCache) Checksum() [32]byte {
 
 // Read the value from the writecache or the backend. This function is used for
 // GetCommittedState() in Eth interface. It is used in gas refund related code.
-func (this *WriteCache) ReadCommitted(tx uint64, key string, T any) (interface{}, uint64) {
+func (this *WriteCache) ReadCommitted(tx uint64, key string, T any) (any, uint64) {
 	// Just to leave a record for conflict detection. This is different from the original Ethereum implementation.
 	// In Ethereum, there is no such concept as the multiprocessor，so the committed state can only come from the
 	// previous block or the transactions before the current one. But in the multiprocessor, the committed state

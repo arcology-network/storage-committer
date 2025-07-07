@@ -23,7 +23,7 @@ import (
 	addrcompressor "github.com/arcology-network/common-lib/addrcompressor"
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
-	stgintf "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
 
 	"github.com/holiman/uint256"
@@ -108,11 +108,11 @@ func TestUnivaluesCodeMeta(t *testing.T) {
 	// in.writes = 2
 	// in.deltaWrites = 3
 
-	inKeys, _, _ := in.Value().(stgintf.Type).Get()
+	inKeys, _, _ := in.Value().(stgcommon.Type).Get()
 
 	bytes := in.Encode()
 	out := (&Univalue{}).Decode(bytes).(*Univalue)
-	outSet, _, _ := out.Value().(stgintf.Type).Get()
+	outSet, _, _ := out.Value().(stgcommon.Type).Get()
 
 	if !slice.EqualSet(inKeys.(*deltaset.DeltaSet[string]).Elements(), outSet.(*deltaset.DeltaSet[string]).Elements()) {
 		t.Error("Error")

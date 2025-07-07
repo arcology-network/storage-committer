@@ -19,7 +19,7 @@ package univalue
 
 import (
 	"github.com/arcology-network/common-lib/common"
-	stgintf "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 )
 
 // IPAccess is purely for inter-process communication, the valuee get copied in
@@ -38,7 +38,7 @@ func (this IPAccess) From(v *Univalue) *Univalue {
 		return v
 	}
 
-	value := v.Value().(stgintf.Type)
+	value := v.Value().(stgcommon.Type)
 
 	return v.New(
 		&v.Property,
@@ -67,14 +67,16 @@ func (this ITAccess) From(v *Univalue) *Univalue {
 		return value
 	}
 
-	typed := value.Value().(stgintf.Type)
+	typed := value.Value().(stgcommon.Type)
+	delta, sign := typed.Delta()
+	min, max := typed.Limits()
 	newv := typed.New(
 		nil,
-		typed.Delta(),
-		typed.DeltaSign(),
-		typed.Min(),
-		typed.Max(),
-	).(stgintf.Type)
+		delta,
+		sign,
+		min,
+		max,
+	).(stgcommon.Type)
 
 	if typed.IsCommutative() && typed.IsNumeric() { // For the accumulator, commutative u64 & U256
 		newv.SetValue(typed.Value())

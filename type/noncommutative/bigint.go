@@ -38,7 +38,7 @@ func NewBigint(v int64) any {
 }
 
 func (this *Bigint) MemSize() uint64                            { return uint64((*big.Int)(this).BitLen()) }
-func (this *Bigint) IsSelf(key any) bool                        { return true }
+func (this *Bigint) CanApply(key any) bool                      { return true }
 func (this *Bigint) TypeID() uint8                              { return BIGINT }
 func (this *Bigint) CopyTo(v any) (any, uint32, uint32, uint32) { return v, 0, 1, 0 }
 
@@ -55,23 +55,18 @@ func (this *Bigint) IsNumeric() bool     { return true }
 func (this *Bigint) IsCommutative() bool { return false }
 func (this *Bigint) IsBounded() bool     { return false }
 
-func (this *Bigint) Value() any      { return (this) }
-func (this *Bigint) Delta() any      { return (this) }
-func (this *Bigint) DeltaSign() bool { return true } // delta sign
-func (this *Bigint) Min() any        { return nil }
-func (this *Bigint) Max() any        { return nil }
+func (this *Bigint) Value() any         { return (this) }
+func (this *Bigint) Delta() (any, bool) { return this, (*big.Int)(this).Sign() > 0 }
+func (this *Bigint) Limits() (any, any) { return nil, nil }
 
-func (this *Bigint) CloneDelta() any { return this.Clone() }
+func (this *Bigint) CloneDelta() (any, bool) { return this.Clone(), (*big.Int)(this).Sign() > 0 }
 
-func (this *Bigint) SetValue(v any)          { this.SetDelta(v) }
+func (this *Bigint) SetValue(v any)          { this.SetDelta(v, true) } // The sign is only a placeholder, the value carries the sign by itself.
 func (this *Bigint) Preload(_ string, _ any) {}
 
-func (this *Bigint) IsDeltaApplied() bool { return true }
-func (this *Bigint) ResetDelta()          { this.SetDelta(big.NewInt(0)) }
-func (this *Bigint) SetDelta(v any)       { (*big.Int)(this).Set((*big.Int)(v.(*Bigint))) }
-func (this *Bigint) SetDeltaSign(v any)   {}
-func (this *Bigint) SetMin(v any)         {}
-func (this *Bigint) SetMax(v any)         {}
+func (this *Bigint) IsDeltaApplied() bool   { return true }
+func (this *Bigint) ResetDelta()            { this.SetDelta(big.NewInt(0), true) }
+func (this *Bigint) SetDelta(v any, _ bool) { (*big.Int)(this).Set((*big.Int)(v.(*Bigint))) }
 
 func (this *Bigint) Get() (any, uint32, uint32) { return *((*big.Int)(this)), 1, 0 }
 
@@ -87,15 +82,9 @@ func (this *Bigint) Set(value any, _ any) (any, uint32, uint32, uint32, error) {
 }
 
 func (this *Bigint) ApplyDelta(typedVals []intf.Type) (intf.Type, int, error) {
-	// vec := v.([]*univalue.Univalue)
 	for _, v := range typedVals {
-		// v := vec[i].Value()
 		if this == nil && v != nil { // New value
 			this = v.(*Bigint)
-		}
-
-		if this == nil && v == nil {
-			this = nil
 		}
 
 		if this != nil && v != nil {

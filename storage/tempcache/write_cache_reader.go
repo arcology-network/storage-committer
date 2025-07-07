@@ -27,7 +27,6 @@ import (
 	common "github.com/arcology-network/common-lib/common"
 	deltaset "github.com/arcology-network/common-lib/exp/deltaset"
 	stgcommon "github.com/arcology-network/storage-committer/common"
-	stgtype "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/type/commutative"
 	"github.com/arcology-network/storage-committer/type/univalue"
 )
@@ -84,7 +83,7 @@ func (this *WriteCache) PeekRaw(path string, T any) (any, uint64) {
 	if v == nil {
 		return nil, stgcommon.MIN_READ_SIZE
 	}
-	return v, v.(stgtype.Type).MemSize()
+	return v, v.(stgcommon.Type).MemSize()
 }
 
 // // Peek the value under a path. The difference between Peek and Read is that Peek does not have access metadata attached.
@@ -97,7 +96,7 @@ func (this *WriteCache) PeekRaw(path string, T any) (any, uint64) {
 // This function looks up the committed value in the DB instead of the cache.
 func (this *WriteCache) PeekCommitted(path string, T any) (any, uint64) {
 	v, _ := this.backend.Retrive(path, T)
-	return v, v.(stgtype.Type).MemSize()
+	return v, v.(stgcommon.Type).MemSize()
 }
 
 // This function looks up the value and carries out the operation on the value directly.

@@ -18,7 +18,7 @@
 package ethplatform
 
 import (
-	stgintf "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
 	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
 )
@@ -33,8 +33,8 @@ func (Codec) Encode(_ string, value interface{}) []byte {
 		return []byte{} // Deletion
 	}
 
-	encoded := value.(stgintf.Type).Encode()
-	encoded = append(encoded, value.(stgintf.Type).TypeID())
+	encoded := value.(stgcommon.Type).Encode()
+	encoded = append(encoded, value.(stgcommon.Type).TypeID())
 	return encoded
 }
 

@@ -20,9 +20,6 @@ package commutative
 import (
 	"testing"
 
-	"github.com/arcology-network/common-lib/common"
-	stgintf "github.com/arcology-network/storage-committer/common"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/holiman/uint256"
 )
 
@@ -186,24 +183,4 @@ func TestCodec(t *testing.T) {
 		!out.max.Eq((&U256_MAX)) {
 		t.Error("Error: Out of range, should have failed")
 	}
-}
-
-type Rlp struct {
-	Val any
-	Min any
-	Max any
-}
-
-func (this Rlp) Encode(v any) []byte {
-	this.Val = v.(stgintf.Type).Value()
-	if !v.(stgintf.Type).IsBounded() {
-		this.Min = v.(stgintf.Type).Min()
-		this.Max = v.(stgintf.Type).Max()
-	}
-	buffer := common.FilterFirst(rlp.EncodeToBytes(this))
-	return buffer
-
-	// return
-
-	// return buffer
 }
