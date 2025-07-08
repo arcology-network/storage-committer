@@ -75,7 +75,7 @@ func (this *Path) EncodeToBuffer(buffer []byte) int {
 	return offset
 }
 
-func (*Path) Decode(buffer []byte) interface{} {
+func (*Path) Decode(buffer []byte) any {
 	if len(buffer) == 0 {
 		return NewPath()
 	}
@@ -104,7 +104,7 @@ func (this *Path) StorageEncode(_ string) []byte {
 	return buffer
 }
 
-func (this *Path) StorageDecode(_ string, buffer []byte) interface{} {
+func (this *Path) StorageDecode(_ string, buffer []byte) any {
 	var decoded []byte
 	rlp.DecodeBytes(buffer, &decoded)
 	return this.Decode(decoded)

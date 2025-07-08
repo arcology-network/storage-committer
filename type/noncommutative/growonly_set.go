@@ -22,22 +22,50 @@ import (
 )
 
 type GrowonlySet struct {
-	Any[[][]byte]
+	value [][]byte
 }
 
 func NewGrowonlySet() stgcommon.Type {
 	return &GrowonlySet{
-		Any: Any[[][]byte]{
-			value: make([][]byte, 0),
-		},
+		value: make([][]byte, 0),
 	}
 }
 
-func (this *GrowonlySet) Clone() any              { return codec.Byteset(this.value).Clone() }
-func (this *GrowonlySet) CloneDelta() (any, bool) { return this.Clone(), true }
-func (this *GrowonlySet) ResetDelta()             { this.value = [][]byte{} }
-func (this *GrowonlySet) SetDelta(v any, _ bool)  { this.value = v.([][]byte) }
+func (this *GrowonlySet) New(_, delta, _, _, _ any) any {
+	set := NewGrowonlySet().(*GrowonlySet)
+	set.value = delta.([][]byte)
+	return set
+}
 
+func (this *GrowonlySet) Clone() any { return nil }
+func (this *GrowonlySet) Equal(other any) bool {
+	return codec.Byteset(this.value).Equal(other.(*GrowonlySet).value)
+}
+
+func (this *GrowonlySet) IsNumeric() bool     { return false }
+func (this *GrowonlySet) IsCommutative() bool { return true }
+func (this *GrowonlySet) IsBounded() bool     { return false }
+
+func (this *GrowonlySet) MemSize() uint64                            { return 0 }
+func (this *GrowonlySet) CanApply(v any) bool                        { return false } // If the input has the same type as this, return true
+func (this *GrowonlySet) TypeID() uint8                              { return stgcommon.UNKNOWN }
+func (this *GrowonlySet) CopyTo(v any) (any, uint32, uint32, uint32) { return v, 0, 1, 0 }
+
+func (this *GrowonlySet) Value() any         { return this.value }
+func (this *GrowonlySet) Delta() (any, bool) { return this.value, true }
+func (this *GrowonlySet) DeltaSign() bool    { return true } // delta sign
+func (this *GrowonlySet) Limits() (any, any) { return nil, nil }
+func (this *GrowonlySet) SetLimits(_, _ any) {}
+
+func (this *GrowonlySet) SetValue(v any)         { this.SetDelta(v, true) }
+func (this *GrowonlySet) ResetDelta()            { this.value = [][]byte{} }
+func (this *GrowonlySet) SetDelta(v any, _ bool) { this.value = v.([][]byte) }
+
+func (this *GrowonlySet) Preload(_ string, _ any) {}
+func (this *GrowonlySet) IsDeltaApplied() bool    { return true }
+func (this *GrowonlySet) CloneDelta() (any, bool) { return this.Clone(), true }
+
+func (this *GrowonlySet) Get() (any, uint32, uint32) { return this.value, 1, 0 }
 func (this *GrowonlySet) Set(v any, _ any) (any, uint32, uint32, uint32, error) {
 	if v == nil {
 		this.value = nil
@@ -46,6 +74,28 @@ func (this *GrowonlySet) Set(v any, _ any) (any, uint32, uint32, uint32, error) 
 
 	this.value = append(this.value, v.([]byte))
 	return this, 0, 1, 0, nil
+}
+
+func (this *GrowonlySet) ApplyDelta(typedVals []stgcommon.Type) (stgcommon.Type, int, error) {
+	for _, v := range typedVals {
+		if this == nil && v != nil { // New value
+			this.value = v.(*GrowonlySet).value
+		}
+
+		if this != nil && v != nil {
+			this.Set(v, nil)
+		}
+
+		if this != nil && v == nil {
+			this = nil
+		}
+	}
+
+	if this == nil {
+		return nil, 0, nil
+	}
+
+	return this, len(typedVals), nil
 }
 
 // Size() uint64 // Encoded size
