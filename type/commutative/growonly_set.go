@@ -14,25 +14,28 @@
 *   You should have received a copy of the GNU General Public License
 *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package noncommutative
+package commutative
 
 import (
 	"github.com/arcology-network/common-lib/codec"
 	stgcommon "github.com/arcology-network/storage-committer/common"
+	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
 )
 
 type GrowonlySet struct {
 	value [][]byte
 }
 
-func NewGrowonlySet() stgcommon.Type {
-	return &GrowonlySet{
+func NewGrowOnlySet(args ...[]byte) stgcommon.Type {
+	this := &GrowonlySet{
 		value: make([][]byte, 0),
 	}
+	this.value = append(this.value, args...)
+	return this
 }
 
 func (this *GrowonlySet) New(_, delta, _, _, _ any) any {
-	set := NewGrowonlySet().(*GrowonlySet)
+	set := NewGrowOnlySet().(*GrowonlySet)
 	set.value = delta.([][]byte)
 	return set
 }
@@ -48,7 +51,7 @@ func (this *GrowonlySet) IsBounded() bool     { return false }
 
 func (this *GrowonlySet) MemSize() uint64                            { return 0 }
 func (this *GrowonlySet) CanApply(v any) bool                        { return false } // If the input has the same type as this, return true
-func (this *GrowonlySet) TypeID() uint8                              { return stgcommon.UNKNOWN }
+func (this *GrowonlySet) TypeID() uint8                              { return GROWONLY_SET }
 func (this *GrowonlySet) CopyTo(v any) (any, uint32, uint32, uint32) { return v, 0, 1, 0 }
 
 func (this *GrowonlySet) Value() any         { return this.value }
@@ -72,7 +75,7 @@ func (this *GrowonlySet) Set(v any, _ any) (any, uint32, uint32, uint32, error) 
 		return this, 0, 1, 0, nil
 	}
 
-	this.value = append(this.value, v.([]byte))
+	this.value = append(this.value, v.(*noncommutative.Bytes).Value().(codec.Bytes))
 	return this, 0, 1, 0, nil
 }
 
