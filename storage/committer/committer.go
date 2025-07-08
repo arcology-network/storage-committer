@@ -23,7 +23,7 @@ import (
 	indexer "github.com/arcology-network/common-lib/storage/indexer"
 	stgcommon "github.com/arcology-network/storage-committer/common"
 	platform "github.com/arcology-network/storage-committer/platform"
-	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
+	cache "github.com/arcology-network/storage-committer/storage/cache"
 	"github.com/arcology-network/storage-committer/type/univalue"
 
 	mapi "github.com/arcology-network/common-lib/exp/map"
@@ -160,7 +160,7 @@ func (this *StateCommitter) SyncPrecommit() {
 func (this *StateCommitter) AsyncPrecommit() {
 	slice.ParallelForeach(this.writers, len(this.writers),
 		func(_ int, writer *stgcommon.AsyncWriter[*univalue.Univalue]) {
-			if !common.IsType[*tempcache.ExecutionCacheWriter](*writer) {
+			if !common.IsType[*cache.ExecutionCacheWriter](*writer) {
 				(*writer).Precommit(false)
 			}
 		})
@@ -179,7 +179,7 @@ func (this *StateCommitter) Commit(blockNum uint64) *StateCommitter {
 func (this *StateCommitter) SyncCommit(blockNum uint64) {
 	slice.ParallelForeach(this.writers, len(this.writers),
 		func(_ int, writer *stgcommon.AsyncWriter[*univalue.Univalue]) {
-			if common.IsType[*tempcache.ExecutionCacheWriter](*writer) || common.IsType[*livecache.LiveCacheWriter](*writer) {
+			if common.IsType[*cache.ExecutionCacheWriter](*writer) || common.IsType[*livecache.LiveCacheWriter](*writer) {
 				(*writer).Commit(blockNum)
 				return
 			}
@@ -190,7 +190,7 @@ func (this *StateCommitter) SyncCommit(blockNum uint64) {
 func (this *StateCommitter) AsyncCommit(blockNum uint64) {
 	slice.ParallelForeach(this.writers, len(this.writers),
 		func(_ int, writer *stgcommon.AsyncWriter[*univalue.Univalue]) {
-			if !common.IsType[*tempcache.ExecutionCacheWriter](*writer) && !common.IsType[*livecache.LiveCacheWriter](*writer) {
+			if !common.IsType[*cache.ExecutionCacheWriter](*writer) && !common.IsType[*livecache.LiveCacheWriter](*writer) {
 				(*writer).Commit(blockNum)
 				// fmt.Println("Commit to", (*writer).Name(), "at block", blockNum)
 				return

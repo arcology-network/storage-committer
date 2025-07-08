@@ -218,7 +218,7 @@ func (this *WriteCache) EraseAll(tx uint64, path string, T any) (any, int64, err
 		key := path + subkey // Concatenate the path and the subkey
 		writeData, err := this.Write(tx, key, nil)
 		if err != nil {
-			fmt.Printf("----------storage-committer/storage/tempcache/write_cache_reader.go----EraseAll for--key:%v--err:%v \n", key, err)
+			fmt.Printf("----------storage-committer/storage/cache/write_cache_reader.go----EraseAll for--key:%v--err:%v \n", key, err)
 			// panic(err)
 		}
 		accumWriteDataSize += writeData
