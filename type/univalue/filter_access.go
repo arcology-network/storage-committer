@@ -30,7 +30,7 @@ type IPAccess struct {
 }
 
 func (this IPAccess) From(v *Univalue) *Univalue {
-	if this.Err != nil || v.GetPersistent() || v.IsPathLookup() {
+	if this.Err != nil || v.IfSkipConflictCheck() || v.IsPathLookup() {
 		return nil
 	}
 

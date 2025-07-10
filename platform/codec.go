@@ -74,8 +74,12 @@ func (this Codec) Decode(_ string, buffer []byte, _ any) interface{} {
 	case noncommutative.INT64:
 		i64 := noncommutative.Int64(0)
 		return i64.Decode(buffer)
+
+	case commutative.GROWONLY_SET: // GrowOnlySet
+		return (&commutative.GrowOnlySet{}).Decode(buffer)
 	}
 
+	// panic("Unknown type ID: " + string(this.ID))
 	return nil
 }
 

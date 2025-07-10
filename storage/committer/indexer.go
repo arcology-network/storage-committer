@@ -59,7 +59,7 @@ func TxIndexer(_ interfaces.ReadOnlyStore) *indexer.UnorderedIndexer[uint64, *un
 	return indexer.NewUnorderedIndexer(
 		nil,
 		func(v *univalue.Univalue) (uint64, bool) {
-			if !v.GetPersistent() {
+			if !v.IfSkipConflictCheck() {
 				return v.GetTx(), true
 			}
 			return math.MaxUint32, false

@@ -51,3 +51,8 @@ func DeferrablePath(source evmcommon.Address, sourceFun [4]byte) string {
 func PrepaidGasPath(source evmcommon.Address, sourceFun [4]byte) string {
 	return FuncPropertyPath(source, sourceFun) + PREPAID_GAS
 }
+
+// The path for the prepayers that are used to pay for the prepaid gas.
+func PrepayersPath(source evmcommon.Address, sourceFun [4]byte) string {
+	return FuncPropertyPath(source, sourceFun) + PREPAYERS
+}

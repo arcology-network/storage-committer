@@ -25,24 +25,24 @@ import (
 func TestGrowonlySet(t *testing.T) {
 	set := NewGrowOnlySet()
 	if _, _, _, _, err := set.Set([]byte{1, 2, 3, 4, 5}, nil); err != nil {
-		t.Errorf("Failed to set value in GrowonlySet: %v", err)
+		t.Errorf("Failed to set value in GrowOnlySet: %v", err)
 	}
 
 	if _, _, _, _, err := set.Set([]byte{7, 8, 9, 10, 11}, nil); err != nil {
-		t.Errorf("Failed to set value in GrowonlySet: %v", err)
+		t.Errorf("Failed to set value in GrowOnlySet: %v", err)
 	}
 
 	v, _, _ := set.Get()
 	if value := v.([][]byte); !reflect.DeepEqual(value, [][]byte{{1, 2, 3, 4, 5}, {7, 8, 9, 10, 11}}) {
-		t.Errorf("GrowonlySet value mismatch: got %v, want %v", value, [][]byte{{1, 2, 3, 4, 5}, {7, 8, 9, 10, 11}})
+		t.Errorf("GrowOnlySet value mismatch: got %v, want %v", value, [][]byte{{1, 2, 3, 4, 5}, {7, 8, 9, 10, 11}})
 	}
 
 	buffer := set.Encode()
 
-	out := NewGrowOnlySet().Decode(buffer).(*GrowonlySet)
+	out := NewGrowOnlySet().Decode(buffer).(*GrowOnlySet)
 	v2, _, _ := out.Get()
 
 	if !reflect.DeepEqual(v2, [][]byte{{1, 2, 3, 4, 5}, {7, 8, 9, 10, 11}}) {
-		t.Errorf("GrowonlySet value mismatch: got %v, want %v", v2, [][]byte{{1, 2, 3, 4, 5}, {7, 8, 9, 10, 11}})
+		t.Errorf("GrowOnlySet value mismatch: got %v, want %v", v2, [][]byte{{1, 2, 3, 4, 5}, {7, 8, 9, 10, 11}})
 	}
 }

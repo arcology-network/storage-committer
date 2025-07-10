@@ -134,11 +134,11 @@ func (this *WriteCache) Write(tx uint64, path string, newVal any, args ...any) (
 	return dataSize, errors.New("Error: Unknown data type !")
 }
 
+// WritePersistent writes the value to the cache and sets the persistent flag to true to skip the conflict check.
 func (this *WriteCache) WritePersistent(tx uint64, path string, newVal any, args ...any) (int64, error) {
-	setter := func(univ *univalue.Univalue) {
-		univ.SetPersistent(true) // Set the persistent flag to true
-	}
-	return this.Write(tx, path, newVal, setter) // Write to the cache first
+	return this.Write(tx, path, newVal, func(univ *univalue.Univalue) {
+		univ.SkipConflictCheck(true) // Set the persistent flag to true
+	}) // Write to the cache first
 }
 
 // Get the raw value directly, skip the access counting at the univalue level
@@ -201,7 +201,7 @@ func (this *WriteCache) Retrive(path string, T any) (any, error) {
 }
 
 // Check if the path exists in the writecache or the backend.
-// No access count is recorded.
+// No access count is recorded. Only for internal use. Not exposed to the public API.
 func (this *WriteCache) IfExists(path string) bool {
 	if stgcommon.ETH10_ACCOUNT_PREFIX_LENGTH == len(path) {
 		return true

@@ -25,31 +25,31 @@ import (
 )
 
 type Property struct {
-	vType         uint8
-	persistent    bool    // If affected by conflict status or not.
-	tx            uint64  // Transaction ID
-	generation    uint64  // Generation ID
-	sequence      uint64  // Sequence ID
-	path          *string // Key
-	pathBytes     []byte  // for fast path comparison in sorin
-	keyHash       uint64  // keyHash of the key, for faster comparison
-	reads         uint32  // The number of reads
-	writes        uint32  // The number of writes
-	deltaWrites   uint32  // The number of delta writes
-	isDeleted     bool    // If the value is deleted. Without this the conflict detection will mixed deletes up with normal wirtes whose values are removed for serialization speed.
-	sizeInStorage uint64  // Size in storage, which is guaranteed to be committed already.
-	gasUsed       uint64  // Gas used up to this point.
-	preexists     bool    // If the key exists in the source, which can be a cache or a storage.
-	msg           string
-	reclaimFunc   func(any)
+	vType               uint8
+	ifSkipConflictCheck bool    // If affected by conflict status or not.
+	tx                  uint64  // Transaction ID
+	generation          uint64  // Generation ID
+	sequence            uint64  // Sequence ID
+	path                *string // Key
+	pathBytes           []byte  // for fast path comparison in sorin
+	keyHash             uint64  // keyHash of the key, for faster comparison
+	reads               uint32  // The number of reads
+	writes              uint32  // The number of writes
+	deltaWrites         uint32  // The number of delta writes
+	isDeleted           bool    // If the value is deleted. Without this the conflict detection will mixed deletes up with normal wirtes whose values are removed for serialization speed.
+	sizeInStorage       uint64  // Size in storage, which is guaranteed to be committed already.
+	gasUsed             uint64  // Gas used up to this point.
+	preexists           bool    // If the key exists in the source, which can be a cache or a storage.
+	msg                 string
+	reclaimFunc         func(any)
 }
 
-func NewProperty(tx uint64, key string, reads, writes uint32, deltaWrites uint32, vType uint8, persistent, preexists bool) *Property {
+func NewProperty(tx uint64, key string, reads, writes uint32, deltaWrites uint32, vType uint8, ifSkipConflictCheck, preexists bool) *Property {
 	return &Property{
-		vType:         vType,
-		sizeInStorage: 0,
-		persistent:    persistent,
-		tx:            tx,
+		vType:               vType,
+		sizeInStorage:       0,
+		ifSkipConflictCheck: ifSkipConflictCheck,
+		tx:                  tx,
 
 		path:        &key,
 		pathBytes:   unsafe.Slice(unsafe.StringData(key), len(key)),
@@ -64,7 +64,7 @@ func NewProperty(tx uint64, key string, reads, writes uint32, deltaWrites uint32
 func (this *Property) Reset() {
 	this.vType = 0
 	this.sizeInStorage = 0
-	this.persistent = false
+	this.ifSkipConflictCheck = false
 	this.tx = 0
 	this.generation = 0
 	this.sequence = 0
@@ -84,7 +84,7 @@ func (this *Property) Merge(other *Property) bool {
 	this.deltaWrites += other.deltaWrites
 	this.gasUsed += other.gasUsed
 	this.sizeInStorage = common.Max(this.sizeInStorage, other.sizeInStorage)
-	this.persistent = this.persistent || other.persistent
+	this.ifSkipConflictCheck = this.ifSkipConflictCheck || other.ifSkipConflictCheck
 	return this.keyHash == other.keyHash
 }
 
@@ -93,8 +93,8 @@ func (this *Property) GetMsg() string        { return this.msg }
 func (this *Property) SetMsg(msg string)     { this.msg = msg }
 func (this *Property) AppendMsg(msg string)  { this.msg = this.msg + "\n" + msg }
 
-func (this *Property) GetPersistent() bool  { return this.persistent }
-func (this *Property) SetPersistent(v bool) { this.persistent = v }
+func (this *Property) IfSkipConflictCheck() bool { return this.ifSkipConflictCheck }
+func (this *Property) SkipConflictCheck(v bool)  { this.ifSkipConflictCheck = v }
 
 func (this *Property) GetTx() uint64     { return this.tx }
 func (this *Property) SetTx(txId uint64) { this.tx = txId }
@@ -121,7 +121,7 @@ func (this *Property) IncrementDeltaWrites(deltaWrites uint32) { this.deltaWrite
 
 func (this *Property) IsReadOnly() bool { return this.Writes() == 0 && this.DeltaWrites() == 0 }
 func (this *Property) Preexist() bool   { return this.preexists } // Exist in cache as a failed read
-// func (this *Property) Persistent() bool { return this.persistent }
+// func (this *Property) Persistent() bool { return this.ifSkipConflictCheck }
 
 // This is for debugging purposes only, do not use it in production code!!!
 func (this *Property) SetIsDeleted(flag bool) { this.isDeleted = flag }

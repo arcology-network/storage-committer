@@ -49,7 +49,7 @@ func (this *Property) Size() uint64 {
 		uint64(8) + // codec.Uint64(this.gasUsed).Size() +
 		uint64(1) + //+  codec.Bool(this.preexists).Size() + // isDeleted
 		uint64(1) + //+  codec.Bool(this.preexists).Size() +
-		uint64(1) + //+  codec.Bool(this.persistent).Size() +
+		uint64(1) + //+  codec.Bool(this.ifSkipConflictCheck).Size() +
 		uint64(8) + //+  sizeInStorage
 		uint64(len(this.msg))
 }
@@ -70,7 +70,7 @@ func (this *Property) FillHeader(buffer []byte) int {
 			codec.Uint64(this.gasUsed).Size(),
 			codec.Bool(this.isDeleted).Size(),
 			codec.Bool(this.preexists).Size(),
-			codec.Bool(this.persistent).Size(),
+			codec.Bool(this.ifSkipConflictCheck).Size(),
 			codec.Uint64(this.sizeInStorage).Size(),
 			codec.String(this.msg).Size(),
 		},
@@ -91,7 +91,7 @@ func (this *Property) EncodeToBuffer(buffer []byte) int {
 	offset += codec.Uint64(this.gasUsed).EncodeToBuffer(buffer[offset:])
 	offset += codec.Bool(this.isDeleted).EncodeToBuffer(buffer[offset:])
 	offset += codec.Bool(this.preexists).EncodeToBuffer(buffer[offset:])
-	offset += codec.Bool(this.persistent).EncodeToBuffer(buffer[offset:])
+	offset += codec.Bool(this.ifSkipConflictCheck).EncodeToBuffer(buffer[offset:])
 	offset += codec.Uint64(this.sizeInStorage).EncodeToBuffer(buffer[offset:])
 	offset += codec.String(this.msg).EncodeToBuffer(buffer[offset:])
 
@@ -117,7 +117,7 @@ func (this *Property) Decode(buffer []byte) any {
 	this.gasUsed = uint64(new(codec.Uint64).Decode(fields[9]).(codec.Uint64))
 	this.isDeleted = bool(codec.Bool(false).Decode(fields[10]).(codec.Bool))
 	this.preexists = bool(codec.Bool(false).Decode(fields[11]).(codec.Bool))
-	this.persistent = bool(codec.Bool(true).Decode(fields[12]).(codec.Bool))
+	this.ifSkipConflictCheck = bool(codec.Bool(true).Decode(fields[12]).(codec.Bool))
 	this.sizeInStorage = uint64(new(codec.Uint64).Decode(fields[13]).(codec.Uint64))
 	this.msg = string(codec.String("").Decode(bytes.Clone(fields[14])).(codec.String))
 
@@ -136,7 +136,7 @@ func (this *Property) GobDecode(data []byte) error {
 	this.pathBytes = v.pathBytes
 	this.keyHash = v.keyHash
 	this.preexists = v.preexists
-	this.persistent = v.persistent
+	this.ifSkipConflictCheck = v.ifSkipConflictCheck
 	this.tx = v.tx
 	this.generation = v.generation
 	this.sequence = v.sequence

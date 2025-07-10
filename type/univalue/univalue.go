@@ -374,7 +374,7 @@ func (this *Univalue) Print() {
 	fmt.Print(spaces+"reads: ", this.reads)
 	fmt.Print(spaces+"writes: ", this.writes)
 	fmt.Print(spaces+"DeltaWrites: ", this.deltaWrites)
-	fmt.Print(spaces+"persistent: ", this.persistent)
+	fmt.Print(spaces+"ifSkipConflictCheck: ", this.ifSkipConflictCheck)
 	fmt.Print(spaces+"preexists: ", this.preexists)
 
 	path := *this.path

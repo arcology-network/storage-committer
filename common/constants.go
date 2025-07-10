@@ -81,7 +81,7 @@ const (
 	EXECUTION_EXCEPTED    = "except/"
 	DEFERRED              = "defer"
 	PREPAID_GAS           = "prepaidGas" // Amount of gas prepaid for the function's deferred execution
-	// PREPAYEE              = "prepayee"   // The address of the prepayee for the prepaid gas
-	PARALLEL_EXECUTION   = uint8(0) // The default method
-	SEQUENTIAL_EXECUTION = uint8(255)
+	PREPAYERS             = "prepayers"  // The address of the prepayee for the prepaid gas
+	PARALLEL_EXECUTION    = uint8(0)     // The default method
+	SEQUENTIAL_EXECUTION  = uint8(255)
 )
