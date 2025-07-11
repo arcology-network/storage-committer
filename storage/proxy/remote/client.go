@@ -23,22 +23,19 @@ import (
 	"net/http"
 	"net/url"
 
-	addrcompressor "github.com/arcology-network/common-lib/addrcompressor"
 	datastore "github.com/arcology-network/storage-committer/storage/livestorage"
 )
 
 type ReadonlyClient struct {
-	addr         string
-	path         string
-	uncompressor *addrcompressor.CompressionLut
-	localStore   *datastore.LiveStorage
+	addr       string
+	path       string
+	localStore *datastore.LiveStorage
 }
 
-func NewReadonlyClient(addr string, path string, lut *addrcompressor.CompressionLut, args ...interface{}) *ReadonlyClient {
+func NewReadonlyClient(addr string, path string, args ...interface{}) *ReadonlyClient {
 	readonlyClient := &ReadonlyClient{
-		addr:         addr,
-		path:         path,
-		uncompressor: lut,
+		addr: addr,
+		path: path,
 	}
 
 	if len(args) > 0 && args[0] != nil {

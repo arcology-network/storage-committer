@@ -18,20 +18,34 @@
 package univalue
 
 import (
+	"math/rand"
 	"testing"
+	"time"
 
-	addrcompressor "github.com/arcology-network/common-lib/addrcompressor"
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
 	stgcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/holiman/uint256"
 )
 
+func RandomAccount() string {
+	var letters = []byte("abcdef0123456789")
+	rand.Seed(time.Now().UnixNano())
+	b := make([]byte, 20)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+
+	addr := hexutil.Encode(b)
+	return addr
+}
+
 /* Commutative Int64 Test */
 func TestUnivaluesCodecPathMeta(t *testing.T) {
-	alice := addrcompressor.RandomAccount()
+	alice := RandomAccount()
 
 	u64 := commutative.NewBoundedUint64(0, 100)
 	in0 := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/u64-000", 3, 4, 0, u64, nil)
@@ -72,7 +86,7 @@ func TestUnivaluesCodecPathMeta(t *testing.T) {
 }
 
 func TestUnivaluesCodecU256(t *testing.T) {
-	alice := addrcompressor.RandomAccount() /* Commutative Int64 Test */
+	alice := RandomAccount() /* Commutative Int64 Test */
 
 	// meta:= commutative.NewPath()
 	u256 := commutative.NewBoundedU256(uint256.NewInt(0), uint256.NewInt(100))
@@ -96,7 +110,7 @@ func TestUnivaluesCodecU256(t *testing.T) {
 
 func TestUnivaluesCodeMeta(t *testing.T) {
 	/* Commutative Int64 Test */
-	alice := addrcompressor.RandomAccount()
+	alice := RandomAccount()
 
 	path := commutative.NewPath()
 	path.(*commutative.Path).SetSubPaths([]string{"e-01", "e-001", "e-002", "e-002"})

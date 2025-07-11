@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/arcology-network/common-lib/addrcompressor"
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
 	stgcommon "github.com/arcology-network/storage-committer/common"
@@ -140,7 +139,7 @@ func TestUnivalueCodeMeta(t *testing.T) {
 
 func TestPropertyCodecUint64(t *testing.T) {
 	/* Commutative Int64 Test */
-	alice := addrcompressor.AliceAccount()
+	alice := AliceAccount()
 
 	// meta:= commutative.NewPath()
 	u256 := commutative.NewBoundedUint64(0, 100).(*commutative.Uint64)
