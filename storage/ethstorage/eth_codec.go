@@ -23,13 +23,13 @@ import (
 
 type Rlp struct{}
 
-func (Rlp) Encode(key string, v interface{}) []byte {
+func (Rlp) Encode(key string, v any) []byte {
 	if v == nil {
 		return []byte{} // Deletion
 	}
 	return v.(stgcommon.Type).StorageEncode(key)
 }
 
-func (Rlp) Decode(key string, buffer []byte, T any) interface{} {
+func (Rlp) Decode(key string, buffer []byte, T any) any {
 	return T.(stgcommon.Type).StorageDecode(key, buffer)
 }

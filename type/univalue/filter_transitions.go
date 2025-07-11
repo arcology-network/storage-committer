@@ -51,7 +51,7 @@ func (this IPTransition) From(v *Univalue) *Univalue {
 	delta, sign := typed.Delta()
 
 	min, max := typed.Limits()
-	typed = typed.New(
+	vtyped := typed.New(
 		common.IfThen(!v.Value().(stgcommon.Type).IsCommutative() || common.IsType[*commutative.Path](v.Value()),
 			nil,
 			v.Value().(stgcommon.Type).Value()), // Keep Non-path commutative variables (u256, u64) only
@@ -59,11 +59,12 @@ func (this IPTransition) From(v *Univalue) *Univalue {
 		sign,
 		min,
 		max,
-	).(stgcommon.Type)
+	)
 
+	vt := vtyped.(stgcommon.Type)
 	return v.New(
 		&v.Property,
-		typed,
+		vt,
 		[]byte{},
 	)
 }

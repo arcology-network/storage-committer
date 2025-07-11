@@ -18,6 +18,7 @@
 package noncommutative
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"math/big"
 
@@ -44,8 +45,8 @@ func (*Int64) Decode(bytes []byte) any {
 
 func (this *Int64) Reset() {}
 
-func (this *Int64) Hash(hasher func([]byte) []byte) []byte { return hasher(this.Encode()) }
-func (this *Int64) ShortHash() (uint64, bool)              { return uint64(*this) ^ (1 << 63), true }
+func (this *Int64) Hash() [32]byte            { return sha256.Sum256(this.Encode()) }
+func (this *Int64) ShortHash() (uint64, bool) { return uint64(*this) ^ (1 << 63), true }
 
 func (this *Int64) Print() {
 	fmt.Println(*this)

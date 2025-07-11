@@ -18,6 +18,7 @@
 package commutative
 
 import (
+	"crypto/sha256"
 	"errors"
 	"math"
 
@@ -155,6 +156,6 @@ func (this *Int64) ShortHash() (uint64, bool) {
 	return uint64(this.value) ^ (1 << 63), true
 }
 
-func (this *Int64) Hash(hasher func([]byte) []byte) []byte {
-	return hasher(this.Encode())
+func (this *Int64) Hash() [32]byte {
+	return sha256.Sum256(this.Encode())
 }

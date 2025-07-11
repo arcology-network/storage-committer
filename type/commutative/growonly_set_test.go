@@ -23,7 +23,13 @@ import (
 )
 
 func TestGrowonlySet(t *testing.T) {
-	set := NewGrowOnlySet()
+	set := NewGrowOnlySet(
+		func(v []byte) uint64 { return uint64(len(v)) },
+		func(v []byte, bf []byte) int { return copy(bf, v) },
+		func(v []byte) []byte { return v },
+		func(a, b []byte) bool { return reflect.DeepEqual(a, b) },
+	)
+
 	if _, _, _, _, err := set.Set([]byte{1, 2, 3, 4, 5}, nil); err != nil {
 		t.Errorf("Failed to set value in GrowOnlySet: %v", err)
 	}
@@ -39,7 +45,14 @@ func TestGrowonlySet(t *testing.T) {
 
 	buffer := set.Encode()
 
-	out := NewGrowOnlySet().Decode(buffer).(*GrowOnlySet)
+	set2 := NewGrowOnlySet(
+		func(v []byte) uint64 { return uint64(len(v)) },
+		func(v []byte, bf []byte) int { return copy(bf, v) },
+		func(v []byte) []byte { return v },
+		func(a, b []byte) bool { return reflect.DeepEqual(a, b) },
+	)
+
+	out := set2.Decode(buffer).(*GrowOnlySet[[]byte])
 	v2, _, _ := out.Get()
 
 	if !reflect.DeepEqual(v2, [][]byte{{1, 2, 3, 4, 5}, {7, 8, 9, 10, 11}}) {

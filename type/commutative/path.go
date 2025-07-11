@@ -18,6 +18,7 @@
 package commutative
 
 import (
+	"crypto/sha256"
 	"errors"
 
 	"github.com/arcology-network/common-lib/common"
@@ -194,8 +195,8 @@ func (this *Path) Reset() {
 	this.DeltaSet.ResetDelta() // The committed keys are not reset.
 }
 
-func (this *Path) Hash(hasher func([]byte) []byte) []byte {
-	return hasher(this.Encode())
+func (this *Path) Hash() [32]byte {
+	return sha256.Sum256(this.Encode())
 }
 
 // This function is mainly for fast comparison.

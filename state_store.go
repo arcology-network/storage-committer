@@ -56,7 +56,7 @@ func NewStateStore(backend *proxy.StorageProxy) *StateStore {
 func (this *StateStore) Backend() *proxy.StorageProxy    { return this.backend }
 func (this *StateStore) Cache() *cache.WriteCache        { return this.WriteCache }
 func (this *StateStore) Import(trans univalue.Univalues) { this.StateCommitter.Import(trans) }
-func (this *StateStore) Preload(key []byte) interface{}  { return this.backend.Preload(key) }
+func (this *StateStore) Preload(key []byte) any          { return this.backend.Preload(key) }
 func (this *StateStore) Clear()                          { this.WriteCache.Clear() }
 
 func (this *StateStore) GetWriters() []intf.AsyncWriter[*univalue.Univalue] {

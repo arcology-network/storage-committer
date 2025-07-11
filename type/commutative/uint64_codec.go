@@ -62,7 +62,7 @@ func (this *Uint64) EncodeToBuffer(buffer []byte) int {
 	return offset
 }
 
-func (this *Uint64) Decode(buffer []byte) interface{} {
+func (this *Uint64) Decode(buffer []byte) any {
 	if len(buffer) == 0 {
 		return this
 	}
@@ -90,7 +90,7 @@ func (this *Uint64) StorageEncode(_ string) []byte {
 	return buffer
 }
 
-func (*Uint64) StorageDecode(_ string, buffer []byte) interface{} {
+func (*Uint64) StorageDecode(_ string, buffer []byte) any {
 	this := NewUnboundedUint64().(*Uint64)
 
 	arr := make([]*big.Int, 3)

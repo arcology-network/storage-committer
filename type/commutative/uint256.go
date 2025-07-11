@@ -18,6 +18,7 @@
 package commutative
 
 import (
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"math/big"
@@ -176,8 +177,8 @@ func (this *U256) Reset() { // Reset to its default value
 	slice.Fill(this.value[:], 0)
 }
 
-func (this *U256) Hash(hasher func([]byte) []byte) []byte { return hasher(this.Encode()) }
-func (this *U256) ShortHash() (uint64, bool)              { return 0, false }
+func (this *U256) Hash() [32]byte            { return sha256.Sum256(this.Encode()) }
+func (this *U256) ShortHash() (uint64, bool) { return 0, false }
 
 func (this *U256) Clone() any {
 	return &U256{

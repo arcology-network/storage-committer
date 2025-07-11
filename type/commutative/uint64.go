@@ -18,6 +18,7 @@
 package commutative
 
 import (
+	"crypto/sha256"
 	"errors"
 	"math"
 
@@ -129,5 +130,5 @@ func (this *Uint64) ApplyDelta(typedVals []stgcommon.Type) (stgcommon.Type, int,
 	return this, len(typedVals), nil
 }
 
-func (this *Uint64) Hash(hasher func([]byte) []byte) []byte { return hasher(this.Encode()) }
-func (this *Uint64) ShortHash() (uint64, bool)              { return this.value, false }
+func (this *Uint64) Hash() [32]byte            { return sha256.Sum256(this.Encode()) }
+func (this *Uint64) ShortHash() (uint64, bool) { return this.value, false }

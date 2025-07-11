@@ -19,6 +19,7 @@ package noncommutative
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
 	"math/big"
@@ -49,7 +50,7 @@ func (this *Bytes) EncodeToBuffer(buffer []byte) int {
 	return offset + codec.Bytes(this.value).EncodeToBuffer(buffer[offset:])
 }
 
-func (this *Bytes) Decode(buffer []byte) interface{} {
+func (this *Bytes) Decode(buffer []byte) any {
 	if len(buffer) == 0 {
 		return this
 	}
@@ -63,9 +64,7 @@ func (this *Bytes) Decode(buffer []byte) interface{} {
 
 func (this *Bytes) Reset() {}
 
-func (this *Bytes) Hash(hasher func([]byte) []byte) []byte {
-	return hasher(this.Encode())
-}
+func (this *Bytes) Hash() [32]byte { return sha256.Sum256(this.Encode()) }
 
 func (this *Bytes) ShortHash() (uint64, bool) {
 	v := uint64(0)
@@ -100,7 +99,7 @@ func (this *Bytes) StorageEncode(key string) []byte {
 	return buffer
 }
 
-func (this *Bytes) StorageDecode(key string, buffer []byte) interface{} {
+func (this *Bytes) StorageDecode(key string, buffer []byte) any {
 	var buf []byte
 	if err := rlp.DecodeBytes(buffer, &buf); err != nil {
 		panic(err)

@@ -32,15 +32,15 @@ type LiveStorage struct {
 	db    commonintf.PersistentStorage
 	cache *cache.ReadCache[string, any]
 
-	encoder func(string, interface{}) []byte
-	decoder func(string, []byte, any) interface{}
+	encoder func(string, any) []byte
+	decoder func(string, []byte, any) any
 }
 
 // numShards uint64, isNil func(V) bool, hasher func(K) uint64, cachePolicy *policy.CachePolicy
 func NewLiveStorage(
 	db commonintf.PersistentStorage,
 	encoder func(string, any) []byte,
-	decoder func(string, []byte, any) interface{},
+	decoder func(string, []byte, any) any,
 ) *LiveStorage {
 	LiveStorage := &LiveStorage{
 		cache: cache.NewReadCache(
@@ -63,10 +63,10 @@ func NewLiveStorage(
 }
 
 // Placeholder only
-func (this *LiveStorage) Preload(data []byte) interface{}                   { return nil }
-func (this *LiveStorage) Cache(any) interface{}                             { return this.cache }
-func (this *LiveStorage) Encoder(any) func(string, interface{}) []byte      { return this.encoder }
-func (this *LiveStorage) Decoder(any) func(string, []byte, any) interface{} { return this.decoder }
+func (this *LiveStorage) Preload(data []byte) any                   { return nil }
+func (this *LiveStorage) Cache(any) any                             { return this.cache }
+func (this *LiveStorage) Encoder(any) func(string, any) []byte      { return this.encoder }
+func (this *LiveStorage) Decoder(any) func(string, []byte, any) any { return this.decoder }
 
 func (this *LiveStorage) GetDB() commonintf.PersistentStorage   { return this.db }
 func (this *LiveStorage) SetDB(db commonintf.PersistentStorage) { this.db = db }
@@ -79,13 +79,13 @@ func (this *LiveStorage) IfExists(key string) bool {
 }
 
 // Inject directly to the local cache.
-func (this *LiveStorage) Inject(key string, v interface{}) error {
+func (this *LiveStorage) Inject(key string, v any) error {
 	this.cache.Set(key, v)
 	return this.db.BatchSet([]string{key}, [][]byte{this.encoder(key, v)})
 }
 
 // Inject directly to the local cache.
-func (this *LiveStorage) BatchInject(keys []string, values []interface{}) error {
+func (this *LiveStorage) BatchInject(keys []string, values []any) error {
 	this.cache.BatchSet(keys, values) // update the local cache
 	encoded := make([][]byte, len(keys))
 	for i := 0; i < len(keys); i++ {
@@ -94,7 +94,7 @@ func (this *LiveStorage) BatchInject(keys []string, values []interface{}) error 
 	return this.db.BatchSet(keys, encoded)
 }
 
-func (this *LiveStorage) RetriveFromStorage(key string, T any) (interface{}, error) {
+func (this *LiveStorage) RetriveFromStorage(key string, T any) (any, error) {
 	if this.db == nil {
 		return nil, errors.New("Error: DB not found")
 	}
@@ -109,7 +109,7 @@ func (this *LiveStorage) RetriveFromStorage(key string, T any) (interface{}, err
 	return nil, err
 }
 
-func (this *LiveStorage) Retrive(key string, T any) (interface{}, error) {
+func (this *LiveStorage) Retrive(key string, T any) (any, error) {
 	// Read from the local cache first
 	if v, _ := this.cache.Get(key); v != nil {
 		return *v, nil
@@ -122,7 +122,7 @@ func (this *LiveStorage) Retrive(key string, T any) (interface{}, error) {
 	return v, err
 }
 
-func (this *LiveStorage) BatchRetrive(keys []string, T []any) []interface{} {
+func (this *LiveStorage) BatchRetrive(keys []string, T []any) []any {
 	values := common.FilterFirst(this.cache.BatchGet(keys)) // From the local cache first
 	if slice.Count[any](values, nil) == 0 {                 // All found
 		return values

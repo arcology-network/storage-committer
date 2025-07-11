@@ -34,7 +34,7 @@ type LiveStgIndexer struct {
 
 	partitionIDs  []uint64
 	keyBuffer     []string
-	valueBuffer   []interface{}
+	valueBuffer   []any
 	encodedBuffer [][]byte //The encoded buffer contains the encoded values
 }
 
@@ -46,7 +46,7 @@ func NewLiveStgIndexer(liveStg *LiveStorage, _ int64) *LiveStgIndexer {
 
 		partitionIDs:  []uint64{},
 		keyBuffer:     []string{},
-		valueBuffer:   []interface{}{},
+		valueBuffer:   []any{},
 		encodedBuffer: [][]byte{},
 	}
 }
@@ -70,7 +70,7 @@ func (this *LiveStgIndexer) Finalize() {
 
 	// Extract the keys and values from the buffer
 	this.keyBuffer = make([]string, len(this.buffer))
-	this.valueBuffer = slice.ParallelTransform(this.buffer, runtime.NumCPU(), func(i int, v *univalue.Univalue) interface{} {
+	this.valueBuffer = slice.ParallelTransform(this.buffer, runtime.NumCPU(), func(i int, v *univalue.Univalue) any {
 		this.keyBuffer[i] = *v.GetPath()
 		return v.Value()
 	})
@@ -98,7 +98,7 @@ func (this *LiveStgIndexer) Merge(idxers []*LiveStgIndexer) *LiveStgIndexer {
 
 	this.valueBuffer = slice.ConcateDo(idxers,
 		func(idxer *LiveStgIndexer) uint64 { return uint64(len(idxer.valueBuffer)) },
-		func(idxer *LiveStgIndexer) []interface{} { return idxer.valueBuffer })
+		func(idxer *LiveStgIndexer) []any { return idxer.valueBuffer })
 
 	this.encodedBuffer = slice.ConcateDo(idxers,
 		func(idxer *LiveStgIndexer) uint64 { return uint64(len(idxer.encodedBuffer)) },

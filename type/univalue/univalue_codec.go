@@ -70,7 +70,7 @@ func (this *Univalue) EncodeToBuffer(buffer []byte) int {
 	return offset
 }
 
-func (this *Univalue) Decode(buffer []byte) interface{} {
+func (this *Univalue) Decode(buffer []byte) any {
 	fields := codec.Byteset{}.Decode(buffer).(codec.Byteset)
 	property := (&Property{}).Decode(fields[0]).(*Property)
 

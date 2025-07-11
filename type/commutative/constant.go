@@ -23,5 +23,6 @@ const (
 	UINT64  uint8 = 102
 	UINT256 uint8 = 103
 
-	GROWONLY_SET uint8 = 50
+	RANGE              = 9
+	GROWONLY_SET uint8 = 50 // 50 ~ 59
 )

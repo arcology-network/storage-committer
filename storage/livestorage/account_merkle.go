@@ -40,18 +40,18 @@ package ccstorage
 // 	platform   interfaces.Platform
 // 	nodePool   *mempool.Mempool
 // 	merklePool *mempool.Mempool
-// 	encoder    func(...interface{}) []byte
+// 	encoder    func(...any) []byte
 // }
 
-// func NewAccountMerkle(platform interfaces.Platform, encoder func(...interface{}) []byte, hashFunc func([]byte) []byte) *AccountMerkle {
+// func NewAccountMerkle(platform interfaces.Platform, encoder func(...any) []byte, hashFunc func([]byte) []byte) *AccountMerkle {
 // 	am := &AccountMerkle{
 // 		branches: 16,
 // 		merkles:  make(map[string]*merkle.Merkle),
 // 		platform: platform,
-// 		nodePool: mempool.NewMempool("node", func() interface{} {
+// 		nodePool: mempool.NewMempool("node", func() any {
 // 			return merkle.NewNode()
 // 		}),
-// 		merklePool: mempool.NewMempool("merkle", func() interface{} {
+// 		merklePool: mempool.NewMempool("merkle", func() any {
 // 			return merkle.NewMerkle(16, merkle.Concatenator{}, merkle.Keccak256{})
 // 		}),
 
@@ -98,7 +98,7 @@ package ccstorage
 // 	t0 := time.Now()
 // 	offset := stgcommon.ETH10_ACCOUNT_PREFIX_LENGTH
 // 	ranges, ParseAccountAddrs := this.markAccountRange(keys)
-// 	builder := func(start, end, index int, args ...interface{}) {
+// 	builder := func(start, end, index int, args ...any) {
 // 		mempool := this.nodePool.GetPool(index)
 // 		for i := start; i < end; i++ {
 // 			path := keys[ranges[i]]
@@ -148,7 +148,7 @@ package ccstorage
 // 	positions = append(positions, len(paths))
 
 // 	ParseAccountAddrs := make([]*string, len(positions)-1)
-// 	worker := func(start, end, index int, args ...interface{}) {
+// 	worker := func(start, end, index int, args ...any) {
 // 		for i := start; i < end; i++ {
 // 			ParseAccountAddrs[i] = &paths[positions[i]]
 // 		}

@@ -98,7 +98,7 @@ func (this *StorageProxy) ExecCache() *livecache.LiveCache { return this.execCac
 func (this *StorageProxy) ExecStore() *livestg.LiveStorage { return this.execStorage } // Arcology storage
 
 // Check if the key exists in th storage.
-func (this *StorageProxy) RetriveFromStorage(key string, T any) (interface{}, error) {
+func (this *StorageProxy) RetriveFromStorage(key string, T any) (any, error) {
 	if v, ok := this.execCache.Get(key); ok { // Check the cache first
 		return v, nil
 	}
@@ -107,7 +107,7 @@ func (this *StorageProxy) RetriveFromStorage(key string, T any) (interface{}, er
 
 func (this *StorageProxy) EthStore() *ethstg.EthDataStore { return this.ethStorage } // Eth storage
 
-func (this *StorageProxy) Preload(data []byte) interface{} {
+func (this *StorageProxy) Preload(data []byte) any {
 	return this.ethStorage.Preload(data)
 }
 
@@ -124,7 +124,7 @@ func (this *StorageProxy) Inject(key string, v any) error {
 	return this.execStorage.Inject(key, v)
 }
 
-func (this *StorageProxy) Retrive(key string, v any) (interface{}, error) {
+func (this *StorageProxy) Retrive(key string, v any) (any, error) {
 	if retv, ok := this.execCache.Get(key); ok { // Get from cache first
 		return retv, nil
 	}
