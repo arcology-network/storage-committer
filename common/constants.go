@@ -27,6 +27,7 @@ const (
 
 	ETH10                              = "blcc://eth1.0/"
 	ETH10_ACCOUNT_PREFIX               = ETH10 + "account/"
+	GAS_PREPAYERS                      = ETH10 + "prepayers/" // Gas prepayment for the deferred execution.
 	ETH10_ACCOUNT_PREFIX_LENGTH        = len(ETH10_ACCOUNT_PREFIX)
 	ETH10_ACCOUNT_LENGTH               = 42 // 40 hex digits + 0x
 	ETH10_ACCOUNT_FULL_LENGTH          = ETH10_ACCOUNT_PREFIX_LENGTH + ETH10_ACCOUNT_LENGTH
@@ -73,15 +74,18 @@ const (
 	MAX_CONFLICT_RATIO            = 0.5
 	MAX_NUM_CONFLICTS             = 256
 
-	PROPERTY_PATH        = "func/"
-	PROPERTY_PATH_PREFIX = "/" + PROPERTY_PATH
-	PROPERTY_PATH_LENGTH = len(PROPERTY_PATH)
+	// function property paths, that can be created on the fly.
+	FUNC_PATH      = "func/"
+	FULL_FUNC_PATH = "/" + FUNC_PATH
+	// PROPERTY_PATH_LENGTH = len(FUNC_PATH)
 
-	EXECUTION_PARALLELISM = "parallelism/" // The execution parallelism of the function, either parallel or sequential
-	EXECUTION_EXCEPTED    = "except/"
-	DEFERRED              = "defer"
-	PREPAID_GAS           = "prepaidGas" // Amount of gas prepaid for the function's deferred execution
-	PREPAYERS             = "prepayers"  // The address of the prepayee for the prepaid gas
-	PARALLEL_EXECUTION    = uint8(0)     // The default method
-	SEQUENTIAL_EXECUTION  = uint8(255)
+	// "/sponsoredGas":       commutative.UINT256, // Gas reserved
+	// "/func/":              commutative.PATH,
+
+	EXECUTION_PARALLELISM       = "parallelism/" // The execution parallelism of the function, either parallel or sequential
+	EXECUTION_EXCEPTED          = "except/"
+	DEFERRED                    = "defer"
+	REQUIRED_PREPAID_GAS_AMOUNT = "requiredPrepaidGasAmount" // Amount of gas prepaid required for the function's deferred execution
+	PARALLEL_EXECUTION          = uint8(0)                   // The default method
+	SEQUENTIAL_EXECUTION        = uint8(255)
 )

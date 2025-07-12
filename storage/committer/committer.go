@@ -139,11 +139,11 @@ func (this *StateCommitter) Finalize(txs []uint64) {
 // Commit commits the transitions in the StateCommitter.
 // 1. For the block write cache, it commits the transitions to the cache.
 // 2. For the eth storage, it updates the tries without committing the transitions to the DB
-func (this *StateCommitter) Precommit(txs []uint64) [32]byte {
+func (this *StateCommitter) Precommit(txs []uint64) *StateCommitter {
 	this.Finalize(txs)
 	this.SyncPrecommit()
 	this.AsyncPrecommit()
-	return [32]byte{}
+	return this
 }
 
 // Only the global write cache needs to be synchronized before the next precommit or commit.

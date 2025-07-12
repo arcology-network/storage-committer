@@ -77,7 +77,6 @@ func (this *Bytes) Print() {
 	fmt.Println()
 }
 
-// ETH10_STORAGE_PREFIX_LENGTH
 func (this *Bytes) StorageEncode(key string) []byte {
 	// big int can take on arbitrary length, but will remove the leading zeros.
 	// This isn't a problem in the original Ethereum implementation because

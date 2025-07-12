@@ -19,7 +19,8 @@ package statestore
 
 import (
 	intf "github.com/arcology-network/storage-committer/common"
-	stgcomm "github.com/arcology-network/storage-committer/storage/committer"
+	stgcommon "github.com/arcology-network/storage-committer/common"
+	committer "github.com/arcology-network/storage-committer/storage/committer"
 	"github.com/arcology-network/storage-committer/type/univalue"
 
 	cache "github.com/arcology-network/storage-committer/storage/cache"
@@ -32,12 +33,12 @@ import (
 type StateStore struct {
 	// *cache.ShardedWriteCache
 	*cache.WriteCache // execution cache
-	*stgcomm.StateCommitter
+	*committer.StateCommitter
 	backend *proxy.StorageProxy
 }
 
 // New creates a new StateCommitter instance.
-func NewStateStore(backend *proxy.StorageProxy) *StateStore {
+func NewStateStore(backend *proxy.StorageProxy, initTrans ...*univalue.Univalue) *StateStore {
 	store := &StateStore{
 		backend: backend,
 		WriteCache: cache.NewWriteCache(
@@ -49,7 +50,19 @@ func NewStateStore(backend *proxy.StorageProxy) *StateStore {
 			},
 		),
 	}
-	store.StateCommitter = stgcomm.NewStateCommitter(store.WriteCache, store.GetWriters())
+	store.StateCommitter = committer.NewStateCommitter(store.WriteCache, store.GetWriters())
+
+	// Commit initial transitions to the store if any.
+	if len(initTrans) > 0 {
+		for _, tran := range initTrans {
+			tran.SkipConflictCheck(true) // Skip conflict check for initial transitions
+		}
+
+		committer := committer.NewStateCommitter(store, store.GetWriters())
+		committer.Import(initTrans)
+		committer.Precommit([]uint64{stgcommon.SYSTEM})
+		committer.Commit(0)
+	}
 	return store
 }
 

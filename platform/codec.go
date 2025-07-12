@@ -53,71 +53,37 @@ func (this Codec) Decode(_ string, buffer []byte, _ any) interface{} {
 		return stringer.Decode(buffer)
 	}
 
-	if this.ID == noncommutative.BIGINT { // big int pointer
+	switch this.ID {
+	case noncommutative.STRING: // delta big int
+		stringer := noncommutative.String("")
+		return stringer.Decode(buffer)
+
+	case noncommutative.BIGINT: // big int pointer
 		return (&noncommutative.Bigint{}).Decode(buffer)
-	}
 
-	if this.ID == noncommutative.BYTES { // big int pointer
+	case noncommutative.BYTES: // big int pointer
 		return (&noncommutative.Bytes{}).Decode(buffer)
-	}
 
-	if this.ID == commutative.PATH { // Path
+	case commutative.PATH: // Path
 		return (&commutative.Path{}).Decode(buffer)
-	}
 
-	if this.ID == commutative.INT64 { // delta int 64
+	case commutative.INT64: // delta int 64
 		return (&commutative.Int64{}).Decode(buffer)
-	}
 
-	if this.ID == commutative.UINT64 { // delta int 64
+	case commutative.UINT64: // delta int 64
 		return (&commutative.Uint64{}).Decode(buffer)
-	}
 
-	if this.ID == commutative.UINT256 { // delta big int
+	case commutative.UINT256: // delta big int
 		return (&commutative.U256{}).Decode(buffer)
-	}
 
-	if this.ID == noncommutative.INT64 {
+	case noncommutative.INT64:
 		i64 := noncommutative.Int64(0)
 		return i64.Decode(buffer)
+
+		// case commutative.GROWONLY_SET: // GrowOnlySet
+		// 	// panic("GrowOnlySet is not supported in this codec")
+		// 	return (&commutative.GrowOnlySet[[]byte]{}).Decode(buffer)
 	}
-
-	if this.ID == commutative.GROWONLY_SET { // GrowOnlySet
-		// panic("GrowOnlySet is not supported in this codec")
-		return (&commutative.GrowOnlySet[[]byte]{}).Decode(buffer)
-	}
-
-	// switch this.ID {
-	// case noncommutative.STRING: // delta big int
-	// 	stringer := noncommutative.String("")
-	// 	return stringer.Decode(buffer)
-
-	// case noncommutative.BIGINT: // big int pointer
-	// 	return (&noncommutative.Bigint{}).Decode(buffer)
-
-	// case noncommutative.BYTES: // big int pointer
-	// 	return (&noncommutative.Bytes{}).Decode(buffer)
-
-	// case commutative.PATH: // Path
-	// 	return (&commutative.Path{}).Decode(buffer)
-
-	// case commutative.INT64: // delta int 64
-	// 	return (&commutative.Int64{}).Decode(buffer)
-
-	// case commutative.UINT64: // delta int 64
-	// 	return (&commutative.Uint64{}).Decode(buffer)
-
-	// case commutative.UINT256: // delta big int
-	// 	return (&commutative.U256{}).Decode(buffer)
-
-	// case noncommutative.INT64:
-	// 	i64 := noncommutative.Int64(0)
-	// 	return i64.Decode(buffer)
-
-	// case commutative.GROWONLY_SET: // GrowOnlySet
-	// 	// panic("GrowOnlySet is not supported in this codec")
-	// 	return (&commutative.GrowOnlySet[[]byte]{}).Decode(buffer)
-	// }
 
 	// panic("Unknown type ID: " + string(this.ID))
 	return nil

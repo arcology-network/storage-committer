@@ -29,30 +29,30 @@ func SponsoredGasPath(source evmcommon.Address) string {
 }
 
 func PropertyPath(source evmcommon.Address) string {
-	return ETH10_ACCOUNT_PREFIX + hexutil.Encode(source[:]) + "/"
+	return ETH10_ACCOUNT_PREFIX + hexutil.Encode(source[:]) + "/" + FUNC_PATH
 }
 
-func FuncPropertyPath(source evmcommon.Address, sourceFun [4]byte) string {
-	return PropertyPath(source) + PROPERTY_PATH + hex.EncodeToString(sourceFun[:]) + "/"
+func FuncPath(source evmcommon.Address, sourceFun [4]byte) string {
+	return PropertyPath(source) + hex.EncodeToString(sourceFun[:]) + "/"
 }
 
 func ExecutionParallelism(source evmcommon.Address, sourceFun [4]byte) string {
-	return FuncPropertyPath(source, sourceFun) + EXECUTION_PARALLELISM
+	return FuncPath(source, sourceFun) + EXECUTION_PARALLELISM
 }
 
 func ExceptPaths(source evmcommon.Address, sourceFun [4]byte) string {
-	return FuncPropertyPath(source, sourceFun) + EXECUTION_EXCEPTED
+	return FuncPath(source, sourceFun) + EXECUTION_EXCEPTED
 }
 
 func DeferrablePath(source evmcommon.Address, sourceFun [4]byte) string {
-	return FuncPropertyPath(source, sourceFun) + DEFERRED
+	return FuncPath(source, sourceFun) + DEFERRED
 }
 
-func PrepaidGasPath(source evmcommon.Address, sourceFun [4]byte) string {
-	return FuncPropertyPath(source, sourceFun) + PREPAID_GAS
+func RequiredPrepaidGasAmountPath(source evmcommon.Address, sourceFun [4]byte) string {
+	return FuncPath(source, sourceFun) + REQUIRED_PREPAID_GAS_AMOUNT
 }
 
 // The path for the prepayers that are used to pay for the prepaid gas.
-func PrepayersPath(source evmcommon.Address, sourceFun [4]byte) string {
-	return FuncPropertyPath(source, sourceFun) + PREPAYERS
+func PrepayersPath() string {
+	return GAS_PREPAYERS
 }

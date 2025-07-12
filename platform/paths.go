@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	common "github.com/arcology-network/common-lib/common"
-	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/slice"
 	stgcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
@@ -32,6 +31,7 @@ type Platform struct {
 	syspaths map[string]uint8
 }
 
+// Returns a list of paths that need to be created under the account automatically when the account is created.
 func NewPlatform() *Platform {
 	return &Platform{
 		map[string]uint8{
@@ -41,12 +41,10 @@ func NewPlatform() *Platform {
 			"/balance": commutative.UINT256,
 
 			// Arcology specific paths
-			"/sponsoredGas": commutative.UINT256, // Gas reserved
-			// "/sponsor/":           commutative.PATH,    // Sponsor account for execution
-			"/func/":              commutative.PATH,
-			"/storage/":           commutative.PATH,
-			"/storage/container/": commutative.PATH, // Container storage
-			"/storage/native/":    commutative.PATH, // Native storage
+			stgcommon.FULL_FUNC_PATH: commutative.PATH,
+			"/storage/":              commutative.PATH,
+			"/storage/container/":    commutative.PATH, // Container storage
+			"/storage/native/":       commutative.PATH, // Native storage
 		},
 	}
 }
@@ -55,17 +53,7 @@ func ETH10AccountShard(numOfShard int, key string) int {
 	if len(key) < 24 {
 		panic("Invalid eth1.0 account shard key: " + key)
 	}
-	return (hex2int(key[22])*16 + hex2int(key[23])) % numOfShard
-}
-
-// func (this *Platform) RootLength() int { return len(this.stgcommon.ETH10Account()) + 40 }
-
-func hex2int(c byte) int {
-	if c >= 'a' {
-		return int(c-'a') + 10
-	} else {
-		return int(c - '0')
-	}
+	return (common.Hex2int(key[22])*16 + common.Hex2int(key[23])) % numOfShard
 }
 
 // Get ths builtin paths
@@ -82,21 +70,12 @@ func (this *Platform) GetBuiltins(acct string) ([]string, []uint8) {
 // These paths won't keep the sub elements
 func (this *Platform) IsSysPath(path string) bool {
 	if len(path) <= stgcommon.ETH10_ACCOUNT_FULL_LENGTH {
-		return path == stgcommon.ETH10 || path == stgcommon.ETH10_ACCOUNT_PREFIX
+		return true
 	}
 
 	subPath := path[stgcommon.ETH10_ACCOUNT_FULL_LENGTH:] // Removed the shared part
 	_, ok := this.syspaths[subPath]
 	return ok
-}
-
-func (this *Platform) GetSysPaths() []string {
-	return mapi.Keys(this.syspaths)
-}
-
-func (this *Platform) Builtins(acct string, idx int) string {
-	paths, _ := common.MapKVs(this.syspaths)
-	return stgcommon.ETH10_ACCOUNT_PREFIX + acct + paths[idx]
 }
 
 func ParseAccountAddr(acct string) (string, string, string) {
