@@ -18,15 +18,16 @@
 package statestore
 
 import (
+	// "github.com/arcology-network/concurrenturl/commutative"
 	intf "github.com/arcology-network/storage-committer/common"
 	stgcommon "github.com/arcology-network/storage-committer/common"
 	committer "github.com/arcology-network/storage-committer/storage/committer"
-	"github.com/arcology-network/storage-committer/type/univalue"
+	"github.com/arcology-network/storage-committer/type/commutative"
 
 	cache "github.com/arcology-network/storage-committer/storage/cache"
 	proxy "github.com/arcology-network/storage-committer/storage/proxy"
+	"github.com/arcology-network/storage-committer/type/univalue"
 	"github.com/cespare/xxhash/v2"
-	//  "github.com/arcology-network/storage-committer/storage/proxy"
 )
 
 // Buffer is simpliest  of indexers. It does not index anything, just stores the transitions.
@@ -38,7 +39,7 @@ type StateStore struct {
 }
 
 // New creates a new StateCommitter instance.
-func NewStateStore(backend *proxy.StorageProxy, initTrans ...*univalue.Univalue) *StateStore {
+func NewStateStore(backend *proxy.StorageProxy) *StateStore {
 	store := &StateStore{
 		backend: backend,
 		WriteCache: cache.NewWriteCache(
@@ -53,16 +54,18 @@ func NewStateStore(backend *proxy.StorageProxy, initTrans ...*univalue.Univalue)
 	store.StateCommitter = committer.NewStateCommitter(store.WriteCache, store.GetWriters())
 
 	// Commit initial transitions to the store if any.
-	if len(initTrans) > 0 {
-		for _, tran := range initTrans {
-			tran.SkipConflictCheck(true) // Skip conflict check for initial transitions
-		}
-
-		committer := committer.NewStateCommitter(store, store.GetWriters())
-		committer.Import(initTrans)
-		committer.Precommit([]uint64{stgcommon.SYSTEM})
-		committer.Commit(0)
+	initTrans := []*univalue.Univalue{
+		univalue.NewUnivalue(stgcommon.SYSTEM, stgcommon.GAS_PREPAYERS, 0, 1, 0, commutative.NewPath(), nil),
 	}
+
+	for _, tran := range initTrans {
+		tran.SkipConflictCheck(true) // Skip conflict check for initial transitions
+	}
+
+	committer := committer.NewStateCommitter(store, store.GetWriters())
+	committer.Import(initTrans)
+	committer.Precommit([]uint64{stgcommon.SYSTEM})
+	committer.Commit(0)
 	return store
 }
 

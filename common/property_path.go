@@ -24,32 +24,32 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
-func SponsoredGasPath(source evmcommon.Address) string {
-	return ETH10_ACCOUNT_PREFIX + hexutil.Encode(source[:]) + "/sponsoredGas"
+func SponsoredGasPath(addr evmcommon.Address) string {
+	return ETH10_ACCOUNT_PREFIX + hexutil.Encode(addr[:]) + "/sponsoredGas"
 }
 
-func PropertyPath(source evmcommon.Address) string {
-	return ETH10_ACCOUNT_PREFIX + hexutil.Encode(source[:]) + "/" + FUNC_PATH
+func PropertyPath(addr evmcommon.Address) string {
+	return ETH10_ACCOUNT_PREFIX + hexutil.Encode(addr[:]) + "/" + FUNC_PATH
 }
 
-func FuncPath(source evmcommon.Address, sourceFun [4]byte) string {
-	return PropertyPath(source) + hex.EncodeToString(sourceFun[:]) + "/"
+func FuncPath(addr evmcommon.Address, sourceFun [4]byte) string {
+	return PropertyPath(addr) + hex.EncodeToString(sourceFun[:]) + "/"
 }
 
-func ExecutionParallelism(source evmcommon.Address, sourceFun [4]byte) string {
-	return FuncPath(source, sourceFun) + EXECUTION_PARALLELISM
+func ExecutionParallelism(addr evmcommon.Address, sourceFun [4]byte) string {
+	return FuncPath(addr, sourceFun) + EXECUTION_PARALLELISM
 }
 
-func ExceptPaths(source evmcommon.Address, sourceFun [4]byte) string {
-	return FuncPath(source, sourceFun) + EXECUTION_EXCEPTED
+func ExceptPaths(addr evmcommon.Address, sourceFun [4]byte) string {
+	return FuncPath(addr, sourceFun) + EXECUTION_EXCEPTED
 }
 
-func DeferrablePath(source evmcommon.Address, sourceFun [4]byte) string {
-	return FuncPath(source, sourceFun) + DEFERRED
+func DeferrablePath(addr evmcommon.Address, sourceFun [4]byte) string {
+	return FuncPath(addr, sourceFun) + DEFERRED
 }
 
-func RequiredPrepaidGasAmountPath(source evmcommon.Address, sourceFun [4]byte) string {
-	return FuncPath(source, sourceFun) + REQUIRED_PREPAID_GAS_AMOUNT
+func RequiredPrepaidGasAmountPath(addr evmcommon.Address, sourceFun [4]byte) string {
+	return FuncPath(addr, sourceFun) + REQUIRED_PREPAID_GAS_AMOUNT
 }
 
 // The path for the prepayers that are used to pay for the prepaid gas.
