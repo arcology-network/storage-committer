@@ -44,12 +44,8 @@ func ExceptPaths(addr evmcommon.Address, sourceFun [4]byte) string {
 	return FuncPath(addr, sourceFun) + EXECUTION_EXCEPTED
 }
 
-func DeferrablePath(addr evmcommon.Address, sourceFun [4]byte) string {
-	return FuncPath(addr, sourceFun) + DEFERRED
-}
-
-func RequiredPrepaidGasAmountPath(addr evmcommon.Address, sourceFun [4]byte) string {
-	return FuncPath(addr, sourceFun) + REQUIRED_PREPAID_GAS_AMOUNT
+func RequiredPrepaymentPath(addr evmcommon.Address, sourceFun [4]byte) string {
+	return FuncPath(addr, sourceFun) + REQUIRED_GAS_PREPAYMENT
 }
 
 // The path for the prepayers that are used to pay for the prepaid gas.
