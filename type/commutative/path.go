@@ -47,6 +47,36 @@ func NewPath(newPaths ...string) stgcommon.Type {
 	return this
 }
 
+// The entries that need to be deleted when the path is deleted.
+func (this *Path) GetCascadeSub(prefix string, source any) []string {
+	store := source.(interface {
+		Retrive(string, any) (any, error)
+	})
+
+	subElem := this.DeltaSet.Elements()
+	elements := slice.Transform(subElem, func(_ int, k string) string { return prefix + k })
+	pathStrs := []string{}
+	for {
+		subPaths := slice.MoveIf(&elements, func(_ int, k string) bool {
+			return common.IsPath(k)
+		})
+
+		// Loop through the sub paths and check if they exist in the store.
+		if len(subPaths) == 0 {
+			pathStrs = append(pathStrs, elements...)
+			break
+		}
+
+		for i := range subPaths {
+			if path, _ := store.Retrive(subPaths[i], new(Path)); path != nil {
+				underSubPaths := path.(*Path).GetCascadeSub(subPaths[i], store)
+				pathStrs = append(pathStrs, underSubPaths...)
+			}
+		}
+	}
+	return pathStrs
+}
+
 func (this *Path) Length() int                                { return int(this.DeltaSet.NonNilCount()) }
 func (this *Path) View() *deltaset.DeltaSet[string]           { return this.DeltaSet }
 func (this *Path) MemSize() uint64                            { return uint64(this.DeltaSet.NonNilCount()) * 32 * 2 } // Just an estimate, need to update on fly instead of calculating everytime
@@ -74,12 +104,12 @@ func (this *Path) ResetDelta()            { this.DeltaSet.ResetDelta() }
 func (this *Path) SetDelta(v any, _ bool) { this.DeltaSet.SetDelta(v.(*deltaset.DeltaSet[string])) }
 func (this *Path) SetDeltaSign(v any)     {}
 
-func (this *Path) Preload(k string, arg any) {
+func (this *Path) Preload(k string, source any) {
 	if this.preloaded != nil { // Already preloaded
 		return
 	}
 
-	store := arg.(interface {
+	store := source.(interface {
 		Retrive(string, any) (any, error)
 	})
 

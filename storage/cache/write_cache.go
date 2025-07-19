@@ -65,26 +65,17 @@ func (this *WriteCache) Cache() *map[string]*univalue.Univalue  { return &this.k
 func (this *WriteCache) Preload([]byte) any                     { return nil } // Placeholder
 func (this *WriteCache) NewUnivalue() *univalue.Univalue        { return this.pool.New() }
 
-// If the access has been recorded
-func (this *WriteCache) GetOrNew(tx uint64, path string, T any) (*univalue.Univalue, bool) {
-	unival, inCache := this.kvDict[path]
-	if unival == nil { // Not in the kvDict, check the datastore
-		unival = this.GetFromStore(tx, path, T)
-	}
-	return unival, inCache // From cache
-}
-
 func (this *WriteCache) write(tx uint64, path string, value any) (*univalue.Univalue, error) {
 	parentPath := common.GetParentPath(path)
 	var univ *univalue.Univalue
 	if this.IfExists(parentPath) || tx == stgcommon.SYSTEM { // The parent path exists or to inject the path directly
-		univ, inCache := this.GetOrNew(tx, path, value) // Get a univalue wrapper
-		err := univ.Set(tx, path, value, inCache, this) // set the new value
+		univ, inCache := this.RetriveOrCreate(tx, path, value) // Get a univalue wrapper
+		err := univ.Set(tx, path, value, inCache, this)        // set the new value
 
 		// Update the parent path meta
 		if err == nil {
 			if strings.HasSuffix(parentPath, "/container/") || !this.platform.IsSysPath(parentPath) && tx != stgcommon.SYSTEM { // Don't keep track of the system children
-				parentMeta, inCache := this.GetOrNew(tx, parentPath, new(commutative.Path))
+				parentMeta, inCache := this.RetriveOrCreate(tx, parentPath, new(commutative.Path))
 				err = parentMeta.Set(tx, path, univ.Value(), inCache, this)
 			}
 		}
@@ -93,8 +84,39 @@ func (this *WriteCache) write(tx uint64, path string, value any) (*univalue.Univ
 	return univ, errors.New("Error: The parent path " + parentPath + " doesn't exist for " + path)
 }
 
+// If the access has been recorded
+func (this *WriteCache) RetriveOrCreate(tx uint64, path string, T any) (*univalue.Univalue, bool) {
+	unival, inCache := this.kvDict[path]
+	if unival == nil { // Not in the kvDict, check the datastore
+		unival = this.GetFromStore(tx, path, T)
+	}
+	return unival, inCache // From cache
+}
+
+// The function is used to get the univalue from the backend only.
+func (this *WriteCache) GetFromStore(tx uint64, path string, T any) *univalue.Univalue {
+	var typedv any
+	if backend := this.ReadOnlyStore(); backend != nil {
+		typedv, _ = backend.Retrive(path, T)
+	}
+
+	// It is possible that the typedv is nil, but we still need to create a univalue for it
+	// for conflict detection purpose.
+	unival := this.NewUnivalue().Init(tx, path, 0, 0, 0, typedv, this)
+	this.kvDict[path] = unival // Adding to kvDict
+	return unival
+}
+
+// This function specifically retrieves the value from the backend without any tracking.
+func (this *WriteCache) RetriveFromStorage(key string, T any) (any, error) {
+	if this.backend == nil {
+		return nil, errors.New("Error: The backend is nil")
+	}
+	return this.backend.RetriveFromStorage(key, T)
+}
+
 func (this *WriteCache) Read(tx uint64, path string, T any) (any, any, uint64) {
-	univalue, _ := this.GetOrNew(tx, path, T)
+	univalue, _ := this.RetriveOrCreate(tx, path, T)
 
 	// need to check if it is in the memory. If so gas price should be 3 instead.
 	dataSize := stgcommon.MIN_READ_SIZE
@@ -127,18 +149,11 @@ func (this *WriteCache) Write(tx uint64, path string, newVal any, args ...any) (
 	if newVal == nil || newVal.(stgcommon.Type).TypeID() != uint8(reflect.Invalid) {
 		univ, err := this.write(tx, path, newVal)
 		if len(args) > 0 && args[0] != nil {
-			args[0].(func(*univalue.Univalue))(univ) // Call the callback function if provided
+			args[0].(func(*univalue.Univalue, int64))(univ, dataSize) // Call the callback function if provided
 		}
 		return dataSize, err
 	}
 	return dataSize, errors.New("Error: Unknown data type !")
-}
-
-// WritePersistent writes the value to the cache and sets the persistent flag to true to skip the conflict check.
-func (this *WriteCache) WritePersistent(tx uint64, path string, newVal any, args ...any) (int64, error) {
-	return this.Write(tx, path, newVal, func(univ *univalue.Univalue) {
-		univ.SkipConflictCheck(true) // Set the persistent flag to true
-	}) // Write to the cache first
 }
 
 // Get the raw value directly, skip the access counting at the univalue level
@@ -158,27 +173,7 @@ func (this *WriteCache) Find(tx uint64, path string, T any) (any, any) {
 	return univ.Value(), univ
 }
 
-// The function is used to get the univalue from the backend only.
-func (this *WriteCache) GetFromStore(tx uint64, path string, T any) *univalue.Univalue {
-	var typedv any
-	if backend := this.ReadOnlyStore(); backend != nil {
-		typedv, _ = backend.Retrive(path, T)
-	}
-
-	unival := this.NewUnivalue().Init(tx, path, 0, 0, 0, typedv, this)
-	this.kvDict[path] = unival // Adding to kvDict
-	return unival
-}
-
-// This function specifically retrieves the value from the backend without any tracking.
-func (this *WriteCache) RetriveFromStorage(key string, T any) (any, error) {
-	if this.backend == nil {
-		return nil, errors.New("Error: The backend is nil")
-	}
-	return this.backend.RetriveFromStorage(key, T)
-}
-
-// Get the raw value directly whichout tracking the accessing record.
+// Get the raw value directly WITHOUT tracking the accessing record.
 // Users need to track the access count themselves.
 func (this *WriteCache) Retrive(path string, T any) (any, error) {
 	typedv, _ := this.Find(stgcommon.SYSTEM, path, T)
@@ -300,7 +295,7 @@ func (this *WriteCache) Export(preprocs ...func([]*univalue.Univalue) []*univalu
 		}, buffer)
 	}
 	slice.RemoveIf(&buffer, func(_ int, v *univalue.Univalue) bool {
-		return v.PathLookupOnly() || (v.Reads() == 0 && v.IsReadOnly()) // Remove peeks
+		return v.PathLookupOnly() // Remove peeks
 	})
 
 	// univalue.Univalues(buffer).PrintUnsorted() // For debugging purpose

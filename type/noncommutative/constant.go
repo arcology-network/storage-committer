@@ -22,4 +22,8 @@ const (
 	STRING uint8 = 105
 	BIGINT uint8 = 106
 	BYTES  uint8 = 107
+	UINT32 uint8 = 108
+	UINT64 uint8 = 109
+
+	PLACEHOLDER uint8 = 255
 )

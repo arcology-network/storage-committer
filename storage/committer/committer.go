@@ -24,6 +24,7 @@ import (
 	stgcommon "github.com/arcology-network/storage-committer/common"
 	platform "github.com/arcology-network/storage-committer/platform"
 	cache "github.com/arcology-network/storage-committer/storage/cache"
+	commutative "github.com/arcology-network/storage-committer/type/commutative"
 	"github.com/arcology-network/storage-committer/type/univalue"
 
 	mapi "github.com/arcology-network/common-lib/exp/map"
@@ -57,7 +58,7 @@ func NewStateCommitter(readonlyStore stgcommon.ReadOnlyStore, writers []stgcommo
 
 		writers: writers,
 		byPath:  PathIndexer(readonlyStore), // By storage path
-		byTxID:  TxIndexer(readonlyStore),   // By tx ID
+		byTxID:  TxIndexer(readonlyStore),   // By tx ID, used to quickly remove the transitions that are not in the whitelist.
 	}
 }
 
@@ -76,6 +77,9 @@ func (this *StateCommitter) SetStore(store stgcommon.ReadOnlyStore) { // Testing
 
 // Import imports the given transitions into the StateCommitter.
 func (this *StateCommitter) Import(transitions []*univalue.Univalue) *StateCommitter {
+	transitions = this.SubstitueWildcards(transitions) // Import the wildcards, if any.
+
+	// Import the regular transitions to the indexers.
 	this.byPath.Import(transitions)
 	this.byTxID.Import(transitions)
 
@@ -83,6 +87,35 @@ func (this *StateCommitter) Import(transitions []*univalue.Univalue) *StateCommi
 		writer.Import(transitions)
 	}
 	return this
+}
+
+// SubstitueWildcards substitutes the wildcards in the transitions with the actual transitions.
+func (this *StateCommitter) SubstitueWildcards(transitions []*univalue.Univalue) []*univalue.Univalue {
+	wildcards := slice.MoveIf(&transitions, func(_ int, v *univalue.Univalue) bool {
+		flag, _ := v.IsWildcard()
+		return flag
+	})
+
+	substitued := []*univalue.Univalue{}
+	for i := range wildcards {
+		parentPath := common.GetParentPath(*wildcards[i].GetPath())       // Get the parent path of the wildcard, so that it can be used for cascade delete.
+		v, err := this.Store().Retrive(parentPath, new(commutative.Path)) // Preload the path, so that it can be used for cascade delete.
+		if v == nil || err != nil {
+			continue
+		}
+
+		// Get the sub paths of the path. including the child paths.
+		pathStrs := v.(stgcommon.Type).GetCascadeSub(parentPath, this.Store())
+		trans := slice.Transform(pathStrs, func(_ int, substitued string) *univalue.Univalue {
+			newTran := wildcards[i].Clone().(*univalue.Univalue)
+			newTran.SetPath(&substitued) // Set the path to the sub path.
+			newTran.SetValue(nil)        // Set the value to nil, so that it won't be indexed
+			return newTran
+		})
+		substitued = append(substitued, trans...)
+	}
+	transitions = append(transitions, substitued...) // Append the substituted transitions to the original transitions.
+	return transitions
 }
 
 // Finalize finalizes the transitions in the StateCommitter.
@@ -112,25 +145,25 @@ func (this *StateCommitter) Finalize(txs []uint64) {
 		slice.RemoveIf(v, func(_ int, val *univalue.Univalue) bool { return val.GetPath() == nil }) // Remove conflicting ones.
 		if len(*v) > 0 {
 			// Finalize the transitions and flag the merged ones.
-			DeltaSequence(*v).Finalize(this.readonlyStore)
+			DeltaSequence(*v).Finalize(this.readonlyStore) // Sort and finalize the transitions.
 		}
 	})
 
 	// When deleting a path, all the sub paths are also deleted. But deleted sub paths aren't part of the transitions.
 	// to save bandwidth, we need generate these transitions here.
-	// affiliatedDeletes := []*univalue.Univalue{}
+	// GetCascadeSub := []*univalue.Univalue{}
 	// this.byPath.ForeachDo(func(_ string, v []*univalue.Univalue) {
 	// 	if v[0].TypeID() == commutative.PATH && v[0].Value() == nil {
 	// 		for _, k := range v[0].Value().(*deltaset.DeltaSet[string]).Elements() {
 	// 			key := *(v[0].Property.GetPath()) + k // Concatenate the path and the subkey
 	// 			v := univalue.NewUnivalue(v[0].GetTx(), key, 0, 1, 0, nil, nil)
-	// 			affiliatedDeletes = append(affiliatedDeletes, v)
+	// 			GetCascadeSub = append(GetCascadeSub, v)
 	// 		}
 	// 	}
 	// })
 
 	// Import the affiliated deletes, no need to finalize them because they are already finalized.
-	// this.Import(affiliatedDeletes)
+	// this.Import(GetCascadeSub)
 
 	this.byPath.Clear()
 	this.byTxID.Clear()

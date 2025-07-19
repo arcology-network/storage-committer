@@ -96,11 +96,17 @@ func (this *Int64) Reset() {
 	this.delta = 0
 }
 
+func (*Int64) GetCascadeSub(_ string, _ any) []string { return nil } // The entries to delete when this is deleted.
+
 func (this *Int64) Get() (any, uint32, uint32) {
 	return int64(this.value + this.delta), 1, common.IfThen(this.delta == 0, uint32(0), uint32(1))
 }
 
 func (this *Int64) Set(v any, source any) (any, uint32, uint32, uint32, error) {
+	if v == nil {
+		return this, 0, 1, 0, nil
+	}
+
 	if this.isUnderflow(int64(v.(*Int64).delta)) || this.isOverflow(int64(v.(*Int64).delta)) {
 		return this, 0, 1, 0, errors.New("Error: Value out of range!!")
 	}

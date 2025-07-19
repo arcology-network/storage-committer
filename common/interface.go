@@ -36,6 +36,7 @@ type Type interface { // value type
 	CloneDelta() (any, bool)
 	SetDelta(any, bool)
 	SetValue(v any)
+	GetCascadeSub(string, any) []string // Get the sub paths for cascade delete, if applicable.
 
 	Get() (any, uint32, uint32) // Value, reads and writes, no deltawrites.
 	Set(any, any) (any, uint32, uint32, uint32, error)

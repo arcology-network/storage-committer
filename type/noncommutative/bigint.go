@@ -23,7 +23,7 @@ import (
 
 	// "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/common"
-	intf "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 )
 
 // type Bigint codec.Bigint
@@ -68,7 +68,8 @@ func (this *Bigint) IsDeltaApplied() bool   { return true }
 func (this *Bigint) ResetDelta()            { this.SetDelta(big.NewInt(0), true) }
 func (this *Bigint) SetDelta(v any, _ bool) { (*big.Int)(this).Set((*big.Int)(v.(*Bigint))) }
 
-func (this *Bigint) Get() (any, uint32, uint32) { return *((*big.Int)(this)), 1, 0 }
+func (this *Bigint) Get() (any, uint32, uint32)        { return *((*big.Int)(this)), 1, 0 }
+func (*Bigint) GetCascadeSub(_ string, _ any) []string { return nil } // // The entries to delete when this is deleted.
 
 func (this *Bigint) New(_, delta, _, _, _ any) any {
 	return common.IfThenDo1st(delta != nil && delta.(*Bigint) != nil, func() any { return delta.(*Bigint).Clone() }, any(this))
@@ -81,7 +82,7 @@ func (this *Bigint) Set(value any, _ any) (any, uint32, uint32, uint32, error) {
 	return this, 0, 1, 0, nil
 }
 
-func (this *Bigint) ApplyDelta(typedVals []intf.Type) (intf.Type, int, error) {
+func (this *Bigint) ApplyDelta(typedVals []stgcommon.Type) (stgcommon.Type, int, error) {
 	for _, v := range typedVals {
 		if this == nil && v != nil { // New value
 			this = v.(*Bigint)

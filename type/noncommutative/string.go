@@ -51,9 +51,10 @@ func (this *String) CloneDelta() (any, bool) { return this.Clone(), true }
 func (this *String) SetValue(v any)          { this.SetDelta(v, true) }
 func (this *String) Preload(_ string, _ any) {}
 
-func (this *String) IsDeltaApplied() bool   { return true }
-func (this *String) ResetDelta()            { this.SetDelta(common.New[String](""), true) }
-func (this *String) SetDelta(v any, _ bool) { *this = (*v.(*String)) }
+func (this *String) IsDeltaApplied() bool              { return true }
+func (this *String) ResetDelta()                       { this.SetDelta(common.New[String](""), true) }
+func (this *String) SetDelta(v any, _ bool)            { *this = (*v.(*String)) }
+func (*String) GetCascadeSub(_ string, _ any) []string { return nil } // The entries to delete when this is deleted.
 
 func (this *String) New(_, delta, _, _, _ any) any {
 	return common.IfThenDo1st(delta != nil && delta.(*String) != nil, func() any { return delta.(*String).Clone() }, any(this))

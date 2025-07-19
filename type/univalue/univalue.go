@@ -35,7 +35,7 @@ import (
 type Univalue struct {
 	Property
 	value any
-	cache []byte
+	buf   []byte // The encoded value.
 }
 
 func NewUnivalue(tx uint64, key string, reads, writes uint32, deltaWrites uint32, T any, source any) *Univalue {
@@ -79,9 +79,17 @@ func (*Univalue) Reset(this *Univalue) {
 
 func (this *Univalue) From(v *Univalue) any { return v }
 
+func (this *Univalue) IsWildcard() (bool, string) {
+	if strings.HasSuffix(*this.path, "/*") {
+		idx := strings.IndexByte(*this.path, '*')
+		return true, (*this.path)[:idx]
+	}
+	return false, (*this.path)
+}
+
 // func (this *Univalue) IsHotLoaded() bool             { return this.reads > 1 }
 func (this *Univalue) SetTx(txId uint64) { this.tx = txId }
-func (this *Univalue) ClearCache()       { this.cache = this.cache[:0] }
+func (this *Univalue) ClearCache()       { this.buf = this.buf[:0] }
 func (this *Univalue) Value() any        { return this.value }
 func (this *Univalue) SetValue(newValue any) *Univalue {
 	if this.value != nil && reflect.TypeOf(this.value) != reflect.TypeOf(newValue) && newValue != nil {
@@ -92,7 +100,7 @@ func (this *Univalue) SetValue(newValue any) *Univalue {
 	return this
 }
 
-func (this *Univalue) GetCache() any { return this.cache }
+// func (this *Univalue) GetCache() any { return this.cache }
 
 func (this *Univalue) Init(tx uint64, key string, reads, writes, deltaWrites uint32, v any, dataSource ...any) *Univalue {
 	this.vType = common.IfThenDo1st(v != nil, func() uint8 { return v.(intf.Type).TypeID() }, uint8(reflect.Invalid))
@@ -263,11 +271,6 @@ func (this *Univalue) PathLookupOnly() bool {
 	return this.reads == 0 && this.deltaWrites == 0 && this.writes == 0
 }
 
-// This is a path lookup operation, which means that the nothing is written to the path itself.
-func (this *Univalue) IsPathLookup() bool {
-	return this.writes == 0 && this.deltaWrites == 0 && this.Reads() == 0
-}
-
 func (this *Univalue) IsReadOnly() bool       { return (this.writes == 0 && this.deltaWrites == 0) }
 func (this *Univalue) IsWriteOnly() bool      { return (this.reads == 0 && this.deltaWrites == 0) }
 func (this *Univalue) IsDeltaWriteOnly() bool { return (this.reads == 0 && this.writes == 0) }
@@ -333,7 +336,7 @@ func (this *Univalue) Clone() any {
 	v := &Univalue{
 		this.Property.Clone(),
 		common.IfThenDo1st(this.value != nil, func() any { return this.value.(intf.Type).Clone() }, this.value),
-		slice.Clone(this.cache),
+		slice.Clone(this.buf),
 	}
 	return v
 }
@@ -404,3 +407,32 @@ func (this *Univalue) Equal(other *Univalue) bool {
 		vFlag &&
 		this.preexists == other.Preexist()
 }
+
+// func (this *Univalue) GetCascadeSub(prefix string, source any) []string {
+// 	elements := slice.Transform(this.DeltaSet.Elements(), func(_ int, k string) string { return prefix + k })
+
+// 	store := source.(interface {
+// 		Peek(string, any) (any, error)
+// 	})
+
+// 	pathStrs := []string{}
+// 	for {
+// 		subPaths := slice.MoveIf(&elements, func(_ int, k string) bool {
+// 			return common.IsPath(k)
+// 		})
+// 		pathStrs = append(pathStrs, elements...)
+
+// 		// Loop through the sub paths and check if they exist in the store.
+// 		for i := range subPaths {
+// 			if path, _ := store.Peek(prefix+subPaths[i], new(Path)); path != nil {
+// 				path.(*Path).GetCascadeSub(prefix+subPaths[i], store)
+// 			}
+// 		}
+
+// 		if len(subPaths) == 0 {
+// 			pathStrs = append(pathStrs, subPaths...)
+// 			break
+// 		}
+// 	}
+// 	return pathStrs
+// }

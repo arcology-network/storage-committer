@@ -78,10 +78,11 @@ func (this *Bytes) CloneDelta() (any, bool) { return codec.Bytes(slice.Clone(thi
 func (this *Bytes) SetValue(v any)          { this.SetDelta(v, true) }
 func (this *Bytes) Preload(_ string, _ any) {}
 
-func (this *Bytes) IsDeltaApplied() bool       { return true }
-func (this *Bytes) ResetDelta()                { this.SetDelta(codec.Bytes([]byte{}), true) }
-func (this *Bytes) SetDelta(v any, _ bool)     { copy(this.value, v.(codec.Bytes)) }
-func (this *Bytes) Get() (any, uint32, uint32) { return []byte(this.value), 1, 0 }
+func (this *Bytes) IsDeltaApplied() bool              { return true }
+func (this *Bytes) ResetDelta()                       { this.SetDelta(codec.Bytes([]byte{}), true) }
+func (this *Bytes) SetDelta(v any, _ bool)            { copy(this.value, v.(codec.Bytes)) }
+func (this *Bytes) Get() (any, uint32, uint32)        { return []byte(this.value), 1, 0 }
+func (*Bytes) GetCascadeSub(_ string, _ any) []string { return nil } // // The entries to delete when this is deleted.
 
 func (this *Bytes) New(_, delta, _, _, _ any) any {
 	v := common.IfThenDo1st(delta != nil && delta.(codec.Bytes) != nil, func() codec.Bytes { return delta.(codec.Bytes).Clone().(codec.Bytes) }, this.value)

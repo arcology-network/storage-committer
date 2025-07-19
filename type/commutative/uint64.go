@@ -88,12 +88,17 @@ func (this *Uint64) SetDelta(v any, sign bool) { this.delta = v.(uint64) }
 func (this *Uint64) TypeID() uint8                              { return UINT64 }
 func (this *Uint64) CanApply(key any) bool                      { return true }
 func (this *Uint64) CopyTo(v any) (any, uint32, uint32, uint32) { return v, 0, 1, 0 }
+func (*Uint64) GetCascadeSub(_ string, _ any) []string          { return nil }
 
 func (this *Uint64) Get() (any, uint32, uint32) {
 	return this.value + this.delta, 1, common.IfThen(this.delta == 0, uint32(0), uint32(1))
 }
 
 func (this *Uint64) Set(v any, source any) (any, uint32, uint32, uint32, error) {
+	if v == nil {
+		return this, 0, 1, 0, nil
+	}
+
 	if (this.max < v.(*Uint64).delta) || (this.max-v.(*Uint64).delta < this.value+this.delta) {
 		return this, 0, 1, 0, errors.New("Error: Value out of range!!")
 	}

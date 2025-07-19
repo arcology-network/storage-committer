@@ -90,10 +90,10 @@ func (this *Univalue) GetEncoded() []byte {
 		return this.value.(stgcommon.Type).Value().(codec.Encodable).Encode()
 	}
 
-	if len(this.cache) > 0 {
+	if len(this.buf) > 0 {
 		return this.value.(stgcommon.Type).Value().(codec.Encodable).Encode()
 	}
-	return this.cache
+	return this.buf
 }
 
 func (this *Univalue) GobEncode() ([]byte, error) {

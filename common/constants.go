@@ -75,12 +75,15 @@ const (
 	MAX_NUM_CONFLICTS             = 256
 
 	// function property paths, that can be created on the fly.
-	FUNC_PATH      = "func/"
+	FUNC_PATH      = "parallel/"
 	FULL_FUNC_PATH = "/" + FUNC_PATH
 
-	EXECUTION_PARALLELISM   = "parallelism/" // The execution parallelism of the function, either parallel or sequential
-	EXECUTION_EXCEPTED      = "except/"
+	PARALLELISM_LEVEL       = "lvl/" // The execution parallelism of the function, either parallel or sequential
+	PARALLEL_EXCEPTED       = "except/"
 	REQUIRED_GAS_PREPAYMENT = "requiredPrepayment" // Amount of gas prepaid required for the function's deferred execution
+	CONFLICT_INFO           = "conflicts/"         // The history of conflicts for the function, used for debugging and analysis
+	TOTAL_CALLS             = "totalCalls"         // Total number of invocations for the function, used for debugging and analysis
+	AVERAGE_GAS_USED        = "averageGasUsed"     // Average gas used for the function, used for determining rollback priority.
 	PARALLEL_EXECUTION      = uint8(0)             // The default method
 	SEQUENTIAL_EXECUTION    = uint8(255)
 )

@@ -37,11 +37,11 @@ func FuncPath(addr evmcommon.Address, sourceFun [4]byte) string {
 }
 
 func ExecutionParallelism(addr evmcommon.Address, sourceFun [4]byte) string {
-	return FuncPath(addr, sourceFun) + EXECUTION_PARALLELISM
+	return FuncPath(addr, sourceFun) + PARALLELISM_LEVEL
 }
 
 func ExceptPaths(addr evmcommon.Address, sourceFun [4]byte) string {
-	return FuncPath(addr, sourceFun) + EXECUTION_EXCEPTED
+	return FuncPath(addr, sourceFun) + PARALLEL_EXCEPTED
 }
 
 func RequiredPrepaymentPath(addr evmcommon.Address, sourceFun [4]byte) string {

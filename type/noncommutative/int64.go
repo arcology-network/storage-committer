@@ -56,11 +56,10 @@ func (this *Int64) CloneDelta() (any, bool) { return this.Clone(), *this >= 0 }
 func (this *Int64) SetValue(v any)          { this.SetDelta(v, true) } // The sign is only a placeholder, the value carries the sign by itself.
 func (this *Int64) Preload(_ string, _ any) {}
 
-func (this *Int64) IsDeltaApplied() bool { return true }
-func (this *Int64) ResetDelta()          { this.SetDelta(common.New[Int64](0), true) }
-func (this *Int64) SetDelta(v any, sign bool) {
-	(*this) = (*v.(*Int64)) * common.IfThen(sign, Int64(1), Int64(-1))
-}
+func (this *Int64) IsDeltaApplied() bool              { return true }
+func (this *Int64) ResetDelta()                       { this.SetDelta(common.New[Int64](0), true) }
+func (this *Int64) SetDelta(v any, sign bool)         { (*this) = (*v.(*Int64)) }
+func (*Int64) GetCascadeSub(_ string, _ any) []string { return nil } // The entries to delete when this is deleted.
 
 func (this *Int64) New(_, delta, _, _, _ any) any {
 	if common.IsType[int64](delta) {

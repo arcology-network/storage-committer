@@ -56,10 +56,6 @@ func TestDatastoreBasic(t *testing.T) {
 		vs[i] = values[i]
 	}
 
-	// if err := store.batchWritePersistentStorage(keys, values); err != nil {
-	// 	t.Error(err)
-	// }
-
 	if err := store.BatchInject(keys, vs); err != nil {
 		t.Error(err)
 	}
