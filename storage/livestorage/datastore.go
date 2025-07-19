@@ -73,6 +73,7 @@ func (this *LiveStorage) SetDB(db commonintf.PersistentStorage) { this.db = db }
 
 // func (this *LiveStorage) RetriveFromStorage(key string) bool { return this.IfExists(key) }
 
+// No access tracking
 func (this *LiveStorage) IfExists(key string) bool {
 	v, _ := this.Retrive(key, nil)
 	return v != nil

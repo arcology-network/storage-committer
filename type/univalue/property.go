@@ -27,6 +27,7 @@ import (
 type Property struct {
 	vType               uint8
 	ifSkipConflictCheck bool    // If affected by conflict status or not.
+	isLocal             bool    // If true, it is used in the local cache.
 	tx                  uint64  // Transaction ID
 	generation          uint64  // Generation ID
 	sequence            uint64  // Sequence ID
@@ -88,6 +89,9 @@ func (this *Property) Merge(other *Property) bool {
 	return this.keyHash == other.keyHash
 }
 
+func (this *Property) IsLocal() bool         { return this.isLocal }
+func (this *Property) SetLocal(isLocal bool) { this.isLocal = isLocal }
+
 func (this *Property) SizeInStorage() uint64 { return this.sizeInStorage }
 func (this *Property) GetMsg() string        { return this.msg }
 func (this *Property) SetMsg(msg string)     { this.msg = msg }
@@ -100,10 +104,10 @@ func (this *Property) GetTx() uint64     { return this.tx }
 func (this *Property) SetTx(txId uint64) { this.tx = txId }
 
 func (this *Property) GetGeneration() uint64 { return this.generation }
-func (this *Property) Getsequence() uint64   { return this.sequence }
+func (this *Property) GetSequence() uint64   { return this.sequence }
 
 func (this *Property) SetGeneration(id uint64) { this.generation = id }
-func (this *Property) Setsequence(id uint64)   { this.sequence = id }
+func (this *Property) SetSequence(id uint64)   { this.sequence = id }
 
 func (this *Property) GetPath() *string     { return this.path }
 func (this *Property) SetPath(path *string) { this.path = path }

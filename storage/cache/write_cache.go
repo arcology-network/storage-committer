@@ -18,6 +18,7 @@
 package cache
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"reflect"
@@ -36,19 +37,21 @@ import (
 
 // WriteCache is a read-only data backend used for caching.
 type WriteCache struct {
-	backend  stgcommon.ReadOnlyStore
-	kvDict   map[string]*univalue.Univalue // Local KV lookup
-	platform stgeth.Platform
-	pool     *mempool.Mempool[*univalue.Univalue]
+	backend     stgcommon.ReadOnlyStore
+	kvDict      map[string]*univalue.Univalue // Local KV lookup
+	wildcardDel []string                      // Paths delete by wildcard
+	platform    stgeth.Platform
+	pool        *mempool.Mempool[*univalue.Univalue]
 }
 
 // NewWriteCache creates a new instance of WriteCache; the backend can be another instance of WriteCache,
 // resulting in a cascading-like structure.
 func NewWriteCache(backend stgcommon.ReadOnlyStore, perPage int, numPages int, args ...any) *WriteCache {
 	return &WriteCache{
-		backend:  backend,
-		kvDict:   make(map[string]*univalue.Univalue),
-		platform: *stgeth.NewPlatform(),
+		backend:     backend,
+		kvDict:      make(map[string]*univalue.Univalue),
+		wildcardDel: make([]string, 0),
+		platform:    *stgeth.NewPlatform(),
 		pool: mempool.NewMempool(perPage, numPages, func() *univalue.Univalue {
 			return new(univalue.Univalue)
 		}, (&univalue.Univalue{}).Reset),
@@ -64,6 +67,26 @@ func (this *WriteCache) ReadOnlyStore() stgcommon.ReadOnlyStore { return this.ba
 func (this *WriteCache) Cache() *map[string]*univalue.Univalue  { return &this.kvDict }
 func (this *WriteCache) Preload([]byte) any                     { return nil } // Placeholder
 func (this *WriteCache) NewUnivalue() *univalue.Univalue        { return this.pool.New() }
+
+func (this *WriteCache) Write(tx uint64, path string, newVal any, args ...any) (int64, error) {
+	sizeDif := this.DiffSize(tx, path, newVal) // Update the size difference
+
+	// Could be negative if the value is deleted or replaced by a value with a smaller size.
+	dataSize := sizeDif
+	if newVal == nil || newVal.(stgcommon.Type).TypeID() != uint8(reflect.Invalid) {
+		// Check if the path matches any wildcard delete
+		// if this.MatchesWildcard(path) {
+
+		// }
+
+		univ, err := this.write(tx, path, newVal)
+		if len(args) > 0 && args[0] != nil {
+			args[0].(func(*univalue.Univalue, int64))(univ, dataSize) // Call the callback function if provided
+		}
+		return dataSize, err
+	}
+	return dataSize, errors.New("Error: Unknown data type !")
+}
 
 func (this *WriteCache) write(tx uint64, path string, value any) (*univalue.Univalue, error) {
 	parentPath := common.GetParentPath(path)
@@ -84,17 +107,50 @@ func (this *WriteCache) write(tx uint64, path string, value any) (*univalue.Univ
 	return univ, errors.New("Error: The parent path " + parentPath + " doesn't exist for " + path)
 }
 
+// Get the raw value directly, put it in an empty univalue without recording the access at the univalue level.
+func (this *WriteCache) Find(tx uint64, path string, T any) (any, any) {
+	if univ, ok := this.kvDict[path]; ok {
+		return univ.Value(), univ
+	}
+
+	v, _ := this.ReadOnlyStore().Retrive(path, T)
+	univ := univalue.NewUnivalue(tx, path, 0, 0, 0, v, nil)
+	return univ.Value(), univ
+}
+
+// Get the raw value directly WITHOUT tracking the accessing record.
+// Users need to count access themselves.
+func (this *WriteCache) Retrive(path string, T any) (any, error) {
+	typedv, _ := this.Find(stgcommon.SYSTEM, path, T)
+	if typedv == nil || typedv.(stgcommon.Type).IsDeltaApplied() {
+		return typedv, nil
+	}
+
+	// Special treatment for the commutative.Path.
+	// In general, value types need to be fully cloned as well, so they be
+	// manipulated without affecting the original value. But this doesn't apply to the commutative.Path, which
+	// has its own change tracking mechanism.
+	if common.IsType[*commutative.Path](typedv) {
+		return typedv.(*commutative.Path).Clone(), nil
+	}
+
+	// Make a Deep copy of the original value.
+	rawv, _, _ := typedv.(stgcommon.Type).Get()
+	min, max := typedv.(stgcommon.Type).Limits()
+	return typedv.(stgcommon.Type).New(rawv, nil, nil, min, max), nil // Clone the value
+}
+
 // If the access has been recorded
 func (this *WriteCache) RetriveOrCreate(tx uint64, path string, T any) (*univalue.Univalue, bool) {
 	unival, inCache := this.kvDict[path]
 	if unival == nil { // Not in the kvDict, check the datastore
-		unival = this.GetFromStore(tx, path, T)
+		unival = this.LoadToCache(tx, path, T)
 	}
 	return unival, inCache // From cache
 }
 
-// The function is used to get the univalue from the backend only.
-func (this *WriteCache) GetFromStore(tx uint64, path string, T any) *univalue.Univalue {
+// The load the data from the backend to the cache only. No access tracking is done.
+func (this *WriteCache) LoadToCache(tx uint64, path string, T any) *univalue.Univalue {
 	var typedv any
 	if backend := this.ReadOnlyStore(); backend != nil {
 		typedv, _ = backend.Retrive(path, T)
@@ -141,58 +197,35 @@ func (this *WriteCache) DiffSize(tx uint64, path string, newVal any) int64 {
 	return newSize - oldSize
 }
 
-func (this *WriteCache) Write(tx uint64, path string, newVal any, args ...any) (int64, error) {
-	sizeDif := this.DiffSize(tx, path, newVal) // Update the size difference
-
-	// Could be negative if the value is deleted or replaced by a value with a smaller size.
-	dataSize := sizeDif
-	if newVal == nil || newVal.(stgcommon.Type).TypeID() != uint8(reflect.Invalid) {
-		univ, err := this.write(tx, path, newVal)
-		if len(args) > 0 && args[0] != nil {
-			args[0].(func(*univalue.Univalue, int64))(univ, dataSize) // Call the callback function if provided
+func (this *WriteCache) MatchesWildcard(path string) bool {
+	for _, wildcardPath := range this.wildcardDel {
+		if len(path) < len(wildcardPath) {
+			continue
 		}
-		return dataSize, err
+
+		if bytes.Equal([]byte(path[:len(wildcardPath)]), []byte(wildcardPath)) {
+			return true
+		}
 	}
-	return dataSize, errors.New("Error: Unknown data type !")
+	return false
+}
+
+func (this *WriteCache) LoadWildcardEntry(path string, T any) bool {
+	if _, ok := this.kvDict[path]; ok {
+		return true
+	}
+
+	if this.MatchesWildcard(path) {
+		this.Retrive(path, T)
+
+	}
+	return false
 }
 
 // Get the raw value directly, skip the access counting at the univalue level
 func (this *WriteCache) InCache(path string) (any, bool) {
 	univ, ok := this.kvDict[path]
 	return univ, ok
-}
-
-// Get the raw value directly, put it in an empty univalue without recording the access at the univalue level.
-func (this *WriteCache) Find(tx uint64, path string, T any) (any, any) {
-	if univ, ok := this.kvDict[path]; ok {
-		return univ.Value(), univ
-	}
-
-	v, _ := this.ReadOnlyStore().Retrive(path, T)
-	univ := univalue.NewUnivalue(tx, path, 0, 0, 0, v, nil)
-	return univ.Value(), univ
-}
-
-// Get the raw value directly WITHOUT tracking the accessing record.
-// Users need to track the access count themselves.
-func (this *WriteCache) Retrive(path string, T any) (any, error) {
-	typedv, _ := this.Find(stgcommon.SYSTEM, path, T)
-	if typedv == nil || typedv.(stgcommon.Type).IsDeltaApplied() {
-		return typedv, nil
-	}
-
-	// Special treatment for the commutative.Path.
-	// In general, value types need to be fully cloned as well, so they be
-	// manipulated without affecting the original value. But this doesn't apply to the commutative.Path, which
-	// has its own change tracking mechanism.
-	if common.IsType[*commutative.Path](typedv) {
-		return typedv.(*commutative.Path).Clone(), nil
-	}
-
-	// Make a Deep copy of the original value.
-	rawv, _, _ := typedv.(stgcommon.Type).Get()
-	min, max := typedv.(stgcommon.Type).Limits()
-	return typedv.(stgcommon.Type).New(rawv, nil, nil, min, max), nil // Clone the value
 }
 
 // Check if the path exists in the writecache or the backend.
@@ -295,7 +328,7 @@ func (this *WriteCache) Export(preprocs ...func([]*univalue.Univalue) []*univalu
 		}, buffer)
 	}
 	slice.RemoveIf(&buffer, func(_ int, v *univalue.Univalue) bool {
-		return v.PathLookupOnly() // Remove peeks
+		return v.PathLookupOnly() || v.IsLocal() // Remove peeks and local values
 	})
 
 	// univalue.Univalues(buffer).PrintUnsorted() // For debugging purpose
@@ -354,7 +387,7 @@ func (this *WriteCache) ReadCommitted(tx uint64, key string, T any) (any, uint64
 	// previous block or the transactions before the current one. But in the multiprocessor, the committed state
 	// may also come from the parent thread. So we need to leave a record for the conflict detection in case that
 	// threads spawned by multiple parent are trying to access the same path.
-	if v := this.GetFromStore(tx, key, this); v != nil { // Check to see if the path exists in the backend.
+	if v := this.LoadToCache(tx, key, this); v != nil { // Check to see if the path exists in the backend.
 		return v.Get(tx, key, nil), 0
 	}
 	return nil, 0
