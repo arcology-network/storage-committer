@@ -15,6 +15,15 @@
  *   limitations under the License.
  */
 
+// write_cache.go provides the implementation of WriteCache, a read-only data backend
+// designed for caching key-value pairs in the Arcology Network storage committer module.
+// It supports efficient retrieval, insertion, and management of cached data, including
+// wildcard deletions, memory pooling, and integration with a backend store. The WriteCache
+// is optimized for use in concurrent and multi-processor environments.
+//
+// Note: The WriteCache itself is read-only; all updates are performed by the committer.
+//
+
 package cache
 
 import (
@@ -26,6 +35,7 @@ import (
 	"strings"
 
 	common "github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/common-lib/exp/associative"
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	mempool "github.com/arcology-network/common-lib/exp/mempool"
 	slice "github.com/arcology-network/common-lib/exp/slice"
@@ -38,8 +48,8 @@ import (
 // WriteCache is a read-only data backend used for caching.
 type WriteCache struct {
 	backend     stgcommon.ReadOnlyStore
-	kvDict      map[string]*univalue.Univalue // Local KV lookup
-	wildcardDel []string                      // Paths delete by wildcard
+	kvDict      map[string]*univalue.Univalue       // Local KV lookup
+	wildcardDel []*associative.Pair[uint64, string] // Paths delete by wildcard
 	platform    stgeth.Platform
 	pool        *mempool.Mempool[*univalue.Univalue]
 }
@@ -50,7 +60,7 @@ func NewWriteCache(backend stgcommon.ReadOnlyStore, perPage int, numPages int, a
 	return &WriteCache{
 		backend:     backend,
 		kvDict:      make(map[string]*univalue.Univalue),
-		wildcardDel: make([]string, 0),
+		wildcardDel: make([]*associative.Pair[uint64, string], 0),
 		platform:    *stgeth.NewPlatform(),
 		pool: mempool.NewMempool(perPage, numPages, func() *univalue.Univalue {
 			return new(univalue.Univalue)
@@ -68,16 +78,26 @@ func (this *WriteCache) Cache() *map[string]*univalue.Univalue  { return &this.k
 func (this *WriteCache) Preload([]byte) any                     { return nil } // Placeholder
 func (this *WriteCache) NewUnivalue() *univalue.Univalue        { return this.pool.New() }
 
-func (this *WriteCache) Write(tx uint64, path string, newVal any, args ...any) (int64, error) {
-	sizeDif := this.DiffSize(tx, path, newVal) // Update the size difference
+func (this *WriteCache) FilterWildcards(tx uint64, path string, newVal any, args ...any) (bool, uint64) {
+	if flag, cleanPath := univalue.IsWildcard(path); flag { // Check if the path is a wildcard path
+		this.wildcardDel = append(this.wildcardDel, &associative.Pair[uint64, string]{First: tx, Second: path})
+		pathMeta, _ := this.read(tx, cleanPath, newVal) // Read the clean path to ensure it exists in the cache
+		return true, pathMeta.Value().(*commutative.Path).TotalSize
+	}
+	return false, 0 // Return true to indicate that the path is valid
+}
 
+func (this *WriteCache) Write(tx uint64, path string, newVal any, args ...any) (int64, error) {
+	if matched, size := this.FilterWildcards(tx, path, newVal, args...); matched {
+		return int64(size), nil // If the path is a wildcard, return the size difference
+	}
+
+	sizeDif := this.DiffSize(tx, path, newVal) // Update the size difference
 	// Could be negative if the value is deleted or replaced by a value with a smaller size.
 	dataSize := sizeDif
 	if newVal == nil || newVal.(stgcommon.Type).TypeID() != uint8(reflect.Invalid) {
 		// Check if the path matches any wildcard delete
-		// if this.MatchesWildcard(path) {
-
-		// }
+		this.PreloadWildcard(path, newVal) // Preload the wildcard paths to the cache, if any.
 
 		univ, err := this.write(tx, path, newVal)
 		if len(args) > 0 && args[0] != nil {
@@ -88,17 +108,46 @@ func (this *WriteCache) Write(tx uint64, path string, newVal any, args ...any) (
 	return dataSize, errors.New("Error: Unknown data type !")
 }
 
+func (this *WriteCache) PreloadWildcard(path string, T any) []*univalue.Univalue {
+	preloaded := make([]*univalue.Univalue, 0)
+	for _, wildcardPath := range this.wildcardDel {
+		if len(path) < len(wildcardPath.Second) {
+			continue
+		}
+
+		if bytes.Equal([]byte(path[:len(wildcardPath.Second)]), []byte(wildcardPath.Second)) {
+			univ, _ := this.read(wildcardPath.First, path, T) // Preload the path
+			univ.SetValue(nil)                                // To indicate t the path has been deleted by the wildcard
+			univ.IncrementWrites(1)
+			univ.SetLocal(true) // Mark as local, so only the wildcard will be exported.
+			preloaded = append(preloaded, univ)
+		}
+	}
+	return preloaded
+}
+
+// WildcardsToUnivalue converts wildcard paths to Univalue for exporting.
+func (this *WriteCache) WildcardsToUnivalue() []*univalue.Univalue {
+	univs := make([]*univalue.Univalue, 0)
+	for _, wildcardPath := range this.wildcardDel {
+		newV := univalue.NewUnivalue(wildcardPath.First, wildcardPath.Second, 0, 1, 0, nil, nil)
+		newV.SetPreexist(true) // Mark as pre-existing, so it pass through the filter.
+		univs = append(univs, newV)
+	}
+	return univs
+}
+
 func (this *WriteCache) write(tx uint64, path string, value any) (*univalue.Univalue, error) {
 	parentPath := common.GetParentPath(path)
 	var univ *univalue.Univalue
 	if this.IfExists(parentPath) || tx == stgcommon.SYSTEM { // The parent path exists or to inject the path directly
-		univ, inCache := this.RetriveOrCreate(tx, path, value) // Get a univalue wrapper
-		err := univ.Set(tx, path, value, inCache, this)        // set the new value
+		univ, inCache := this.read(tx, path, value)     // Get a univalue wrapper
+		err := univ.Set(tx, path, value, inCache, this) // set the new value
 
 		// Update the parent path meta
 		if err == nil {
 			if strings.HasSuffix(parentPath, "/container/") || !this.platform.IsSysPath(parentPath) && tx != stgcommon.SYSTEM { // Don't keep track of the system children
-				parentMeta, inCache := this.RetriveOrCreate(tx, parentPath, new(commutative.Path))
+				parentMeta, inCache := this.read(tx, parentPath, new(commutative.Path))
 				err = parentMeta.Set(tx, path, univ.Value(), inCache, this)
 			}
 		}
@@ -140,15 +189,6 @@ func (this *WriteCache) Retrive(path string, T any) (any, error) {
 	return typedv.(stgcommon.Type).New(rawv, nil, nil, min, max), nil // Clone the value
 }
 
-// If the access has been recorded
-func (this *WriteCache) RetriveOrCreate(tx uint64, path string, T any) (*univalue.Univalue, bool) {
-	unival, inCache := this.kvDict[path]
-	if unival == nil { // Not in the kvDict, check the datastore
-		unival = this.LoadToCache(tx, path, T)
-	}
-	return unival, inCache // From cache
-}
-
 // The load the data from the backend to the cache only. No access tracking is done.
 func (this *WriteCache) LoadToCache(tx uint64, path string, T any) *univalue.Univalue {
 	var typedv any
@@ -172,7 +212,7 @@ func (this *WriteCache) RetriveFromStorage(key string, T any) (any, error) {
 }
 
 func (this *WriteCache) Read(tx uint64, path string, T any) (any, any, uint64) {
-	univalue, _ := this.RetriveOrCreate(tx, path, T)
+	univalue, _ := this.read(tx, path, T)
 
 	// need to check if it is in the memory. If so gas price should be 3 instead.
 	dataSize := stgcommon.MIN_READ_SIZE
@@ -181,6 +221,16 @@ func (this *WriteCache) Read(tx uint64, path string, T any) (any, any, uint64) {
 	}
 
 	return univalue.Get(tx, path, nil), univalue, dataSize
+}
+
+// Read the value from the cache or backend, and return the univalue wrapper.
+// No access tracking is done at the univalue level.
+func (this *WriteCache) read(tx uint64, path string, T any) (*univalue.Univalue, bool) {
+	unival, inCache := this.kvDict[path]
+	if unival == nil { // Not in the kvDict, check the datastore
+		unival = this.LoadToCache(tx, path, T)
+	}
+	return unival, inCache // From cache
 }
 
 func (this *WriteCache) DiffSize(tx uint64, path string, newVal any) int64 {
@@ -195,31 +245,6 @@ func (this *WriteCache) DiffSize(tx uint64, path string, newVal any) int64 {
 	}
 
 	return newSize - oldSize
-}
-
-func (this *WriteCache) MatchesWildcard(path string) bool {
-	for _, wildcardPath := range this.wildcardDel {
-		if len(path) < len(wildcardPath) {
-			continue
-		}
-
-		if bytes.Equal([]byte(path[:len(wildcardPath)]), []byte(wildcardPath)) {
-			return true
-		}
-	}
-	return false
-}
-
-func (this *WriteCache) LoadWildcardEntry(path string, T any) bool {
-	if _, ok := this.kvDict[path]; ok {
-		return true
-	}
-
-	if this.MatchesWildcard(path) {
-		this.Retrive(path, T)
-
-	}
-	return false
 }
 
 // Get the raw value directly, skip the access counting at the univalue level
@@ -332,6 +357,7 @@ func (this *WriteCache) Export(preprocs ...func([]*univalue.Univalue) []*univalu
 	})
 
 	// univalue.Univalues(buffer).PrintUnsorted() // For debugging purpose
+	buffer = append(buffer, this.WildcardsToUnivalue()...)
 	return buffer
 }
 

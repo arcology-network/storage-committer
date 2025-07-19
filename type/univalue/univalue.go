@@ -79,14 +79,6 @@ func (*Univalue) Reset(this *Univalue) {
 
 func (this *Univalue) From(v *Univalue) any { return v }
 
-func (this *Univalue) IsWildcard() (bool, string) {
-	if strings.HasSuffix(*this.path, "/*") {
-		idx := strings.IndexByte(*this.path, '*')
-		return true, (*this.path)[:idx]
-	}
-	return false, (*this.path)
-}
-
 // func (this *Univalue) IsHotLoaded() bool             { return this.reads > 1 }
 func (this *Univalue) SetTx(txId uint64) { this.tx = txId }
 func (this *Univalue) ClearCache()       { this.buf = this.buf[:0] }
@@ -271,9 +263,10 @@ func (this *Univalue) PathLookupOnly() bool {
 	return this.reads == 0 && this.deltaWrites == 0 && this.writes == 0
 }
 
-func (this *Univalue) IsReadOnly() bool       { return (this.writes == 0 && this.deltaWrites == 0) }
-func (this *Univalue) IsWriteOnly() bool      { return (this.reads == 0 && this.deltaWrites == 0) }
-func (this *Univalue) IsDeltaWriteOnly() bool { return (this.reads == 0 && this.writes == 0) }
+func (this *Univalue) IsWildcard() (bool, string) { return IsWildcard(*this.path) }
+func (this *Univalue) IsReadOnly() bool           { return (this.writes == 0 && this.deltaWrites == 0) }
+func (this *Univalue) IsWriteOnly() bool          { return (this.reads == 0 && this.deltaWrites == 0) }
+func (this *Univalue) IsDeltaWriteOnly() bool     { return (this.reads == 0 && this.writes == 0) }
 func (this *Univalue) IsDeleteOnly() bool {
 	return this.isDeleted && this.reads == 0 && this.deltaWrites == 0 // Cannot just use value == nil, because it may be a new value.
 }

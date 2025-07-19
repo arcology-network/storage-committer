@@ -123,8 +123,10 @@ func (this *Property) IncrementReads(reads uint32)             { this.reads += r
 func (this *Property) IncrementWrites(writes uint32)           { this.writes += writes }
 func (this *Property) IncrementDeltaWrites(deltaWrites uint32) { this.deltaWrites += deltaWrites }
 
-func (this *Property) IsReadOnly() bool { return this.Writes() == 0 && this.DeltaWrites() == 0 }
-func (this *Property) Preexist() bool   { return this.preexists } // Exist in cache as a failed read
+func (this *Property) IsReadOnly() bool   { return this.Writes() == 0 && this.DeltaWrites() == 0 }
+func (this *Property) Preexist() bool     { return this.preexists } // Exist in cache as a failed read
+func (this *Property) SetPreexist(v bool) { this.preexists = v }    // Exist in cache as a failed read
+
 // func (this *Property) Persistent() bool { return this.ifSkipConflictCheck }
 
 // This is for debugging purposes only, do not use it in production code!!!

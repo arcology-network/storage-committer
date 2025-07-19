@@ -15,8 +15,10 @@
  *   limitations under the License.
  */
 
-// This package includes functions for indexing, retrieving, and manipulating data stored in the cache.
-// The cache supports concurrent access and provides methods for reading and writing data at specific paths.
+// This file provides a set of wrapper methods for the WriteCache type, enabling advanced operations on cached data paths.
+// The functions include utilities for indexing, retrieving, manipulating, and erasing elements within the cache, as well as
+// reading and writing values at specific indices or keys.
+
 package cache
 
 import (
@@ -31,7 +33,18 @@ import (
 	"github.com/arcology-network/storage-committer/type/univalue"
 )
 
-// Get the index of a given key under a path.
+/*
+The following code defines a set of utility methods for the WriteCache type,
+focusing on advanced operations involving data paths within a cache system.
+These methods enable efficient indexing, retrieval, manipulation, and erasure
+f elements stored under specific paths. By providing abstractions for common
+path-based operations, the code simplifies interaction with cached data structures
+and supports features such as reading values at specific indices, accessing keys,
+and performing batch modifications. This design is particularly useful in scenarios
+where hierarchical or path-based data organization is required, such as in storage
+systems or databases.
+*/
+
 func (this *WriteCache) IndexOf(tx uint64, path string, key any, T any) (uint64, uint64) {
 	if !common.IsPath(path) {
 		return math.MaxUint64, 0 //, errors.New("Error: Not a path!!!")
@@ -85,13 +98,6 @@ func (this *WriteCache) PeekRaw(path string, T any) (any, uint64) {
 	return v, v.(stgcommon.Type).MemSize()
 }
 
-// // Peek the value under a path. The difference between Peek and Read is that Peek does not have access metadata attached.
-// func (this *WriteCache) PeekExist(path string) (bool, uint64) {
-// 	_, univ := this.Find(stgcommon.SYSTEM, path, T)
-// 	v := univ.(*univalue.Univalue).Value()
-// 	return v != nil, stgcommon.MIN_READ_SIZE
-// }
-
 // This function looks up the committed value in the DB instead of the cache.
 func (this *WriteCache) PeekCommitted(path string, T any) (any, uint64) {
 	v, _ := this.backend.Retrive(path, T)
@@ -100,7 +106,7 @@ func (this *WriteCache) PeekCommitted(path string, T any) (any, uint64) {
 
 // This function looks up the value and carries out the operation on the value directly.
 func (this *WriteCache) Do(tx uint64, path string, doer any, T any) (any, error) {
-	univalue, _ := this.RetriveOrCreate(tx, path, T)
+	univalue, _ := this.read(tx, path, T)
 	return univalue.Do(tx, path, doer), nil
 }
 

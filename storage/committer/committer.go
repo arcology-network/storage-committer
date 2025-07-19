@@ -33,8 +33,16 @@ import (
 	livecache "github.com/arcology-network/storage-committer/storage/livecache"
 )
 
-// StateCommitter represents a storage committer.
-// The main purpose of the StateCommitter is to commit the transitions to the different stores.
+/*
+	StateCommitter is a core component responsible for managing and committing state transitions
+	within the Arcology Network's storage system. It handles the import, indexing, finalization,
+	and commitment of state changes (transitions) to various underlying storage backends.
+	The committer supports features such as wildcard substitution, transaction whitelisting,
+	and efficient batch operations, ensuring consistency and performance across different storage layers.
+	This implementation leverages indexers and asynchronous writers to optimize the processing and persistence
+	of state updates.
+*/
+
 type StateCommitter struct {
 	readonlyStore stgcommon.ReadOnlyStore
 	platform      *platform.Platform

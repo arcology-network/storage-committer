@@ -36,7 +36,8 @@ type Path struct {
 
 	//When it is set to non zero, it can only store one type of data, otherwise it can store multiple types.
 	//This is no type checking, it is up to the developer to make sure the data type is correct.
-	Type uint8
+	TotalSize uint64 // The size of the elements under the path in bytes.
+	Type      uint8
 }
 
 func NewPath(newPaths ...string) stgcommon.Type {

@@ -15,6 +15,13 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+//
+// delta_sequence.go provides types and methods for managing sequences of state deltas
+// in the Arcology Network's storage committer. It defines DeltaSequence and DeltaSequences,
+// which represent ordered collections of state transitions (Univalue objects), and provides
+// utilities for sorting, finalizing, and extracting values and keys from these sequences.
+//
+
 package statestore
 
 import (
@@ -73,15 +80,15 @@ func (this DeltaSequence) Finalize(store stgcommon.ReadOnlyStore) *univalue.Univ
 
 func (this DeltaSequence) Finalized() *univalue.Univalue { return this[0] }
 
-type DeltaSequencesV2 []DeltaSequence
+type DeltaSequences []DeltaSequence
 
-func (this DeltaSequencesV2) Finalized() []stgcommon.Type {
+func (this DeltaSequences) Finalized() []stgcommon.Type {
 	return slice.Transform(this, func(_ int, v DeltaSequence) stgcommon.Type {
 		return v[0].Value().(stgcommon.Type)
 	})
 }
 
-func (this DeltaSequencesV2) Keys() []*string {
+func (this DeltaSequences) Keys() []*string {
 	return slice.Transform(this, func(_ int, v DeltaSequence) *string {
 		return v[0].GetPath()
 	})
