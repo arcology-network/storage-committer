@@ -156,7 +156,7 @@ func (this *Univalue) CopyTo(writable any) {
 	writeCache := writable.(interface {
 		Read(uint64, string, any) (any, any, uint64)
 		Write(uint64, string, any, ...any) (int64, error)
-		Find(uint64, string, any) (any, any)
+		Find(uint64, string, any, func(*Univalue)) (any, *Univalue, bool)
 	})
 
 	if this.writes == 0 && this.deltaWrites == 0 {
@@ -165,14 +165,14 @@ func (this *Univalue) CopyTo(writable any) {
 		writeCache.Write(this.tx, *this.GetPath(), this.value)
 	}
 
-	_, univ := writeCache.Find(this.tx, *this.GetPath(), nil)
+	_, univ, _ := writeCache.Find(this.tx, *this.GetPath(), nil, nil)
 	if this == univ {
 		return
 	}
 
-	univ.(*Univalue).IncrementReads(this.Reads())
-	univ.(*Univalue).IncrementWrites(this.Writes())
-	univ.(*Univalue).IncrementDeltaWrites(this.DeltaWrites())
+	univ.IncrementReads(this.Reads())
+	univ.IncrementWrites(this.Writes())
+	univ.IncrementDeltaWrites(this.DeltaWrites())
 }
 
 func (this *Univalue) Set(tx uint64, path string, newV any, inCache bool, importer any) error { // update the value

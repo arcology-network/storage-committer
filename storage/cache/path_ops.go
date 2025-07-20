@@ -90,8 +90,8 @@ func (this *WriteCache) Peek(path string, T any) (any, uint64) {
 
 // Peek the value under a path. The difference between Peek and Read is that Peek does not have access metadata attached.
 func (this *WriteCache) PeekRaw(path string, T any) (any, uint64) {
-	_, univ := this.Find(stgcommon.SYSTEM, path, T)
-	v := univ.(*univalue.Univalue).Value()
+	_, univ, _ := this.Find(stgcommon.SYSTEM, path, T, nil)
+	v := univ.Value()
 	if v == nil {
 		return nil, stgcommon.MIN_READ_SIZE
 	}
@@ -106,7 +106,7 @@ func (this *WriteCache) PeekCommitted(path string, T any) (any, uint64) {
 
 // This function looks up the value and carries out the operation on the value directly.
 func (this *WriteCache) Do(tx uint64, path string, doer any, T any) (any, error) {
-	univalue, _ := this.read(tx, path, T)
+	_, univalue, _ := this.Find(tx, path, T, this.AddToDict)
 	return univalue.Do(tx, path, doer), nil
 }
 
