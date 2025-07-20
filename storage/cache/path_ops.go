@@ -50,8 +50,8 @@ func (this *WriteCache) IndexOf(tx uint64, path string, key any, T any) (uint64,
 		return math.MaxUint64, 0 //, errors.New("Error: Not a path!!!")
 	}
 
-	getter := func(v any) (uint32, uint32, uint32, any) { return 1, 0, 0, v }
-	if v, err := this.Do(tx, path, getter, T); err == nil {
+	readAdder := func(v any) (uint32, uint32, uint32, any) { return 1, 0, 0, v }
+	if v, err := this.DoReadOnly(tx, path, readAdder, T); err == nil {
 		pathInfo := v.(*univalue.Univalue).Value()
 		if common.IsType[*commutative.Path](pathInfo) && common.IsType[string](key) {
 			// idx, _ := pathInfo.(*commutative.Path).View().IdxOf(key.(string))
@@ -68,8 +68,8 @@ func (this *WriteCache) KeyAt(tx uint64, path string, index any, T any) (string,
 		return "", stgcommon.MIN_READ_SIZE //, errors.New("Error: Not a path!!!")
 	}
 
-	getter := func(v any) (uint32, uint32, uint32, any) { return 1, 0, 0, v }
-	if v, err := this.Do(tx, path, getter, T); err == nil {
+	readAdder := func(v any) (uint32, uint32, uint32, any) { return 1, 0, 0, v }
+	if v, err := this.DoReadOnly(tx, path, readAdder, T); err == nil {
 		pathInfo := v.(*univalue.Univalue).Value()
 		if common.IsType[*commutative.Path](pathInfo) && common.IsType[uint64](index) {
 			return pathInfo.(*commutative.Path).View().KeyAt(index.(uint64)), stgcommon.MIN_READ_SIZE
@@ -79,23 +79,12 @@ func (this *WriteCache) KeyAt(tx uint64, path string, index any, T any) (string,
 }
 
 // Peek the value under a path. The difference between Peek and Read is that Peek does not have access metadata attached.
-func (this *WriteCache) Peek(path string, T any) (any, uint64) {
-	v, dataSize := this.PeekRaw(path, T)
-	if v == nil {
-		return nil, dataSize
+func (this *WriteCache) Peek(path string, T any) (any, any, uint64) {
+	if v, _, _ := this.Find(stgcommon.SYSTEM, path, true, T, nil); v != nil {
+		originalV, _, _ := v.(stgcommon.Type).Get()
+		return originalV, v, v.(stgcommon.Type).MemSize()
 	}
-	originalV, _, _ := v.(stgcommon.Type).Get()
-	return originalV, dataSize
-}
-
-// Peek the value under a path. The difference between Peek and Read is that Peek does not have access metadata attached.
-func (this *WriteCache) PeekRaw(path string, T any) (any, uint64) {
-	_, univ, _ := this.Find(stgcommon.SYSTEM, path, T, nil)
-	v := univ.Value()
-	if v == nil {
-		return nil, stgcommon.MIN_READ_SIZE
-	}
-	return v, v.(stgcommon.Type).MemSize()
+	return nil, nil, stgcommon.MIN_READ_SIZE
 }
 
 // This function looks up the committed value in the DB instead of the cache.
@@ -105,8 +94,8 @@ func (this *WriteCache) PeekCommitted(path string, T any) (any, uint64) {
 }
 
 // This function looks up the value and carries out the operation on the value directly.
-func (this *WriteCache) Do(tx uint64, path string, doer any, T any) (any, error) {
-	_, univalue, _ := this.Find(tx, path, T, this.AddToDict)
+func (this *WriteCache) DoReadOnly(tx uint64, path string, doer any, T any) (any, error) {
+	_, univalue, _ := this.Find(tx, path, true, T, this.AddToDict) // Only if the doer is an read only operation, the value will be added to the cache.
 	return univalue.Do(tx, path, doer), nil
 }
 
@@ -176,16 +165,6 @@ func (this *WriteCache) ReadAt(tx uint64, path string, idx uint64, T any) (any, 
 }
 
 // Read th Nth element under a path
-func (this *WriteCache) DoAt(tx uint64, path string, idx uint64, do any, T any) (any, uint64, error) {
-	if key, dataSize, err := this.getKeyByIdx(tx, path, idx); err == nil && key != nil {
-		v, err := this.Do(tx, key.(string), do, T)
-		return v, dataSize, err
-	} else {
-		return key, dataSize, err
-	}
-}
-
-// Read th Nth element under a path
 func (this *WriteCache) PopBack(tx uint64, path string, T any) (any, int64, error) {
 	if !common.IsPath(path) {
 		return nil, int64(stgcommon.MIN_READ_SIZE), errors.New("Error: Not a path!!!")
@@ -215,7 +194,7 @@ func (this *WriteCache) EraseAll(tx uint64, path string, T any) (any, int64, err
 		return nil, int64(stgcommon.MIN_READ_SIZE), errors.New("Error: Not a path!!!")
 	}
 
-	meta, readDataSize := this.Peek(path, T) // read the container meta
+	meta, _, readDataSize := this.Peek(path, T) // read the container meta
 
 	// var accumReadGas uint64
 	var accumWriteDataSize int64
