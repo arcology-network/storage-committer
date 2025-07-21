@@ -27,7 +27,7 @@ import (
 type Property struct {
 	vType               uint8
 	ifSkipConflictCheck bool    // If affected by conflict status or not.
-	isLocal             bool    // If true, it is used in the local cache.
+	isSubstituted       bool    // If true, it is used in the local cache.
 	tx                  uint64  // Transaction ID
 	generation          uint64  // Generation ID
 	sequence            uint64  // Sequence ID
@@ -89,8 +89,8 @@ func (this *Property) Merge(other *Property) bool {
 	return this.keyHash == other.keyHash
 }
 
-func (this *Property) IsLocal() bool         { return this.isLocal }
-func (this *Property) SetLocal(isLocal bool) { this.isLocal = isLocal }
+func (this *Property) IsSubstituted() bool               { return this.isSubstituted }
+func (this *Property) SetSubstituted(isSubstituted bool) { this.isSubstituted = isSubstituted }
 
 func (this *Property) SizeInStorage() uint64 { return this.sizeInStorage }
 func (this *Property) GetMsg() string        { return this.msg }

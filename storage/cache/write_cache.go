@@ -88,56 +88,35 @@ func (this *WriteCache) FilterWildcards(tx uint64, path string, newVal any, args
 	return false, 0 // Return true to indicate that the path is valid
 }
 
-// Remove the matched entries ALREADY in the write cache as deleted.
-func (this *WriteCache) removeDuplicates(path string) {
-	wildcard := common.GetParentPath(path)
-	for k, v := range this.kvDict {
-		if bytes.Equal([]byte(k[:len(wildcard)]), []byte(wildcard)) {
-			if v.Value() != nil {
-				v.SetValue(nil)
-				v.IncrementWrites(1)
-				continue
-			}
-			delete(this.kvDict, k) // Remove the entry from the cache because it is already covered by the wildcard.
-		}
-	}
-}
-
 // PreloadMatched preloads the paths that match the wildcard delete path that are about to be deleted by the
 // the current write operation.
-// func (this *WriteCache) PreloadMatched(path string, T any) []*univalue.Univalue {
-// 	preloaded := make([]*univalue.Univalue, 0)
-// 	for _, wildcardPath := range this.wildcardDel {
-// 		if len(path) < len(wildcardPath.Second) {
-// 			continue
-// 		}
-
-// 		if bytes.Equal([]byte(path[:len(wildcardPath.Second)]), []byte(wildcardPath.Second)) {
-// 			_, univ, _ := this.Find(wildcardPath.First, path, T, this.AddToDict) // Preload the path
-// 			univ.SetValue(nil)                                                   // To indicate t the path has been deleted by the wildcard
-// 			univ.IncrementWrites(1)
-// 			univ.SetLocal(true) // Mark as local, so only the wildcard will be exported.
-// 			preloaded = append(preloaded, univ)
-// 		}
-// 	}
-// 	return preloaded
-// }
-
-// Get the raw value directly, put it in an empty univalue without recording
-// the access at the univalue level. Won't update the kvDict.
-func (this *WriteCache) Find(tx uint64, path string, isRead bool, T any, do func(*univalue.Univalue)) (any, *univalue.Univalue, bool) {
+func (this *WriteCache) PreloadMatched(path string, T any) (bool, *univalue.Univalue) {
 	for _, wildcardPath := range this.wildcardDel {
 		if len(path) < len(wildcardPath.Second) {
 			continue
 		}
 
-		parentPath := common.GetParentPath(wildcardPath.Second) // Ensure the path is a valid parent path
-		if parentPath == path[:len(parentPath)] {
+		if bytes.Equal([]byte(path[:len(wildcardPath.Second)]), []byte(wildcardPath.Second)) {
+			univ := this.LoadFromCommitted(0, path, T) // Preload the path from the backend
+			univ.SetValue(nil)                         // To indicate t the path has been deleted by the wildcard
+			univ.IncrementWrites(1)
+			return true, univ
 		}
 	}
+	return false, nil
+}
 
+// Get the raw value directly, put it in an empty univalue without recording
+// the access at the univalue level. Won't update the kvDict.
+func (this *WriteCache) Find(tx uint64, path string, isReadOnly bool, T any, do func(*univalue.Univalue)) (any, *univalue.Univalue, bool) {
 	if univ, ok := this.kvDict[path]; ok {
 		return univ.Value(), univ, true // From cache
+	}
+
+	// Check if the path is a wildcard path and preload it if necessary.
+	if matched, univ := this.PreloadMatched(path, T); matched {
+		this.kvDict[path] = univ // Add the preloaded univalue to the cache
+		return univ.Value(), univ, false
 	}
 
 	univ := this.LoadFromCommitted(tx, path, T)
@@ -145,6 +124,25 @@ func (this *WriteCache) Find(tx uint64, path string, isRead bool, T any, do func
 		do(univ) // Call the callback function if provided
 	}
 	return univ.Value(), univ, false
+}
+
+func (this *WriteCache) find(tx uint64, path string, T any, do func(*univalue.Univalue)) (any, *univalue.Univalue, bool) {
+	if univ, ok := this.kvDict[path]; ok {
+		return univ.Value(), univ, true // From cache
+	}
+	univ := this.LoadFromCommitted(tx, path, T)
+	return univ.Value(), univ, false
+}
+
+// Remove the matched entries ALREADY in the write cache as deleted.
+func (this *WriteCache) removeDuplicates(path string) {
+	wildcard := common.GetParentPath(path)
+	for k, v := range this.kvDict {
+		if bytes.Equal([]byte(k[:len(wildcard)]), []byte(wildcard)) {
+			v.SetValue(nil)
+			v.IncrementWrites(1)
+		}
+	}
 }
 
 func (this *WriteCache) Write(tx uint64, path string, newVal any, args ...any) (int64, error) {
@@ -156,7 +154,6 @@ func (this *WriteCache) Write(tx uint64, path string, newVal any, args ...any) (
 		this.removeDuplicates(path) // Mark all the matched entries in the write cache as deleted
 		return int64(size), nil     // If the path is a wildcard, return the size difference
 	}
-	// this.PreloadMatched(path, newVal) // Preload the wildcard paths to the cache, if any.
 
 	univ, err := this.write(tx, path, newVal)
 	sizeDif := this.DiffSize(tx, path, newVal) // Update the size difference
@@ -368,7 +365,7 @@ func (this *WriteCache) Export(preprocs ...func([]*univalue.Univalue) []*univalu
 		}, buffer)
 	}
 	slice.RemoveIf(&buffer, func(_ int, v *univalue.Univalue) bool {
-		return v.PathLookupOnly() || v.IsLocal() // Remove peeks and local values
+		return v.PathLookupOnly() // Remove peeks and local values
 	})
 
 	// univalue.Univalues(buffer).PrintUnsorted() // For debugging purpose
