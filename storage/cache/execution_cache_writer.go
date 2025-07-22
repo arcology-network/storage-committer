@@ -18,26 +18,27 @@
 package cache
 
 // ExecutionCacheWriter is a struct that contains data strucuture and methods for writing data to cache.
-// The indexer is used to index the input transitions as they are received, in a way that they can be committed efficiently later.
+// The indexer is used to index the input transitions as they are received, in a way that they can be
+// committed efficiently later.
 type ExecutionCacheWriter struct {
-	*WriteCacheIndexer
+	*ExecutionCacheIndexer
 	*WriteCache
 }
 
 func NewExecutionCacheWriter(writeCache *WriteCache, version int64) *ExecutionCacheWriter {
 	return &ExecutionCacheWriter{
-		WriteCacheIndexer: NewWriteCacheIndexer(nil, int64(version)),
-		WriteCache:        writeCache,
+		ExecutionCacheIndexer: NewExecutionCacheIndexer(nil, int64(version), nil),
+		WriteCache:            writeCache,
 	}
 }
 
 // write cache updates itself every generation. It doesn't need to write to the database.
 func (this *ExecutionCacheWriter) Precommit(isSync bool) {
-	this.WriteCacheIndexer.Finalize() // Remove the nil transitions
-	for i := range this.WriteCacheIndexer.buffer {
-		this.WriteCache.kvDict[*this.WriteCacheIndexer.buffer[i].GetPath()] = this.WriteCacheIndexer.buffer[i]
+	this.ExecutionCacheIndexer.Finalize() // Remove the nil transitions
+	for i := range this.ExecutionCacheIndexer.buffer {
+		this.WriteCache.kvDict[*this.ExecutionCacheIndexer.buffer[i].GetPath()] = this.ExecutionCacheIndexer.buffer[i]
 	}
-	this.WriteCacheIndexer = NewWriteCacheIndexer(nil, -1)
+	this.ExecutionCacheIndexer = NewExecutionCacheIndexer(nil, -1, nil)
 
 }
 
@@ -45,7 +46,8 @@ func (this *ExecutionCacheWriter) Precommit(isSync bool) {
 // the database.
 func (this *ExecutionCacheWriter) Commit(_ uint64) {
 	this.WriteCache.Clear()
-	this.WriteCacheIndexer.buffer = this.WriteCacheIndexer.buffer[:0]
+	this.ExecutionCacheIndexer.buffer = this.ExecutionCacheIndexer.buffer[:0]
 }
 
+func (this *ExecutionCacheWriter) IsSync() bool { return true } // Execution cache is always synchronous.
 func (this *ExecutionCacheWriter) Name() string { return "Execution Cache Writer" }

@@ -32,8 +32,7 @@ import (
 
 // Buffer is simpliest  of indexers. It does not index anything, just stores the transitions.
 type StateStore struct {
-	// *cache.ShardedWriteCache
-	*cache.WriteCache // execution cache
+	*cache.WriteCache // execution cache, cleared at the end of each block.
 	*committer.StateCommitter
 	backend *proxy.StorageProxy
 }
@@ -75,8 +74,8 @@ func (this *StateStore) Import(trans univalue.Univalues) { this.StateCommitter.I
 func (this *StateStore) Preload(key []byte) any          { return this.backend.Preload(key) }
 func (this *StateStore) Clear()                          { this.WriteCache.Clear() }
 
-func (this *StateStore) GetWriters() []intf.AsyncWriter[*univalue.Univalue] {
-	return append([]intf.AsyncWriter[*univalue.Univalue]{
+func (this *StateStore) GetWriters() []intf.Writer[*univalue.Univalue] {
+	return append([]intf.Writer[*univalue.Univalue]{
 		cache.NewExecutionCacheWriter(this.WriteCache, -1)},
 		this.backend.GetWriters()...)
 }

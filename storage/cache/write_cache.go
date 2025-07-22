@@ -27,7 +27,6 @@
 package cache
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"reflect"
@@ -79,33 +78,6 @@ func (this *WriteCache) Cache() *map[string]*univalue.Univalue  { return &this.k
 func (this *WriteCache) Preload([]byte) any                     { return nil } // Placeholder
 func (this *WriteCache) NewUnivalue() *univalue.Univalue        { return this.pool.New() }
 
-func (this *WriteCache) FilterWildcards(tx uint64, path string, newVal any, args ...any) (bool, uint64) {
-	if flag, cleanPath := univalue.IsWildcard(path); flag { // Check if the path is a wildcard path
-		this.wildcardDel = append(this.wildcardDel, &associative.Pair[uint64, string]{First: tx, Second: path})
-		pathMeta, _, _ := this.Find(tx, cleanPath, true, newVal, nil) // Read the clean path to ensure it exists in the cache
-		return true, pathMeta.(*commutative.Path).TotalSize
-	}
-	return false, 0 // Return true to indicate that the path is valid
-}
-
-// PreloadMatched preloads the paths that match the wildcard delete path that are about to be deleted by the
-// the current write operation.
-func (this *WriteCache) PreloadMatched(path string, T any) (bool, *univalue.Univalue) {
-	for _, wildcardPath := range this.wildcardDel {
-		if len(path) < len(wildcardPath.Second) {
-			continue
-		}
-
-		if bytes.Equal([]byte(path[:len(wildcardPath.Second)]), []byte(wildcardPath.Second)) {
-			univ := this.LoadFromCommitted(0, path, T) // Preload the path from the backend
-			univ.SetValue(nil)                         // To indicate t the path has been deleted by the wildcard
-			univ.IncrementWrites(1)
-			return true, univ
-		}
-	}
-	return false, nil
-}
-
 // Get the raw value directly, put it in an empty univalue without recording
 // the access at the univalue level. Won't update the kvDict.
 func (this *WriteCache) Find(tx uint64, path string, isReadOnly bool, T any, do func(*univalue.Univalue)) (any, *univalue.Univalue, bool) {
@@ -113,9 +85,9 @@ func (this *WriteCache) Find(tx uint64, path string, isReadOnly bool, T any, do 
 		return univ.Value(), univ, true // From cache
 	}
 
-	// Check if the path is a wildcard path and preload it if necessary.
-	if matched, univ := this.PreloadMatched(path, T); matched {
-		this.kvDict[path] = univ // Add the preloaded univalue to the cache
+	// If the path is a covered by a wildcard.
+	if matched, univ := this.MatchWildcard(path, T); matched {
+		this.kvDict[path] = univ // Add to the cache
 		return univ.Value(), univ, false
 	}
 
@@ -126,33 +98,13 @@ func (this *WriteCache) Find(tx uint64, path string, isReadOnly bool, T any, do 
 	return univ.Value(), univ, false
 }
 
-func (this *WriteCache) find(tx uint64, path string, T any, do func(*univalue.Univalue)) (any, *univalue.Univalue, bool) {
-	if univ, ok := this.kvDict[path]; ok {
-		return univ.Value(), univ, true // From cache
-	}
-	univ := this.LoadFromCommitted(tx, path, T)
-	return univ.Value(), univ, false
-}
-
-// Remove the matched entries ALREADY in the write cache as deleted.
-func (this *WriteCache) removeDuplicates(path string) {
-	wildcard := common.GetParentPath(path)
-	for k, v := range this.kvDict {
-		if bytes.Equal([]byte(k[:len(wildcard)]), []byte(wildcard)) {
-			v.SetValue(nil)
-			v.IncrementWrites(1)
-		}
-	}
-}
-
 func (this *WriteCache) Write(tx uint64, path string, newVal any, args ...any) (int64, error) {
 	if newVal != nil && newVal.(stgcommon.Type).TypeID() == uint8(reflect.Invalid) { // Neither a valid replacement nor a delete operation.
 		return 0, errors.New("Error: Unknown data type !")
 	}
 
-	if matched, size := this.FilterWildcards(tx, path, newVal, args...); matched {
-		this.removeDuplicates(path) // Mark all the matched entries in the write cache as deleted
-		return int64(size), nil     // If the path is a wildcard, return the size difference
+	if isWildcard, size := this.HandleWildcard(tx, path, newVal, args...); isWildcard {
+		return int64(size), nil // If the path is a wildcard, return the size difference
 	}
 
 	univ, err := this.write(tx, path, newVal)
@@ -180,17 +132,6 @@ func (this *WriteCache) write(tx uint64, path string, value any) (*univalue.Univ
 		return univ, err
 	}
 	return univ, errors.New("Error: The parent path " + parentPath + " doesn't exist for " + path)
-}
-
-// WildcardsToUnivalue converts wildcard paths to Univalue for exporting.
-func (this *WriteCache) WildcardsToUnivalue() []*univalue.Univalue {
-	univs := make([]*univalue.Univalue, 0)
-	for _, wildcardPath := range this.wildcardDel {
-		newV := univalue.NewUnivalue(wildcardPath.First, wildcardPath.Second, 0, 1, 0, nil, nil)
-		newV.SetPreexist(true) // Mark as pre-existing, so it pass through the filter.
-		univs = append(univs, newV)
-	}
-	return univs
 }
 
 // Get the raw value directly WITHOUT tracking the accessing record.
@@ -376,8 +317,6 @@ func (this *WriteCache) Export(preprocs ...func([]*univalue.Univalue) []*univalu
 // For the testing purpose, export the content of the writecache to two arrays of univalues and filter.
 func (this *WriteCache) ExportAll(preprocs ...func([]*univalue.Univalue) []*univalue.Univalue) ([]*univalue.Univalue, []*univalue.Univalue) {
 	all := this.Export()
-	// univalue.Univalues(all).Print()
-
 	accesses := univalue.Univalues(slice.Clone(all)).To(univalue.ITAccess{})
 	transitions := univalue.Univalues(slice.Clone(all)).To(univalue.ITTransition{})
 	return accesses, transitions

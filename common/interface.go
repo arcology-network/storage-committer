@@ -63,10 +63,11 @@ type Type interface { // value type
 	Print()
 }
 
-type AsyncWriter[T any] interface {
+type Writer[T any] interface {
 	Import([]T)
 	Precommit(bool)
 	Commit(uint64)
+	IsSync() bool // If the writer is synchronous, it will block until the commit is done.
 	Name() string
 }
 

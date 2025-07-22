@@ -17,18 +17,25 @@
 
 package livecache
 
-// LiveCacheWriter writes to the OBJECT cache.
+import "github.com/arcology-network/storage-committer/type/univalue"
+
+// LiveCacheWriter writes to the LiveCache.
+
 type LiveCacheWriter struct {
-	*CacheIndexer
+	*LiveCacheIndexer
 	liveCache *LiveCache
-	buffer    []*CacheIndexer // For multiple generations. Each geneartion has its own indexer.
+	buffer    []*LiveCacheIndexer           // For multiple generations. Each geneartion has its own indexer.
+	version   int64                         // The version of the indexer, used for debugging and tracking.
+	filter    func(*univalue.Univalue) bool // Filter function to select transitions to be indexed
 }
 
-func NewLiveCacheWriter(cache *LiveCache, version int64) *LiveCacheWriter {
+func NewLiveCacheWriter(cache *LiveCache, version int64, filter func(*univalue.Univalue) bool) *LiveCacheWriter {
 	return &LiveCacheWriter{
-		CacheIndexer: NewCacheIndexer(cache, version),
-		liveCache:    cache,
-		buffer:       make([]*CacheIndexer, 0),
+		LiveCacheIndexer: NewLiveCacheIndexer(cache, version, filter),
+		liveCache:        cache,
+		buffer:           make([]*LiveCacheIndexer, 0),
+		version:          version,
+		filter:           filter,
 	}
 }
 
@@ -37,19 +44,20 @@ func NewLiveCacheWriter(cache *LiveCache, version int64) *LiveCacheWriter {
 // Each generation
 func (this *LiveCacheWriter) Precommit(isSync bool) {
 	if isSync {
-		this.CacheIndexer.PreCommit()
+		this.LiveCacheIndexer.PreCommit()
 	} else {
-		this.CacheIndexer.Finalize()                            // Remove the nil transitions
-		this.buffer = append(this.buffer, this.CacheIndexer)    // Append the indexer to the buffer
-		this.CacheIndexer = NewCacheIndexer(this.liveCache, -1) // Reset the indexer with a default version number
+		this.LiveCacheIndexer.Finalize()                                             // Remove the nil transitions
+		this.buffer = append(this.buffer, this.LiveCacheIndexer)                     // Append the indexer to the buffer
+		this.LiveCacheIndexer = NewLiveCacheIndexer(this.liveCache, -1, this.filter) // Reset the indexer with a default version number
 	}
 }
 
 // Triggered by the block commit.
 func (this *LiveCacheWriter) Commit(block uint64) {
-	merged := new(CacheIndexer).Merge(this.buffer) // Merge indexers
-	this.liveCache.Commit(merged.buffer, block)    // commit univalues directly
-	this.buffer = make([]*CacheIndexer, 0)         // Reset the indexer buffer
+	merged := new(LiveCacheIndexer).Merge(this.buffer) // Merge indexers
+	this.liveCache.Commit(merged.buffer, block)        // commit univalues directly
+	this.buffer = make([]*LiveCacheIndexer, 0)         // Reset the indexer buffer
 }
 
+func (this *LiveCacheWriter) IsSync() bool { return true }
 func (this *LiveCacheWriter) Name() string { return "Live Cache Writer" }

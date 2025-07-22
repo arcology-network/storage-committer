@@ -30,13 +30,14 @@ import (
 // An index by account address, transitions have the same Eth account address will be put together in a list
 // This is for ETH storage, concurrent container related sub-paths won't be put into this index.
 type EthIndexer struct {
+	filter  func(tran *univalue.Univalue) bool // Post processing function to filter transitions.
 	Version int64
 	*indexer.UnorderedIndexer[[20]byte, *univalue.Univalue, *associative.Pair[*Account, []*univalue.Univalue]]
 	dirtyAccounts []*Account
-	err           error
+	// err           error
 }
 
-func NewEthIndexer(store *EthDataStore, Version int64) *EthIndexer {
+func NewEthIndexer(store *EthDataStore, Version int64, filter func(tran *univalue.Univalue) bool) *EthIndexer {
 	idxer := (indexer.NewUnorderedIndexer(
 		nil,
 		func(v *univalue.Univalue) ([20]byte, bool) {
@@ -56,7 +57,9 @@ func NewEthIndexer(store *EthDataStore, Version int64) *EthIndexer {
 		},
 	))
 
+	// All passed by default.
 	return &EthIndexer{
+		filter:           filter,
 		Version:          Version,
 		UnorderedIndexer: idxer,
 	}
@@ -64,7 +67,7 @@ func NewEthIndexer(store *EthDataStore, Version int64) *EthIndexer {
 
 func (this *EthIndexer) Import(trans []*univalue.Univalue) {
 	ethTrans := slice.CopyIf(trans, func(_ int, v *univalue.Univalue) bool {
-		return v.GetPath() != nil && platform.IsEthPath(*v.GetPath()) // None nil Eth Storage paths only.
+		return v.GetPath() != nil && this.filter(v) // None nil Eth Storage paths only.
 	})
 	this.UnorderedIndexer.Import(ethTrans)
 }

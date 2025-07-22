@@ -31,8 +31,12 @@ import (
 	"github.com/cespare/xxhash/v2"
 )
 
-// ReadCache is a wrapper around cache.ReadCache with some extra methods provided
-// by the intf.Datastore interface to work with the storage-committer.
+// LiveCache acts as an in-memory cache layer for state data, providing fast access to frequently used values.
+// When a state access request is made, the system first checks the LiveCache for the data.
+// Only if the requested data is not found in the LiveCache does the system query the underlying storage.
+// This approach reduces storage access latency and improves overall system performance by keeping hot data
+// readily available.
+
 type LiveCache struct {
 	*cache.ReadCache[string, *associative.Pair[stgcommon.Type, *Profile]]               // Provide Readonly interface
 	profile                                                               *CacheProfile // Memory usage of the cache.

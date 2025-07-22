@@ -32,8 +32,8 @@ import (
 // It keeps track of the all the sub paths that are added, removed or updated.
 type Path struct {
 	*deltaset.DeltaSet[string]
-	preloaded *orderedset.OrderedSet[string]
-
+	preloaded   *orderedset.OrderedSet[string]
+	isTransient bool // If true, it is not persisted to the storage.
 	//When it is set to non zero, it can only store one type of data, otherwise it can store multiple types.
 	//This is no type checking, it is up to the developer to make sure the data type is correct.
 	TotalSize uint64 // The size of the elements under the path in bytes.
@@ -77,6 +77,10 @@ func (this *Path) GetCascadeSub(prefix string, source any) []string {
 	}
 	return pathStrs
 }
+
+// The univalue also holds the info but it is wouldn't save to the storage.
+func (this *Path) IsTransient() bool           { return this.isTransient }
+func (this *Path) SetTransient(transient bool) { this.isTransient = transient }
 
 func (this *Path) Length() int                                { return int(this.DeltaSet.NonNilCount()) }
 func (this *Path) View() *deltaset.DeltaSet[string]           { return this.DeltaSet }
