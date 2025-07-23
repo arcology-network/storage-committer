@@ -26,7 +26,6 @@ import (
 
 func TestPath(t *testing.T) {
 	/* Noncommutative Path Test*/
-
 	meta := NewPath()
 	inPath := meta.(*Path)
 
@@ -72,6 +71,8 @@ func TestPath(t *testing.T) {
 
 func TestCodecPathMeta(t *testing.T) {
 	in := NewPath().(*Path)
+	in.TotalSize = (111)
+	in.IsTransient = true
 
 	in.SetSubPaths([]string{"e-01", "e-001", "e-002", "e-002"})
 	in.SetAdded([]string{"+01", "+001", "+002", "+002"})
@@ -79,6 +80,10 @@ func TestCodecPathMeta(t *testing.T) {
 
 	buffer := in.Encode()
 	out := (&Path{}).Decode(buffer).(*Path)
+
+	if out.TotalSize != in.TotalSize || out.IsTransient != in.IsTransient {
+		t.Error("Error: Don't match!!", out.TotalSize, in.TotalSize, out.IsTransient, in.IsTransient)
+	}
 
 	if !slice.EqualSet(out.Value().(*orderedset.OrderedSet[string]).Elements(), []string{"e-01", "e-001", "e-002"}) {
 		t.Error("Error: Don't match!!")

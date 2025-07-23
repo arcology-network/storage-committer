@@ -22,6 +22,7 @@ import (
 
 	ccbadger "github.com/arcology-network/common-lib/storage/badger"
 	memdb "github.com/arcology-network/common-lib/storage/memdb"
+	"github.com/arcology-network/storage-committer/type/commutative"
 	"github.com/arcology-network/storage-committer/type/univalue"
 
 	// intf "github.com/arcology-network/storage-committer/interfaces"
@@ -147,7 +148,7 @@ func (this *StorageProxy) Retrive(key string, v any) (any, error) {
 func (this *StorageProxy) GetWriters() []intf.Writer[*univalue.Univalue] {
 	return []intf.Writer[*univalue.Univalue]{
 		livecache.NewLiveCacheWriter(this.execCache, -1, this.FilterOutTransients),
-		ethstorage.NewEthStorageWriter(this.ethStorage, -1, this.FilterOutNonEth),
+		ethstorage.NewEthStorageWriter(this.ethStorage, -1, this.EthOnly),
 		ccstorage.NewLiveStorageWriter(this.execStorage, -1, this.FilterOutTransients),
 	}
 }
@@ -161,7 +162,7 @@ func (this *StorageProxy) SyncWriters() []intf.Writer[*univalue.Univalue] {
 
 func (this *StorageProxy) AsyncWriters() []intf.Writer[*univalue.Univalue] {
 	return []intf.Writer[*univalue.Univalue]{
-		ethstorage.NewEthStorageWriter(this.ethStorage, -1, this.FilterOutNonEth),
+		ethstorage.NewEthStorageWriter(this.ethStorage, -1, this.EthOnly),
 		ccstorage.NewLiveStorageWriter(this.execStorage, -1, this.FilterOutTransients),
 	}
 }
@@ -169,16 +170,15 @@ func (this *StorageProxy) AsyncWriters() []intf.Writer[*univalue.Univalue] {
 // Filter out the transitions that are not needed to be persisted.
 func (this *StorageProxy) FilterOutTransients(tran *univalue.Univalue) bool {
 	// System paths only get reset if they are transient.
-	// if v := (*tran).Value(); v != nil && v.(intf.Type).TypeID() == commutative.PATH && v.(*commutative.Path).IsTransient() && this.platform.IsSysPath(*(*tran).GetPath()) {
-	// 	v.(*commutative.Path).Reset()
-	// }
+	if v := (*tran).Value(); v != nil && v.(intf.Type).TypeID() == commutative.PATH && v.(*commutative.Path).IsTransient && this.platform.IsSysPath(*(*tran).GetPath()) {
+		v.(*commutative.Path).Reset()
+	}
 
-	// // Other transient transitions get no chance to be persisted.
-	// return !(*tran).IsTransient()
-	return true
+	// Other transient transitions get no chance to be persisted.
+	return !(*tran).IsTransient()
 }
 
 // Filter out the transitions that are not needed to be persisted.
-func (this *StorageProxy) FilterOutNonEth(tran *univalue.Univalue) bool {
+func (this *StorageProxy) EthOnly(tran *univalue.Univalue) bool {
 	return ethplatform.IsEthPath(*tran.GetPath())
 }

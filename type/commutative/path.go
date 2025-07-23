@@ -33,16 +33,16 @@ import (
 type Path struct {
 	*deltaset.DeltaSet[string]
 	preloaded   *orderedset.OrderedSet[string]
-	isTransient bool // If true, it is not persisted to the storage.
+	IsTransient bool // If true, it is not persisted to the storage.
 	//When it is set to non zero, it can only store one type of data, otherwise it can store multiple types.
 	//This is no type checking, it is up to the developer to make sure the data type is correct.
 	TotalSize uint64 // The size of the elements under the path in bytes.
-	Type      uint8
+	ElemType  uint8
 }
 
 func NewPath(newPaths ...string) stgcommon.Type {
 	this := &Path{
-		Type:     0, // The default data type is 0. It can store multiple types of data in the same path.
+		ElemType: 0, // The default data type is 0. It can store multiple types of data in the same path.
 		DeltaSet: deltaset.NewDeltaSet("", 1000, nil, newPaths...),
 	}
 	return this
@@ -77,10 +77,6 @@ func (this *Path) GetCascadeSub(prefix string, source any) []string {
 	}
 	return pathStrs
 }
-
-// The univalue also holds the info but it is wouldn't save to the storage.
-func (this *Path) IsTransient() bool           { return this.isTransient }
-func (this *Path) SetTransient(transient bool) { this.isTransient = transient }
 
 func (this *Path) Length() int                                { return int(this.DeltaSet.NonNilCount()) }
 func (this *Path) View() *deltaset.DeltaSet[string]           { return this.DeltaSet }
@@ -128,9 +124,11 @@ func (this *Path) Preload(k string, source any) {
 // This is because the committed set should never be modified until the commit time.
 func (this *Path) Clone() any {
 	return &Path{
-		DeltaSet:  this.DeltaSet.Clone(),
-		preloaded: this.preloaded,
-		Type:      this.Type,
+		DeltaSet:    this.DeltaSet.Clone(),
+		preloaded:   this.preloaded,
+		ElemType:    this.ElemType,
+		IsTransient: this.IsTransient,
+		TotalSize:   this.TotalSize,
 	}
 }
 
@@ -141,10 +139,12 @@ func (this *Path) Get() (any, uint32, uint32) {
 }
 
 // For the codec only
-func (this *Path) New(value, delta, sign, min, max any) any {
+func (this *Path) New(_, _, _, _, _ any) any {
 	deltaSet := &Path{
-		DeltaSet: this.DeltaSet.CloneDelta(),
-		Type:     this.Type,
+		DeltaSet:    this.DeltaSet.CloneDelta(),
+		ElemType:    this.ElemType,
+		IsTransient: this.IsTransient,
+		TotalSize:   this.TotalSize,
 	}
 	return deltaSet
 }

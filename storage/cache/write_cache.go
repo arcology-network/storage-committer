@@ -128,6 +128,11 @@ func (this *WriteCache) write(tx uint64, path string, value any) (*univalue.Univ
 				_, parentMeta, inCache := this.Find(tx, parentPath, false, new(commutative.Path), this.AddToDict)
 				err = parentMeta.Set(tx, path, univ.Value(), inCache, this)
 			}
+
+			//Set Transient Status based on its parent path.
+			if pathMeta, _, _ := this.Find(tx, parentPath, true, new(commutative.Path), nil); pathMeta != nil { // Get the parent path meta
+				univ.SetTransient(pathMeta.(*commutative.Path).IsTransient) // Use the parent path transient status to set the current path
+			}
 		}
 		return univ, err
 	}
