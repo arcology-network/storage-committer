@@ -75,8 +75,8 @@ func (this *ShardedWriteCache) Write(tx uint64, path string, value interface{}) 
 	return this.caches[this.hasher(path)%NUM_SHARDS].Write(tx, path, value)
 }
 
-// func (this *ShardedWriteCache) InCache(path string) (interface{}, bool) {
-// 	return this.caches[this.hasher(path)%NUM_SHARDS].InCache(path)
+// func (this *ShardedWriteCache) GetIfCached(path string) (interface{}, bool) {
+// 	return this.caches[this.hasher(path)%NUM_SHARDS].GetIfCached(path)
 // }
 
 func (this *ShardedWriteCache) Retrive(path string, T any) (interface{}, error) {

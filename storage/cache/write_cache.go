@@ -206,7 +206,7 @@ func (this *WriteCache) DiffSize(tx uint64, path string, newVal any) int64 {
 }
 
 // Get the raw value directly, skip the access counting at the univalue level
-func (this *WriteCache) InCache(path string) (any, bool) {
+func (this *WriteCache) GetIfCached(path string) (any, bool) {
 	univ, ok := this.kvDict[path]
 	return univ, ok
 }

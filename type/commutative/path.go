@@ -188,30 +188,47 @@ func (this *Path) Set(value any, source any) (any, uint32, uint32, uint32, error
 	tx := source.([]any)[2].(uint64)
 	writeCache := source.([]any)[3].(interface {
 		Write(uint64, string, any, ...any) (int64, error)
-		InCache(string) (any, bool)
+		IfExists(string) bool
 	})
 
-	// Delete or rewrite the path. A rewrite is generally not allowed.
-	// The path is the root of the container. It cannot be rewritten. But it can be deleted.
+	// Delete or rewrite the path. The path is the root of the container.
+	// A rewrite is generally not allowed. But it can be deleted.
 	// When that happens, all the sub paths are also deleted.
+	// System paths are not allowed to be deleted.
 	if common.IsPath(targetPath) && len(targetPath) == len(containerRoot) {
 		if value == nil { // Delete the path and all its elements
-			for _, subpath := range this.DeltaSet.Elements() { // Get all the committed sub paths
-				// Delete the sub path
-				writeCache.Write(tx, targetPath+subpath, nil) //FIXME: THIS EMITS SOME ERROR MESSAGEES BUT DON't SEEM TO BE HARMFUL
+			elems := this.DeltaSet.Elements()
+			subPaths := slice.MoveIf(&elems, func(_ int, subpath string) bool {
+				return common.IsPath(subpath)
+			})
+
+			for _, subelem := range elems {
+				// Only have to mark the sub elements already in the cache as deleted.
+				if writeCache.IfExists(targetPath + subelem) {
+					writeCache.Write(tx, targetPath+subelem, nil)
+				}
 			}
+			this.DeleteAll() // Remove all from the path meta
+
+			// CascaderRemoval of all the sub paths and their elements
+			for _, subpath := range subPaths {
+				writeCache.Write(tx, targetPath+subpath, nil)
+			}
+
+			// for _, subpath := range this.DeltaSet.Elements() { // Get all the committed sub paths
+			// 	// Cascade delete the sub path
+			// 	writeCache.Write(tx, targetPath+subpath, nil) //FIXME: THIS EMITS SOME ERROR MESSAGEES BUT DON't SEEM TO BE HARMFUL
+			// }
 			return this, 0, 1, 0, nil
 		}
 		return this, 0, 1, 0, errors.New("Error: Cannot rewrite a path!")
 	}
 
 	subkey := targetPath[len(targetPath)-(len(targetPath)-len(containerRoot)):] // Extract the sub key from the path
-	ok, _ := this.DeltaSet.Exists(subkey)
-
-	// Update an existing key or delete a non-existent key won't change the delta set. So we return 0, 0, 0.
-	// This as to be this way otherwise it will cause a lot of conflicts, when multiple transactions are trying
-	// to update the same key. It is also logically correct.
-	if (ok && value != nil) || (!ok && value == nil) {
+	if ok, _ := this.DeltaSet.Exists(subkey); (ok && value != nil) || (!ok && value == nil) {
+		// Update an existing or delete a non-existent one won't change the set itself. So we return 0, 0, 0.
+		// Otherwise it will cause a lot of conflicts, when multiple transactions are trying
+		// to access the path. It is also logically correct.
 		return this, 0, 0, 0, nil
 	}
 
