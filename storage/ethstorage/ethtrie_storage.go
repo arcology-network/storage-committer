@@ -235,7 +235,7 @@ func (this *EthDataStore) GetAccountFromTrie(address ethcommon.Address, accesses
 			return &Account{
 				address,
 				acctState,
-				common.FilterFirst(this.diskdbs[0].Get(acctState.CodeHash)), // code
+				common.FilterFirst(this.diskdbs[0].Get(acctState.CodeHash)).([]byte), // code
 				stgTrie,
 				false,
 				this.ethdb,

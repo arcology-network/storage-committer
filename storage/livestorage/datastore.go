@@ -20,7 +20,6 @@ package ccstorage
 import (
 	"errors"
 
-	common "github.com/arcology-network/common-lib/common"
 	"github.com/cespare/xxhash/v2"
 
 	slice "github.com/arcology-network/common-lib/exp/slice"
@@ -124,8 +123,8 @@ func (this *LiveStorage) Retrive(key string, T any) (any, error) {
 }
 
 func (this *LiveStorage) BatchRetrive(keys []string, T []any) []any {
-	values := common.FilterFirst(this.cache.BatchGet(keys)) // From the local cache first
-	if slice.Count[any](values, nil) == 0 {                 // All found
+	values, _ := this.cache.BatchGet(keys) // From the local cache first
+	if slice.Count(values, nil) == 0 {     // All found
 		return values
 	}
 
