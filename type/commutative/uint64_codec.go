@@ -50,15 +50,15 @@ func (this *Uint64) Encode() []byte {
 			common.IfThen(this.max != math.MaxUint64, uint64(8), 0),
 		},
 	)
-	this.EncodeToBuffer(buffer[offset:])
+	this.EncodeTo(buffer[offset:])
 	return buffer
 }
 
-func (this *Uint64) EncodeToBuffer(buffer []byte) int {
-	offset := common.IfThenDo1st(this.value != 0, func() int { return codec.Uint64(this.value).EncodeToBuffer(buffer) }, 0)
-	offset += common.IfThenDo1st(this.delta != 0, func() int { return codec.Uint64(this.delta).EncodeToBuffer(buffer[offset:]) }, 0)
-	offset += common.IfThenDo1st(this.min != 0, func() int { return codec.Uint64(this.min).EncodeToBuffer(buffer[offset:]) }, 0)
-	offset += common.IfThenDo1st(this.max != math.MaxUint64, func() int { return codec.Uint64(this.max).EncodeToBuffer(buffer[offset:]) }, 0)
+func (this *Uint64) EncodeTo(buffer []byte) int {
+	offset := common.IfThenDo1st(this.value != 0, func() int { return codec.Uint64(this.value).EncodeTo(buffer) }, 0)
+	offset += common.IfThenDo1st(this.delta != 0, func() int { return codec.Uint64(this.delta).EncodeTo(buffer[offset:]) }, 0)
+	offset += common.IfThenDo1st(this.min != 0, func() int { return codec.Uint64(this.min).EncodeTo(buffer[offset:]) }, 0)
+	offset += common.IfThenDo1st(this.max != math.MaxUint64, func() int { return codec.Uint64(this.max).EncodeTo(buffer[offset:]) }, 0)
 	return offset
 }
 

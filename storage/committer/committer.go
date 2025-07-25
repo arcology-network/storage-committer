@@ -151,7 +151,7 @@ func (this *StateCommitter) CascadeDelete(txs []uint64) {
 	// GetCascadeSub := []*univalue.Univalue{}
 	// this.byPath.ForeachDo(func(_ string, v []*univalue.Univalue) {
 	// 	if v[0].TypeID() == commutative.PATH && v[0].Value() == nil {
-	// 		for _, k := range v[0].Value().(*deltaset.DeltaSet[string]).Elements() {
+	// 		for _, k := range v[0].Value().(*softdeltaset.DeltaSet[string]).Elements() {
 	// 			key := *(v[0].Property.GetPath()) + k // Concatenate the path and the subkey
 	// 			v := univalue.NewUnivalue(v[0].GetTx(), key, 0, 1, 0, nil, nil)
 	// 			GetCascadeSub = append(GetCascadeSub, v)

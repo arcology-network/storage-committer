@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
+	"github.com/arcology-network/common-lib/exp/softdeltaset"
 	stgcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
 	"github.com/holiman/uint256"
@@ -132,7 +132,7 @@ func TestUnivalueCodeMeta(t *testing.T) {
 	out := (&Univalue{}).Decode(bytes).(*Univalue)
 	outKeys, _, _ := out.Value().(stgcommon.Type).Get()
 
-	if !slice.EqualSet(inKeys.(*deltaset.DeltaSet[string]).Elements(), outKeys.(*deltaset.DeltaSet[string]).Elements()) {
+	if !slice.EqualSet(inKeys.(*softdeltaset.DeltaSet[string]).Elements(), outKeys.(*softdeltaset.DeltaSet[string]).Elements()) {
 		t.Error("Error")
 	}
 }

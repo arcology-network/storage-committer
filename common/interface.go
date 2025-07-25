@@ -49,7 +49,7 @@ type Type interface { // value type
 	// Encoding methods
 	Size() uint64 // Encoded size
 	Encode() []byte
-	EncodeToBuffer([]byte) int
+	EncodeTo([]byte) int
 	Decode([]byte) any
 
 	// Storage encoding related methods

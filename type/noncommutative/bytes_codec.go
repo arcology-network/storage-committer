@@ -45,9 +45,9 @@ func (this *Bytes) Encode() []byte {
 	return codec.Byteset(byteset).Encode()
 }
 
-func (this *Bytes) EncodeToBuffer(buffer []byte) int {
-	offset := codec.Bool(this.placeholder).EncodeToBuffer(buffer)
-	return offset + codec.Bytes(this.value).EncodeToBuffer(buffer[offset:])
+func (this *Bytes) EncodeTo(buffer []byte) int {
+	offset := codec.Bool(this.placeholder).EncodeTo(buffer)
+	return offset + codec.Bytes(this.value).EncodeTo(buffer[offset:])
 }
 
 func (this *Bytes) Decode(buffer []byte) any {

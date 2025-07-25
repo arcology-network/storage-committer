@@ -61,11 +61,11 @@ func (this Univalues) Encode(selector ...any) []byte {
 
 	headerLen := uint64((len(this) + 1) * codec.UINT64_LEN)
 	buffer := make([]byte, headerLen+offsets[len(offsets)-1])
-	codec.Uint32(len(this)).EncodeToBuffer(buffer)
+	codec.Uint32(len(this)).EncodeTo(buffer)
 
 	slice.ParallelForeach(this, 6, func(i int, _ **Univalue) {
-		codec.Uint32(offsets[i]).EncodeToBuffer(buffer[(i+1)*codec.UINT64_LEN:])
-		this[i].EncodeToBuffer(buffer[headerLen+offsets[i]:])
+		codec.Uint32(offsets[i]).EncodeTo(buffer[(i+1)*codec.UINT64_LEN:])
+		this[i].EncodeTo(buffer[headerLen+offsets[i]:])
 	})
 	return buffer
 }

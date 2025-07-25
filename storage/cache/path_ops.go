@@ -27,7 +27,7 @@ import (
 	"math"
 
 	common "github.com/arcology-network/common-lib/common"
-	deltaset "github.com/arcology-network/common-lib/exp/deltaset"
+	softdeltaset "github.com/arcology-network/common-lib/exp/softdeltaset"
 	stgcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/type/commutative"
 	"github.com/arcology-network/storage-committer/type/univalue"
@@ -72,7 +72,9 @@ func (this *WriteCache) KeyAt(tx uint64, path string, index any, T any) (string,
 	if v, err := this.DoReadOnly(tx, path, readAdder, T); err == nil {
 		pathInfo := v.(*univalue.Univalue).Value()
 		if common.IsType[*commutative.Path](pathInfo) && common.IsType[uint64](index) {
-			return pathInfo.(*commutative.Path).View().KeyAt(index.(uint64)), stgcommon.MIN_READ_SIZE
+			if v, ok := pathInfo.(*commutative.Path).View().KeyAt(index.(uint64)); ok {
+				return *v, stgcommon.MIN_READ_SIZE
+			}
 		}
 	}
 	return "", stgcommon.MIN_READ_SIZE
@@ -106,12 +108,12 @@ func (this *WriteCache) getKeyByIdx(tx uint64, path string, idx uint64) (any, ui
 	}
 
 	meta, _, dataSize := this.Read(tx, path, new(commutative.Path)) // read the container meta
-	length := meta.(*deltaset.DeltaSet[string]).Length()
+	length := meta.(*softdeltaset.DeltaSet[string]).Length()
 
 	if meta != nil {
-		subKey := meta.(*deltaset.DeltaSet[string]).KeyAt(idx)
-		if len(subKey) > 0 {
-			return path + meta.(*deltaset.DeltaSet[string]).KeyAt(idx), dataSize, nil
+		subKey, ok := meta.(*softdeltaset.DeltaSet[string]).KeyAt(idx)
+		if ok && len(*subKey) > 0 {
+			return path + *subKey, dataSize, nil
 		}
 		return nil, dataSize, errors.New("Error: Exceeded the length of the path !!!")
 	}
@@ -119,7 +121,10 @@ func (this *WriteCache) getKeyByIdx(tx uint64, path string, idx uint64) (any, ui
 	return common.IfThen(meta == nil,
 		meta,
 		common.IfThenDo1st(idx < length,
-			func() any { return path + meta.(*deltaset.DeltaSet[string]).KeyAt(idx) },
+			func() any {
+				subKey, _ := meta.(*softdeltaset.DeltaSet[string]).KeyAt(idx)
+				return path + *subKey
+			},
 			nil),
 	), dataSize, nil
 }
@@ -132,8 +137,8 @@ func (this *WriteCache) Min(tx uint64, path string, idx uint64) (any, uint64, er
 
 	meta, _, dataSize := this.Read(tx, path, new(commutative.Path)) // read the container meta
 	if meta != nil {
-		if subkey := meta.(*deltaset.DeltaSet[string]).KeyAt(idx); len(subkey) > 0 {
-			return path + subkey, dataSize, nil
+		if subKey, ok := meta.(*softdeltaset.DeltaSet[string]).KeyAt(idx); ok {
+			return path + *subKey, dataSize, nil
 		}
 	}
 	return "", dataSize, errors.New("Error: Key not found in the path!!!")
@@ -147,8 +152,8 @@ func (this *WriteCache) Max(tx uint64, path string, idx uint64) (any, uint64, er
 
 	meta, _, dataSize := this.Read(tx, path, new(commutative.Path)) // read the container meta
 	if meta != nil {
-		if subkey := meta.(*deltaset.DeltaSet[string]).KeyAt(idx); len(subkey) > 0 {
-			return path + subkey, dataSize, nil
+		if subkey, ok := meta.(*softdeltaset.DeltaSet[string]).KeyAt(idx); ok {
+			return path + *subkey, dataSize, nil
 		}
 	}
 	return "", dataSize, errors.New("Error: Key not found in the path!!!")
@@ -171,12 +176,12 @@ func (this *WriteCache) PopBack(tx uint64, path string, T any) (any, int64, erro
 	}
 
 	meta, _, _1stReadSize := this.Read(tx, path, T) // read the container meta
-	subkey, ok := meta.(*deltaset.DeltaSet[string]).Last()
+	subkey, ok := meta.(*softdeltaset.DeltaSet[string]).Last()
 	if !ok {
 		return nil, int64(_1stReadSize), errors.New("Error: The path is either empty or doesn't exist")
 	}
 
-	key := path + subkey // Concatenate the path and the subkey
+	key := path + *subkey // Concatenate the path and the subkey
 	value, _, _2ndReadSize := this.Read(tx, key, T)
 	if value == nil {
 		return nil, int64(_1stReadSize + _2ndReadSize), errors.New("Error: Empty container!")
@@ -198,7 +203,7 @@ func (this *WriteCache) EraseAll(tx uint64, path string, T any) (any, int64, err
 
 	// var accumReadGas uint64
 	var accumWriteDataSize int64
-	for _, subkey := range meta.(*deltaset.DeltaSet[string]).Elements() {
+	for _, subkey := range meta.(*softdeltaset.DeltaSet[string]).Elements() {
 		key := path + subkey // Concatenate the path and the subkey
 		writeData, err := this.Write(tx, key, nil)
 		if err != nil {

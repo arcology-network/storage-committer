@@ -36,8 +36,8 @@ func (this *String) Encode() []byte {
 	return codec.String(string(*this)).Encode()
 }
 
-func (this *String) EncodeToBuffer(buffer []byte) int {
-	return codec.String(*this).EncodeToBuffer(buffer)
+func (this *String) EncodeTo(buffer []byte) int {
+	return codec.String(*this).EncodeTo(buffer)
 }
 
 func (this *String) Decode(buffer []byte) any {

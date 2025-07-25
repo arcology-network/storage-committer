@@ -27,7 +27,7 @@ import (
 
 func (this *Property) Encode() []byte {
 	buffer := make([]byte, this.Size())
-	this.EncodeToBuffer(buffer)
+	this.EncodeTo(buffer)
 	return buffer
 }
 
@@ -77,23 +77,23 @@ func (this *Property) FillHeader(buffer []byte) int {
 	)
 }
 
-func (this *Property) EncodeToBuffer(buffer []byte) int {
+func (this *Property) EncodeTo(buffer []byte) int {
 	offset := this.FillHeader(buffer)
-	offset += codec.Uint8(this.vType).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.tx).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.generation).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.sequence).EncodeToBuffer(buffer[offset:])
-	offset += codec.String(*this.path).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.keyHash).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.reads).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.writes).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.deltaWrites).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.gasUsed).EncodeToBuffer(buffer[offset:])
-	offset += codec.Bool(this.isDeleted).EncodeToBuffer(buffer[offset:])
-	offset += codec.Bool(this.preexists).EncodeToBuffer(buffer[offset:])
-	offset += codec.Bool(this.ifSkipConflictCheck).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.sizeInStorage).EncodeToBuffer(buffer[offset:])
-	offset += codec.String(this.msg).EncodeToBuffer(buffer[offset:])
+	offset += codec.Uint8(this.vType).EncodeTo(buffer[offset:])
+	offset += codec.Uint64(this.tx).EncodeTo(buffer[offset:])
+	offset += codec.Uint64(this.generation).EncodeTo(buffer[offset:])
+	offset += codec.Uint64(this.sequence).EncodeTo(buffer[offset:])
+	offset += codec.String(*this.path).EncodeTo(buffer[offset:])
+	offset += codec.Uint64(this.keyHash).EncodeTo(buffer[offset:])
+	offset += codec.Uint64(this.reads).EncodeTo(buffer[offset:])
+	offset += codec.Uint64(this.writes).EncodeTo(buffer[offset:])
+	offset += codec.Uint64(this.deltaWrites).EncodeTo(buffer[offset:])
+	offset += codec.Uint64(this.gasUsed).EncodeTo(buffer[offset:])
+	offset += codec.Bool(this.isDeleted).EncodeTo(buffer[offset:])
+	offset += codec.Bool(this.preexists).EncodeTo(buffer[offset:])
+	offset += codec.Bool(this.ifSkipConflictCheck).EncodeTo(buffer[offset:])
+	offset += codec.Uint64(this.sizeInStorage).EncodeTo(buffer[offset:])
+	offset += codec.String(this.msg).EncodeTo(buffer[offset:])
 
 	return offset
 }

@@ -34,8 +34,8 @@ func (this *Int64) Encode() []byte {
 	return codec.Int64(*this).Encode()
 }
 
-func (this *Int64) EncodeToBuffer(buffer []byte) int {
-	return codec.Int64(*this).EncodeToBuffer(buffer)
+func (this *Int64) EncodeTo(buffer []byte) int {
+	return codec.Int64(*this).EncodeTo(buffer)
 }
 
 func (*Int64) Decode(bytes []byte) any {

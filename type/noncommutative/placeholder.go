@@ -62,10 +62,10 @@ func (this *Placeholder) ApplyDelta(typedVals []stgcommon.Type) (stgcommon.Type,
 	return this, 0, nil
 }
 
-func (*Placeholder) Size() uint64                { return 0 }
-func (*Placeholder) Encode() []byte              { return []byte{} }
-func (*Placeholder) EncodeToBuffer(_ []byte) int { return 0 }
-func (*Placeholder) Decode([]byte) any           { return &Placeholder{} }
+func (*Placeholder) Size() uint64          { return 0 }
+func (*Placeholder) Encode() []byte        { return []byte{} }
+func (*Placeholder) EncodeTo(_ []byte) int { return 0 }
+func (*Placeholder) Decode([]byte) any     { return &Placeholder{} }
 
 func (*Placeholder) Reset()                               {}
 func (*Placeholder) Hash() [32]byte                       { return [32]byte{} }

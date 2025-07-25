@@ -38,31 +38,31 @@ func TestPath(t *testing.T) {
 		t.Error("Error: Don't match!!", inPath.Value().([]string))
 	}
 
-	if v, ok := inPath.GetByIndex(0); !ok || v != "e-01" {
+	if v, ok := inPath.GetByIndex(0); !ok || *v != "e-01" {
 		t.Error("Error: Don't match!!", v)
 	}
 
-	if v, ok := inPath.GetByIndex(1); !ok || v != "e-001" {
+	if v, ok := inPath.GetByIndex(1); !ok || *v != "e-001" {
 		t.Error("Error: Don't match!!", v)
 	}
 
-	if v, ok := inPath.GetByIndex(2); !ok || v != "e-002" {
+	if v, ok := inPath.GetByIndex(2); !ok || *v != "e-002" {
 		t.Error("Error: Don't match!!", v)
 	}
 
-	if v, ok := inPath.GetByIndex(3); !ok || v != "+01" {
+	if v, ok := inPath.GetByIndex(3); !ok || *v != "+01" {
 		t.Error("Error: Don't match!!", v)
 	}
 
-	if v, ok := inPath.GetByIndex(4); !ok || v != "+001" {
+	if v, ok := inPath.GetByIndex(4); !ok || *v != "+001" {
 		t.Error("Error: Don't match!!", v)
 	}
 
-	if v, ok := inPath.GetByIndex(5); !ok || v != "+002" {
+	if v, ok := inPath.GetByIndex(5); !ok || *v != "+002" {
 		t.Error("Error: Don't match!!", v)
 	}
 
-	if v, ok := inPath.GetByIndex(6); ok || v != "" {
+	if v, ok := inPath.GetByIndex(6); ok || v != nil {
 		t.Error("Error: Don't match!!", v)
 	}
 }

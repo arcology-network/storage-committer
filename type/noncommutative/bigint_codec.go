@@ -36,9 +36,9 @@ func (this *Bigint) Encode() []byte {
 	return v.Encode()
 }
 
-func (this *Bigint) EncodeToBuffer(buffer []byte) int {
+func (this *Bigint) EncodeTo(buffer []byte) int {
 	v := codec.Bigint(*this)
-	return v.EncodeToBuffer(buffer)
+	return v.EncodeTo(buffer)
 }
 
 func (this *Bigint) Decode(buffer []byte) any {

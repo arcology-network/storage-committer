@@ -21,17 +21,18 @@ import (
 	"crypto/sha256"
 	"errors"
 
+	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/orderedset"
 	"github.com/arcology-network/common-lib/exp/slice"
+	softdeltaset "github.com/arcology-network/common-lib/exp/softdeltaset"
 	stgcommon "github.com/arcology-network/storage-committer/common"
 )
 
 // The Path type is a special commutative type that represents a path in the concurrent storage.
 // It keeps track of the all the sub paths that are added, removed or updated.
 type Path struct {
-	*deltaset.DeltaSet[string]
+	*softdeltaset.DeltaSet[string]
 	preloaded   *orderedset.OrderedSet[string]
 	IsTransient bool // If true, it is not persisted to the storage.
 	//When it is set to non zero, it can only store one type of data, otherwise it can store multiple types.
@@ -43,7 +44,7 @@ type Path struct {
 func NewPath(newPaths ...string) stgcommon.Type {
 	this := &Path{
 		ElemType: 0, // The default data type is 0. It can store multiple types of data in the same path.
-		DeltaSet: deltaset.NewDeltaSet("", 1000, nil, newPaths...),
+		DeltaSet: softdeltaset.NewDeltaSet("", 1000, codec.Sizer, codec.EncodeTo, new(codec.String).DecodeTo, nil, newPaths...),
 	}
 	return this
 }
@@ -79,7 +80,7 @@ func (this *Path) GetCascadeSub(prefix string, source any) []string {
 }
 
 func (this *Path) Length() int                                { return int(this.DeltaSet.NonNilCount()) }
-func (this *Path) View() *deltaset.DeltaSet[string]           { return this.DeltaSet }
+func (this *Path) View() *softdeltaset.DeltaSet[string]       { return this.DeltaSet }
 func (this *Path) MemSize() uint64                            { return uint64(this.DeltaSet.NonNilCount()) * 32 * 2 } // Just an estimate, need to update on fly instead of calculating everytime
 func (this *Path) TypeID() uint8                              { return PATH }
 func (this *Path) CanApply(key any) bool                      { return common.IsPath(key.(string)) }
@@ -100,9 +101,9 @@ func (this *Path) Limits() (any, any) { return nil, nil }
 func (this *Path) CloneDelta() (any, bool) { return this.DeltaSet.CloneDelta(), true }
 
 func (this *Path) IsDeltaApplied() bool   { return this.IsDirty() }
-func (this *Path) SetValue(v any)         { this.DeltaSet = v.(*deltaset.DeltaSet[string]) }
+func (this *Path) SetValue(v any)         { this.DeltaSet = v.(*softdeltaset.DeltaSet[string]) }
 func (this *Path) ResetDelta()            { this.DeltaSet.ResetDelta() }
-func (this *Path) SetDelta(v any, _ bool) { this.DeltaSet.SetDelta(v.(*deltaset.DeltaSet[string])) }
+func (this *Path) SetDelta(v any, _ bool) { this.DeltaSet.SetDelta(v.(*softdeltaset.DeltaSet[string])) }
 func (this *Path) SetDeltaSign(v any)     {}
 
 func (this *Path) Preload(k string, source any) {
@@ -174,7 +175,7 @@ func (this *Path) ApplyDelta(typedVals []stgcommon.Type) (stgcommon.Type, int, e
 		// If no ones has the preloaded value, then this is a new path, no preloaded value
 	}
 
-	deltaSets := slice.Transform(typedVals, func(_ int, v stgcommon.Type) *deltaset.DeltaSet[string] { return v.(*Path).DeltaSet })
+	deltaSets := slice.Transform(typedVals, func(_ int, v stgcommon.Type) *softdeltaset.DeltaSet[string] { return v.(*Path).DeltaSet })
 	this.Commit(deltaSets) // Apply the delta sets to the committed value，including its own delta set.
 	return this, len(typedVals), nil
 }
