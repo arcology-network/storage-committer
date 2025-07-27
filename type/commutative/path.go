@@ -79,11 +79,15 @@ func (this *Path) GetCascadeSub(prefix string, source any) []string {
 	return pathStrs
 }
 
-func (this *Path) Length() int                                { return int(this.DeltaSet.NonNilCount()) }
-func (this *Path) View() *softdeltaset.DeltaSet[string]       { return this.DeltaSet }
-func (this *Path) MemSize() uint64                            { return uint64(this.DeltaSet.NonNilCount()) * 32 * 2 } // Just an estimate, need to update on fly instead of calculating everytime
-func (this *Path) TypeID() uint8                              { return PATH }
-func (this *Path) CanApply(key any) bool                      { return common.IsPath(key.(string)) }
+func (this *Path) Length() int                          { return int(this.DeltaSet.NonNilCount()) }
+func (this *Path) View() *softdeltaset.DeltaSet[string] { return this.DeltaSet }
+func (this *Path) MemSize() uint64                      { return uint64(this.DeltaSet.NonNilCount()) * 32 * 2 } // Just an estimate, need to update on fly instead of calculating everytime
+func (this *Path) TypeID() uint8                        { return PATH }
+
+func (this *Path) Deleteble(key, path any) bool {
+	return common.IsPath(key.(string)) && key.(string) == path.(string)
+}
+
 func (this *Path) CopyTo(v any) (any, uint32, uint32, uint32) { return v, 0, 1, 0 }
 
 func (this *Path) IsNumeric() bool         { return false }

@@ -28,6 +28,7 @@ import (
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/slice"
 	intf "github.com/arcology-network/storage-committer/common"
+	"github.com/arcology-network/storage-committer/type/noncommutative"
 	"github.com/cespare/xxhash"
 )
 
@@ -62,6 +63,13 @@ func NewUnivalue(tx uint64, key string, reads, writes uint32, deltaWrites uint32
 }
 
 func (this *Univalue) Init(tx uint64, key string, reads, writes, deltaWrites uint32, v any, preExist bool) *Univalue {
+	// Sometime when a value is read from the storage by a delete operation, the caller only provides the nil value as
+	// the new value, the loader wouldn't be about to decode it to the correct type. The loader will return the raw byte value
+	// in this case, so we convert it to a noncommutative bytes type to avoid the type mismatch happening down stream.
+	if common.IsType[[]byte](v) {
+		v = noncommutative.NewBytes(v.([]byte))
+	}
+
 	this.vType = common.IfThenDo1st(v != nil, func() uint8 { return v.(intf.Type).TypeID() }, uint8(reflect.Invalid))
 	this.tx = tx
 	this.path = &key
@@ -185,9 +193,10 @@ func (this *Univalue) Set(tx uint64, path string, newV any, inCache bool, import
 		return nil
 	}
 
-	// To avoid interference with the value in the global object cache.
-	this.MakeDeepCopy(newV)
+	this.MakeDeepCopy(newV) // To avoid interference with the value in the global object cache.
 
+	//Update an existing value. For a path a delete operation will
+	// remove all its sub paths, but not the path itself.
 	oldV := this.value.(intf.Type)
 	v, r, w, dw, err := oldV.Set(newV, []any{path, *this.path, tx, importer}) // Update the current value
 	this.value = v
@@ -195,7 +204,9 @@ func (this *Univalue) Set(tx uint64, path string, newV any, inCache bool, import
 	this.reads += r
 	this.deltaWrites += dw
 
-	if newV == nil && this.Value().(intf.Type).CanApply(path) { // Delete the entry but keep the access record.
+	//Delete an existing value. Not Every value can be deleted by itself, some only can be delete by its parent
+	// that is why we need to check first.
+	if newV == nil && this.Value().(intf.Type).Deleteble(*this.GetPath(), path) { // Delete the entry but keep the access record.
 		this.vType = uint8(reflect.Invalid)
 		this.value = newV // Delete the value
 		this.writes++

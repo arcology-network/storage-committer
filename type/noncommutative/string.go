@@ -32,7 +32,7 @@ func NewString(v string) intf.Type {
 }
 
 func (this *String) MemSize() uint64                            { return uint64(len(*this)) }
-func (this *String) CanApply(key any) bool                      { return true }
+func (this *String) Deleteble(path, key any) bool               { return true }
 func (this *String) TypeID() uint8                              { return STRING }
 func (this *String) Equal(other any) bool                       { return *this == *(other.(*String)) }
 func (this *String) CopyTo(v any) (any, uint32, uint32, uint32) { return v, 0, 1, 0 }

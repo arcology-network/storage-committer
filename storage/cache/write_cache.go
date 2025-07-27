@@ -103,9 +103,9 @@ func (this *WriteCache) Write(tx uint64, path string, newVal any, args ...any) (
 		return 0, errors.New("Error: Unknown data type !")
 	}
 
-	if isWildcard, size := this.HandleWildcard(tx, path, newVal, args...); isWildcard {
-		return int64(size), nil // If the path is a wildcard, return the size difference
-	}
+	// if isWildcard, size := this.HandleWildcard(tx, path, newVal, args...); isWildcard {
+	// 	return int64(size), nil // If the path is a wildcard, return the size difference
+	// }
 
 	univ, err := this.write(tx, path, newVal)
 	sizeDif := this.DiffSize(tx, path, newVal) // Update the size difference

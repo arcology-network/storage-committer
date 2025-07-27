@@ -168,7 +168,7 @@ func (this *U256) SetDelta(v any, sign bool) {
 }
 
 func (this *U256) MemSize() uint64                            { return 16 + 1 } // in bytes
-func (this *U256) CanApply(key any) bool                      { return true }
+func (this *U256) Deleteble(path, key any) bool               { return true }
 func (this *U256) TypeID() uint8                              { return UINT256 }
 func (this *U256) CopyTo(v any) (any, uint32, uint32, uint32) { return v, 0, 1, 0 }
 func (*U256) GetCascadeSub(_ string, _ any) []string          { return nil }

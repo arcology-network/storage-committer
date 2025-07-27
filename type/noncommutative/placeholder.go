@@ -27,7 +27,7 @@ type Placeholder struct{}
 func NewPlaceholder(any) stgcommon.Type { return &Placeholder{} }
 
 func (this *Placeholder) MemSize() uint64                            { return 0 }
-func (this *Placeholder) CanApply(v any) bool                        { return true } // If the input has the same type as this, return true
+func (this *Placeholder) Deleteble(k, v any) bool                    { return true } // If the input has the same type as this, return true
 func (this *Placeholder) TypeID() uint8                              { return PLACEHOLDER }
 func (this *Placeholder) CopyTo(v any) (any, uint32, uint32, uint32) { return v, 0, 1, 0 }
 

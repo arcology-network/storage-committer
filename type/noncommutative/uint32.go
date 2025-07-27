@@ -33,7 +33,7 @@ func NewUint32(v uint64) *Uint32 {
 }
 
 func (this *Uint32) MemSize() uint64                            { return 8 }
-func (this *Uint32) CanApply(key any) bool                      { return true }
+func (this *Uint32) Deleteble(path, key any) bool               { return true }
 func (this *Uint32) TypeID() uint8                              { return UINT32 }
 func (this *Uint32) CopyTo(v any) (any, uint32, uint32, uint32) { return v, 0, 1, 0 }
 func (this *Uint32) Clone() any                                 { return common.New(*this) }

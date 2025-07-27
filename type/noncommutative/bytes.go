@@ -45,9 +45,9 @@ func NewBytes(v []byte) stgcommon.Type {
 // 	this.value = v
 // }
 
-func (this *Bytes) MemSize() uint64     { return uint64(1 + len(this.value)) }
-func (this *Bytes) CanApply(v any) bool { return true } // If the input has the same type as this, return true
-func (this *Bytes) TypeID() uint8       { return BYTES }
+func (this *Bytes) MemSize() uint64         { return uint64(1 + len(this.value)) }
+func (this *Bytes) Deleteble(k, v any) bool { return true } // If the input has the same type as this, return true
+func (this *Bytes) TypeID() uint8           { return BYTES }
 
 func (this *Bytes) CopyTo(v any) (any, uint32, uint32, uint32) {
 	return v, 0, 1, 0

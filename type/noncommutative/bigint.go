@@ -38,7 +38,7 @@ func NewBigint(v int64) any {
 }
 
 func (this *Bigint) MemSize() uint64                            { return uint64((*big.Int)(this).BitLen()) }
-func (this *Bigint) CanApply(key any) bool                      { return true }
+func (this *Bigint) Deleteble(path, key any) bool               { return true }
 func (this *Bigint) TypeID() uint8                              { return BIGINT }
 func (this *Bigint) CopyTo(v any) (any, uint32, uint32, uint32) { return v, 0, 1, 0 }
 
