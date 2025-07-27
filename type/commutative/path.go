@@ -189,6 +189,7 @@ func (this *Path) Set(value any, source any) (any, uint32, uint32, uint32, error
 	writeCache := source.([]any)[3].(interface {
 		Write(uint64, string, any, ...any) (int64, error)
 		IfExists(string) bool
+		GetIfCached(string) (any, bool)
 	})
 
 	// Delete or rewrite the path. The path is the root of the container.
@@ -202,10 +203,10 @@ func (this *Path) Set(value any, source any) (any, uint32, uint32, uint32, error
 				return common.IsPath(subpath)
 			})
 
-			for _, subelem := range elems {
-				// Only have to mark the sub elements already in the cache as deleted.
-				if writeCache.IfExists(targetPath + subelem) {
-					writeCache.Write(tx, targetPath+subelem, nil)
+			for _, elem := range elems {
+				// Only mark the elements already in the cache as deleted.
+				if _, ok := writeCache.GetIfCached(targetPath + elem); ok {
+					writeCache.Write(tx, targetPath+elem, nil)
 				}
 			}
 			this.DeleteAll() // Remove all from the path meta

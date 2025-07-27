@@ -70,7 +70,7 @@ func (this *LiveStorage) Decoder(any) func(string, []byte, any) any { return thi
 func (this *LiveStorage) GetDB() commonintf.PersistentStorage   { return this.db }
 func (this *LiveStorage) SetDB(db commonintf.PersistentStorage) { this.db = db }
 
-// func (this *LiveStorage) RetriveFromStorage(key string) bool { return this.IfExists(key) }
+// func (this *LiveStorage) ReadStorage(key string) bool { return this.IfExists(key) }
 
 // No access tracking
 func (this *LiveStorage) IfExists(key string) bool {
@@ -94,7 +94,7 @@ func (this *LiveStorage) BatchInject(keys []string, values []any) error {
 	return this.db.BatchSet(keys, encoded)
 }
 
-func (this *LiveStorage) RetriveFromStorage(key string, T any) (any, error) {
+func (this *LiveStorage) ReadStorage(key string, T any) (any, error) {
 	if this.db == nil {
 		return nil, errors.New("Error: DB not found")
 	}
@@ -115,7 +115,7 @@ func (this *LiveStorage) Retrive(key string, T any) (any, error) {
 		return *v, nil
 	}
 
-	v, err := this.RetriveFromStorage(key, T)
+	v, err := this.ReadStorage(key, T)
 	if err == nil && T != nil {
 		this.cache.Set(key, v) //update to the local cache and add all the missing values to the cache
 	}

@@ -34,8 +34,8 @@ func (this *StateCommitter) SubstitueWildcards(transitions []*univalue.Univalue)
 
 	substitued := []*univalue.Univalue{}
 	for i := range wildcards {
-		parentPath := common.GetParentPath(*wildcards[i].GetPath())       // Get the parent path of the wildcard, so that it can be used for cascade delete.
-		v, err := this.Store().Retrive(parentPath, new(commutative.Path)) // Preload the path, so that it can be used for cascade delete.
+		parentPath := common.GetParentPath(*wildcards[i].GetPath())           // Get the parent path of the wildcard, so that it can be used for cascade delete.
+		v, err := this.Store().ReadStorage(parentPath, new(commutative.Path)) // Preload the path, so that it can be used for cascade delete.
 		if v == nil || err != nil {
 			continue
 		}

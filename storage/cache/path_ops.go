@@ -91,8 +91,8 @@ func (this *WriteCache) Peek(path string, T any) (any, any, uint64) {
 
 // This function looks up the committed value in the DB instead of the cache.
 func (this *WriteCache) PeekCommitted(path string, T any) (any, uint64) {
-	v, _ := this.backend.Retrive(path, T)
-	return v, v.(stgcommon.Type).MemSize()
+	v, _ := this.backend.ReadStorage(path, T)
+	return v, 0
 }
 
 // This function looks up the value and carries out the operation on the value directly.

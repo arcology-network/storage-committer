@@ -166,17 +166,17 @@ func (this *WriteCache) Retrive(path string, T any) (any, error) {
 func (this *WriteCache) LoadFromCommitted(tx uint64, path string, T any) *univalue.Univalue {
 	var typedv any
 	if backend := this.ReadOnlyStore(); backend != nil {
-		typedv, _ = backend.Retrive(path, T)
+		typedv, _ = backend.Retrive(path, T) // The backend could also be another instance of WriteCache.
 	}
-	return this.NewUnivalue().Init(tx, path, 0, 0, 0, typedv, this)
+	return this.NewUnivalue().Init(tx, path, 0, 0, 0, typedv, typedv != nil)
 }
 
 // This function specifically retrieves the value from the backend without any tracking.
-func (this *WriteCache) RetriveFromStorage(key string, T any) (any, error) {
-	if this.backend == nil {
-		return nil, errors.New("Error: The backend is nil")
+func (this *WriteCache) ReadStorage(key string, T any) (any, error) {
+	if this.backend != nil {
+		return this.backend.ReadStorage(key, T)
 	}
-	return this.backend.RetriveFromStorage(key, T)
+	return nil, errors.New("Error: The backend is nil")
 }
 
 func (this *WriteCache) Read(tx uint64, path string, T any) (any, any, uint64) {

@@ -111,11 +111,15 @@ func (this *StorageProxy) ExecCache() *livecache.LiveCache { return this.execCac
 func (this *StorageProxy) ExecStore() *livestg.LiveStorage { return this.execStorage } // Arcology storage
 
 // Check if the key exists in th storage.
-func (this *StorageProxy) RetriveFromStorage(key string, T any) (any, error) {
+func (this *StorageProxy) ReadStorage(key string, T any) (any, error) {
 	if v, ok := this.execCache.Get(key); ok { // Check the cache first
 		return v, nil
 	}
 	return this.execStorage.Retrive(key, T)
+}
+
+func (this *StorageProxy) Retrive(key string, v any) (any, error) {
+	return this.ReadStorage(key, v)
 }
 
 func (this *StorageProxy) EthStore() *ethstg.EthDataStore { return this.ethStorage } // Eth storage
@@ -137,38 +141,31 @@ func (this *StorageProxy) Inject(key string, v any) error {
 	return this.execStorage.Inject(key, v)
 }
 
-func (this *StorageProxy) Retrive(key string, v any) (any, error) {
-	if retv, ok := this.execCache.Get(key); ok { // Get from cache first
-		return retv, nil
-	}
-	return this.execStorage.Retrive(key, v)
-}
-
 // Get the stores that can be
 func (this *StorageProxy) GetWriters() []intf.Writer[*univalue.Univalue] {
 	return []intf.Writer[*univalue.Univalue]{
-		livecache.NewLiveCacheWriter(this.execCache, -1, this.FilterOutTransients),
+		livecache.NewLiveCacheWriter(this.execCache, -1, this.RemoveTransients),
 		ethstorage.NewEthStorageWriter(this.ethStorage, -1, this.EthOnly),
-		ccstorage.NewLiveStorageWriter(this.execStorage, -1, this.FilterOutTransients),
+		ccstorage.NewLiveStorageWriter(this.execStorage, -1, this.RemoveTransients),
 	}
 }
 
 // Get the stores that can be
 func (this *StorageProxy) SyncWriters() []intf.Writer[*univalue.Univalue] {
 	return []intf.Writer[*univalue.Univalue]{
-		livecache.NewLiveCacheWriter(this.execCache, -1, this.FilterOutTransients),
+		livecache.NewLiveCacheWriter(this.execCache, -1, this.RemoveTransients),
 	}
 }
 
 func (this *StorageProxy) AsyncWriters() []intf.Writer[*univalue.Univalue] {
 	return []intf.Writer[*univalue.Univalue]{
 		ethstorage.NewEthStorageWriter(this.ethStorage, -1, this.EthOnly),
-		ccstorage.NewLiveStorageWriter(this.execStorage, -1, this.FilterOutTransients),
+		ccstorage.NewLiveStorageWriter(this.execStorage, -1, this.RemoveTransients),
 	}
 }
 
 // Filter out the transitions that are not needed to be persisted.
-func (this *StorageProxy) FilterOutTransients(tran *univalue.Univalue) bool {
+func (this *StorageProxy) RemoveTransients(tran *univalue.Univalue) bool {
 	// System paths only get reset if they are transient.
 	if v := (*tran).Value(); v != nil && v.(intf.Type).TypeID() == commutative.PATH && v.(*commutative.Path).IsTransient && this.platform.IsSysPath(*(*tran).GetPath()) {
 		v.(*commutative.Path).Reset()

@@ -39,6 +39,10 @@ type Univalue struct {
 }
 
 func NewUnivalue(tx uint64, key string, reads, writes uint32, deltaWrites uint32, T any, source any) *Univalue {
+	if source != nil {
+		panic("Error: The source should be nil")
+	}
+
 	univ := &Univalue{
 		Property{
 			vType:         common.IfThenDo1st(T != nil, func() uint8 { return T.(intf.Type).TypeID() }, uint8(reflect.Invalid)),
@@ -54,13 +58,20 @@ func NewUnivalue(tx uint64, key string, reads, writes uint32, deltaWrites uint32
 		T,
 		[]byte{},
 	}
-
-	if source != nil {
-		if v, err := source.(intf.ReadOnlyStore).RetriveFromStorage(key, T); err != nil {
-			univ.sizeInStorage = v.(intf.Type).MemSize()
-		}
-	}
 	return univ
+}
+
+func (this *Univalue) Init(tx uint64, key string, reads, writes, deltaWrites uint32, v any, preExist bool) *Univalue {
+	this.vType = common.IfThenDo1st(v != nil, func() uint8 { return v.(intf.Type).TypeID() }, uint8(reflect.Invalid))
+	this.tx = tx
+	this.path = &key
+	this.keyHash = xxhash.Sum64String(key)
+	this.reads = reads
+	this.writes = writes
+	this.deltaWrites = deltaWrites
+	this.value = v
+	this.preexists = preExist
+	return this
 }
 
 func (*Univalue) New(meta, value, cache any) *Univalue {
@@ -89,27 +100,6 @@ func (this *Univalue) SetValue(newValue any) *Univalue {
 	}
 
 	this.value = newValue
-	return this
-}
-
-// func (this *Univalue) GetCache() any { return this.cache }
-
-func (this *Univalue) Init(tx uint64, key string, reads, writes, deltaWrites uint32, v any, dataSource ...any) *Univalue {
-	this.vType = common.IfThenDo1st(v != nil, func() uint8 { return v.(intf.Type).TypeID() }, uint8(reflect.Invalid))
-	this.tx = tx
-	this.path = &key
-	this.keyHash = xxhash.Sum64String(key)
-	this.reads = reads
-	this.writes = writes
-	this.deltaWrites = deltaWrites
-	this.value = v
-	this.preexists = common.IfThenDo1st(len(dataSource) > 0, func() bool { return (&Property{}).CheckPreexist(key, dataSource[0]) }, false)
-
-	this.sizeInStorage = 0
-	if v, _ := dataSource[0].(intf.ReadOnlyStore).RetriveFromStorage(key, v); v != nil {
-		this.sizeInStorage = v.(intf.Type).MemSize()
-	}
-
 	return this
 }
 
