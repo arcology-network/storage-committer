@@ -81,7 +81,7 @@ func (this *WriteCache) HandleWildcard(tx uint64, path string, newVal any, args 
 			}
 		}
 
-		pathMeta, _, _ := this.Find(tx, cleanPath, false, newVal, nil) // Read the clean path to ensure it exists in the cache
+		pathMeta, _, _ := this.FindForRead(tx, cleanPath, false, newVal, nil) // Read the clean path to ensure it exists in the cache
 		return true, pathMeta.(*commutative.Path).TotalSize
 	}
 	return false, 0 // Return true to indicate that the path is valid
