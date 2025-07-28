@@ -78,6 +78,15 @@ func (this *Platform) IsSysPath(path string) bool {
 	return ok
 }
 
+// A system path and an child of the system paths as well.
+func (this *Platform) IsSysChildWithSysParent(path string) bool {
+	if !this.IsSysPath(path) {
+		return false
+	}
+	parent := common.GetParentPath(path)
+	return this.IsSysPath(parent) || !strings.Contains(parent, "/") // Root path is also a system path.
+}
+
 func ParseAccountAddr(acct string) (string, string, string) {
 	if len(acct) < stgcommon.ETH10_ACCOUNT_PREFIX_LENGTH+stgcommon.ETH10_ACCOUNT_LENGTH {
 		return acct, "", ""

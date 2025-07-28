@@ -83,11 +83,11 @@ func (this *WriteCache) NewUnivalue() *univalue.Univalue { return this.pool.New(
 // the entry is deleted through a wildcard deletion, in this case, if the entry is not in the write cache,
 // it won't be touched, but it is not in the parent records to mark it as deleted.
 func (this *WriteCache) ExistsInParent(path string) bool {
-	parent := common.GetParentPath(path)
-	if this.platform.IsSysPath(parent) {
+	if this.platform.IsSysChildWithSysParent(path) {
 		return true
 	}
 
+	parent := common.GetParentPath(path)
 	if v, _, _ := this.FindForWrite(0, parent, new(commutative.Path), nil); v != nil {
 		subkey := path[len(parent):]
 		if ok, _ := v.(*commutative.Path).Exists(subkey); ok { // Add the path to the parent path
