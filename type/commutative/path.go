@@ -199,6 +199,7 @@ func (this *Path) Set(value any, source any) (any, uint32, uint32, uint32, error
 	// Delete or rewrite the path. The path is the root of the container.
 	// A rewrite is not allowed. But it can be deleted.
 	// When that happens, all the sub paths are also deleted.
+	targetPath = common.TrimWildcardSuffix(targetPath) // Remove the trailing wildcard suffix if it exists.
 	if common.IsPath(targetPath) && len(targetPath) == len(containerRoot) {
 		if value == nil { // Delete the path and all its elements
 			elems := this.DeltaSet.Elements() // Get all the elements under the path
