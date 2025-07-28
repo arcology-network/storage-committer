@@ -206,7 +206,7 @@ func (this *Univalue) Set(tx uint64, path string, newV any, inCache bool, import
 
 	//Delete an existing value. Not Every value can be deleted by itself, some only can be delete by its parent
 	// that is why we need to check first.
-	if newV == nil && this.Value().(intf.Type).Deleteble(*this.GetPath(), path) { // Delete the entry but keep the access record.
+	if newV == nil && this.Value().(intf.Type).IsDeletable(*this.GetPath(), path) { // Delete the entry but keep the access record.
 		this.vType = uint8(reflect.Invalid)
 		this.value = newV // Delete the value
 		this.writes++

@@ -89,7 +89,7 @@ func (this *Int64) SetDeltaSign(v any)     {}
 
 func (this *Int64) MemSize() uint64                            { return 5 * 8 }
 func (this *Int64) TypeID() uint8                              { return INT64 }
-func (this *Int64) Deleteble(path, key any) bool               { return true }
+func (this *Int64) IsDeletable(key, path any) bool             { return true }
 func (this *Int64) CopyTo(v any) (any, uint32, uint32, uint32) { return v, 0, 1, 0 }
 func (this *Int64) Reset() {
 	this.value = 0

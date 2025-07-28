@@ -86,7 +86,7 @@ func (this *Uint64) SetValue(v any)            { this.value = v.(uint64) }
 func (this *Uint64) SetDelta(v any, sign bool) { this.delta = v.(uint64) }
 
 func (this *Uint64) TypeID() uint8                              { return UINT64 }
-func (this *Uint64) Deleteble(path, key any) bool               { return true }
+func (this *Uint64) IsDeletable(key, path any) bool             { return true }
 func (this *Uint64) CopyTo(v any) (any, uint32, uint32, uint32) { return v, 0, 1, 0 }
 func (*Uint64) GetCascadeSub(_ string, _ any) []string          { return nil }
 

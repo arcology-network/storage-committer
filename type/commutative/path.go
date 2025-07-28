@@ -84,7 +84,7 @@ func (this *Path) View() *softdeltaset.DeltaSet[string] { return this.DeltaSet }
 func (this *Path) MemSize() uint64                      { return uint64(this.DeltaSet.NonNilCount()) * 32 * 2 } // Just an estimate, need to update on fly instead of calculating everytime
 func (this *Path) TypeID() uint8                        { return PATH }
 
-func (this *Path) Deleteble(key, path any) bool {
+func (this *Path) IsDeletable(key, path any) bool {
 	return common.IsPath(key.(string)) && key.(string) == path.(string)
 }
 
@@ -209,6 +209,7 @@ func (this *Path) Set(value any, source any) (any, uint32, uint32, uint32, error
 
 			for _, elem := range elems {
 				// Only mark the elements already in the cache as deleted.
+				// No need to touch those in the storage.
 				if _, ok := writeCache.GetIfCached(targetPath + elem); ok {
 					writeCache.Write(tx, targetPath+elem, nil)
 				}
@@ -219,11 +220,6 @@ func (this *Path) Set(value any, source any) (any, uint32, uint32, uint32, error
 			for _, subpath := range subPaths {
 				writeCache.Write(tx, targetPath+subpath, nil)
 			}
-
-			// for _, subpath := range this.DeltaSet.Elements() { // Get all the committed sub paths
-			// 	// Cascade delete the sub path
-			// 	writeCache.Write(tx, targetPath+subpath, nil) //FIXME: THIS EMITS SOME ERROR MESSAGEES BUT DON't SEEM TO BE HARMFUL
-			// }
 			return this, 0, 1, 0, nil
 		}
 		return this, 0, 1, 0, errors.New("Error: Cannot rewrite a path!")

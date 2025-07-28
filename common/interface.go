@@ -42,7 +42,7 @@ type Type interface { // value type
 	Set(any, any) (any, uint32, uint32, uint32, error)
 	CopyTo(any) (any, uint32, uint32, uint32) // Only a function to generate the right access counts, when assigning the value.
 	ApplyDelta([]Type) (Type, int, error)
-	Deleteble(any, any) bool
+	IsDeletable(any, any) bool
 
 	MemSize() uint64 // Size in memory
 
