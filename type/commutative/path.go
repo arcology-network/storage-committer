@@ -197,16 +197,18 @@ func (this *Path) Set(value any, source any) (any, uint32, uint32, uint32, error
 	})
 
 	// Delete or rewrite the path. The path is the root of the container.
-	// A rewrite is generally not allowed. But it can be deleted.
+	// A rewrite is not allowed. But it can be deleted.
 	// When that happens, all the sub paths are also deleted.
-	// System paths are not allowed to be deleted.
 	if common.IsPath(targetPath) && len(targetPath) == len(containerRoot) {
 		if value == nil { // Delete the path and all its elements
-			elems := this.DeltaSet.Elements()
+			elems := this.DeltaSet.Elements() // Get all the elements under the path
+
+			// Separate the sub paths from other elements.
 			subPaths := slice.MoveIf(&elems, func(_ int, subpath string) bool {
 				return common.IsPath(subpath)
 			})
 
+			// Mark the elements as deleted in the write cache.
 			for _, elem := range elems {
 				// Only mark the elements already in the cache as deleted.
 				// No need to touch those in the storage.
@@ -214,9 +216,11 @@ func (this *Path) Set(value any, source any) (any, uint32, uint32, uint32, error
 					writeCache.Write(tx, targetPath+elem, nil)
 				}
 			}
-			this.DeleteAll() // Remove all from the path meta
 
-			// CascaderRemoval of all the sub paths and their elements
+			// Remove all from the path meta
+			this.DeleteAll()
+
+			// Remove all the sub paths and their elements recursively.
 			for _, subpath := range subPaths {
 				writeCache.Write(tx, targetPath+subpath, nil)
 			}

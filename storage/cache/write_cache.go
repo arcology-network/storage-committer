@@ -88,7 +88,7 @@ func (this *WriteCache) ExistsInParent(path string) bool {
 		return true
 	}
 
-	if v, _, _ := this.FindForWrite(0, parent, true, new(commutative.Path), nil); v != nil {
+	if v, _, _ := this.FindForWrite(0, parent, new(commutative.Path), nil); v != nil {
 		subkey := path[len(parent):]
 		if ok, _ := v.(*commutative.Path).Exists(subkey); ok { // Add the path to the parent path
 			return ok
@@ -99,14 +99,14 @@ func (this *WriteCache) ExistsInParent(path string) bool {
 
 // Get the raw value directly, put it in an empty univalue without recording
 // the access at the univalue level. Won't update the kvDict.
-func (this *WriteCache) FindForRead(tx uint64, path string, isReadOnly bool, T any, do func(*univalue.Univalue)) (any, *univalue.Univalue, bool) {
+func (this *WriteCache) FindForRead(tx uint64, path string, T any, do func(*univalue.Univalue)) (any, *univalue.Univalue, bool) {
 	if !this.ExistsInParent(path) {
 		return nil, this.NewUnivalue().Init(tx, path, 0, 0, 0, nil, false), false
 	}
-	return this.FindForWrite(tx, path, isReadOnly, T, do) // Find the value in the cache
+	return this.FindForWrite(tx, path, T, do) // Find the value in the cache
 }
 
-func (this *WriteCache) FindForWrite(tx uint64, path string, isReadOnly bool, T any, do func(*univalue.Univalue)) (any, *univalue.Univalue, bool) {
+func (this *WriteCache) FindForWrite(tx uint64, path string, T any, do func(*univalue.Univalue)) (any, *univalue.Univalue, bool) {
 	if univ, ok := this.kvDict[path]; ok {
 		return univ.Value(), univ, true // From cache
 	}
@@ -141,22 +141,30 @@ func (this *WriteCache) Write(tx uint64, path string, newVal any, args ...any) (
 	return sizeDif, err
 }
 
+func IsWildcard(path string) bool {
+	return strings.HasSuffix(path, "*")
+}
+
 func (this *WriteCache) write(tx uint64, path string, value any) (*univalue.Univalue, error) {
 	parentPath := common.GetParentPath(path)
-	var univ *univalue.Univalue
-	if this.IfExists(parentPath) || tx == stgcommon.SYSTEM { // The parent path exists or to inject the path directly
-		_, univ, inCache := this.FindForWrite(tx, path, false, value, this.AddToDict) // Get a univalue wrapper
-		err := univ.Set(tx, path, value, inCache, this)                               // set the new value
+	univ := univalue.NewUnivalue(tx, path, 0, 1, 0, value, nil) // Default univalue wrapper
+	if this.IfExists(parentPath) || tx == stgcommon.SYSTEM {    // The parent path exists or to inject the path directly
+		var err error
+		var inCache bool
+		if !IsWildcard(path) {
+			_, univ, inCache = this.FindForWrite(tx, path, value, this.AddToDict) // Get a univalue wrapper
+			err = univ.Set(tx, path, value, inCache, this)                        // set the new value
+		}
 
 		// Update the parent path meta
 		if err == nil {
 			if strings.HasSuffix(parentPath, "/container/") || !this.platform.IsSysPath(parentPath) && tx != stgcommon.SYSTEM { // Don't keep track of the system children
-				_, parentMeta, inCache := this.FindForWrite(tx, parentPath, false, new(commutative.Path), this.AddToDict)
+				_, parentMeta, inCache := this.FindForWrite(tx, parentPath, new(commutative.Path), this.AddToDict)
 				err = parentMeta.Set(tx, path, univ.Value(), inCache, this)
 			}
 
 			//Set Transient Status based on its parent path settings.
-			if pathMeta, _, _ := this.FindForRead(tx, parentPath, true, new(commutative.Path), nil); pathMeta != nil { // Get the parent path meta
+			if pathMeta, _, _ := this.FindForRead(tx, parentPath, new(commutative.Path), nil); pathMeta != nil { // Get the parent path meta
 				univ.SetTransient(pathMeta.(*commutative.Path).IsTransient) // Use the parent path transient status to set the current path
 			}
 		}
@@ -168,7 +176,7 @@ func (this *WriteCache) write(tx uint64, path string, value any) (*univalue.Univ
 // Get the raw value directly WITHOUT tracking the accessing record.
 // Users need to count access themselves.
 func (this *WriteCache) Retrive(path string, T any) (any, error) {
-	typedv, _, _ := this.FindForRead(stgcommon.SYSTEM, path, true, T, nil)
+	typedv, _, _ := this.FindForRead(stgcommon.SYSTEM, path, T, nil)
 	if typedv == nil || typedv.(stgcommon.Type).IsDeltaApplied() {
 		return typedv, nil
 	}
@@ -206,7 +214,7 @@ func (this *WriteCache) ReadStorage(key string, T any) (any, error) {
 }
 
 func (this *WriteCache) Read(tx uint64, path string, T any) (any, any, uint64) {
-	_, univalue, _ := this.FindForRead(tx, path, true, T, this.AddToDict) // Get the univalue wrapper
+	_, univalue, _ := this.FindForRead(tx, path, T, this.AddToDict) // Get the univalue wrapper
 
 	// need to check if it is in the memory. If so gas price should be 3 instead.
 	dataSize := stgcommon.MIN_READ_SIZE
@@ -219,7 +227,7 @@ func (this *WriteCache) Read(tx uint64, path string, T any) (any, any, uint64) {
 
 func (this *WriteCache) DiffSize(tx uint64, path string, newVal any) int64 {
 	oldSize := int64(0)
-	if oldVal, _, _ := this.FindForRead(tx, path, true, newVal, nil); oldVal != nil {
+	if oldVal, _, _ := this.FindForRead(tx, path, newVal, nil); oldVal != nil {
 		oldSize += int64(oldVal.(stgcommon.Type).MemSize())
 	}
 
