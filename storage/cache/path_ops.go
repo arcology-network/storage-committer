@@ -23,7 +23,6 @@ package cache
 
 import (
 	"errors"
-	"fmt"
 	"math"
 
 	common "github.com/arcology-network/common-lib/common"
@@ -198,21 +197,21 @@ func (this *WriteCache) EraseAll(tx uint64, path string, T any) (any, int64, err
 	if !common.IsPath(path) {
 		return nil, int64(stgcommon.MIN_READ_SIZE), errors.New("Error: Not a path!!!")
 	}
+	writeDataSize, err := this.Write(tx, path+"*", nil) // Remove the path from the cache, so that it will not be read again.
 
-	meta, _, readDataSize := this.Peek(path, T) // read the container meta
-
+	// meta, _, readDataSize := this.Peek(path, T) // read the container meta
 	// var accumReadGas uint64
-	var accumWriteDataSize int64
-	for _, subkey := range meta.(*softdeltaset.DeltaSet[string]).Elements() {
-		key := path + subkey // Concatenate the path and the subkey
-		writeData, err := this.Write(tx, key, nil)
-		if err != nil {
-			fmt.Printf("----------storage-committer/storage/cache/write_cache_reader.go----EraseAll for--key:%v--err:%v \n", key, err)
-			// panic(err)
-		}
-		accumWriteDataSize += writeData
-	}
-	return nil, int64(readDataSize) + accumWriteDataSize, nil
+	// var accumWriteDataSize int64
+	// for _, subkey := range meta.(*softdeltaset.DeltaSet[string]).Elements() {
+	// 	key := path + subkey // Concatenate the path and the subkey
+	// 	writeData, err := this.Write(tx, key, nil)
+	// 	if err != nil {
+	// 		fmt.Printf("----------storage-committer/storage/cache/write_cache_reader.go----EraseAll for--key:%v--err:%v \n", key, err)
+	// 		// panic(err)
+	// 	}
+	// 	accumWriteDataSize += writeData
+	// }
+	return nil, writeDataSize, err
 }
 
 // Read th Nth element under a path
