@@ -80,8 +80,21 @@ func (this *WriteCache) Preload([]byte) any                     { return nil } /
 func (this *WriteCache) NewUnivalue() *univalue.Univalue { return this.pool.New() }
 
 // Check if the current entry is in its parents' records. This is used when
-// the entry is deleted through a wildcard deletion, in this case, if the entry is not in the write cache,
+// the entry is deleted through a wildcard deletion, in this case, if the
+// entry is not in the write cache,
 // it won't be touched, but it is not in the parent records to mark it as deleted.
+
+// Recursively check IS NOT supported yet. It is not fully implemented for multi-level containers.
+// But the single level is fine to use.
+
+// Imagine a path like /a/b/c/d. We delete all the sub paths of /a/*
+// and because c and d are not in the write cache, they are not touched, only marked
+// as deleted in the parent path which is a's child list. But they may still be in the storage.
+// So when we check if they still exist and if we only query by their paths directly we can
+// still find them and their immediate parent path also exists, although their grandparent path
+// are gone. Unless we recursively check the parent paths, we can't tell if they are truly gone.
+// This requires a lot of queries and decoding.
+
 func (this *WriteCache) ExistsInParent(path string) bool {
 	if this.platform.IsSysChildWithSysParent(path) {
 		return true

@@ -39,7 +39,7 @@ import (
 
 type LiveCache struct {
 	*cache.ReadCache[string, *associative.Pair[stgcommon.Type, *Profile]]               // Provide Readonly interface
-	profile                                                               *CacheProfile // Memory usage of the cache.
+	profile                                                               *CacheProfile // Memory usage of the cache itself.
 }
 
 func NewLiveCache(cacheCap uint64) *LiveCache {

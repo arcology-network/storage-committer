@@ -222,6 +222,8 @@ func (this *Path) Set(value any, source any) (any, uint32, uint32, uint32, error
 			this.DeleteAll()
 
 			// Remove all the sub paths and their elements recursively.
+			// This is NOT fully supported yet. For it to work, The write cache
+			// needs to be able to handle recursive path meta checks.
 			for _, subpath := range subPaths {
 				writeCache.Write(tx, targetPath+subpath, nil)
 			}
