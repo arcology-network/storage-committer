@@ -73,18 +73,24 @@ func (this *Platform) IsSysPath(path string) bool {
 		return true
 	}
 
-	subPath := path[stgcommon.ETH10_ACCOUNT_FULL_LENGTH:] // Removed the shared part
+	subPath := path[stgcommon.ETH10_ACCOUNT_FULL_LENGTH:] // Removed the shared prefix part
 	_, ok := this.syspaths[subPath]
 	return ok
 }
 
 // A system path and an child of the system paths as well.
-func (this *Platform) IsSysChildWithSysParent(path string) bool {
-	if !this.IsSysPath(path) {
-		return false
+func (this *Platform) IsImmediateChildOfSysPath(path string) bool {
+	if this.IsSysPath(path) {
+		return true
 	}
 	parent := common.GetParentPath(path)
-	return this.IsSysPath(parent) || !strings.Contains(parent, "/") // Root path is also a system path.
+	return this.IsSysPath(parent) ||
+		!strings.Contains(parent, "/") // All but the root has "/", root is also a system path.
+}
+
+// If the path of a concurrent container, it is a concurrent path.
+func (*Platform) IsCocurrentPath(path string) bool {
+	return strings.HasSuffix(path, "/container/")
 }
 
 func ParseAccountAddr(acct string) (string, string, string) {

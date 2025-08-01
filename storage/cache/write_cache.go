@@ -96,14 +96,15 @@ func (this *WriteCache) NewUnivalue() *univalue.Univalue { return this.pool.New(
 // This requires a lot of queries and decoding.
 
 func (this *WriteCache) ExistsInParent(path string) bool {
-	if this.platform.IsSysChildWithSysParent(path) {
+	// No metadata for immediate children of system paths.
+	if this.platform.IsImmediateChildOfSysPath(path) {
 		return true
 	}
 
-	parent := common.GetParentPath(path)
-	if v, _, _ := this.FindForWrite(0, parent, new(commutative.Path), nil); v != nil {
-		subkey := path[len(parent):]
-		if ok, _ := v.(*commutative.Path).Exists(subkey); ok { // Add the path to the parent path
+	parentPath := common.GetParentPath(path) // Get the parent path
+	if meta, _, _ := this.FindForWrite(0, parentPath, new(commutative.Path), nil); meta != nil {
+		childKey := path[len(parentPath):]
+		if ok, _ := meta.(*commutative.Path).Exists(childKey); ok { // Add the path to the parent path
 			return ok
 		}
 	}
@@ -171,7 +172,8 @@ func (this *WriteCache) write(tx uint64, path string, value any) (*univalue.Univ
 
 		// Update the parent path meta
 		if err == nil {
-			if strings.HasSuffix(parentPath, "/container/") || !this.platform.IsSysPath(parentPath) && tx != stgcommon.SYSTEM { // Don't keep track of the system children
+			// Only track of the children of concurrent paths.
+			if strings.HasSuffix(parentPath, "/container/") || !this.platform.IsSysPath(parentPath) && tx != stgcommon.SYSTEM {
 				_, parentMeta, inCache := this.FindForWrite(tx, parentPath, new(commutative.Path), this.AddToDict)
 				err = parentMeta.Set(tx, path, univ.Value(), inCache, this)
 			}
