@@ -209,10 +209,9 @@ func (this *Path) Set(value any, source any) (any, uint32, uint32, uint32, error
 				return common.IsPath(subpath)
 			})
 
-			// Mark the elements as deleted in the write cache.
+			// Only mark the elements already in the cache as deleted.
+			// No need to touch those in the storage.
 			for _, elem := range elems {
-				// Only mark the elements already in the cache as deleted.
-				// No need to touch those in the storage.
 				if _, ok := writeCache.GetIfCached(targetPath + elem); ok {
 					writeCache.Write(tx, targetPath+elem, nil)
 				}
@@ -227,7 +226,11 @@ func (this *Path) Set(value any, source any) (any, uint32, uint32, uint32, error
 			for _, subpath := range subPaths {
 				writeCache.Write(tx, targetPath+subpath, nil)
 			}
-			return this, 0, 1, 0, nil
+
+			if this.DeltaSet.IsDirty() {
+				return this, 0, 1, 0, nil
+			}
+			return this, 0, 0, 1, nil // Delete committed items only result in 1 delta write.
 		}
 		return this, 0, 1, 0, errors.New("Error: Cannot rewrite a path!")
 	}

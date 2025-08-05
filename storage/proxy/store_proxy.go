@@ -77,7 +77,9 @@ func NewMemDBStoreProxy() *StorageProxy {
 
 func NewLevelDBStoreProxy(dbpath string) *StorageProxy {
 	proxy := &StorageProxy{
+		platform:   ethplatform.NewPlatform(),
 		ethStorage: ethstg.NewLevelDBDataStore(dbpath), //ethstg.NewParallelEthMemDataStore(),
+		execCache:  livecache.NewLiveCache(math.MaxUint64),
 		execStorage: livestg.NewLiveStorage(
 			// memdb.NewMemoryDB(),
 			ccbadger.NewBadgerDB(dbpath+"_badager"),
@@ -86,7 +88,7 @@ func NewLevelDBStoreProxy(dbpath string) *StorageProxy {
 			ethplatform.Codec{}.Decode,
 		),
 	}
-	proxy.execCache = livecache.NewLiveCache(math.MaxUint64)
+	// proxy.execCache = livecache.NewLiveCache(math.MaxUint64)
 	return proxy
 }
 

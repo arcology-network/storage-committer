@@ -83,13 +83,18 @@ func (this *Platform) IsImmediateChildOfSysPath(path string) bool {
 	if this.IsSysPath(path) {
 		return true
 	}
+
 	parent := common.GetParentPath(path)
+	if this.IsContainerPath(parent) { // Still need to keep track of the elements under the container path.
+		return false
+	}
+
 	return this.IsSysPath(parent) ||
 		!strings.Contains(parent, "/") // All but the root has "/", root is also a system path.
 }
 
 // If the path of a concurrent container, it is a concurrent path.
-func (*Platform) IsCocurrentPath(path string) bool {
+func (*Platform) IsContainerPath(path string) bool {
 	return strings.HasSuffix(path, "/container/")
 }
 
