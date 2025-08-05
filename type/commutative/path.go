@@ -227,7 +227,7 @@ func (this *Path) Set(value any, source any) (any, uint32, uint32, uint32, error
 				writeCache.Write(tx, targetPath+subpath, nil)
 			}
 
-			if this.DeltaSet.IsDirty() {
+			if this.DeltaSet.CommittedOnly() {
 				return this, 0, 1, 0, nil
 			}
 			return this, 0, 0, 1, nil // Delete committed items only result in 1 delta write.
