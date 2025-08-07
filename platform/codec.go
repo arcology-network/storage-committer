@@ -27,7 +27,7 @@ type Codec struct {
 	ID uint8
 }
 
-func (Codec) Encode(_ string, value interface{}) []byte {
+func (Codec) Encode(_ string, value any) []byte {
 	if value == nil {
 
 		return []byte{} // Deletion
@@ -38,7 +38,7 @@ func (Codec) Encode(_ string, value interface{}) []byte {
 	return encoded
 }
 
-func (this Codec) Decode(_ string, buffer []byte, _ any) interface{} {
+func (this Codec) Decode(_ string, buffer []byte, _ any) any {
 	if len(buffer) == 0 {
 		return nil
 	}

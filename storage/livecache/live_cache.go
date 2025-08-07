@@ -44,7 +44,7 @@ type LiveCache struct {
 
 func NewLiveCache(cacheCap uint64) *LiveCache {
 	cache := &LiveCache{
-		ReadCache: cache.NewReadCache[string, *associative.Pair[stgcommon.Type, *Profile]](
+		ReadCache: cache.NewReadCache(
 			4096, // 4096 shards to avoid lock contention
 			func(v *associative.Pair[stgcommon.Type, *Profile]) bool {
 				return v == nil
@@ -95,6 +95,11 @@ func (this *LiveCache) GetRaw(key string) (*associative.Pair[stgcommon.Type, *Pr
 }
 
 func (this *LiveCache) Commit(univals []*univalue.Univalue, block uint64) {
+	// Cache is disabled, do nothing.
+	if !this.Status() {
+		return
+	}
+
 	// Prepare the space for the new values in the cache, some univalues may be deleted because of the memory limit.
 	this.profile.PrepareSpace(&univals, this)
 

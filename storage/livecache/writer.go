@@ -39,10 +39,22 @@ func NewLiveCacheWriter(cache *LiveCache, version int64, filter func(*univalue.U
 	}
 }
 
+// Import the transitions into the indexer
+func (this *LiveCacheWriter) Import(transitions []*univalue.Univalue) {
+	if !this.liveCache.Status() {
+		return // Cache is disabled, do nothing.
+	}
+	this.LiveCacheIndexer.Import(transitions)
+}
+
 // Send the data to the downstream processor, this is called for each generation.
 // If there are multiple generations, this can be called multiple times before Await.
 // Each generation
 func (this *LiveCacheWriter) Precommit(isSync bool) {
+	if !this.liveCache.Status() {
+		return // Cache is disabled, do nothing.
+	}
+
 	if isSync {
 		this.LiveCacheIndexer.PreCommit()
 	} else {
@@ -54,6 +66,10 @@ func (this *LiveCacheWriter) Precommit(isSync bool) {
 
 // Triggered by the block commit.
 func (this *LiveCacheWriter) Commit(block uint64) {
+	if !this.liveCache.Status() {
+		return // Cache is disabled, do nothing.
+	}
+
 	merged := new(LiveCacheIndexer).Merge(this.buffer) // Merge indexers
 	this.liveCache.Commit(merged.buffer, block)        // commit univalues directly
 	this.buffer = make([]*LiveCacheIndexer, 0)         // Reset the indexer buffer

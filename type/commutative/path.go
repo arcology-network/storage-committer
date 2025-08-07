@@ -187,7 +187,7 @@ func (this *Path) ApplyDelta(typedVals []stgcommon.Type) (stgcommon.Type, int, e
 // Set sets the value of the key to the given value and returns the new value, the number of keys added, the number of
 // keys removed and the number of keys updated.
 func (this *Path) Set(value any, source any) (any, uint32, uint32, uint32, error) {
-	targetPath := source.([]any)[0].(string)
+	path := source.([]any)[0].(string)
 	containerRoot := source.([]any)[1].(string)
 	tx := source.([]any)[2].(uint64)
 	writeCache := source.([]any)[3].(interface {
@@ -199,9 +199,10 @@ func (this *Path) Set(value any, source any) (any, uint32, uint32, uint32, error
 	// Delete or rewrite the path. The path is the root of the container.
 	// A rewrite is not allowed. But it can be deleted.
 	// When that happens, all the sub paths are also deleted.
-	targetPath = common.TrimWildcardSuffix(targetPath) // Remove the trailing wildcard suffix if it exists.
+	targetPath := common.TrimWildcardSuffix(path) // Remove the trailing wildcard suffix if it exists.
 	if common.IsPath(targetPath) && len(targetPath) == len(containerRoot) {
-		if value == nil { // Delete the path and all its elements
+		// Either Delete the path and all its elements OR just the elements under the path with a wildcard suffix.
+		if value == nil {
 			elems := this.DeltaSet.Elements() // Get all the elements under the path
 
 			// Separate the sub paths from other elements.
@@ -227,9 +228,9 @@ func (this *Path) Set(value any, source any) (any, uint32, uint32, uint32, error
 				writeCache.Write(tx, targetPath+subpath, nil)
 			}
 
-			if this.DeltaSet.CommittedOnly() {
-				return this, 0, 1, 0, nil
-			}
+			// if this.DeltaSet.CommittedOnly() {
+			// 	return this, 0, 1, 0, nil
+			// }
 			return this, 0, 0, 1, nil // Delete committed items only result in 1 delta write.
 		}
 		return this, 0, 1, 0, errors.New("Error: Cannot rewrite a path!")

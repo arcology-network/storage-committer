@@ -79,9 +79,9 @@ func (this *Path) Print() {
 	fmt.Println("TotalSize: ", this.TotalSize)
 	fmt.Println("IsTransient: ", this.IsTransient)
 	fmt.Println("Committed: ", codec.Strings(this.DeltaSet.Committed().Elements()).ToHex())
-	fmt.Println("Updated  ", codec.Strings(this.DeltaSet.Added().Elements()).ToHex())
-	fmt.Println("Removed: ", codec.Strings(this.DeltaSet.Removed().Elements()).ToHex())
-	fmt.Println("Type: ", codec.Strings(this.DeltaSet.Removed().Elements()).ToHex())
+	fmt.Println("Staged Added: ", codec.Strings(this.DeltaSet.Added().Elements()).ToHex())
+	fmt.Println("Staged Removed: ", codec.Strings(this.DeltaSet.Removed().Elements()).ToHex())
+	fmt.Println("Type: ", this.TypeID())
 	fmt.Println()
 }
 

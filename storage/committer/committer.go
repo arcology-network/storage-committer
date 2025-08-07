@@ -81,7 +81,7 @@ func NewStateCommitter(readonlyStore stgcommon.ReadOnlyStore, writers []stgcommo
 }
 
 // New creates a new StateCommitter instance.
-func (this *StateCommitter) New(args ...interface{}) *StateCommitter {
+func (this *StateCommitter) New(args ...any) *StateCommitter {
 	return &StateCommitter{
 		platform: platform.NewPlatform(),
 	}
