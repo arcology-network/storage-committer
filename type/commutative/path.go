@@ -228,10 +228,16 @@ func (this *Path) Set(value any, source any) (any, uint32, uint32, uint32, error
 				writeCache.Write(tx, targetPath+subpath, nil)
 			}
 
-			// if this.DeltaSet.CommittedOnly() {
-			// 	return this, 0, 1, 0, nil
-			// }
-			return this, 0, 0, 1, nil // Delete committed items only result in 1 delta write.
+			// Delete committed items only result in 1 delta write. Since no other thread may alter the path at the same time.
+			if this.DeltaSet.CommittedOnly() {
+				return this, 0, 0, 1, nil
+			}
+
+			// Need to delete the elements that are not committed yet. This is a full delete.
+			// For example, if Thread A adds some elements and Thread B deletes the path at the same time.
+			// depending on the order of execution, the final result may be different. If A is executed first, then the elements
+			// added by A will be deleted by B. If B is executed first, then the elements added by A will remain. They aren't commutative.
+			return this, 0, 1, 0, nil
 		}
 		return this, 0, 1, 0, errors.New("Error: Cannot rewrite a path!")
 	}

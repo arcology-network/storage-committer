@@ -28,6 +28,7 @@ import (
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/slice"
 	intf "github.com/arcology-network/storage-committer/common"
+	"github.com/arcology-network/storage-committer/type/commutative"
 	"github.com/arcology-network/storage-committer/type/noncommutative"
 	"github.com/cespare/xxhash"
 )
@@ -264,10 +265,16 @@ func (this *Univalue) PathLookupOnly() bool {
 	return this.reads == 0 && this.deltaWrites == 0 && this.writes == 0
 }
 
-func (this *Univalue) IsWildcard() (bool, string) { return IsWildcard(*this.path) }
-func (this *Univalue) IsReadOnly() bool           { return (this.writes == 0 && this.deltaWrites == 0) }
-func (this *Univalue) IsWriteOnly() bool          { return (this.reads == 0 && this.deltaWrites == 0) }
-func (this *Univalue) IsDeltaWriteOnly() bool     { return (this.reads == 0 && this.writes == 0) }
+func (this *Univalue) IsWildcard() (bool, string) {
+	if common.IsType[*commutative.Path](this.Value()) {
+		return this.Value().(*commutative.Path).DeltaSet.Removed().AllDeleted(), *this.path
+	}
+
+	return IsWildcard(*this.path)
+}
+func (this *Univalue) IsReadOnly() bool       { return (this.writes == 0 && this.deltaWrites == 0) }
+func (this *Univalue) IsWriteOnly() bool      { return (this.reads == 0 && this.deltaWrites == 0) }
+func (this *Univalue) IsDeltaWriteOnly() bool { return (this.reads == 0 && this.writes == 0) }
 func (this *Univalue) IsDeleteOnly() bool {
 	return this.isDeleted && this.reads == 0 && this.deltaWrites == 0 // Cannot just use value == nil, because it may be a new value.
 }

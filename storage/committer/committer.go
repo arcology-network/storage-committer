@@ -95,7 +95,7 @@ func (this *StateCommitter) SetStore(store stgcommon.ReadOnlyStore) { // Testing
 
 // Import imports the given transitions into the StateCommitter.
 func (this *StateCommitter) Import(transitions []*univalue.Univalue) *StateCommitter {
-	transitions = this.SubstitueWildcards(transitions) // Import the wildcards, if any.
+	// transitions := rawTrans //this.ExpandWildcards(rawTrans) // Import the wildcards, if any.
 
 	// Import the regular transitions to the indexers.
 	this.byPath.Import(transitions)
