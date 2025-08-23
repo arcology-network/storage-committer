@@ -22,7 +22,6 @@ import (
 	intf "github.com/arcology-network/storage-committer/common"
 	stgcommon "github.com/arcology-network/storage-committer/common"
 	committer "github.com/arcology-network/storage-committer/storage/committer"
-	"github.com/arcology-network/storage-committer/type/commutative"
 
 	cache "github.com/arcology-network/storage-committer/storage/cache"
 	proxy "github.com/arcology-network/storage-committer/storage/proxy"
@@ -54,7 +53,7 @@ func NewStateStore(backend *proxy.StorageProxy) *StateStore {
 
 	// Commit initial transitions to the store if any.
 	initTrans := []*univalue.Univalue{
-		univalue.NewUnivalue(stgcommon.SYSTEM, stgcommon.GAS_PREPAYERS, 0, 1, 0, commutative.NewPath(), nil),
+		// univalue.NewUnivalue(stgcommon.SYSTEM, stgcommon.GAS_PREPAYERS, 0, 1, 0, commutative.NewPath(), nil),
 	}
 
 	for _, tran := range initTrans {

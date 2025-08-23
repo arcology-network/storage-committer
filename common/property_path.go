@@ -32,23 +32,23 @@ func PropertyPath(addr evmcommon.Address) string {
 	return ETH10_ACCOUNT_PREFIX + hexutil.Encode(addr[:]) + "/" + FUNC_PATH
 }
 
-func FuncPath(addr evmcommon.Address, sourceFun [4]byte) string {
-	return PropertyPath(addr) + hex.EncodeToString(sourceFun[:]) + "/"
+func FuncPath(addr evmcommon.Address, funcSign [4]byte) string {
+	return PropertyPath(addr) + hex.EncodeToString(funcSign[:]) + "/"
 }
 
-func ExecutionParallelism(addr evmcommon.Address, sourceFun [4]byte) string {
-	return FuncPath(addr, sourceFun) + PARALLELISM_LEVEL
+func ExecutionParallelism(addr evmcommon.Address, funcSign [4]byte) string {
+	return FuncPath(addr, funcSign) + PARALLELISM_LEVEL
 }
 
-func ExceptPaths(addr evmcommon.Address, sourceFun [4]byte) string {
-	return FuncPath(addr, sourceFun) + PARALLEL_EXCEPTED
+func ExceptPaths(addr evmcommon.Address, funcSign [4]byte) string {
+	return FuncPath(addr, funcSign) + PARALLEL_EXCEPTED
 }
 
-func RequiredPrepaymentPath(addr evmcommon.Address, sourceFun [4]byte) string {
-	return FuncPath(addr, sourceFun) + REQUIRED_GAS_PREPAYMENT
+func RequiredPrepaymentPath(addr evmcommon.Address, funcSign [4]byte) string {
+	return FuncPath(addr, funcSign) + REQUIRED_PREPAYMENT_AMOUNT
 }
 
 // The path for the prepayers that are used to pay for the prepaid gas.
-func PrepayersPath() string {
-	return GAS_PREPAYERS
+func PrepayersPath(callee evmcommon.Address, funcSign [4]byte, caller evmcommon.Address) string {
+	return FuncPath(callee, funcSign) + PREPAYERS + hexutil.Encode(caller[:])
 }

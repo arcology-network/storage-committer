@@ -25,9 +25,9 @@ const (
 	MAX_DEPTH uint8 = 12
 	SYSTEM          = math.MaxInt32
 
-	ETH10                              = "blcc://eth1.0/"
-	ETH10_ACCOUNT_PREFIX               = ETH10 + "account/"
-	GAS_PREPAYERS                      = ETH10 + "prepayers/" // Gas prepayment for the deferred execution.
+	ETH10                = "blcc://eth1.0/"
+	ETH10_ACCOUNT_PREFIX = ETH10 + "account/"
+	// GAS_PREPAYERS                      = ETH10 + "prepayers/" // Gas prepayment for the deferred execution.
 	ETH10_ACCOUNT_PREFIX_LENGTH        = len(ETH10_ACCOUNT_PREFIX)
 	ETH10_ACCOUNT_LENGTH               = 42 // 40 hex digits + 0x
 	ETH10_ACCOUNT_FULL_LENGTH          = ETH10_ACCOUNT_PREFIX_LENGTH + ETH10_ACCOUNT_LENGTH
@@ -78,12 +78,13 @@ const (
 	FUNC_PATH      = "parallel/"
 	FULL_FUNC_PATH = "/" + FUNC_PATH
 
-	PARALLELISM_LEVEL       = "lvl/" // The execution parallelism of the function, either parallel or sequential
-	PARALLEL_EXCEPTED       = "except/"
-	REQUIRED_GAS_PREPAYMENT = "requiredPrepayment" // Amount of gas prepaid required for the function's deferred execution
-	CONFLICT_INFO           = "conflicts/"         // The history of conflicts for the function, used for debugging and analysis
-	TOTAL_CALLS             = "totalCalls"         // Total number of invocations for the function, used for debugging and analysis
-	AVERAGE_GAS_USED        = "averageGasUsed"     // Average gas used for the function, used for determining rollback priority.
-	PARALLEL_EXECUTION      = uint8(0)             // The default method
-	SEQUENTIAL_EXECUTION    = uint8(255)
+	PARALLELISM_LEVEL          = "lvl/" // The execution parallelism of the function, either parallel or sequential
+	PARALLEL_EXCEPTED          = "except/"
+	REQUIRED_PREPAYMENT_AMOUNT = "requiredAmount" // Amount of gas prepaid required for the function's deferred execution
+	PREPAYERS                  = "prepayers/"     // Address of the gas prepayers for the function's deferred execution
+	CONFLICT_INFO              = "conflicts/"     // The history of conflicts for the function, used for debugging and analysis
+	TOTAL_CALLS                = "totalCalls"     // Total number of invocations for the function, used for debugging and analysis
+	AVERAGE_GAS_USED           = "averageGasUsed" // Average gas used for the function, used for determining rollback priority.
+	PARALLEL_EXECUTION         = uint8(0)         // The default method
+	SEQUENTIAL_EXECUTION       = uint8(255)
 )
