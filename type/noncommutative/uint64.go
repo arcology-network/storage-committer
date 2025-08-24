@@ -20,7 +20,6 @@ package noncommutative
 import (
 	"math"
 
-	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	intf "github.com/arcology-network/storage-committer/common"
 )
@@ -38,7 +37,7 @@ func (this *Uint64) TypeID() uint8                              { return UINT64 
 func (this *Uint64) CopyTo(v any) (any, uint32, uint32, uint32) { return v, 0, 1, 0 }
 func (this *Uint64) Clone() any                                 { return common.New(*this) }
 func (this *Uint64) Equal(other any) bool                       { return *this == *(other.(*Uint64)) }
-func (this *Uint64) Get() (any, uint32, uint32)                 { return int64(*this), 1, 0 }
+func (this *Uint64) Get() (any, uint32, uint32)                 { return uint64(*this), 1, 0 }
 
 func (this *Uint64) IsNumeric() bool     { return true }
 func (this *Uint64) IsCommutative() bool { return false }
@@ -58,14 +57,10 @@ func (this *Uint64) Preload(_ string, _ any) {}
 
 func (this *Uint64) IsDeltaApplied() bool              { return true }
 func (this *Uint64) ResetDelta()                       { this.SetDelta(common.New[Uint64](0), true) }
-func (this *Uint64) SetDelta(v any, _ bool)            { (*this) -= (*v.(*Uint64)) }
+func (this *Uint64) SetDelta(v any, _ bool)            { (*this) = (*v.(*Uint64)) }
 func (*Uint64) GetCascadeSub(_ string, _ any) []string { return nil } // The entries to delete when this is deleted.
 
 func (this *Uint64) New(_, delta, _, _, _ any) any {
-	if common.IsType[int64](delta) {
-		delta = common.New(codec.Uint64(delta.(int64)))
-	}
-
 	return common.IfThenDo1st(delta != nil && delta.(*Uint64) != nil, func() any { return delta.(*Uint64).Clone() }, any(this))
 }
 

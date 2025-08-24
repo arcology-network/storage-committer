@@ -41,10 +41,10 @@ func NewPlatform() *Platform {
 			"/balance": commutative.UINT256,
 
 			// Arcology specific paths
-			stgcommon.FULL_FUNC_PATH: commutative.PATH,
-			"/storage/":              commutative.PATH,
-			"/storage/container/":    commutative.PATH, // Container storage
-			"/storage/native/":       commutative.PATH, // Native storage
+			stgcommon.FULL_PARA_PROP_PATH: commutative.PATH,
+			"/storage/":                   commutative.PATH,
+			"/storage/container/":         commutative.PATH, // Container storage
+			"/storage/native/":            commutative.PATH, // Native storage
 		},
 	}
 }

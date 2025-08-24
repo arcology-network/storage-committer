@@ -96,7 +96,8 @@ func (this ITTransition) From(v *Univalue) *Univalue {
 	}
 
 	typed := unival.Value().(stgcommon.Type) // Get the typed value from the unival
-	typed.SetDelta(typed.CloneDelta())
+	delta, sign := typed.CloneDelta()
+	typed.SetDelta(delta, sign)
 	// typedNew := typed.New(
 	// 	nil,
 	// 	typed.CloneDelta(),
@@ -122,7 +123,7 @@ func (this RuntimeProperty) From(unival *Univalue) *Univalue {
 	}
 
 	path := *unival.GetPath()
-	if strings.Contains(path[stgcommon.ETH10_ACCOUNT_FULL_LENGTH:], "/"+stgcommon.FUNC_PATH) {
+	if strings.Contains(path[stgcommon.ETH10_ACCOUNT_FULL_LENGTH:], "/"+stgcommon.PARA_PROP_PATH) {
 		return unival
 	}
 	return nil

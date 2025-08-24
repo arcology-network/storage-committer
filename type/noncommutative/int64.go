@@ -20,7 +20,6 @@ package noncommutative
 import (
 	"math"
 
-	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	intf "github.com/arcology-network/storage-committer/common"
 )
@@ -62,9 +61,10 @@ func (this *Int64) SetDelta(v any, sign bool)         { (*this) = (*v.(*Int64)) 
 func (*Int64) GetCascadeSub(_ string, _ any) []string { return nil } // The entries to delete when this is deleted.
 
 func (this *Int64) New(_, delta, _, _, _ any) any {
-	if common.IsType[int64](delta) {
-		delta = common.New(codec.Int64(delta.(int64)))
-	}
+	// The delta could either be int64 or *int64
+	// if common.IsType[int64](delta) {
+	// 	delta = common.New(codec.Int64(delta.(int64)))
+	// }
 
 	return common.IfThenDo1st(delta != nil && delta.(*Int64) != nil, func() any { return delta.(*Int64).Clone() }, any(this))
 }

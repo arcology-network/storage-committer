@@ -75,8 +75,8 @@ const (
 	MAX_NUM_CONFLICTS             = 256
 
 	// function property paths, that can be created on the fly.
-	FUNC_PATH      = "parallel/"
-	FULL_FUNC_PATH = "/" + FUNC_PATH
+	PARA_PROP_PATH      = "parallel/"
+	FULL_PARA_PROP_PATH = "/" + PARA_PROP_PATH
 
 	PARALLELISM_LEVEL          = "lvl/" // The execution parallelism of the function, either parallel or sequential
 	PARALLEL_EXCEPTED          = "except/"

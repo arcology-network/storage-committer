@@ -29,7 +29,7 @@ func SponsoredGasPath(addr evmcommon.Address) string {
 }
 
 func PropertyPath(addr evmcommon.Address) string {
-	return ETH10_ACCOUNT_PREFIX + hexutil.Encode(addr[:]) + "/" + FUNC_PATH
+	return ETH10_ACCOUNT_PREFIX + hexutil.Encode(addr[:]) + "/" + PARA_PROP_PATH
 }
 
 func FuncPath(addr evmcommon.Address, funcSign [4]byte) string {
@@ -49,6 +49,6 @@ func RequiredPrepaymentPath(addr evmcommon.Address, funcSign [4]byte) string {
 }
 
 // The path for the prepayers that are used to pay for the prepaid gas.
-func PrepayersPath(callee evmcommon.Address, funcSign [4]byte, caller evmcommon.Address) string {
-	return FuncPath(callee, funcSign) + PREPAYERS + hexutil.Encode(caller[:])
+func PrepayersPath(callee evmcommon.Address, funcSign [4]byte) string {
+	return FuncPath(callee, funcSign) + PREPAYERS
 }

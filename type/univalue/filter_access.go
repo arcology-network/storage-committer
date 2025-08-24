@@ -63,7 +63,7 @@ func (this ITAccess) From(v *Univalue) *Univalue {
 		return nil
 	}
 
-	if value.Value() == nil { // Entry deletion
+	if value.Value() == nil { // regular value or Entry deletion
 		return value
 	}
 
