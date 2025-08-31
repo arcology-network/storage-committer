@@ -41,7 +41,7 @@ func (this *Int64) Get() (any, uint32, uint32)                 { return int64(*t
 
 func (this *Int64) IsNumeric() bool     { return true }
 func (this *Int64) IsCommutative() bool { return false }
-func (this *Int64) IsBounded() bool     { return false }
+func (this *Int64) HasLimits() bool     { return false }
 
 func (this *Int64) Value() any         { return this }
 func (this *Int64) Delta() (any, bool) { return this, *this >= 0 }

@@ -81,7 +81,7 @@ func (this *Uint64) Print() {
 
 func (this *Uint64) StorageEncode(_ string) []byte {
 	var buffer []byte
-	if this.IsBounded() {
+	if this.HasLimits() {
 		v := []*big.Int{new(big.Int).SetUint64(this.value), new(big.Int).SetUint64(this.min), new(big.Int).SetUint64(this.max)}
 		buffer, _ = rlp.EncodeToBytes(v)
 	} else {

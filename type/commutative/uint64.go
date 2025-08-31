@@ -69,7 +69,7 @@ func (this *Uint64) MemSize() uint64 { return 5 * 8 }
 
 func (this *Uint64) IsNumeric() bool     { return true }
 func (this *Uint64) IsCommutative() bool { return true }
-func (this *Uint64) IsBounded() bool     { return this.min != 0 || this.max != math.MaxInt64 }
+func (this *Uint64) HasLimits() bool     { return this.min != 0 || this.max != math.MaxInt64 }
 
 func (this *Uint64) Value() any         { return this.value }
 func (this *Uint64) Delta() (any, bool) { return this.delta, true }

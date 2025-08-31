@@ -71,7 +71,7 @@ func (this *Int64) Clone() any {
 func (this *Int64) Equal(other any) bool { return *this == *other.(*Int64) }
 func (this *Int64) IsNumeric() bool      { return true }
 func (this *Int64) IsCommutative() bool  { return true }
-func (this *Int64) IsBounded() bool      { return this.min != math.MinInt64 || this.max != math.MaxInt64 }
+func (this *Int64) HasLimits() bool      { return this.min != math.MinInt64 || this.max != math.MaxInt64 }
 
 func (this *Int64) Value() any         { return this.value }
 func (this *Int64) Delta() (any, bool) { return this.delta, this.delta >= 0 }

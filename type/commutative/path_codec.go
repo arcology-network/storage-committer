@@ -33,7 +33,7 @@ func (this *Path) HeaderSize() uint64 {
 func (this *Path) Size() uint64 {
 	return this.HeaderSize() +
 		8 + // TotalSize
-		1 + // IsTransient
+		1 + // isBlockBound
 		uint64(this.DeltaSet.Size()) +
 		1 // 1 byte for element type ID
 }
@@ -55,7 +55,7 @@ func (this *Path) EncodeTo(buffer []byte) int {
 	)
 
 	offset += codec.Uint64(this.TotalSize).EncodeTo(buffer[offset:])
-	offset += codec.Bool(this.IsTransient).EncodeTo(buffer[offset:])
+	offset += codec.Bool(this.isBlockBound).EncodeTo(buffer[offset:])
 	this.DeltaSet.EncodeTo(buffer[offset:])
 	offset += 1
 
@@ -69,7 +69,7 @@ func (*Path) Decode(buffer []byte) any {
 	path := NewPath().(*Path)
 	fields := codec.Byteset{}.Decode(buffer).(codec.Byteset)
 	path.TotalSize = uint64(codec.Uint64(0).Decode(fields[0]).(codec.Uint64))
-	path.IsTransient = bool(codec.Bool(false).Decode(fields[1]).(codec.Bool))
+	path.isBlockBound = bool(codec.Bool(false).Decode(fields[1]).(codec.Bool))
 	path.DeltaSet = path.DeltaSet.Decode(fields[2]).(*softdeltaset.DeltaSet[string])
 	path.ElemType = uint8(fields[3][0])
 	return path
@@ -77,7 +77,7 @@ func (*Path) Decode(buffer []byte) any {
 
 func (this *Path) Print() {
 	fmt.Println("TotalSize: ", this.TotalSize)
-	fmt.Println("IsTransient: ", this.IsTransient)
+	fmt.Println("isBlockBound: ", this.isBlockBound)
 	fmt.Println("Committed: ", codec.Strings(this.DeltaSet.Committed().Elements()).ToHex())
 	fmt.Println("Staged Added: ", codec.Strings(this.DeltaSet.Added().Elements()).ToHex())
 	fmt.Println("Staged Removed: ", codec.Strings(this.DeltaSet.Removed().Elements()).ToHex())

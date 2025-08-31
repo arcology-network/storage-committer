@@ -53,7 +53,7 @@ func (this *Bigint) Clone() any {
 
 func (this *Bigint) IsNumeric() bool     { return true }
 func (this *Bigint) IsCommutative() bool { return false }
-func (this *Bigint) IsBounded() bool     { return false }
+func (this *Bigint) HasLimits() bool     { return false }
 
 func (this *Bigint) Value() any         { return (this) }
 func (this *Bigint) Delta() (any, bool) { return this, (*big.Int)(this).Sign() > 0 }

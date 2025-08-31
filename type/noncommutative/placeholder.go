@@ -37,7 +37,7 @@ func (this *Placeholder) Equal(other any) bool { return true }
 
 func (this *Placeholder) IsNumeric() bool     { return false }
 func (this *Placeholder) IsCommutative() bool { return false }
-func (this *Placeholder) IsBounded() bool     { return false }
+func (this *Placeholder) HasLimits() bool     { return false }
 
 func (this *Placeholder) Value() any              { return this }
 func (this *Placeholder) Delta() (any, bool)      { return this, true }

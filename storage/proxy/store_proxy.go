@@ -169,12 +169,12 @@ func (this *StorageProxy) AsyncWriters() []intf.Writer[*univalue.Univalue] {
 // Filter out the transitions that are not needed to be persisted.
 func (this *StorageProxy) RemoveTransients(tran *univalue.Univalue) bool {
 	// System paths only get reset if they are transient.
-	if v := (*tran).Value(); v != nil && v.(intf.Type).TypeID() == commutative.PATH && v.(*commutative.Path).IsTransient && this.platform.IsSysPath(*(*tran).GetPath()) {
+	if v := (*tran).Value(); v != nil && v.(intf.Type).TypeID() == commutative.PATH && v.(*commutative.Path).IsBlockBound() && this.platform.IsSysPath(*(*tran).GetPath()) {
 		v.(*commutative.Path).Reset()
 	}
 
 	// Other transient transitions get no chance to be persisted.
-	return !(*tran).IsTransient()
+	return !(*tran).IsBlockBound()
 }
 
 // Filter out the transitions that are not needed to be persisted.

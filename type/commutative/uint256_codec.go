@@ -95,7 +95,7 @@ func (this *U256) Decode(buffer []byte) any {
 
 func (this *U256) StorageEncode(_ string) []byte {
 	var buffer []byte
-	if this.IsBounded() {
+	if this.HasLimits() {
 		buffer, _ = rlp.EncodeToBytes([]any{this.value, this.min, this.max})
 	} else {
 		buffer, _ = rlp.EncodeToBytes(this.value.ToBig())

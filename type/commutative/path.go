@@ -33,8 +33,8 @@ import (
 // It keeps track of the all the sub paths that are added, removed or updated.
 type Path struct {
 	*softdeltaset.DeltaSet[string]
-	preloaded   *orderedset.OrderedSet[string]
-	IsTransient bool // If true, it is not persisted to the storage.
+	preloaded    *orderedset.OrderedSet[string]
+	isBlockBound bool // If true, it is not persisted to the storage after each block
 	//When it is set to non zero, it can only store one type of data, otherwise it can store multiple types.
 	//This is no type checking, it is up to the developer to make sure the data type is correct.
 	TotalSize uint64 // The size of the elements under the path in bytes.
@@ -84,6 +84,8 @@ func (this *Path) View() *softdeltaset.DeltaSet[string] { return this.DeltaSet }
 func (this *Path) MemSize() uint64                      { return uint64(this.DeltaSet.NonNilCount()) * 32 * 2 } // Just an estimate, need to update on fly instead of calculating everytime
 func (this *Path) TypeID() uint8                        { return PATH }
 
+func (this *Path) SetBlockBound(v bool) { this.isBlockBound = v }
+func (this *Path) IsBlockBound() bool   { return this.isBlockBound } // If true, it is not persisted to the storage after each block
 func (this *Path) IsDeletable(key, path any) bool {
 	return common.IsPath(key.(string)) && key.(string) == path.(string)
 }
@@ -93,7 +95,7 @@ func (this *Path) CopyTo(v any) (any, uint32, uint32, uint32) { return v, 0, 1, 
 func (this *Path) IsNumeric() bool         { return false }
 func (this *Path) IsCommutative() bool     { return true }
 func (this *Path) IsIdempotent(v any) bool { return false } // To expensive to check, so we just return false.
-func (this *Path) IsBounded() bool         { return true }
+func (this *Path) HasLimits() bool         { return true }
 
 func (this *Path) Value() any { return this.DeltaSet.Committed() }
 func (this *Path) Delta() (any, bool) {
@@ -129,11 +131,11 @@ func (this *Path) Preload(k string, source any) {
 // This is because the committed set should never be modified until the commit time.
 func (this *Path) Clone() any {
 	return &Path{
-		DeltaSet:    this.DeltaSet.Clone(),
-		preloaded:   this.preloaded,
-		ElemType:    this.ElemType,
-		IsTransient: this.IsTransient,
-		TotalSize:   this.TotalSize,
+		DeltaSet:     this.DeltaSet.Clone(),
+		preloaded:    this.preloaded,
+		ElemType:     this.ElemType,
+		isBlockBound: this.isBlockBound,
+		TotalSize:    this.TotalSize,
 	}
 }
 
@@ -146,10 +148,10 @@ func (this *Path) Get() (any, uint32, uint32) {
 // For the codec only
 func (this *Path) New(_, _, _, _, _ any) any {
 	deltaSet := &Path{
-		DeltaSet:    this.DeltaSet.CloneDelta(),
-		ElemType:    this.ElemType,
-		IsTransient: this.IsTransient,
-		TotalSize:   this.TotalSize,
+		DeltaSet:     this.DeltaSet.CloneDelta(),
+		ElemType:     this.ElemType,
+		isBlockBound: this.isBlockBound,
+		TotalSize:    this.TotalSize,
 	}
 	return deltaSet
 }

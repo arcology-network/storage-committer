@@ -180,7 +180,7 @@ func (this *WriteCache) write(tx uint64, path string, value any) (*univalue.Univ
 
 			//Set Transient Status based on its parent path settings.
 			if pathMeta, _, _ := this.FindForRead(tx, parentPath, new(commutative.Path), nil); pathMeta != nil { // Get the parent path meta
-				univ.SetTransient(pathMeta.(*commutative.Path).IsTransient) // Use the parent path transient status to set the current path
+				univ.SetBlockBound(pathMeta.(*commutative.Path).IsBlockBound()) // Use the parent path transient status to set the current path
 			}
 		}
 		return univ, err

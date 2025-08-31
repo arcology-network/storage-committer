@@ -40,7 +40,7 @@ func (this *String) Get() (any, uint32, uint32)                 { return string(
 
 func (this *String) IsNumeric() bool     { return false }
 func (this *String) IsCommutative() bool { return false }
-func (this *String) IsBounded() bool     { return false }
+func (this *String) HasLimits() bool     { return false }
 
 func (this *String) Value() any         { return this }
 func (this *String) Delta() (any, bool) { return this, true }

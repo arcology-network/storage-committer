@@ -28,7 +28,7 @@ type Property struct {
 	vType               uint8
 	ifSkipConflictCheck bool    // If affected by conflict status or not.
 	isSubstituted       bool    // If true, it is used in the local cache.
-	isTransient         bool    // If true, it is not persisted to the storage.
+	isBlockBound        bool    // If true, it is not persisted to the storage.
 	tx                  uint64  // Transaction ID
 	generation          uint64  // Generation ID
 	sequence            uint64  // Sequence ID
@@ -90,8 +90,8 @@ func (this *Property) Merge(other *Property) bool {
 	return this.keyHash == other.keyHash
 }
 
-func (this *Property) IsTransient() bool             { return this.isTransient } // If true, it is not persisted to the storage.
-func (this *Property) SetTransient(isTransient bool) { this.isTransient = isTransient }
+func (this *Property) IsBlockBound() bool              { return this.isBlockBound } // If true, it is not persisted to the storage.
+func (this *Property) SetBlockBound(isBlockBound bool) { this.isBlockBound = isBlockBound }
 
 func (this *Property) IsSubstituted() bool               { return this.isSubstituted } // Substituted by a wildcard path.
 func (this *Property) SetSubstituted(isSubstituted bool) { this.isSubstituted = isSubstituted }

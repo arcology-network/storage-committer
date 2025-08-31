@@ -67,7 +67,7 @@ func (this *Bytes) Equal(other any) bool {
 
 func (this *Bytes) IsNumeric() bool     { return false }
 func (this *Bytes) IsCommutative() bool { return false }
-func (this *Bytes) IsBounded() bool     { return false }
+func (this *Bytes) HasLimits() bool     { return false }
 
 func (this *Bytes) Value() any         { return this.value }
 func (this *Bytes) Delta() (any, bool) { return this.value, true }

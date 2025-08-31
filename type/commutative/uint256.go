@@ -146,7 +146,7 @@ func (this *U256) New(value, delta, sign, min, max any) any {
 
 func (this *U256) IsNumeric() bool     { return true }
 func (this *U256) IsCommutative() bool { return true }
-func (this *U256) IsBounded() bool     { return !this.min.Eq(&U256_ZERO) || !this.max.Eq(&U256_MAX) }
+func (this *U256) HasLimits() bool     { return !this.min.Eq(&U256_ZERO) || !this.max.Eq(&U256_MAX) }
 
 func (this *U256) Value() any         { return this.value }
 func (this *U256) Delta() (any, bool) { return this.delta, this.deltaPositive }
