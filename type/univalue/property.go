@@ -25,28 +25,30 @@ import (
 )
 
 type Property struct {
-	vType               uint8
-	ifSkipConflictCheck bool    // If affected by conflict status or not.
-	isSubstituted       bool    // If true, it is used in the local cache.
-	isBlockBound        bool    // If true, it is not persisted to the storage.
-	tx                  uint64  // Transaction ID
-	generation          uint64  // Generation ID
-	sequence            uint64  // Sequence ID
-	path                *string // Key
-	pathBytes           []byte  // for fast path comparison in sorin
-	keyHash             uint64  // keyHash of the key, for faster comparison
-	reads               uint32  // The number of reads
-	writes              uint32  // The number of writes
-	deltaWrites         uint32  // The number of delta writes
-	isDeleted           bool    // If the value is deleted. Without this the conflict detection will mixed deletes up with normal wirtes whose values are removed for serialization speed.
-	sizeInStorage       uint64  // Size in storage, which is guaranteed to be committed already.
-	gasUsed             uint64  // Gas used up to this point.
-	preexists           bool    // If the key exists in the source, which can be a cache or a storage.
-	msg                 string
-	reclaimFunc         func(any)
+	vType         uint8
+	tx            uint64  // Transaction ID
+	generation    uint64  // Generation ID
+	sequence      uint64  // Sequence ID
+	path          *string // Key
+	pathBytes     []byte  // for fast path comparison in sorin
+	keyHash       uint64  // keyHash of the key, for faster comparison
+	reads         uint32  // The number of reads
+	writes        uint32  // The number of writes
+	deltaWrites   uint32  // The number of delta writes
+	sizeInStorage uint64  // Size in storage, which is guaranteed to be isCommitted already.
+	gasUsed       uint64  // Gas used up to this point.
+	msg           string
+
+	ifSkipConflictCheck bool // If affected by conflict status or not.
+	isExpanded          bool // If true, it is used in the local cache.
+	isBlockBound        bool // If true, it is not persisted to the storage.
+	isCommitted         bool // If the key exists in the source, which can be a cache or a storage.
+	isDeleted           bool // If the value is deleted. Without this the conflict detection will mixed deletes up with normal wirtes whose values are removed for serialization speed.
+
+	reclaimFunc func(any)
 }
 
-func NewProperty(tx uint64, key string, reads, writes uint32, deltaWrites uint32, vType uint8, ifSkipConflictCheck, preexists bool) *Property {
+func NewProperty(tx uint64, key string, reads, writes uint32, deltaWrites uint32, vType uint8, ifSkipConflictCheck, isCommitted bool) *Property {
 	return &Property{
 		vType:               vType,
 		sizeInStorage:       0,
@@ -93,8 +95,8 @@ func (this *Property) Merge(other *Property) bool {
 func (this *Property) IsBlockBound() bool              { return this.isBlockBound } // If true, it is not persisted to the storage.
 func (this *Property) SetBlockBound(isBlockBound bool) { this.isBlockBound = isBlockBound }
 
-func (this *Property) IsSubstituted() bool               { return this.isSubstituted } // Substituted by a wildcard path.
-func (this *Property) SetSubstituted(isSubstituted bool) { this.isSubstituted = isSubstituted }
+func (this *Property) IsExpanded() bool            { return this.isExpanded } // Substituted by a wildcard path.
+func (this *Property) SetExpanded(isExpanded bool) { this.isExpanded = isExpanded }
 
 func (this *Property) SizeInStorage() uint64 { return this.sizeInStorage }
 func (this *Property) GetMsg() string        { return this.msg }
@@ -128,8 +130,8 @@ func (this *Property) IncrementWrites(writes uint32)           { this.writes += 
 func (this *Property) IncrementDeltaWrites(deltaWrites uint32) { this.deltaWrites += deltaWrites }
 
 func (this *Property) IsReadOnly() bool   { return this.Writes() == 0 && this.DeltaWrites() == 0 }
-func (this *Property) Preexist() bool     { return this.preexists } // Exist in cache as a failed read
-func (this *Property) SetPreexist(v bool) { this.preexists = v }    // Exist in cache as a failed read
+func (this *Property) Preexist() bool     { return this.isCommitted } // Exist in cache as a failed read
+func (this *Property) SetPreexist(v bool) { this.isCommitted = v }    // Exist in cache as a failed read
 
 // func (this *Property) Persistent() bool { return this.ifSkipConflictCheck }
 
@@ -138,8 +140,8 @@ func (this *Property) SetIsDeleted(flag bool) { this.isDeleted = flag }
 
 // Check if the key exists in the source, which can be a cache or a storage，which isn't guaranteed
 // to be the same as the cache. It is possible that the key exists in the cache but not in the storage.
-// This means that the key is a new key that hasn't been committed to the storage yet.
-func (this *Property) CheckPreexist(key string, source any) bool {
+// This means that the key is a new key that hasn't been isCommitted to the storage yet.
+func (this *Property) IsCommiitted(key string, source any) bool {
 	return source.(interface{ IfExists(string) bool }).IfExists(key)
 }
 
@@ -171,7 +173,7 @@ func (this *Property) Clone() Property {
 		isDeleted:     this.isDeleted,
 		gasUsed:       this.gasUsed,
 		sizeInStorage: this.sizeInStorage,
-		preexists:     this.preexists,
+		isCommitted:   this.isCommitted,
 		reclaimFunc:   this.reclaimFunc,
 		msg:           this.msg,
 	}

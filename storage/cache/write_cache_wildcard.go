@@ -19,19 +19,14 @@ package cache
 
 import (
 	"bytes"
-	"sort"
-	"strings"
 
-	"github.com/arcology-network/common-lib/exp/associative"
-	"github.com/arcology-network/common-lib/exp/slice"
-	"github.com/arcology-network/storage-committer/type/commutative"
 	"github.com/arcology-network/storage-committer/type/univalue"
 )
 
 // PreloadMatched preloads the paths that match the wildcard delete path that are about to be deleted by the
 // the current write operation.
 func (this *WriteCache) MatchWildcard(path string, T any) (bool, *univalue.Univalue) {
-	for _, wildcardPath := range this.wildcardDel {
+	for _, wildcardPath := range this.committedDel {
 		if len(path) < len(wildcardPath.Second) {
 			continue
 		}
@@ -49,7 +44,7 @@ func (this *WriteCache) MatchWildcard(path string, T any) (bool, *univalue.Univa
 // WildcardsToUnivalue converts wildcard paths to Univalue for exporting.
 func (this *WriteCache) WildcardsToUnivalue() []*univalue.Univalue {
 	univs := make([]*univalue.Univalue, 0)
-	for _, wildcardPath := range this.wildcardDel {
+	for _, wildcardPath := range this.committedDel {
 		newV := univalue.NewUnivalue(wildcardPath.First, wildcardPath.Second+"*", 0, 1, 0, nil, nil)
 		newV.SetPreexist(true) // Mark as pre-existing, so it pass through the filter.
 		univs = append(univs, newV)
@@ -57,32 +52,32 @@ func (this *WriteCache) WildcardsToUnivalue() []*univalue.Univalue {
 	return univs
 }
 
-func (this *WriteCache) HandleWildcard(tx uint64, path string, newVal any, args ...any) (bool, uint64) {
-	if flag, cleanPath := univalue.IsWildcard(path); flag { // Check if the path is a wildcard path
-		this.wildcardDel = append(this.wildcardDel, &associative.Pair[uint64, string]{First: 0, Second: cleanPath})
+// func (this *WriteCache) HandleWildcard(tx uint64, path string, newVal any, args ...any) (bool, uint64) {
+// 	if flag, cleanPath := univalue.IsWildcard(path); flag { // Check if the path is a wildcard path
+// 		this.committedDel = append(this.committedDel, &associative.Pair[uint64, string]{First: 0, Second: cleanPath})
 
-		sort.SliceStable(this.wildcardDel, func(i, j int) bool {
-			return this.wildcardDel[i].Second < this.wildcardDel[j].Second
-		})
+// 		sort.SliceStable(this.committedDel, func(i, j int) bool {
+// 			return this.committedDel[i].Second < this.committedDel[j].Second
+// 		})
 
-		slice.UniqueIf(this.wildcardDel, func(v0, v1 *associative.Pair[uint64, string]) bool {
-			return v0.Second == v1.Second
-		})
+// 		slice.UniqueIf(this.committedDel, func(v0, v1 *associative.Pair[uint64, string]) bool {
+// 			return v0.Second == v1.Second
+// 		})
 
-		for k, v := range this.kvDict {
-			if strings.HasPrefix(k, cleanPath) { // Remove all the paths that match the wildcard path
-				if k == cleanPath && this.platform.IsSysPath(k) { // We cannot delete the system paths
-					continue
-				}
+// 		for k, v := range this.kvDict {
+// 			if strings.HasPrefix(k, cleanPath) { // Remove all the paths that match the wildcard path
+// 				if k == cleanPath && this.platform.IsSysPath(k) { // We cannot delete the system paths
+// 					continue
+// 				}
 
-				v.SetValue(nil) // Set the value to nil to indicate the path has been deleted
-				v.SetSubstituted(true)
-				v.IncrementWrites(1) // Increment the write count
-			}
-		}
+// 				v.SetValue(nil) // Set the value to nil to indicate the path has been deleted
+// 				v.SetExpanded(true)
+// 				v.IncrementWrites(1) // Increment the write count
+// 			}
+// 		}
 
-		pathMeta, _, _ := this.FindForRead(tx, cleanPath, newVal, nil) // Read the clean path to ensure it exists in the cache
-		return true, pathMeta.(*commutative.Path).TotalSize
-	}
-	return false, 0 // Return true to indicate that the path is valid
-}
+// 		pathMeta, _, _ := this.FindForRead(tx, cleanPath, newVal, nil) // Read the clean path to ensure it exists in the cache
+// 		return true, pathMeta.(*commutative.Path).TotalSize
+// 	}
+// 	return false, 0 // Return true to indicate that the path is valid
+// }

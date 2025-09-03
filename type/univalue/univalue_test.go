@@ -48,7 +48,7 @@ func TestUnivalueCodecUint64(t *testing.T) {
 	in.reads = 1
 	in.writes = 2
 	in.deltaWrites = 3
-	in.preexists = true
+	in.isCommitted = true
 
 	bytes := in.Encode()
 	v := (&Univalue{}).Decode(bytes).(*Univalue)
@@ -100,7 +100,7 @@ func TestUnivalueCodecU256(t *testing.T) {
 		*in.path != *v.path ||
 		in.writes != v.writes ||
 		in.deltaWrites != v.deltaWrites ||
-		in.preexists != v.preexists || in.msg != v.msg {
+		in.isCommitted != v.isCommitted || in.msg != v.msg {
 		t.Error("Error: mismatch after decoding")
 	}
 

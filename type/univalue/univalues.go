@@ -160,10 +160,10 @@ func (this Univalues) Sort() Univalues {
 func (this Univalues) SortByTx() {
 	sort.Slice(this, func(i, j int) bool {
 		// if this[i].tx == this[j].tx {
-		// 	if this[i].isSubstituted == this[j].isSubstituted && this[j].isSubstituted {
+		// 	if this[i].isExpanded == this[j].isExpanded && this[j].isExpanded {
 		// 		panic("Two univalues with the same tx and both are substituted. This should not happen.")
 		// 	}
-		// 	return this[i].isSubstituted // Impossible to have two substituted univalues with the same tx.
+		// 	return this[i].isExpanded // Impossible to have two substituted univalues with the same tx.
 		// }
 		return this[i].tx < this[j].tx
 	})

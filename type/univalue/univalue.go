@@ -55,7 +55,7 @@ func NewUnivalue(tx uint64, key string, reads, writes uint32, deltaWrites uint32
 			writes:        writes,
 			deltaWrites:   deltaWrites,
 			sizeInStorage: 0,
-			preexists:     common.IfThenDo1st(source != nil, func() bool { return (&Property{}).CheckPreexist(key, source) }, false),
+			isCommitted:   common.IfThenDo1st(source != nil, func() bool { return (&Property{}).IsCommiitted(key, source) }, false),
 		},
 		T,
 		[]byte{},
@@ -79,7 +79,7 @@ func (this *Univalue) Init(tx uint64, key string, reads, writes, deltaWrites uin
 	this.writes = writes
 	this.deltaWrites = deltaWrites
 	this.value = v
-	this.preexists = preExist
+	this.isCommitted = preExist
 	return this
 }
 
@@ -265,12 +265,14 @@ func (this *Univalue) PathLookupOnly() bool {
 	return this.reads == 0 && this.deltaWrites == 0 && this.writes == 0
 }
 
-func (this *Univalue) IsWildcard() (bool, string) {
+// If all the entries in the isCommitted set have been removed.
+// only work for Path type
+func (this *Univalue) IsCommittedDeleted() (bool, string) {
 	if common.IsType[*commutative.Path](this.Value()) {
-		return this.Value().(*commutative.Path).DeltaSet.Removed().AllDeleted(), *this.path
+		return this.Value().(*commutative.Path).DeltaSet.Removed().AllDeleted, *this.path
 	}
 
-	return IsWildcard(*this.path)
+	return IsCommittedPath(*this.path)
 }
 func (this *Univalue) IsReadOnly() bool       { return (this.writes == 0 && this.deltaWrites == 0) }
 func (this *Univalue) IsWriteOnly() bool      { return (this.reads == 0 && this.deltaWrites == 0) }
@@ -313,7 +315,7 @@ func (this *Univalue) PrecheckAttributes(other *Univalue) {
 	}
 
 	if this.GetTx() != other.GetTx() &&
-		this.preexists &&
+		this.isCommitted &&
 		this.Value() != nil &&
 		this.Value().(intf.Type).IsCommutative() &&
 		this.Reads() > 0 &&
@@ -328,7 +330,7 @@ func (this *Univalue) PrecheckAttributes(other *Univalue) {
 		panic("Error: A deleted value cann't be composite")
 	}
 
-	if !this.preexists && this.IsDeltaWriteOnly() {
+	if !this.isCommitted && this.IsDeltaWriteOnly() {
 		panic("Error: A new value cann't be composite")
 	}
 }
@@ -361,8 +363,8 @@ func (this *Univalue) Less(other *Univalue) bool {
 		return this.deltaWrites > other.deltaWrites
 	}
 
-	if (!this.preexists || !other.preexists) && (this.preexists != other.preexists) {
-		return this.preexists
+	if (!this.isCommitted || !other.isCommitted) && (this.isCommitted != other.isCommitted) {
+		return this.isCommitted
 	}
 	return true
 }
@@ -380,7 +382,7 @@ func (this *Univalue) Print() {
 	fmt.Print(spaces+"DeltaWrites: ", this.deltaWrites)
 	fmt.Print(spaces+"ifSkipConflictCheck: ", this.ifSkipConflictCheck)
 	fmt.Print(spaces+"isBlockBound: ", this.isBlockBound)
-	fmt.Print(spaces+"preexists: ", this.preexists)
+	fmt.Print(spaces+"isCommitted: ", this.isCommitted)
 
 	path := *this.path
 	if index := strings.Index(path, "container/"); index != -1 {
@@ -407,7 +409,7 @@ func (this *Univalue) Equal(other *Univalue) bool {
 		this.reads == other.Reads() &&
 		this.writes == other.Writes() &&
 		vFlag &&
-		this.preexists == other.Preexist()
+		this.isCommitted == other.Preexist()
 }
 
 // func (this *Univalue) GetCascadeSub(prefix string, source any) []string {

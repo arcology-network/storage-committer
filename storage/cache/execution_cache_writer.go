@@ -19,7 +19,7 @@ package cache
 
 // ExecutionCacheWriter is a struct that contains data strucuture and methods for writing data to cache.
 // The indexer is used to index the input transitions as they are received, in a way that they can be
-// committed efficiently later.
+// isCommitted efficiently later.
 type ExecutionCacheWriter struct {
 	*ExecutionCacheIndexer
 	*WriteCache
@@ -42,7 +42,7 @@ func (this *ExecutionCacheWriter) Precommit(isSync bool) {
 
 }
 
-// The generation cache is transient and will clear itself when all the transitions are committed to
+// The generation cache is transient and will clear itself when all the transitions are isCommitted to
 // the database.
 func (this *ExecutionCacheWriter) Commit(_ uint64) {
 	this.WriteCache.Clear()

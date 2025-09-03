@@ -56,7 +56,7 @@ type StateCommitter struct {
 	Err error
 }
 
-// NewStateCommitter creates a new StateCommitter instance. The stores are the stores that can be committed.
+// NewStateCommitter creates a new StateCommitter instance. The stores are the stores that can be isCommitted.
 // A Committable store is a pair of an index and a store. The index is used to index the input transitions as they are
 // received, and the store is used to commit the indexed transitions. Since multiple store can share the same index, each
 // CommittableStore is an indexer and a list of Committable stores.

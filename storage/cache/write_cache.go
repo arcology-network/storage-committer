@@ -46,21 +46,21 @@ import (
 
 // WriteCache is a read-only data backend used for caching.
 type WriteCache struct {
-	backend     stgcommon.ReadOnlyStore
-	kvDict      map[string]*univalue.Univalue       // Local KV lookup
-	wildcardDel []*associative.Pair[uint64, string] // Paths delete by wildcard
-	platform    stgeth.Platform
-	pool        *mempool.Mempool[*univalue.Univalue]
+	backend      stgcommon.ReadOnlyStore
+	kvDict       map[string]*univalue.Univalue       // Local KV lookup
+	committedDel []*associative.Pair[uint64, string] // Paths delete by wildcard
+	platform     stgeth.Platform
+	pool         *mempool.Mempool[*univalue.Univalue]
 }
 
 // NewWriteCache creates a new instance of WriteCache; the backend can be another instance of WriteCache,
 // resulting in a cascading-like structure.
 func NewWriteCache(backend stgcommon.ReadOnlyStore, perPage int, numPages int, args ...any) *WriteCache {
 	return &WriteCache{
-		backend:     backend,
-		kvDict:      make(map[string]*univalue.Univalue),
-		wildcardDel: make([]*associative.Pair[uint64, string], 0),
-		platform:    *stgeth.NewPlatform(),
+		backend:      backend,
+		kvDict:       make(map[string]*univalue.Univalue),
+		committedDel: make([]*associative.Pair[uint64, string], 0),
+		platform:     *stgeth.NewPlatform(),
 		pool: mempool.NewMempool(perPage, numPages, func() *univalue.Univalue {
 			return new(univalue.Univalue)
 		}, (&univalue.Univalue{}).Reset),
@@ -101,7 +101,7 @@ func (this *WriteCache) ExistsInParent(path string) bool {
 		return true
 	}
 
-	parentPath := common.GetParentPath(path) // Get the parent path
+	parentPath, _ := common.GetParentPath(path) // Get the parent path
 	if meta, _, _ := this.FindForWrite(0, parentPath, new(commutative.Path), nil); meta != nil {
 		childKey := path[len(parentPath):]
 		if ok, _ := meta.(*commutative.Path).Exists(childKey); ok { // Add the path to the parent path
@@ -143,10 +143,6 @@ func (this *WriteCache) Write(tx uint64, path string, newVal any, args ...any) (
 		return 0, errors.New("Error: Unknown data type !")
 	}
 
-	// if isWildcard, size := this.HandleWildcard(tx, path, newVal, args...); isWildcard {
-	// 	return int64(size), nil // If the path is a wildcard, return the size difference
-	// }
-
 	univ, err := this.write(tx, path, newVal)
 	sizeDif := this.DiffSize(tx, path, newVal) // Update the size difference
 	if len(args) > 0 && args[0] != nil {
@@ -155,17 +151,15 @@ func (this *WriteCache) Write(tx uint64, path string, newVal any, args ...any) (
 	return sizeDif, err
 }
 
-func IsWildcard(path string) bool {
-	return strings.HasSuffix(path, "*")
-}
-
 func (this *WriteCache) write(tx uint64, path string, value any) (*univalue.Univalue, error) {
-	parentPath := common.GetParentPath(path)
+	parentPath, _ := common.GetParentPath(path)
 	univ := univalue.NewUnivalue(tx, path, 0, 1, 0, value, nil) // Default univalue wrapper
 	if this.IfExists(parentPath) || tx == stgcommon.SYSTEM {    // The parent path exists or to inject the path directly
 		var err error
 		var inCache bool
-		if !IsWildcard(path) {
+
+		// If is a Committed Deletion operation
+		if !strings.HasSuffix(path, "*") && !strings.HasSuffix(path, "[:]") {
 			_, univ, inCache = this.FindForWrite(tx, path, value, this.AddToDict) // Get a univalue wrapper
 			err = univ.Set(tx, path, value, inCache, this)                        // set the new value
 		}
@@ -210,7 +204,7 @@ func (this *WriteCache) Retrive(path string, T any) (any, error) {
 	return typedv.(stgcommon.Type).New(rawv, nil, nil, min, max), nil // Clone the value
 }
 
-// The load the data from the backend. Since the state is already committed, it is read-only.
+// The load the data from the backend. Since the state is already isCommitted, it is read-only.
 // No need to add it to the kvDict or keep track of the access.
 func (this *WriteCache) LoadFromCommitted(tx uint64, path string, T any) *univalue.Univalue {
 	var typedv any
@@ -414,8 +408,8 @@ func (this *WriteCache) Checksum() [32]byte {
 // GetCommittedState() in Eth interface for gas refund related code.
 func (this *WriteCache) ReadCommitted(tx uint64, key string, T any) (any, uint64) {
 	// Just to leave a record for conflict detection. This is different from the original Ethereum implementation.
-	// In Ethereum, there is no such concept as the multiprocessor，so the committed state can only come from the
-	// previous block or the transactions before the current one. But in the multiprocessor, the committed state
+	// In Ethereum, there is no such concept as the multiprocessor，so the isCommitted state can only come from the
+	// previous block or the transactions before the current one. But in the multiprocessor, the isCommitted state
 	// may also come from the parent thread. So we need to leave a record for the conflict detection in case that
 	// threads spawned by multiple parent are trying to access the same path.
 	if v := this.LoadFromCommitted(tx, key, this); v != nil { // Check to see if the path exists in the backend.

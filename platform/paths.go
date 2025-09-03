@@ -84,7 +84,7 @@ func (this *Platform) IsImmediateChildOfSysPath(path string) bool {
 		return true
 	}
 
-	parent := common.GetParentPath(path)
+	parent, _ := common.GetParentPath(path)
 	if this.IsContainerPath(parent) { // Still need to keep track of the elements under the container path.
 		return false
 	}

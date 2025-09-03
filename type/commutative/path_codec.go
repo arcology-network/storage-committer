@@ -39,7 +39,7 @@ func (this *Path) Size() uint64 {
 }
 
 func (this *Path) Encode() []byte {
-	buffer := make([]byte, this.Size()) //  no need to send the committed keys
+	buffer := make([]byte, this.Size()) //  no need to send the isCommitted keys
 	this.EncodeTo(buffer)
 	return buffer
 }

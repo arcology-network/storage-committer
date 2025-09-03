@@ -19,7 +19,7 @@ package univalue
 
 import "strings"
 
-func IsWildcard(path string) (bool, string) {
+func IsCommittedPath(path string) (bool, string) {
 	if strings.HasSuffix(path, "/*") {
 		idx := strings.IndexByte(path, '*')
 		return true, path[:idx]
