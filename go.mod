@@ -15,13 +15,13 @@ require (
 require (
 	github.com/VictoriaMetrics/fastcache v1.12.2
 	github.com/cespare/xxhash/v2 v2.2.0
-	github.com/emirpasic/gods/v2 v2.0.0-alpha
+	github.com/emirpasic/gods/v2 v2.0.0-alpha // indirect
 	golang.org/x/crypto v0.20.0
-	golang.org/x/exp v0.0.0-20231206192017-f3f8817b8deb
+	golang.org/x/exp v0.0.0-20231206192017-f3f8817b8deb // indirect
 )
 
 require (
-	github.com/arcology-network/common-lib v1.9.1-0.20250613001412-0529984b08ff
+	github.com/arcology-network/common-lib v1.9.1-0.20250904084038-46913d516a25
 	github.com/cespare/xxhash v1.1.0
 )
 
