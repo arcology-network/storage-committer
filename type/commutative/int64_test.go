@@ -192,7 +192,8 @@ func TestInt64Codec(t *testing.T) {
 	out = (&Int64{}).Decode(buffer).(*Int64)
 	fmt.Println("Encode() + Decode(): ", time.Since(t0))
 
-	in = (&Int64{}).New(in.Value(), in.Delta(), del >= 0, nil, nil).(*Int64)
+	v, _ := in.Delta()
+	in = (&Int64{}).New(in.Value(), v, del >= 0, nil, nil).(*Int64)
 	buffer = in.Encode()
 	out = (&Int64{}).Decode(buffer).(*Int64)
 	if (*out).value != 2 ||
@@ -222,7 +223,9 @@ func TestInt64Codec(t *testing.T) {
 		t.Error("Don't match")
 	}
 
-	in = (&Int64{}).New(in.Value(), in.Delta(), del >= 0, in.Min(), in.Max()).(*Int64)
+	delta, _ := in.Delta()
+	minv, maxv := in.Limits()
+	in = (&Int64{}).New(in.Value(), delta, del >= 0, minv, maxv).(*Int64)
 	buffer = in.Encode()
 	out = (&Int64{}).Decode(buffer).(*Int64)
 	if (*out).value != 0 ||

@@ -27,7 +27,7 @@ import (
 
 func (this *Property) Encode() []byte {
 	buffer := make([]byte, this.Size())
-	this.EncodeToBuffer(buffer)
+	this.EncodeTo(buffer)
 	return buffer
 }
 
@@ -47,9 +47,9 @@ func (this *Property) Size() uint64 {
 		uint64(8) + // codec.Uint64(this.writes).Size() +
 		uint64(8) + // codec.Uint64(this.deltaWrites).Size() +
 		uint64(8) + // codec.Uint64(this.gasUsed).Size() +
-		uint64(1) + //+  codec.Bool(this.preexists).Size() + // isDeleted
-		uint64(1) + //+  codec.Bool(this.preexists).Size() +
-		uint64(1) + //+  codec.Bool(this.persistent).Size() +
+		uint64(1) + //+  codec.Bool(this.isCommitted).Size() + // isDeleted
+		uint64(1) + //+  codec.Bool(this.isCommitted).Size() +
+		uint64(1) + //+  codec.Bool(this.ifSkipConflictCheck).Size() +
 		uint64(8) + //+  sizeInStorage
 		uint64(len(this.msg))
 }
@@ -69,31 +69,31 @@ func (this *Property) FillHeader(buffer []byte) int {
 			codec.Uint64(this.deltaWrites).Size(),
 			codec.Uint64(this.gasUsed).Size(),
 			codec.Bool(this.isDeleted).Size(),
-			codec.Bool(this.preexists).Size(),
-			codec.Bool(this.persistent).Size(),
+			codec.Bool(this.isCommitted).Size(),
+			codec.Bool(this.ifSkipConflictCheck).Size(),
 			codec.Uint64(this.sizeInStorage).Size(),
 			codec.String(this.msg).Size(),
 		},
 	)
 }
 
-func (this *Property) EncodeToBuffer(buffer []byte) int {
+func (this *Property) EncodeTo(buffer []byte) int {
 	offset := this.FillHeader(buffer)
-	offset += codec.Uint8(this.vType).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.tx).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.generation).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.sequence).EncodeToBuffer(buffer[offset:])
-	offset += codec.String(*this.path).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.keyHash).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.reads).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.writes).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.deltaWrites).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.gasUsed).EncodeToBuffer(buffer[offset:])
-	offset += codec.Bool(this.isDeleted).EncodeToBuffer(buffer[offset:])
-	offset += codec.Bool(this.preexists).EncodeToBuffer(buffer[offset:])
-	offset += codec.Bool(this.persistent).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.sizeInStorage).EncodeToBuffer(buffer[offset:])
-	offset += codec.String(this.msg).EncodeToBuffer(buffer[offset:])
+	offset += codec.Uint8(this.vType).EncodeTo(buffer[offset:])
+	offset += codec.Uint64(this.tx).EncodeTo(buffer[offset:])
+	offset += codec.Uint64(this.generation).EncodeTo(buffer[offset:])
+	offset += codec.Uint64(this.sequence).EncodeTo(buffer[offset:])
+	offset += codec.String(*this.path).EncodeTo(buffer[offset:])
+	offset += codec.Uint64(this.keyHash).EncodeTo(buffer[offset:])
+	offset += codec.Uint64(this.reads).EncodeTo(buffer[offset:])
+	offset += codec.Uint64(this.writes).EncodeTo(buffer[offset:])
+	offset += codec.Uint64(this.deltaWrites).EncodeTo(buffer[offset:])
+	offset += codec.Uint64(this.gasUsed).EncodeTo(buffer[offset:])
+	offset += codec.Bool(this.isDeleted).EncodeTo(buffer[offset:])
+	offset += codec.Bool(this.isCommitted).EncodeTo(buffer[offset:])
+	offset += codec.Bool(this.ifSkipConflictCheck).EncodeTo(buffer[offset:])
+	offset += codec.Uint64(this.sizeInStorage).EncodeTo(buffer[offset:])
+	offset += codec.String(this.msg).EncodeTo(buffer[offset:])
 
 	return offset
 }
@@ -116,8 +116,8 @@ func (this *Property) Decode(buffer []byte) any {
 	this.deltaWrites = uint32(new(codec.Uint64).Decode(fields[8]).(codec.Uint64))
 	this.gasUsed = uint64(new(codec.Uint64).Decode(fields[9]).(codec.Uint64))
 	this.isDeleted = bool(codec.Bool(false).Decode(fields[10]).(codec.Bool))
-	this.preexists = bool(codec.Bool(false).Decode(fields[11]).(codec.Bool))
-	this.persistent = bool(codec.Bool(true).Decode(fields[12]).(codec.Bool))
+	this.isCommitted = bool(codec.Bool(false).Decode(fields[11]).(codec.Bool))
+	this.ifSkipConflictCheck = bool(codec.Bool(true).Decode(fields[12]).(codec.Bool))
 	this.sizeInStorage = uint64(new(codec.Uint64).Decode(fields[13]).(codec.Uint64))
 	this.msg = string(codec.String("").Decode(bytes.Clone(fields[14])).(codec.String))
 
@@ -135,8 +135,8 @@ func (this *Property) GobDecode(data []byte) error {
 	this.path = v.path
 	this.pathBytes = v.pathBytes
 	this.keyHash = v.keyHash
-	this.preexists = v.preexists
-	this.persistent = v.persistent
+	this.isCommitted = v.isCommitted
+	this.ifSkipConflictCheck = v.ifSkipConflictCheck
 	this.tx = v.tx
 	this.generation = v.generation
 	this.sequence = v.sequence

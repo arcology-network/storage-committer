@@ -27,7 +27,7 @@ import (
 
 func (this *Univalue) Encode() []byte {
 	buffer := make([]byte, this.Size())
-	this.EncodeToBuffer(buffer)
+	this.EncodeTo(buffer)
 	return buffer
 }
 
@@ -59,18 +59,18 @@ func (this *Univalue) FillHeader(buffer []byte) int {
 	)
 }
 
-func (this *Univalue) EncodeToBuffer(buffer []byte) int {
+func (this *Univalue) EncodeTo(buffer []byte) int {
 	offset := this.FillHeader(buffer)
 
-	offset += this.Property.EncodeToBuffer(buffer[offset:])
+	offset += this.Property.EncodeTo(buffer[offset:])
 	offset += common.IfThenDo1st(this.value != nil, func() int {
-		return codec.Bytes(this.value.(stgcommon.Type).Encode()).EncodeToBuffer(buffer[offset:])
+		return codec.Bytes(this.value.(stgcommon.Type).Encode()).EncodeTo(buffer[offset:])
 	}, 0)
 
 	return offset
 }
 
-func (this *Univalue) Decode(buffer []byte) interface{} {
+func (this *Univalue) Decode(buffer []byte) any {
 	fields := codec.Byteset{}.Decode(buffer).(codec.Byteset)
 	property := (&Property{}).Decode(fields[0]).(*Property)
 
@@ -90,10 +90,10 @@ func (this *Univalue) GetEncoded() []byte {
 		return this.value.(stgcommon.Type).Value().(codec.Encodable).Encode()
 	}
 
-	if len(this.cache) > 0 {
+	if len(this.buf) > 0 {
 		return this.value.(stgcommon.Type).Value().(codec.Encodable).Encode()
 	}
-	return this.cache
+	return this.buf
 }
 
 func (this *Univalue) GobEncode() ([]byte, error) {

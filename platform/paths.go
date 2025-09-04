@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	common "github.com/arcology-network/common-lib/common"
-	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/slice"
 	stgcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
@@ -32,17 +31,20 @@ type Platform struct {
 	syspaths map[string]uint8
 }
 
+// Returns a list of paths that need to be created under the account automatically when the account is created.
 func NewPlatform() *Platform {
 	return &Platform{
 		map[string]uint8{
-			"/":                   commutative.PATH,
-			"/code":               noncommutative.BYTES,
-			"/nonce":              commutative.UINT64,
-			"/balance":            commutative.UINT256,
-			"/func/":              commutative.PATH,
-			"/storage/":           commutative.PATH,
-			"/storage/container/": commutative.PATH, // Container storage
-			"/storage/native/":    commutative.PATH, // Native storage
+			"/":        commutative.PATH,
+			"/code":    noncommutative.BYTES,
+			"/nonce":   commutative.UINT64,
+			"/balance": commutative.UINT256,
+
+			// Arcology specific paths
+			stgcommon.FULL_PARA_PROP_PATH: commutative.PATH,
+			"/storage/":                   commutative.PATH,
+			"/storage/container/":         commutative.PATH, // Container storage
+			"/storage/native/":            commutative.PATH, // Native storage
 		},
 	}
 }
@@ -51,17 +53,7 @@ func ETH10AccountShard(numOfShard int, key string) int {
 	if len(key) < 24 {
 		panic("Invalid eth1.0 account shard key: " + key)
 	}
-	return (hex2int(key[22])*16 + hex2int(key[23])) % numOfShard
-}
-
-// func (this *Platform) RootLength() int { return len(this.stgcommon.ETH10Account()) + 40 }
-
-func hex2int(c byte) int {
-	if c >= 'a' {
-		return int(c-'a') + 10
-	} else {
-		return int(c - '0')
-	}
+	return (common.Hex2int(key[22])*16 + common.Hex2int(key[23])) % numOfShard
 }
 
 // Get ths builtin paths
@@ -78,21 +70,32 @@ func (this *Platform) GetBuiltins(acct string) ([]string, []uint8) {
 // These paths won't keep the sub elements
 func (this *Platform) IsSysPath(path string) bool {
 	if len(path) <= stgcommon.ETH10_ACCOUNT_FULL_LENGTH {
-		return path == stgcommon.ETH10 || path == stgcommon.ETH10_ACCOUNT_PREFIX
+		return true
 	}
 
-	subPath := path[stgcommon.ETH10_ACCOUNT_FULL_LENGTH:] // Removed the shared part
+	subPath := path[stgcommon.ETH10_ACCOUNT_FULL_LENGTH:] // Removed the shared prefix part
 	_, ok := this.syspaths[subPath]
 	return ok
 }
 
-func (this *Platform) GetSysPaths() []string {
-	return mapi.Keys(this.syspaths)
+// A system path and an child of the system paths as well.
+func (this *Platform) IsImmediateChildOfSysPath(path string) bool {
+	if this.IsSysPath(path) {
+		return true
+	}
+
+	parent, _ := common.GetParentPath(path)
+	if this.IsContainerPath(parent) { // Still need to keep track of the elements under the container path.
+		return false
+	}
+
+	return this.IsSysPath(parent) ||
+		!strings.Contains(parent, "/") // All but the root has "/", root is also a system path.
 }
 
-func (this *Platform) Builtins(acct string, idx int) string {
-	paths, _ := common.MapKVs(this.syspaths)
-	return stgcommon.ETH10_ACCOUNT_PREFIX + acct + paths[idx]
+// If the path of a concurrent container, it is a concurrent path.
+func (*Platform) IsContainerPath(path string) bool {
+	return strings.HasSuffix(path, "/container/")
 }
 
 func ParseAccountAddr(acct string) (string, string, string) {

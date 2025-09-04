@@ -18,18 +18,18 @@
 package ethstorage
 
 import (
-	stgtype "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 )
 
 type Rlp struct{}
 
-func (Rlp) Encode(key string, v interface{}) []byte {
+func (Rlp) Encode(key string, v any) []byte {
 	if v == nil {
 		return []byte{} // Deletion
 	}
-	return v.(stgtype.Type).StorageEncode(key)
+	return v.(stgcommon.Type).StorageEncode(key)
 }
 
-func (Rlp) Decode(key string, buffer []byte, T any) interface{} {
-	return T.(stgtype.Type).StorageDecode(key, buffer)
+func (Rlp) Decode(key string, buffer []byte, T any) any {
+	return T.(stgcommon.Type).StorageDecode(key, buffer)
 }

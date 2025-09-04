@@ -23,7 +23,7 @@ import (
 	"github.com/arcology-network/common-lib/exp/associative"
 	"github.com/arcology-network/common-lib/exp/slice"
 	cache "github.com/arcology-network/common-lib/storage/cache"
-	stgtype "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/type/univalue"
 
 	// intf "github.com/arcology-network/storage-committer/interfaces"
@@ -31,18 +31,22 @@ import (
 	"github.com/cespare/xxhash/v2"
 )
 
-// ReadCache is a wrapper around cache.ReadCache with some extra methods provided
-// by the intf.Datastore interface to work with the storage-committer.
+// LiveCache acts as an in-memory cache layer for state data, providing fast access to frequently used values.
+// When a state access request is made, the system first checks the LiveCache for the data.
+// Only if the requested data is not found in the LiveCache does the system query the underlying storage.
+// This approach reduces storage access latency and improves overall system performance by keeping hot data
+// readily available.
+
 type LiveCache struct {
-	*cache.ReadCache[string, *associative.Pair[stgtype.Type, *Profile]]               // Provide Readonly interface
-	profile                                                             *CacheProfile // Memory usage of the cache.
+	*cache.ReadCache[string, *associative.Pair[stgcommon.Type, *Profile]]               // Provide Readonly interface
+	profile                                                               *CacheProfile // Memory usage of the cache itself.
 }
 
 func NewLiveCache(cacheCap uint64) *LiveCache {
 	cache := &LiveCache{
-		ReadCache: cache.NewReadCache[string, *associative.Pair[stgtype.Type, *Profile]](
+		ReadCache: cache.NewReadCache(
 			4096, // 4096 shards to avoid lock contention
-			func(v *associative.Pair[stgtype.Type, *Profile]) bool {
+			func(v *associative.Pair[stgcommon.Type, *Profile]) bool {
 				return v == nil
 			},
 			func(k string) uint64 {
@@ -59,7 +63,7 @@ func (this *LiveCache) Profile() *CacheProfile { return this.profile }
 func (this *LiveCache) Size() uint64           { return this.profile.occupied }
 
 func (this *LiveCache) CacheChecksum() [32]byte {
-	encoders := func(k string, v *associative.Pair[stgtype.Type, *Profile]) ([]byte, []byte) {
+	encoders := func(k string, v *associative.Pair[stgcommon.Type, *Profile]) ([]byte, []byte) {
 		return []byte(k), v.First.Encode()
 	}
 
@@ -70,10 +74,10 @@ func (this *LiveCache) CacheChecksum() [32]byte {
 }
 
 func (this *LiveCache) Delete(keys []string) {
-	this.ReadCache.BatchSet(keys, make([]*associative.Pair[stgtype.Type, *Profile], len(keys)))
+	this.ReadCache.BatchSet(keys, make([]*associative.Pair[stgcommon.Type, *Profile], len(keys)))
 }
 
-func (this *LiveCache) Get(key string) (stgtype.Type, bool) {
+func (this *LiveCache) Get(key string) (stgcommon.Type, bool) {
 	v, ok := this.ReadCache.Get(key)
 	if !ok {
 		return nil, ok
@@ -82,7 +86,7 @@ func (this *LiveCache) Get(key string) (stgtype.Type, bool) {
 }
 
 // Get the raw value from the cache with the usage information.
-func (this *LiveCache) GetRaw(key string) (*associative.Pair[stgtype.Type, *Profile], bool) {
+func (this *LiveCache) GetRaw(key string) (*associative.Pair[stgcommon.Type, *Profile], bool) {
 	v, ok := this.ReadCache.Get(key)
 	if !ok {
 		return nil, ok
@@ -91,6 +95,11 @@ func (this *LiveCache) GetRaw(key string) (*associative.Pair[stgtype.Type, *Prof
 }
 
 func (this *LiveCache) Commit(univals []*univalue.Univalue, block uint64) {
+	// Cache is disabled, do nothing.
+	if !this.Status() {
+		return
+	}
+
 	// Prepare the space for the new values in the cache, some univalues may be deleted because of the memory limit.
 	this.profile.PrepareSpace(&univals, this)
 
@@ -99,15 +108,15 @@ func (this *LiveCache) Commit(univals []*univalue.Univalue, block uint64) {
 		return *v.GetPath()
 	})
 
-	pairedVals := slice.ParallelTransform(univals, runtime.NumCPU(), func(i int, v *univalue.Univalue) *associative.Pair[stgtype.Type, *Profile] {
+	pairedVals := slice.ParallelTransform(univals, runtime.NumCPU(), func(i int, v *univalue.Univalue) *associative.Pair[stgcommon.Type, *Profile] {
 		if v.Value() == nil {
 			return nil
 		}
 
-		pair := &associative.Pair[stgtype.Type, *Profile]{
-			First: v.Value().(stgtype.Type),
+		pair := &associative.Pair[stgcommon.Type, *Profile]{
+			First: v.Value().(stgcommon.Type),
 			Second: &Profile{
-				sizeInMem:   v.Value().(stgtype.Type).MemSize(),
+				sizeInMem:   v.Value().(stgcommon.Type).MemSize(),
 				visits:      uint64(v.Reads()) + uint64(v.Writes()) + uint64(v.DeltaWrites()),
 				firstLoaded: uint32(block),
 			},

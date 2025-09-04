@@ -49,19 +49,19 @@ func (this *Int64) Encode() []byte {
 			common.IfThen(this.max != math.MaxInt64, uint64(8), 0),
 		},
 	)
-	this.EncodeToBuffer(buffer[offset:])
+	this.EncodeTo(buffer[offset:])
 	return buffer
 }
 
-func (this *Int64) EncodeToBuffer(buffer []byte) int {
-	offset := common.IfThenDo1st(this.value != 0, func() int { return codec.Int64(this.value).EncodeToBuffer(buffer) }, 0)
-	offset += common.IfThenDo1st(this.delta != 0, func() int { return codec.Int64(this.delta).EncodeToBuffer(buffer[offset:]) }, 0)
-	offset += common.IfThenDo1st(this.min != math.MinInt64, func() int { return codec.Int64(this.min).EncodeToBuffer(buffer[offset:]) }, 0)
-	offset += common.IfThenDo1st(this.max != math.MaxInt64, func() int { return codec.Int64(this.max).EncodeToBuffer(buffer[offset:]) }, 0)
+func (this *Int64) EncodeTo(buffer []byte) int {
+	offset := common.IfThenDo1st(this.value != 0, func() int { return codec.Int64(this.value).EncodeTo(buffer) }, 0)
+	offset += common.IfThenDo1st(this.delta != 0, func() int { return codec.Int64(this.delta).EncodeTo(buffer[offset:]) }, 0)
+	offset += common.IfThenDo1st(this.min != math.MinInt64, func() int { return codec.Int64(this.min).EncodeTo(buffer[offset:]) }, 0)
+	offset += common.IfThenDo1st(this.max != math.MaxInt64, func() int { return codec.Int64(this.max).EncodeTo(buffer[offset:]) }, 0)
 	return offset
 }
 
-func (this *Int64) Decode(buffer []byte) interface{} {
+func (this *Int64) Decode(buffer []byte) any {
 	if len(buffer) == 0 {
 		return this
 	}
@@ -83,17 +83,17 @@ func (this *Int64) Print() {
 
 func (this *Int64) StorageEncode(_ string) []byte {
 	var buffer []byte
-	if this.IsBounded() {
-		buffer, _ = rlp.EncodeToBytes([]interface{}{this.value, this.min, this.max})
+	if this.HasLimits() {
+		buffer, _ = rlp.EncodeToBytes([]any{this.value, this.min, this.max})
 	} else {
 		buffer, _ = rlp.EncodeToBytes(this.value)
 	}
 	return buffer
 }
 
-func (*Int64) StorageDecode(_ string, buffer []byte) interface{} {
+func (*Int64) StorageDecode(_ string, buffer []byte) any {
 	var this *Int64
-	var arr []interface{}
+	var arr []any
 	err := rlp.DecodeBytes(buffer, &arr)
 	if err != nil {
 		var value int64

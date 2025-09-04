@@ -30,7 +30,7 @@ package cache
 // 	}
 
 // 	typedv := v.(*univalue.Univalue).Value()
-// 	dataSize := common.IfThenDo1st(typedv != nil, func() uint64 { return uint64(typedv.(stgtype.Type).MemSize()) }, 0)
+// 	dataSize := common.IfThenDo1st(typedv != nil, func() uint64 { return uint64(typedv.(stgcommon.Type).MemSize()) }, 0)
 // 	return common.IfThen(
 // 		v.(*univalue.Univalue).Reads() > 1, // Is hot loaded
 // 		common.Max(dataSize/32, 1)*3,
@@ -45,10 +45,10 @@ package cache
 // 	if data, ok := committedv.([]byte); ok {
 // 		committedSize = uint64(len(data))
 // 	} else {
-// 		committedSize = common.IfThenDo1st(committedv != nil, func() uint64 { return uint64(committedv.(stgtype.Type).MemSize()) }, 0)
+// 		committedSize = common.IfThenDo1st(committedv != nil, func() uint64 { return uint64(committedv.(stgcommon.Type).MemSize()) }, 0)
 // 	}
 
-// 	dataSize := common.IfThenDo1st(v != nil, func() uint64 { return uint64(v.(stgtype.Type).Size()) }, 0)
+// 	dataSize := common.IfThenDo1st(v != nil, func() uint64 { return uint64(v.(stgcommon.Type).Size()) }, 0)
 // 	return common.IfThen(
 // 		committedSize > 0,
 // 		common.Max(int64(dataSize/32), 1)*20000,

@@ -42,7 +42,7 @@ func (this Univalues) Sizes() []int {
 	return sizes
 }
 
-func (this Univalues) Encode(selector ...interface{}) []byte {
+func (this Univalues) Encode(selector ...any) []byte {
 	lengths := make([]uint64, len(this))
 	if len(lengths) == 0 {
 		return []byte{}
@@ -61,16 +61,16 @@ func (this Univalues) Encode(selector ...interface{}) []byte {
 
 	headerLen := uint64((len(this) + 1) * codec.UINT64_LEN)
 	buffer := make([]byte, headerLen+offsets[len(offsets)-1])
-	codec.Uint32(len(this)).EncodeToBuffer(buffer)
+	codec.Uint32(len(this)).EncodeTo(buffer)
 
 	slice.ParallelForeach(this, 6, func(i int, _ **Univalue) {
-		codec.Uint32(offsets[i]).EncodeToBuffer(buffer[(i+1)*codec.UINT64_LEN:])
-		this[i].EncodeToBuffer(buffer[headerLen+offsets[i]:])
+		codec.Uint32(offsets[i]).EncodeTo(buffer[(i+1)*codec.UINT64_LEN:])
+		this[i].EncodeTo(buffer[headerLen+offsets[i]:])
 	})
 	return buffer
 }
 
-func (Univalues) Decode(bytes []byte) interface{} {
+func (Univalues) Decode(bytes []byte) any {
 	if len(bytes) == 0 {
 		return Univalues{}
 	}
@@ -85,7 +85,7 @@ func (Univalues) Decode(bytes []byte) interface{} {
 	return Univalues(univalues)
 }
 
-func (Univalues) DecodeWithMempool(bytes []byte, get func() *Univalue, put func(interface{})) interface{} {
+func (Univalues) DecodeWithMempool(bytes []byte, get func() *Univalue, put func(any)) any {
 	if len(bytes) == 0 {
 		return nil
 	}
@@ -101,7 +101,7 @@ func (Univalues) DecodeWithMempool(bytes []byte, get func() *Univalue, put func(
 	return Univalues(univalues)
 }
 
-// func (Univalues) DecodeV2(bytesset [][]byte, get func() interface{}, put func(interface{})) Univalues {
+// func (Univalues) DecodeV2(bytesset [][]byte, get func() any, put func(any)) Univalues {
 // 	univalues := make([]*Univalue, len(bytesset))
 // 	for i := range bytesset {
 // 		v := get().(*Univalue)
@@ -141,7 +141,7 @@ func (this Univalues) Print(condition ...func(v *Univalue) bool) {
 }
 
 // Print the univalues if the satisfied the existing condition
-func (this Univalues) PrintUnsorted(condition ...func(v *Univalue) bool) {
+func (this Univalues) PrintUnsorted() {
 	for i, v := range this {
 		fmt.Print(i, ": ")
 		v.Print()

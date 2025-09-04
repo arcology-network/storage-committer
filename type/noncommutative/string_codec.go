@@ -19,6 +19,7 @@ package noncommutative
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
 	"unsafe"
@@ -35,11 +36,11 @@ func (this *String) Encode() []byte {
 	return codec.String(string(*this)).Encode()
 }
 
-func (this *String) EncodeToBuffer(buffer []byte) int {
-	return codec.String(*this).EncodeToBuffer(buffer)
+func (this *String) EncodeTo(buffer []byte) int {
+	return codec.String(*this).EncodeTo(buffer)
 }
 
-func (this *String) Decode(buffer []byte) interface{} {
+func (this *String) Decode(buffer []byte) any {
 	if len(buffer) == 0 {
 		return this
 	}
@@ -53,7 +54,7 @@ func (this *String) StorageEncode(_ string) []byte {
 	return buffer
 }
 
-func (this *String) StorageDecode(_ string, buffer []byte) interface{} {
+func (this *String) StorageDecode(_ string, buffer []byte) any {
 	var v String
 	rlp.DecodeBytes(buffer, &v)
 	return &v
@@ -61,9 +62,7 @@ func (this *String) StorageDecode(_ string, buffer []byte) interface{} {
 
 func (*String) Reset() {}
 
-func (this *String) Hash(hasher func([]byte) []byte) []byte {
-	return hasher(this.Encode())
-}
+func (this *String) Hash() [32]byte { return sha256.Sum256(this.Encode()) }
 
 func (this *String) ShortHash() (uint64, bool) {
 	buffer := unsafe.Slice(unsafe.StringData(string(*this)), len(*this))

@@ -24,7 +24,7 @@ import (
 
 	slice "github.com/arcology-network/common-lib/exp/slice"
 	intf "github.com/arcology-network/storage-committer/common"
-	stgtype "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/type/univalue"
 )
 
@@ -63,8 +63,8 @@ func (this *ShardedWriteCache) NewUnivalue(k string) *univalue.Univalue {
 }
 
 // ONLY THE TX WRITECACHE HAS THE NEED TO SUPPORT GET OR NOW
-// func (this *ShardedWriteCache) GetOrNew(tx uint64, path string, T any) (*univalue.Univalue, bool) {
-// 	return this.caches[this.hasher(path)%NUM_SHARDS].GetOrNew(tx, path, T)
+// func (this *ShardedWriteCache) RetriveOrCreate(tx uint64, path string, T any) (*univalue.Univalue, bool) {
+// 	return this.caches[this.hasher(path)%NUM_SHARDS].RetriveOrCreate(tx, path, T)
 // }
 
 func (this *ShardedWriteCache) Read(tx uint64, path string, T any) (interface{}, interface{}, uint64) {
@@ -75,8 +75,8 @@ func (this *ShardedWriteCache) Write(tx uint64, path string, value interface{}) 
 	return this.caches[this.hasher(path)%NUM_SHARDS].Write(tx, path, value)
 }
 
-// func (this *ShardedWriteCache) InCache(path string) (interface{}, bool) {
-// 	return this.caches[this.hasher(path)%NUM_SHARDS].InCache(path)
+// func (this *ShardedWriteCache) GetIfCached(path string) (interface{}, bool) {
+// 	return this.caches[this.hasher(path)%NUM_SHARDS].GetIfCached(path)
 // }
 
 func (this *ShardedWriteCache) Retrive(path string, T any) (interface{}, error) {
@@ -125,8 +125,8 @@ func (this *ShardedWriteCache) Equal(other *ShardedWriteCache) bool {
 	return true
 }
 
-func (this *ShardedWriteCache) KVs() ([][]string, [][]stgtype.Type) {
-	keySet, valueSet := make([][]string, len(this.caches)), make([][]stgtype.Type, len(this.caches))
+func (this *ShardedWriteCache) KVs() ([][]string, [][]stgcommon.Type) {
+	keySet, valueSet := make([][]string, len(this.caches)), make([][]stgcommon.Type, len(this.caches))
 	for i := 0; i < len(this.caches); i++ {
 		keySet[i], valueSet[i] = this.caches[i].KVs()
 	}

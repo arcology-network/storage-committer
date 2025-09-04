@@ -19,24 +19,21 @@ package storagecommon
 
 import (
 	"math"
-
-	"github.com/ethereum/go-ethereum/params"
 )
 
 const (
 	MAX_DEPTH uint8 = 12
 	SYSTEM          = math.MaxInt32
 
-	ETH10                              = "blcc://eth1.0/"
-	ETH10_ACCOUNT_PREFIX               = ETH10 + "account/"
+	ETH10                = "blcc://eth1.0/"
+	ETH10_ACCOUNT_PREFIX = ETH10 + "account/"
+	// GAS_PREPAYERS                      = ETH10 + "prepayers/" // Gas prepayment for the deferred execution.
 	ETH10_ACCOUNT_PREFIX_LENGTH        = len(ETH10_ACCOUNT_PREFIX)
 	ETH10_ACCOUNT_LENGTH               = 42 // 40 hex digits + 0x
 	ETH10_ACCOUNT_FULL_LENGTH          = ETH10_ACCOUNT_PREFIX_LENGTH + ETH10_ACCOUNT_LENGTH
 	ETH10_STORAGE_PREFIX               = ETH10_ACCOUNT_PREFIX + "storage/"
 	ETH10_STORAGE_PREFIX_LENGTH        = len(ETH10_STORAGE_PREFIX) + ETH10_ACCOUNT_LENGTH
 	ETH10_STORAGE_NATIVE_PREFIX_LENGTH = ETH10_STORAGE_PREFIX_LENGTH + len("/native/")
-
-	ETH10_FUNC_PROPERTY_PREFIX = "/func/"
 )
 
 const (
@@ -46,12 +43,8 @@ const (
 )
 
 const (
-	CONTAINER_GAS_READ    = params.SloadGasEIP2200 * 2 // 800 * 2 = 1600, default gas for reading a container.
-	GAS_READ              = params.SloadGasEIP2200 / 2 // 800 / 2 = 400
-	GAS_WRITE             = params.SstoreSetGas / 2    // 20,000 / 2 = 10,000
-	GAS_DELTA_WRITE       = params.SstoreSetGas / 2    // 20,000 / 2 = 10,000
-	GAS_UNCOMMITTED_RESET = params.SstoreSetGas / 4    // 20,000 / 4 = 5,000
-	GAS_COMMITTED_SET     = params.SstoreSetGas / 8    // 20,000 / 8 = 2,500
+	MIN_READ_SIZE  uint64 = 32
+	MIN_WRITE_SIZE uint64 = 32
 )
 
 var WARN_OUT_OF_LOWER_LIMIT string = "Warning: Out of the lower limit!"
@@ -81,13 +74,17 @@ const (
 	MAX_CONFLICT_RATIO            = 0.5
 	MAX_NUM_CONFLICTS             = 256
 
-	PROPERTY_PATH        = "func/"
-	PROPERTY_PATH_LENGTH = len(PROPERTY_PATH)
+	// function property paths, that can be created on the fly.
+	PARA_PROP_PATH      = "parallel/"
+	FULL_PARA_PROP_PATH = "/" + PARA_PROP_PATH
 
-	EXECUTION_METHOD   = "execution"
-	EXECUTION_EXCEPTED = "except/"
-	DEFERRED_FUNC      = "defer"
-
-	PARALLEL_EXECUTION   = uint8(0) // The default method
-	SEQUENTIAL_EXECUTION = uint8(255)
+	PARALLELISM_LEVEL          = "lvl/" // The execution parallelism of the function, either parallel or sequential
+	PARALLEL_EXCEPTED          = "except/"
+	REQUIRED_PREPAYMENT_AMOUNT = "requiredAmount" // Amount of gas prepaid required for the function's deferred execution
+	PREPAYERS                  = "prepayers/"     // Address of the gas prepayers for the function's deferred execution
+	CONFLICT_INFO              = "conflicts/"     // The history of conflicts for the function, used for debugging and analysis
+	TOTAL_CALLS                = "totalCalls"     // Total number of invocations for the function, used for debugging and analysis
+	AVERAGE_GAS_USED           = "averageGasUsed" // Average gas used for the function, used for determining rollback priority.
+	PARALLEL_EXECUTION         = uint8(0)         // The default method
+	SEQUENTIAL_EXECUTION       = uint8(255)
 )

@@ -18,6 +18,7 @@
 package noncommutative
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"math/big"
 
@@ -35,12 +36,12 @@ func (this *Bigint) Encode() []byte {
 	return v.Encode()
 }
 
-func (this *Bigint) EncodeToBuffer(buffer []byte) int {
+func (this *Bigint) EncodeTo(buffer []byte) int {
 	v := codec.Bigint(*this)
-	return v.EncodeToBuffer(buffer)
+	return v.EncodeTo(buffer)
 }
 
-func (this *Bigint) Decode(buffer []byte) interface{} {
+func (this *Bigint) Decode(buffer []byte) any {
 	if len(buffer) == 0 {
 		return this
 	}
@@ -52,7 +53,7 @@ func (this *Bigint) Decode(buffer []byte) interface{} {
 // 	return this.Encode()
 // }
 
-// func (this *Bigint) DecodeCompact(bytes []byte) interface{} {
+// func (this *Bigint) DecodeCompact(bytes []byte) any {
 // 	return this.Decode(bytes)
 // }
 
@@ -61,16 +62,14 @@ func (this *Bigint) StorageEncode(_ string) []byte {
 	return buffer
 }
 
-func (this *Bigint) StorageDecode(_ string, buffer []byte) interface{} {
+func (this *Bigint) StorageDecode(_ string, buffer []byte) any {
 	rlp.DecodeBytes(buffer, this)
 	return this
 }
 
 func (this *Bigint) Reset() {}
 
-func (this *Bigint) Hash(hasher func([]byte) []byte) []byte {
-	return hasher(this.Encode())
-}
+func (this *Bigint) Hash() [32]byte { return sha256.Sum256(this.Encode()) }
 
 func (this *Bigint) ShortHash() (uint64, bool) {
 	v := big.Int(*this)

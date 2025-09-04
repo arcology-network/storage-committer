@@ -22,12 +22,13 @@ import (
 
 	ccbadger "github.com/arcology-network/common-lib/storage/badger"
 	memdb "github.com/arcology-network/common-lib/storage/memdb"
+	"github.com/arcology-network/storage-committer/type/commutative"
 	"github.com/arcology-network/storage-committer/type/univalue"
 
 	// intf "github.com/arcology-network/storage-committer/interfaces"
 	intf "github.com/arcology-network/storage-committer/common"
 
-	stgtypcodec "github.com/arcology-network/storage-committer/platform"
+	ethplatform "github.com/arcology-network/storage-committer/platform"
 	"github.com/arcology-network/storage-committer/storage/ethstorage"
 	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
 	livecache "github.com/arcology-network/storage-committer/storage/livecache"
@@ -35,7 +36,18 @@ import (
 	livestg "github.com/arcology-network/storage-committer/storage/livestorage"
 )
 
+// StorageProxy is a proxy for the storage, it consists of multiple storages and caches.
+// The LiveCache is a memory cache of the liveStorage, used for the execution, it holds some of the
+// latest state data, depending on the capacity of the cache, regardless of the storage type.
+//
+// The LiveStorage is a persistent storage, it holds all the latest state data, regardless of the
+// storage type. EVM uses the LiveCache and LiveStorage for the execution ONLY.
+//
+// EthStorage is used for the Ethereum storage, which is a persistent storage, it holds only the Ethereum state data.
+// The EthStorage won't be used for the execution cache, it is only used for user APIs to query the Ethereum state data.
+
 type StorageProxy struct {
+	platform    *ethplatform.Platform
 	execCache   *livecache.LiveCache // An object cache for the backend storage, only updated once at the end of the block.
 	execStorage *livestg.LiveStorage
 	ethStorage  *ethstg.EthDataStore
@@ -44,11 +56,12 @@ type StorageProxy struct {
 // Cache may also have its storeage, this is the cache only store proxy, no storage.
 func NewCacheOnlyStoreProxy() *StorageProxy {
 	proxy := &StorageProxy{
+		platform:   ethplatform.NewPlatform(),
 		ethStorage: ethstg.NewParallelEthMemDataStore(), //ethstg.NewParallelEthMemDataStore(),
 		execStorage: livestg.NewLiveStorage(
 			nil,
-			stgtypcodec.Codec{}.Encode,
-			stgtypcodec.Codec{}.Decode,
+			ethplatform.Codec{}.Encode,
+			ethplatform.Codec{}.Decode,
 		),
 	}
 
@@ -64,16 +77,18 @@ func NewMemDBStoreProxy() *StorageProxy {
 
 func NewLevelDBStoreProxy(dbpath string) *StorageProxy {
 	proxy := &StorageProxy{
+		platform:   ethplatform.NewPlatform(),
 		ethStorage: ethstg.NewLevelDBDataStore(dbpath), //ethstg.NewParallelEthMemDataStore(),
+		execCache:  livecache.NewLiveCache(math.MaxUint64),
 		execStorage: livestg.NewLiveStorage(
 			// memdb.NewMemoryDB(),
 			ccbadger.NewBadgerDB(dbpath+"_badager"),
 			// ccbadger.NewParaBadgerDB(dbpath+"_pbadager", common.Remainder),
-			stgtypcodec.Codec{}.Encode,
-			stgtypcodec.Codec{}.Decode,
+			ethplatform.Codec{}.Encode,
+			ethplatform.Codec{}.Decode,
 		),
 	}
-	proxy.execCache = livecache.NewLiveCache(math.MaxUint64)
+	// proxy.execCache = livecache.NewLiveCache(math.MaxUint64)
 	return proxy
 }
 
@@ -98,16 +113,20 @@ func (this *StorageProxy) ExecCache() *livecache.LiveCache { return this.execCac
 func (this *StorageProxy) ExecStore() *livestg.LiveStorage { return this.execStorage } // Arcology storage
 
 // Check if the key exists in th storage.
-func (this *StorageProxy) RetriveFromStorage(key string, T any) (interface{}, error) {
+func (this *StorageProxy) ReadStorage(key string, T any) (any, error) {
 	if v, ok := this.execCache.Get(key); ok { // Check the cache first
 		return v, nil
 	}
 	return this.execStorage.Retrive(key, T)
 }
 
+func (this *StorageProxy) Retrive(key string, v any) (any, error) {
+	return this.ReadStorage(key, v)
+}
+
 func (this *StorageProxy) EthStore() *ethstg.EthDataStore { return this.ethStorage } // Eth storage
 
-func (this *StorageProxy) Preload(data []byte) interface{} {
+func (this *StorageProxy) Preload(data []byte) any {
 	return this.ethStorage.Preload(data)
 }
 
@@ -124,18 +143,41 @@ func (this *StorageProxy) Inject(key string, v any) error {
 	return this.execStorage.Inject(key, v)
 }
 
-func (this *StorageProxy) Retrive(key string, v any) (interface{}, error) {
-	if retv, ok := this.execCache.Get(key); ok { // Get from cache first
-		return retv, nil
+// Get the stores that can be
+func (this *StorageProxy) GetWriters() []intf.Writer[*univalue.Univalue] {
+	return []intf.Writer[*univalue.Univalue]{
+		livecache.NewLiveCacheWriter(this.execCache, -1, this.RemoveTransients),
+		ethstorage.NewEthStorageWriter(this.ethStorage, -1, this.EthOnly),
+		ccstorage.NewLiveStorageWriter(this.execStorage, -1, this.RemoveTransients),
 	}
-	return this.execStorage.Retrive(key, v)
 }
 
 // Get the stores that can be
-func (this *StorageProxy) GetWriters() []intf.AsyncWriter[*univalue.Univalue] {
-	return []intf.AsyncWriter[*univalue.Univalue]{
-		livecache.NewLiveCacheWriter(this.execCache, -1),
-		ethstorage.NewEthStorageWriter(this.ethStorage, -1),
-		ccstorage.NewLiveStorageWriter(this.execStorage, -1),
+func (this *StorageProxy) SyncWriters() []intf.Writer[*univalue.Univalue] {
+	return []intf.Writer[*univalue.Univalue]{
+		livecache.NewLiveCacheWriter(this.execCache, -1, this.RemoveTransients),
 	}
+}
+
+func (this *StorageProxy) AsyncWriters() []intf.Writer[*univalue.Univalue] {
+	return []intf.Writer[*univalue.Univalue]{
+		ethstorage.NewEthStorageWriter(this.ethStorage, -1, this.EthOnly),
+		ccstorage.NewLiveStorageWriter(this.execStorage, -1, this.RemoveTransients),
+	}
+}
+
+// Filter out the transitions that are not needed to be persisted.
+func (this *StorageProxy) RemoveTransients(tran *univalue.Univalue) bool {
+	// System paths only get reset if they are transient.
+	if v := (*tran).Value(); v != nil && v.(intf.Type).TypeID() == commutative.PATH && v.(*commutative.Path).IsBlockBound() && this.platform.IsSysPath(*(*tran).GetPath()) {
+		v.(*commutative.Path).Reset()
+	}
+
+	// Other transient transitions get no chance to be persisted.
+	return !(*tran).IsBlockBound()
+}
+
+// Filter out the transitions that are not needed to be persisted.
+func (this *StorageProxy) EthOnly(tran *univalue.Univalue) bool {
+	return ethplatform.IsEthPath(*tran.GetPath())
 }

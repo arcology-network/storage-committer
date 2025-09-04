@@ -17,11 +17,6 @@
 
 package storagecommon
 
-// type Platform interface { // value type
-// 	IsSysPath(string) bool
-// 	// Eth10Account() string
-// }
-
 type Type interface { // value type
 	TypeID() uint8
 	Equal(any) bool
@@ -29,56 +24,56 @@ type Type interface { // value type
 
 	IsNumeric() bool
 	IsCommutative() bool // If the type is commutative, the order of the operands does not matter.
-	IsBounded() bool
 
 	Value() any // Get() - read/write count
-	Delta() any
-	DeltaSign() bool
-	CloneDelta() any
-	Min() any
-	Max() any
-	New(any, any, any, any, any) any
+	Delta() (any, bool)
 
-	SetValue(v any)
+	Limits() (any, any) // Get the limits of the type, if applicable.
 	IsDeltaApplied() bool
-	SetDelta(v any)
-	SetDeltaSign(v any)
-	SetMin(v any)
-	SetMax(v any)
+
+	// Delta replication methods
+	New(any, any, any, any, any) any
+	CloneDelta() (any, bool)
+	SetDelta(any, bool)
+	SetValue(v any)
+	GetCascadeSub(string, any) []string // Get the sub paths for cascade delete, if applicable.
 
 	Get() (any, uint32, uint32) // Value, reads and writes, no deltawrites.
 	Set(any, any) (any, uint32, uint32, uint32, error)
-	CopyTo(any) (any, uint32, uint32, uint32)
+	CopyTo(any) (any, uint32, uint32, uint32) // Only a function to generate the right access counts, when assigning the value.
 	ApplyDelta([]Type) (Type, int, error)
-	IsSelf(any) bool
+	IsDeletable(any, any) bool
 
 	MemSize() uint64 // Size in memory
-	Size() uint64    // Encoded size
+
+	// Encoding methods
+	Size() uint64 // Encoded size
 	Encode() []byte
-	EncodeToBuffer([]byte) int
+	EncodeTo([]byte) int
 	Decode([]byte) any
 
+	// Storage encoding related methods
 	StorageEncode(string) []byte
 	StorageDecode(string, []byte) any
-
 	Preload(string, any)
 
-	Hash(func([]byte) []byte) []byte
+	// Auxiliary methods
+	Hash() [32]byte
 	ShortHash() (uint64, bool) // For fast comparison only.
-	// Reset()
 	Print()
 }
 
-type AsyncWriter[T any] interface {
+type Writer[T any] interface {
 	Import([]T)
 	Precommit(bool)
 	Commit(uint64)
+	IsSync() bool // If the writer is synchronous, it will block until the commit is done.
 	Name() string
 }
 
 type ReadOnlyStore interface {
-	IfExists(string) bool                        // Check if the key exists in the source, which can be a cache or a storage.
-	RetriveFromStorage(string, any) (any, error) // Check if the key is in the persistent storage.
+	IfExists(string) bool                 // Check if the key exists in the source, which can be a cache or a storage.
+	ReadStorage(string, any) (any, error) // Get from persistent storage.
 	Retrive(string, any) (any, error)
 	Preload([]byte) any
 }

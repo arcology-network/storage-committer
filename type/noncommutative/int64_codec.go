@@ -18,6 +18,7 @@
 package noncommutative
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"math/big"
 
@@ -33,19 +34,19 @@ func (this *Int64) Encode() []byte {
 	return codec.Int64(*this).Encode()
 }
 
-func (this *Int64) EncodeToBuffer(buffer []byte) int {
-	return codec.Int64(*this).EncodeToBuffer(buffer)
+func (this *Int64) EncodeTo(buffer []byte) int {
+	return codec.Int64(*this).EncodeTo(buffer)
 }
 
-func (*Int64) Decode(bytes []byte) interface{} {
+func (*Int64) Decode(bytes []byte) any {
 	this := Int64(codec.Int64(0).Decode(bytes).(codec.Int64))
 	return &this
 }
 
 func (this *Int64) Reset() {}
 
-func (this *Int64) Hash(hasher func([]byte) []byte) []byte { return hasher(this.Encode()) }
-func (this *Int64) ShortHash() (uint64, bool)              { return uint64(*this) ^ (1 << 63), true }
+func (this *Int64) Hash() [32]byte            { return sha256.Sum256(this.Encode()) }
+func (this *Int64) ShortHash() (uint64, bool) { return uint64(*this) ^ (1 << 63), true }
 
 func (this *Int64) Print() {
 	fmt.Println(*this)
@@ -57,7 +58,7 @@ func (this *Int64) StorageEncode(_ string) []byte {
 	return buffer
 }
 
-func (this *Int64) StorageDecode(_ string, buffer []byte) interface{} {
+func (this *Int64) StorageDecode(_ string, buffer []byte) any {
 	var v big.Int
 	rlp.DecodeBytes(buffer, &v)
 	return common.New(Int64(v.Uint64()))

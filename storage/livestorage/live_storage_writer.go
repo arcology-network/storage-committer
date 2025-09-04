@@ -17,20 +17,25 @@
 
 package ccstorage
 
-// LiveStorageWriter is a struct that contains data strucuture and methods for writing data to concurrent storage.
+import "github.com/arcology-network/storage-committer/type/univalue"
+
+// LiveStorageWriter is a struct that contains data structure and methods for writing data to concurrent storage.
+// It manages buffered writes and supports both synchronous and asynchronous commit operations to the underlying storage.
 type LiveStorageWriter struct {
 	*LiveStgIndexer
 	buffer  []*LiveStgIndexer
 	store   *LiveStorage
 	version int64
+	filter  func(*univalue.Univalue) bool
 }
 
-func NewLiveStorageWriter(store *LiveStorage, version int64) *LiveStorageWriter {
+func NewLiveStorageWriter(store *LiveStorage, version int64, filter func(*univalue.Univalue) bool) *LiveStorageWriter {
 	return &LiveStorageWriter{
-		LiveStgIndexer: NewLiveStgIndexer(store, 0),
+		LiveStgIndexer: NewLiveStgIndexer(store, 0, filter),
 		buffer:         []*LiveStgIndexer{},
 		store:          store,
 		version:        version,
+		filter:         filter,
 	}
 }
 
@@ -42,7 +47,7 @@ func (this *LiveStorageWriter) Precommit(isSync bool) {
 	} else {
 		this.LiveStgIndexer.Finalize() // Remove the nil transitions
 		this.buffer = append(this.buffer, this.LiveStgIndexer)
-		this.LiveStgIndexer = NewLiveStgIndexer(this.store, -1)
+		this.LiveStgIndexer = NewLiveStgIndexer(this.store, -1, this.filter)
 	}
 }
 
@@ -59,4 +64,5 @@ func (this *LiveStorageWriter) Commit(_ uint64) {
 	this.buffer = this.buffer[:0]
 }
 
+func (this *LiveStorageWriter) IsSync() bool { return false }
 func (this *LiveStorageWriter) Name() string { return "Live Storage Writer" }

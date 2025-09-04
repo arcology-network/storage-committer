@@ -24,7 +24,7 @@ import (
 	"strings"
 
 	"github.com/arcology-network/common-lib/exp/slice"
-	stgintf "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 )
 
 type Univalues []*Univalue
@@ -67,24 +67,24 @@ func (this Univalues) Keys() []string {
 	return keys
 }
 
-func (this Univalues) Values() []stgintf.Type {
-	vals := make([]stgintf.Type, len(this))
+func (this Univalues) Values() []stgcommon.Type {
+	vals := make([]stgcommon.Type, len(this))
 	for i, v := range this {
-		vals[i] = v.Value().(stgintf.Type)
+		vals[i] = v.Value().(stgcommon.Type)
 	}
 	return vals
 }
 
-func (this Univalues) KVs() ([]string, []stgintf.Type) {
+func (this Univalues) KVs() ([]string, []stgcommon.Type) {
 	keys := make([]string, len(this))
-	vals := make([]stgintf.Type, len(this))
+	vals := make([]stgcommon.Type, len(this))
 	for i, v := range this {
 		keys[i] = *v.GetPath()
 		if v.Value() == nil {
 			vals[i] = nil
 			continue
 		}
-		vals[i] = v.Value().(stgintf.Type)
+		vals[i] = v.Value().(stgcommon.Type)
 	}
 	return keys, vals
 }
@@ -158,7 +158,15 @@ func (this Univalues) Sort() Univalues {
 }
 
 func (this Univalues) SortByTx() {
-	sort.Slice(this, func(i, j int) bool { return this[i].tx < this[j].tx })
+	sort.Slice(this, func(i, j int) bool {
+		// if this[i].tx == this[j].tx {
+		// 	if this[i].isExpanded == this[j].isExpanded && this[j].isExpanded {
+		// 		panic("Two univalues with the same tx and both are substituted. This should not happen.")
+		// 	}
+		// 	return this[i].isExpanded // Impossible to have two substituted univalues with the same tx.
+		// }
+		return this[i].tx < this[j].tx
+	})
 }
 
 func Sorter(univals []*Univalue) []*Univalue {

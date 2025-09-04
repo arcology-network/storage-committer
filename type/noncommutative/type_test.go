@@ -96,6 +96,16 @@ func TestInt64RlpCodec(t *testing.T) {
 	}
 }
 
+func TestUint64Codec(t *testing.T) {
+	v := NewUint64(56789)
+	buffer := v.StorageEncode("")
+	output := new(Uint64).StorageDecode("", buffer)
+
+	if *v != *output.(*Uint64) {
+		fmt.Println("Error: Missmatched")
+	}
+}
+
 func TestStringRlpCodec(t *testing.T) {
 	bytes := []byte{0, 0, 0, 1}
 	encoded, _ := rlp.EncodeToBytes(bytes)

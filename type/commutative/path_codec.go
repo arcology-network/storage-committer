@@ -21,7 +21,7 @@ import (
 	"fmt"
 
 	codec "github.com/arcology-network/common-lib/codec"
-	"github.com/arcology-network/common-lib/common"
+	softdeltaset "github.com/arcology-network/common-lib/exp/softdeltaset"
 	"github.com/ethereum/go-ethereum/rlp"
 	// performance "github.com/arcology-network/common-lib/mhasher"
 )
@@ -31,71 +31,57 @@ func (this *Path) HeaderSize() uint64 {
 }
 
 func (this *Path) Size() uint64 {
-	committedEmpty := this.DeltaSet.Committed() != nil
-	appendedEmpty := this.DeltaSet.Updated() != nil
-	removedEmpty := this.DeltaSet.Removed() != nil
-
 	return this.HeaderSize() +
-		common.IfThenDo1st(committedEmpty, func() uint64 { return codec.Strings(this.DeltaSet.Committed().Elements()).Size() }, 0) +
-		common.IfThenDo1st(appendedEmpty, func() uint64 { return codec.Strings(this.DeltaSet.Updated().Elements()).Size() }, 0) +
-		common.IfThenDo1st(removedEmpty, func() uint64 { return codec.Strings(this.DeltaSet.Removed().Elements()).Size() }, 0) +
-		1 // 1 byte for typeID
+		8 + // TotalSize
+		1 + // isBlockBound
+		uint64(this.DeltaSet.Size()) +
+		1 // 1 byte for element type ID
 }
 
 func (this *Path) Encode() []byte {
-	buffer := make([]byte, this.Size()) //  no need to send the committed keys
-	offset := codec.Encoder{}.FillHeader(buffer,
-		[]uint64{
-			common.IfThenDo1st(this.DeltaSet.Committed() != nil, func() uint64 { return codec.Strings(this.DeltaSet.Committed().Elements()).Size() }, 0),
-			common.IfThenDo1st(this.DeltaSet.Updated() != nil, func() uint64 { return codec.Strings(this.DeltaSet.Updated().Elements()).Size() }, 0),
-			common.IfThenDo1st(this.DeltaSet.Removed() != nil, func() uint64 { return codec.Strings(this.DeltaSet.Removed().Elements()).Size() }, 0),
-			1,
-		},
-	)
-	this.EncodeToBuffer(buffer[offset:])
+	buffer := make([]byte, this.Size()) //  no need to send the isCommitted keys
+	this.EncodeTo(buffer)
 	return buffer
 }
 
-func (this *Path) EncodeToBuffer(buffer []byte) int {
-	offset := common.IfThenDo1st(this.DeltaSet.Committed() != nil, func() int {
-		return (codec.Strings(this.DeltaSet.Committed().Elements()).EncodeToBuffer(buffer))
-	}, 0)
+func (this *Path) EncodeTo(buffer []byte) int {
+	offset := codec.Encoder{}.FillHeader(buffer,
+		[]uint64{
+			8,
+			1,
+			uint64(this.DeltaSet.Size()),
+			1,
+		},
+	)
 
-	offset += common.IfThenDo1st(this.DeltaSet.Updated() != nil, func() int {
-		return codec.Strings(this.DeltaSet.Updated().Elements()).EncodeToBuffer(buffer[offset:])
-	}, 0)
-
-	offset += common.IfThenDo1st(this.DeltaSet.Removed() != nil, func() int {
-		return codec.Strings(this.DeltaSet.Removed().Elements()).EncodeToBuffer(buffer[offset:])
-	}, 0)
-
-	buffer[offset] = this.Type
+	offset += codec.Uint64(this.TotalSize).EncodeTo(buffer[offset:])
+	offset += codec.Bool(this.isBlockBound).EncodeTo(buffer[offset:])
+	this.DeltaSet.EncodeTo(buffer[offset:])
 	offset += 1
 
 	return offset
 }
-
-func (*Path) Decode(buffer []byte) interface{} {
+func (*Path) Decode(buffer []byte) any {
 	if len(buffer) == 0 {
 		return NewPath()
 	}
 
 	path := NewPath().(*Path)
-	path.DeltaSet.SetNilVal("")
-
 	fields := codec.Byteset{}.Decode(buffer).(codec.Byteset)
-	path.DeltaSet.InsertCommitted(codec.Strings{}.Decode(fields[0]).(codec.Strings))
-	path.DeltaSet.InsertUpdated(codec.Strings{}.Decode(fields[1]).(codec.Strings))
-	path.DeltaSet.InsertRemoved(codec.Strings{}.Decode(fields[2]).(codec.Strings))
-	path.Type = uint8(fields[3][0])
+	path.TotalSize = uint64(codec.Uint64(0).Decode(fields[0]).(codec.Uint64))
+	path.isBlockBound = bool(codec.Bool(false).Decode(fields[1]).(codec.Bool))
+	path.DeltaSet = path.DeltaSet.Decode(fields[2]).(*softdeltaset.DeltaSet[string])
+	path.ElemType = uint8(fields[3][0])
 	return path
 }
 
 func (this *Path) Print() {
+	fmt.Println("TotalSize: ", this.TotalSize)
+	fmt.Println("isBlockBound: ", this.isBlockBound)
 	fmt.Println("Committed: ", codec.Strings(this.DeltaSet.Committed().Elements()).ToHex())
-	fmt.Println("Updated  ", codec.Strings(this.DeltaSet.Updated().Elements()).ToHex())
-	fmt.Println("Removed: ", codec.Strings(this.DeltaSet.Removed().Elements()).ToHex())
-	fmt.Println("Type: ", codec.Strings(this.DeltaSet.Removed().Elements()).ToHex())
+	fmt.Println("Staged Added: ", codec.Strings(this.DeltaSet.Added().Elements()).ToHex())
+	fmt.Println("Staged Removed: ", codec.Strings(this.DeltaSet.Removed().Elements()).ToHex())
+	fmt.Println("Type: ", this.TypeID())
 	fmt.Println()
 }
 
@@ -104,7 +90,7 @@ func (this *Path) StorageEncode(_ string) []byte {
 	return buffer
 }
 
-func (this *Path) StorageDecode(_ string, buffer []byte) interface{} {
+func (this *Path) StorageDecode(_ string, buffer []byte) any {
 	var decoded []byte
 	rlp.DecodeBytes(buffer, &decoded)
 	return this.Decode(decoded)

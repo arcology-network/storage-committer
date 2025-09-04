@@ -28,6 +28,8 @@ import (
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/slice"
 	intf "github.com/arcology-network/storage-committer/common"
+	"github.com/arcology-network/storage-committer/type/commutative"
+	"github.com/arcology-network/storage-committer/type/noncommutative"
 	"github.com/cespare/xxhash"
 )
 
@@ -35,10 +37,14 @@ import (
 type Univalue struct {
 	Property
 	value any
-	cache []byte
+	buf   []byte // The encoded value.
 }
 
 func NewUnivalue(tx uint64, key string, reads, writes uint32, deltaWrites uint32, T any, source any) *Univalue {
+	if source != nil {
+		panic("Error: The source should be nil")
+	}
+
 	univ := &Univalue{
 		Property{
 			vType:         common.IfThenDo1st(T != nil, func() uint8 { return T.(intf.Type).TypeID() }, uint8(reflect.Invalid)),
@@ -49,18 +55,32 @@ func NewUnivalue(tx uint64, key string, reads, writes uint32, deltaWrites uint32
 			writes:        writes,
 			deltaWrites:   deltaWrites,
 			sizeInStorage: 0,
-			preexists:     common.IfThenDo1st(source != nil, func() bool { return (&Property{}).CheckPreexist(key, source) }, false),
+			isCommitted:   common.IfThenDo1st(source != nil, func() bool { return (&Property{}).IsCommiitted(key, source) }, false),
 		},
 		T,
 		[]byte{},
 	}
-
-	if source != nil {
-		if v, err := source.(intf.ReadOnlyStore).RetriveFromStorage(key, T); err != nil {
-			univ.sizeInStorage = v.(intf.Type).MemSize()
-		}
-	}
 	return univ
+}
+
+func (this *Univalue) Init(tx uint64, key string, reads, writes, deltaWrites uint32, v any, preExist bool) *Univalue {
+	// Sometime when a value is read from the storage by a delete operation, the caller only provides the nil value as
+	// the new value, the loader wouldn't be about to decode it to the correct type. The loader will return the raw byte value
+	// in this case, so we convert it to a noncommutative bytes type to avoid the type mismatch happening down stream.
+	if common.IsType[[]byte](v) {
+		v = noncommutative.NewBytes(v.([]byte))
+	}
+
+	this.vType = common.IfThenDo1st(v != nil, func() uint8 { return v.(intf.Type).TypeID() }, uint8(reflect.Invalid))
+	this.tx = tx
+	this.path = &key
+	this.keyHash = xxhash.Sum64String(key)
+	this.reads = reads
+	this.writes = writes
+	this.deltaWrites = deltaWrites
+	this.value = v
+	this.isCommitted = preExist
+	return this
 }
 
 func (*Univalue) New(meta, value, cache any) *Univalue {
@@ -81,7 +101,7 @@ func (this *Univalue) From(v *Univalue) any { return v }
 
 // func (this *Univalue) IsHotLoaded() bool             { return this.reads > 1 }
 func (this *Univalue) SetTx(txId uint64) { this.tx = txId }
-func (this *Univalue) ClearCache()       { this.cache = this.cache[:0] }
+func (this *Univalue) ClearCache()       { this.buf = this.buf[:0] }
 func (this *Univalue) Value() any        { return this.value }
 func (this *Univalue) SetValue(newValue any) *Univalue {
 	if this.value != nil && reflect.TypeOf(this.value) != reflect.TypeOf(newValue) && newValue != nil {
@@ -89,27 +109,6 @@ func (this *Univalue) SetValue(newValue any) *Univalue {
 	}
 
 	this.value = newValue
-	return this
-}
-
-func (this *Univalue) GetCache() any { return this.cache }
-
-func (this *Univalue) Init(tx uint64, key string, reads, writes, deltaWrites uint32, v any, dataSource ...any) *Univalue {
-	this.vType = common.IfThenDo1st(v != nil, func() uint8 { return v.(intf.Type).TypeID() }, uint8(reflect.Invalid))
-	this.tx = tx
-	this.path = &key
-	this.keyHash = xxhash.Sum64String(key)
-	this.reads = reads
-	this.writes = writes
-	this.deltaWrites = deltaWrites
-	this.value = v
-	this.preexists = common.IfThenDo1st(len(dataSource) > 0, func() bool { return (&Property{}).CheckPreexist(key, dataSource[0]) }, false)
-
-	this.sizeInStorage = 0
-	if v, _ := dataSource[0].(intf.ReadOnlyStore).RetriveFromStorage(key, v); v != nil {
-		this.sizeInStorage = v.(intf.Type).MemSize()
-	}
-
 	return this
 }
 
@@ -155,8 +154,8 @@ func (this *Univalue) Get(tx uint64, path string, source any) any {
 func (this *Univalue) CopyTo(writable any) {
 	writeCache := writable.(interface {
 		Read(uint64, string, any) (any, any, uint64)
-		Write(uint64, string, any) (int64, error)
-		Find(uint64, string, any) (any, any)
+		Write(uint64, string, any, ...any) (int64, error)
+		FindForRead(uint64, string, any, func(*Univalue)) (any, *Univalue, bool)
 	})
 
 	if this.writes == 0 && this.deltaWrites == 0 {
@@ -165,14 +164,14 @@ func (this *Univalue) CopyTo(writable any) {
 		writeCache.Write(this.tx, *this.GetPath(), this.value)
 	}
 
-	_, univ := writeCache.Find(this.tx, *this.GetPath(), nil)
+	_, univ, _ := writeCache.FindForRead(this.tx, *this.GetPath(), nil, nil)
 	if this == univ {
 		return
 	}
 
-	univ.(*Univalue).IncrementReads(this.Reads())
-	univ.(*Univalue).IncrementWrites(this.Writes())
-	univ.(*Univalue).IncrementDeltaWrites(this.DeltaWrites())
+	univ.IncrementReads(this.Reads())
+	univ.IncrementWrites(this.Writes())
+	univ.IncrementDeltaWrites(this.DeltaWrites())
 }
 
 func (this *Univalue) Set(tx uint64, path string, newV any, inCache bool, importer any) error { // update the value
@@ -195,9 +194,10 @@ func (this *Univalue) Set(tx uint64, path string, newV any, inCache bool, import
 		return nil
 	}
 
-	// To avoid interference with the value in the global object cache.
-	this.MakeDeepCopy(newV)
+	this.MakeDeepCopy(newV) // To avoid interference with the value in the global object cache.
 
+	//Update an existing value. For a path a delete operation will
+	// remove all its sub paths, but not the path itself.
 	oldV := this.value.(intf.Type)
 	v, r, w, dw, err := oldV.Set(newV, []any{path, *this.path, tx, importer}) // Update the current value
 	this.value = v
@@ -205,7 +205,9 @@ func (this *Univalue) Set(tx uint64, path string, newV any, inCache bool, import
 	this.reads += r
 	this.deltaWrites += dw
 
-	if newV == nil && this.Value().(intf.Type).IsSelf(path) { // Delete the entry but keep the access record.
+	//Delete an existing value. Not Every value can be deleted by itself, some only can be delete by its parent
+	// that is why we need to check first.
+	if newV == nil && this.Value().(intf.Type).IsDeletable(*this.GetPath(), path) { // Delete the entry but keep the access record.
 		this.vType = uint8(reflect.Invalid)
 		this.value = newV // Delete the value
 		this.writes++
@@ -263,11 +265,15 @@ func (this *Univalue) PathLookupOnly() bool {
 	return this.reads == 0 && this.deltaWrites == 0 && this.writes == 0
 }
 
-// This is a path lookup operation, which means that the nothing is written to the path itself.
-func (this *Univalue) IsPathLookup() bool {
-	return this.writes == 0 && this.deltaWrites == 0 && this.Reads() == 0
-}
+// If all the entries in the isCommitted set have been removed.
+// only work for Path type
+func (this *Univalue) IsCommittedDeleted() (bool, string) {
+	if common.IsType[*commutative.Path](this.Value()) {
+		return this.Value().(*commutative.Path).DeltaSet.Removed().AllDeleted, *this.path
+	}
 
+	return IsCommittedPath(*this.path)
+}
 func (this *Univalue) IsReadOnly() bool       { return (this.writes == 0 && this.deltaWrites == 0) }
 func (this *Univalue) IsWriteOnly() bool      { return (this.reads == 0 && this.deltaWrites == 0) }
 func (this *Univalue) IsDeltaWriteOnly() bool { return (this.reads == 0 && this.writes == 0) }
@@ -285,12 +291,17 @@ func (this *Univalue) IsNilInitOnly() bool {
 // Commutative write is no longer treated as a conflict with read.
 // Write without read happens when a new value is created.
 func (this *Univalue) IsCumulativeWriteOnly(other *Univalue) bool {
+	if this.Value() == nil {
+		return false
+	}
+
+	min, max := this.Value().(intf.Type).Limits()
+	otherMin, otherMax := other.Value().(intf.Type).Limits()
 	return this.reads == 0 &&
-		this.Value() != nil &&
 		this.Value().(intf.Type).IsCommutative() &&
 		this.Value().(intf.Type).IsNumeric() &&
-		this.Value().(intf.Type).Min() == other.Value().(intf.Type).Min() &&
-		this.Value().(intf.Type).Max() == other.Value().(intf.Type).Max() &&
+		min == otherMin &&
+		max == otherMax &&
 		this.Reads() == 0
 }
 
@@ -304,7 +315,7 @@ func (this *Univalue) PrecheckAttributes(other *Univalue) {
 	}
 
 	if this.GetTx() != other.GetTx() &&
-		this.preexists &&
+		this.isCommitted &&
 		this.Value() != nil &&
 		this.Value().(intf.Type).IsCommutative() &&
 		this.Reads() > 0 &&
@@ -319,7 +330,7 @@ func (this *Univalue) PrecheckAttributes(other *Univalue) {
 		panic("Error: A deleted value cann't be composite")
 	}
 
-	if !this.preexists && this.IsDeltaWriteOnly() {
+	if !this.isCommitted && this.IsDeltaWriteOnly() {
 		panic("Error: A new value cann't be composite")
 	}
 }
@@ -328,7 +339,7 @@ func (this *Univalue) Clone() any {
 	v := &Univalue{
 		this.Property.Clone(),
 		common.IfThenDo1st(this.value != nil, func() any { return this.value.(intf.Type).Clone() }, this.value),
-		slice.Clone(this.cache),
+		slice.Clone(this.buf),
 	}
 	return v
 }
@@ -352,8 +363,8 @@ func (this *Univalue) Less(other *Univalue) bool {
 		return this.deltaWrites > other.deltaWrites
 	}
 
-	if (!this.preexists || !other.preexists) && (this.preexists != other.preexists) {
-		return this.preexists
+	if (!this.isCommitted || !other.isCommitted) && (this.isCommitted != other.isCommitted) {
+		return this.isCommitted
 	}
 	return true
 }
@@ -369,15 +380,16 @@ func (this *Univalue) Print() {
 	fmt.Print(spaces+"reads: ", this.reads)
 	fmt.Print(spaces+"writes: ", this.writes)
 	fmt.Print(spaces+"DeltaWrites: ", this.deltaWrites)
-	fmt.Print(spaces+"persistent: ", this.persistent)
-	fmt.Print(spaces+"preexists: ", this.preexists)
+	fmt.Print(spaces+"ifSkipConflictCheck: ", this.ifSkipConflictCheck)
+	fmt.Print(spaces+"isBlockBound: ", this.isBlockBound)
+	fmt.Print(spaces+"isCommitted: ", this.isCommitted)
 
 	path := *this.path
 	if index := strings.Index(path, "container/"); index != -1 {
 		path = path[:index] + "container/" + hex.EncodeToString([]byte(path[index:]))
 	}
 
-	fmt.Print(spaces+"path: ", path, "      ")
+	fmt.Print(spaces+"path: ", *this.path, "      ")
 	common.IfThenDo(this.value != nil, func() { this.value.(intf.Type).Print() }, func() { fmt.Print("nil") })
 	fmt.Println()
 }
@@ -397,5 +409,34 @@ func (this *Univalue) Equal(other *Univalue) bool {
 		this.reads == other.Reads() &&
 		this.writes == other.Writes() &&
 		vFlag &&
-		this.preexists == other.Preexist()
+		this.isCommitted == other.Preexist()
 }
+
+// func (this *Univalue) GetCascadeSub(prefix string, source any) []string {
+// 	elements := slice.Transform(this.DeltaSet.Elements(), func(_ int, k string) string { return prefix + k })
+
+// 	store := source.(interface {
+// 		Peek(string, any) (any, error)
+// 	})
+
+// 	pathStrs := []string{}
+// 	for {
+// 		subPaths := slice.MoveIf(&elements, func(_ int, k string) bool {
+// 			return common.IsPath(k)
+// 		})
+// 		pathStrs = append(pathStrs, elements...)
+
+// 		// Loop through the sub paths and check if they exist in the store.
+// 		for i := range subPaths {
+// 			if path, _ := store.Peek(prefix+subPaths[i], new(Path)); path != nil {
+// 				path.(*Path).GetCascadeSub(prefix+subPaths[i], store)
+// 			}
+// 		}
+
+// 		if len(subPaths) == 0 {
+// 			pathStrs = append(pathStrs, subPaths...)
+// 			break
+// 		}
+// 	}
+// 	return pathStrs
+// }

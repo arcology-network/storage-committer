@@ -26,7 +26,6 @@ import (
 
 func TestPath(t *testing.T) {
 	/* Noncommutative Path Test*/
-
 	meta := NewPath()
 	inPath := meta.(*Path)
 
@@ -39,31 +38,31 @@ func TestPath(t *testing.T) {
 		t.Error("Error: Don't match!!", inPath.Value().([]string))
 	}
 
-	if v, ok := inPath.GetByIndex(0); !ok || v != "e-01" {
+	if v, ok := inPath.GetByIndex(0); !ok || *v != "e-01" {
 		t.Error("Error: Don't match!!", v)
 	}
 
-	if v, ok := inPath.GetByIndex(1); !ok || v != "e-001" {
+	if v, ok := inPath.GetByIndex(1); !ok || *v != "e-001" {
 		t.Error("Error: Don't match!!", v)
 	}
 
-	if v, ok := inPath.GetByIndex(2); !ok || v != "e-002" {
+	if v, ok := inPath.GetByIndex(2); !ok || *v != "e-002" {
 		t.Error("Error: Don't match!!", v)
 	}
 
-	if v, ok := inPath.GetByIndex(3); !ok || v != "+01" {
+	if v, ok := inPath.GetByIndex(3); !ok || *v != "+01" {
 		t.Error("Error: Don't match!!", v)
 	}
 
-	if v, ok := inPath.GetByIndex(4); !ok || v != "+001" {
+	if v, ok := inPath.GetByIndex(4); !ok || *v != "+001" {
 		t.Error("Error: Don't match!!", v)
 	}
 
-	if v, ok := inPath.GetByIndex(5); !ok || v != "+002" {
+	if v, ok := inPath.GetByIndex(5); !ok || *v != "+002" {
 		t.Error("Error: Don't match!!", v)
 	}
 
-	if v, ok := inPath.GetByIndex(6); ok || v != "" {
+	if v, ok := inPath.GetByIndex(6); ok || v != nil {
 		t.Error("Error: Don't match!!", v)
 	}
 }
@@ -72,6 +71,8 @@ func TestPath(t *testing.T) {
 
 func TestCodecPathMeta(t *testing.T) {
 	in := NewPath().(*Path)
+	in.TotalSize = (111)
+	in.isBlockBound = true
 
 	in.SetSubPaths([]string{"e-01", "e-001", "e-002", "e-002"})
 	in.SetAdded([]string{"+01", "+001", "+002", "+002"})
@@ -80,12 +81,16 @@ func TestCodecPathMeta(t *testing.T) {
 	buffer := in.Encode()
 	out := (&Path{}).Decode(buffer).(*Path)
 
+	if out.TotalSize != in.TotalSize || out.isBlockBound != in.isBlockBound {
+		t.Error("Error: Don't match!!", out.TotalSize, in.TotalSize, out.isBlockBound, in.isBlockBound)
+	}
+
 	if !slice.EqualSet(out.Value().(*orderedset.OrderedSet[string]).Elements(), []string{"e-01", "e-001", "e-002"}) {
 		t.Error("Error: Don't match!!")
 	}
 
-	if !slice.EqualSet(out.Updated().Elements(), []string{"+01", "+001", "+002"}) {
-		t.Error("Error: Don't match!!", out.Updated())
+	if !slice.EqualSet(out.DeltaSet.Added().Elements(), []string{"+01", "+001", "+002"}) {
+		t.Error("Error: Don't match!!", out.Added())
 	}
 
 	if !slice.EqualSet(out.Removed(), []string{"-091", "-0092", "-092", "-097"}) {
@@ -99,8 +104,8 @@ func TestCodecPathMeta(t *testing.T) {
 		t.Error("Error: Don't match!! Error: Should have gone!")
 	}
 
-	if !slice.EqualSet(out.Updated().Elements(), []string{"+01", "+001", "+002"}) {
-		t.Error("Error: Don't match!!", out.Updated())
+	if !slice.EqualSet(out.DeltaSet.Added().Elements(), []string{"+01", "+001", "+002"}) {
+		t.Error("Error: Don't match!!", out.Added())
 	}
 
 	if !slice.EqualSet(out.Removed(), []string{"-091", "-0092", "-092", "-097"}) {
@@ -120,8 +125,8 @@ func TestCodecPathMeta(t *testing.T) {
 		t.Error("Error: Don't match!! Error: Should have gone!", out.Value().([]string))
 	}
 
-	if !slice.EqualSet(out.Updated().Elements(), []string{}) {
-		t.Error("Error: Don't match!!", out.Updated())
+	if !slice.EqualSet(out.DeltaSet.Added().Elements(), []string{}) {
+		t.Error("Error: Don't match!!", out.Added())
 	}
 
 	if !slice.EqualSet(out.Removed(), []string{}) {

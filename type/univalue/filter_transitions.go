@@ -43,24 +43,28 @@ func (this IPTransition) From(v *Univalue) *Univalue {
 		return v
 	}
 
-	if this.Err != nil && !v.Persistent() { // Keep balance and nonce transitions for failed ones.
+	if this.Err != nil && !v.IfSkipConflictCheck() { // Keep balance and nonce transitions for failed ones.
 		return nil
 	}
 
 	typed := v.Value().(stgcommon.Type)
-	typed = typed.New(
+	delta, sign := typed.Delta()
+
+	min, max := typed.Limits()
+	vtyped := typed.New(
 		common.IfThen(!v.Value().(stgcommon.Type).IsCommutative() || common.IsType[*commutative.Path](v.Value()),
 			nil,
 			v.Value().(stgcommon.Type).Value()), // Keep Non-path commutative variables (u256, u64) only
-		typed.Delta(),
-		typed.DeltaSign(),
-		typed.Min(),
-		typed.Max(),
-	).(stgcommon.Type)
+		delta,
+		sign,
+		min,
+		max,
+	)
 
+	vt := vtyped.(stgcommon.Type)
 	return v.New(
 		&v.Property,
-		typed,
+		vt,
 		[]byte{},
 	)
 }
@@ -92,7 +96,8 @@ func (this ITTransition) From(v *Univalue) *Univalue {
 	}
 
 	typed := unival.Value().(stgcommon.Type) // Get the typed value from the unival
-	typed.SetDelta(typed.CloneDelta())
+	delta, sign := typed.CloneDelta()
+	typed.SetDelta(delta, sign)
 	// typedNew := typed.New(
 	// 	nil,
 	// 	typed.CloneDelta(),
@@ -118,7 +123,7 @@ func (this RuntimeProperty) From(unival *Univalue) *Univalue {
 	}
 
 	path := *unival.GetPath()
-	if strings.Contains(path[stgcommon.ETH10_ACCOUNT_FULL_LENGTH:], stgcommon.ETH10_FUNC_PROPERTY_PREFIX) {
+	if strings.Contains(path[stgcommon.ETH10_ACCOUNT_FULL_LENGTH:], "/"+stgcommon.PARA_PROP_PATH) {
 		return unival
 	}
 	return nil

@@ -34,19 +34,21 @@ type LiveStgIndexer struct {
 
 	partitionIDs  []uint64
 	keyBuffer     []string
-	valueBuffer   []interface{}
+	valueBuffer   []any
 	encodedBuffer [][]byte //The encoded buffer contains the encoded values
+	filter        func(*univalue.Univalue) bool
 }
 
-func NewLiveStgIndexer(liveStg *LiveStorage, _ int64) *LiveStgIndexer {
+func NewLiveStgIndexer(liveStg *LiveStorage, _ int64, filter func(*univalue.Univalue) bool) *LiveStgIndexer {
 	return &LiveStgIndexer{
 		// buffer:       []*univalue.Univalue{},
 		importBuffer: []*univalue.Univalue{},
 		liveStg:      liveStg,
 
 		partitionIDs:  []uint64{},
+		filter:        filter,
 		keyBuffer:     []string{},
-		valueBuffer:   []interface{}{},
+		valueBuffer:   []any{},
 		encodedBuffer: [][]byte{},
 	}
 }
@@ -54,8 +56,11 @@ func NewLiveStgIndexer(liveStg *LiveStorage, _ int64) *LiveStgIndexer {
 // An index by account address, transitions have the same Eth account address will be put together in a list
 // This is for ETH storage, concurrent container related sub-paths won't be put into this index.
 func (this *LiveStgIndexer) Import(trans []*univalue.Univalue) {
-	this.importBuffer = append(this.importBuffer, trans...)
-	slice.RemoveIf(&this.importBuffer, func(_ int, v *univalue.Univalue) bool { return v.GetPath() == nil })
+	for i := range trans {
+		if trans[i].GetPath() != nil && this.filter(trans[i]) {
+			this.importBuffer = append(this.importBuffer, trans[i])
+		}
+	}
 }
 
 func (this *LiveStgIndexer) PreCommit() {
@@ -70,7 +75,7 @@ func (this *LiveStgIndexer) Finalize() {
 
 	// Extract the keys and values from the buffer
 	this.keyBuffer = make([]string, len(this.buffer))
-	this.valueBuffer = slice.ParallelTransform(this.buffer, runtime.NumCPU(), func(i int, v *univalue.Univalue) interface{} {
+	this.valueBuffer = slice.ParallelTransform(this.buffer, runtime.NumCPU(), func(i int, v *univalue.Univalue) any {
 		this.keyBuffer[i] = *v.GetPath()
 		return v.Value()
 	})
@@ -98,7 +103,7 @@ func (this *LiveStgIndexer) Merge(idxers []*LiveStgIndexer) *LiveStgIndexer {
 
 	this.valueBuffer = slice.ConcateDo(idxers,
 		func(idxer *LiveStgIndexer) uint64 { return uint64(len(idxer.valueBuffer)) },
-		func(idxer *LiveStgIndexer) []interface{} { return idxer.valueBuffer })
+		func(idxer *LiveStgIndexer) []any { return idxer.valueBuffer })
 
 	this.encodedBuffer = slice.ConcateDo(idxers,
 		func(idxer *LiveStgIndexer) uint64 { return uint64(len(idxer.encodedBuffer)) },

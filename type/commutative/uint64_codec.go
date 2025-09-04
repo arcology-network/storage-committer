@@ -50,19 +50,19 @@ func (this *Uint64) Encode() []byte {
 			common.IfThen(this.max != math.MaxUint64, uint64(8), 0),
 		},
 	)
-	this.EncodeToBuffer(buffer[offset:])
+	this.EncodeTo(buffer[offset:])
 	return buffer
 }
 
-func (this *Uint64) EncodeToBuffer(buffer []byte) int {
-	offset := common.IfThenDo1st(this.value != 0, func() int { return codec.Uint64(this.value).EncodeToBuffer(buffer) }, 0)
-	offset += common.IfThenDo1st(this.delta != 0, func() int { return codec.Uint64(this.delta).EncodeToBuffer(buffer[offset:]) }, 0)
-	offset += common.IfThenDo1st(this.min != 0, func() int { return codec.Uint64(this.min).EncodeToBuffer(buffer[offset:]) }, 0)
-	offset += common.IfThenDo1st(this.max != math.MaxUint64, func() int { return codec.Uint64(this.max).EncodeToBuffer(buffer[offset:]) }, 0)
+func (this *Uint64) EncodeTo(buffer []byte) int {
+	offset := common.IfThenDo1st(this.value != 0, func() int { return codec.Uint64(this.value).EncodeTo(buffer) }, 0)
+	offset += common.IfThenDo1st(this.delta != 0, func() int { return codec.Uint64(this.delta).EncodeTo(buffer[offset:]) }, 0)
+	offset += common.IfThenDo1st(this.min != 0, func() int { return codec.Uint64(this.min).EncodeTo(buffer[offset:]) }, 0)
+	offset += common.IfThenDo1st(this.max != math.MaxUint64, func() int { return codec.Uint64(this.max).EncodeTo(buffer[offset:]) }, 0)
 	return offset
 }
 
-func (this *Uint64) Decode(buffer []byte) interface{} {
+func (this *Uint64) Decode(buffer []byte) any {
 	if len(buffer) == 0 {
 		return this
 	}
@@ -81,7 +81,7 @@ func (this *Uint64) Print() {
 
 func (this *Uint64) StorageEncode(_ string) []byte {
 	var buffer []byte
-	if this.IsBounded() {
+	if this.HasLimits() {
 		v := []*big.Int{new(big.Int).SetUint64(this.value), new(big.Int).SetUint64(this.min), new(big.Int).SetUint64(this.max)}
 		buffer, _ = rlp.EncodeToBytes(v)
 	} else {
@@ -90,7 +90,7 @@ func (this *Uint64) StorageEncode(_ string) []byte {
 	return buffer
 }
 
-func (*Uint64) StorageDecode(_ string, buffer []byte) interface{} {
+func (*Uint64) StorageDecode(_ string, buffer []byte) any {
 	this := NewUnboundedUint64().(*Uint64)
 
 	arr := make([]*big.Int, 3)

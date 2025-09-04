@@ -18,21 +18,21 @@
 package statestore
 
 import (
+	// "github.com/arcology-network/concurrenturl/commutative"
 	intf "github.com/arcology-network/storage-committer/common"
-	stgcomm "github.com/arcology-network/storage-committer/storage/committer"
-	"github.com/arcology-network/storage-committer/type/univalue"
+	stgcommon "github.com/arcology-network/storage-committer/common"
+	committer "github.com/arcology-network/storage-committer/storage/committer"
 
+	cache "github.com/arcology-network/storage-committer/storage/cache"
 	proxy "github.com/arcology-network/storage-committer/storage/proxy"
-	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
+	"github.com/arcology-network/storage-committer/type/univalue"
 	"github.com/cespare/xxhash/v2"
-	//  "github.com/arcology-network/storage-committer/storage/proxy"
 )
 
 // Buffer is simpliest  of indexers. It does not index anything, just stores the transitions.
 type StateStore struct {
-	// *tempcache.ShardedWriteCache
-	*tempcache.WriteCache // execution cache
-	*stgcomm.StateCommitter
+	*cache.WriteCache // execution cache, cleared at the end of each block.
+	*committer.StateCommitter
 	backend *proxy.StorageProxy
 }
 
@@ -40,7 +40,7 @@ type StateStore struct {
 func NewStateStore(backend *proxy.StorageProxy) *StateStore {
 	store := &StateStore{
 		backend: backend,
-		WriteCache: tempcache.NewWriteCache(
+		WriteCache: cache.NewWriteCache(
 			backend,
 			16,
 			1,
@@ -49,18 +49,32 @@ func NewStateStore(backend *proxy.StorageProxy) *StateStore {
 			},
 		),
 	}
-	store.StateCommitter = stgcomm.NewStateCommitter(store.WriteCache, store.GetWriters())
+	store.StateCommitter = committer.NewStateCommitter(store.WriteCache, store.GetWriters())
+
+	// Commit initial transitions to the store if any.
+	initTrans := []*univalue.Univalue{
+		// univalue.NewUnivalue(stgcommon.SYSTEM, stgcommon.GAS_PREPAYERS, 0, 1, 0, commutative.NewPath(), nil),
+	}
+
+	for _, tran := range initTrans {
+		tran.SkipConflictCheck(true) // Skip conflict check for initial transitions
+	}
+
+	committer := committer.NewStateCommitter(store, store.GetWriters())
+	committer.Import(initTrans)
+	committer.Precommit([]uint64{stgcommon.SYSTEM})
+	committer.Commit(0)
 	return store
 }
 
 func (this *StateStore) Backend() *proxy.StorageProxy    { return this.backend }
-func (this *StateStore) Cache() *tempcache.WriteCache    { return this.WriteCache }
+func (this *StateStore) Cache() *cache.WriteCache        { return this.WriteCache }
 func (this *StateStore) Import(trans univalue.Univalues) { this.StateCommitter.Import(trans) }
-func (this *StateStore) Preload(key []byte) interface{}  { return this.backend.Preload(key) }
+func (this *StateStore) Preload(key []byte) any          { return this.backend.Preload(key) }
 func (this *StateStore) Clear()                          { this.WriteCache.Clear() }
 
-func (this *StateStore) GetWriters() []intf.AsyncWriter[*univalue.Univalue] {
-	return append([]intf.AsyncWriter[*univalue.Univalue]{
-		tempcache.NewExecutionCacheWriter(this.WriteCache, -1)},
+func (this *StateStore) GetWriters() []intf.Writer[*univalue.Univalue] {
+	return append([]intf.Writer[*univalue.Univalue]{
+		cache.NewExecutionCacheWriter(this.WriteCache, -1)},
 		this.backend.GetWriters()...)
 }

@@ -21,7 +21,7 @@ import (
 
 	indexer "github.com/arcology-network/common-lib/storage/indexer"
 
-	stgtype "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/type/univalue"
 
 	// interfaces "github.com/arcology-network/storage-committer/interfaces"
@@ -43,7 +43,7 @@ func PathIndexer(store interfaces.ReadOnlyStore) *indexer.UnorderedIndexer[strin
 		// The function to update the value when it exists.
 		func(k string, v *univalue.Univalue) []*univalue.Univalue {
 			if v.Value() != nil {
-				v.Value().(stgtype.Type).Preload(k, store)
+				v.Value().(stgcommon.Type).Preload(k, store)
 			}
 			return []*univalue.Univalue{v}
 		},
@@ -59,7 +59,7 @@ func TxIndexer(_ interfaces.ReadOnlyStore) *indexer.UnorderedIndexer[uint64, *un
 	return indexer.NewUnorderedIndexer(
 		nil,
 		func(v *univalue.Univalue) (uint64, bool) {
-			if !v.Persistent() {
+			if !v.IfSkipConflictCheck() {
 				return v.GetTx(), true
 			}
 			return math.MaxUint32, false

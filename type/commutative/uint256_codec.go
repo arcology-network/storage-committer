@@ -46,20 +46,20 @@ func (this *U256) Encode() []byte {
 	buffer[3] = common.IfThen(this.min.Eq(&U256_ZERO), 0, uint8(32))
 	buffer[4] = common.IfThen(this.max.Eq(&U256_MAX), 0, uint8(32))
 
-	this.EncodeToBuffer(buffer[5:])
+	this.EncodeTo(buffer[5:])
 	return buffer
 }
 
-func (this *U256) EncodeToBuffer(buffer []byte) int {
-	offset := common.IfThenDo1st(!this.value.Eq(&U256_ZERO), func() int { return codec.Uint64s(this.value[:]).EncodeToBuffer(buffer) }, 0)
-	offset += common.IfThenDo1st(!this.delta.Eq(&U256_ZERO), func() int { return codec.Uint64s(this.delta[:]).EncodeToBuffer(buffer[offset:]) }, 0)
-	offset += common.IfThenDo1st(!this.deltaPositive, func() int { return codec.Bool(this.deltaPositive).EncodeToBuffer(buffer[offset:]) }, 0)
-	offset += common.IfThenDo1st(!this.min.Eq(&U256_ZERO), func() int { return codec.Uint64s(this.min[:]).EncodeToBuffer(buffer[offset:]) }, 0)
-	offset += common.IfThenDo1st(!this.max.Eq(&U256_MAX), func() int { return codec.Uint64s(this.max[:]).EncodeToBuffer(buffer[offset:]) }, 0)
+func (this *U256) EncodeTo(buffer []byte) int {
+	offset := common.IfThenDo1st(!this.value.Eq(&U256_ZERO), func() int { return codec.Uint64s(this.value[:]).EncodeTo(buffer) }, 0)
+	offset += common.IfThenDo1st(!this.delta.Eq(&U256_ZERO), func() int { return codec.Uint64s(this.delta[:]).EncodeTo(buffer[offset:]) }, 0)
+	offset += common.IfThenDo1st(!this.deltaPositive, func() int { return codec.Bool(this.deltaPositive).EncodeTo(buffer[offset:]) }, 0)
+	offset += common.IfThenDo1st(!this.min.Eq(&U256_ZERO), func() int { return codec.Uint64s(this.min[:]).EncodeTo(buffer[offset:]) }, 0)
+	offset += common.IfThenDo1st(!this.max.Eq(&U256_MAX), func() int { return codec.Uint64s(this.max[:]).EncodeTo(buffer[offset:]) }, 0)
 	return offset
 }
 
-func (this *U256) Decode(buffer []byte) interface{} {
+func (this *U256) Decode(buffer []byte) any {
 	if len(buffer) == 0 {
 		return this
 	}
@@ -95,18 +95,18 @@ func (this *U256) Decode(buffer []byte) interface{} {
 
 func (this *U256) StorageEncode(_ string) []byte {
 	var buffer []byte
-	if this.IsBounded() {
-		buffer, _ = rlp.EncodeToBytes([]interface{}{this.value, this.min, this.max})
+	if this.HasLimits() {
+		buffer, _ = rlp.EncodeToBytes([]any{this.value, this.min, this.max})
 	} else {
 		buffer, _ = rlp.EncodeToBytes(this.value.ToBig())
 	}
 	return buffer
 }
 
-func (*U256) StorageDecode(_ string, buffer []byte) interface{} {
+func (*U256) StorageDecode(_ string, buffer []byte) any {
 	this := NewUnboundedU256().(*U256)
 
-	var arr []interface{}
+	var arr []any
 	err := rlp.DecodeBytes(buffer, &arr)
 	if err != nil {
 		var v2 big.Int

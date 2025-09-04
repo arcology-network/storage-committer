@@ -15,15 +15,20 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+//
+// delta_sequence.go provides types and methods for managing sequences of state deltas
+// in the Arcology Network's storage committer. It defines DeltaSequence and DeltaSequences,
+// which represent ordered collections of state transitions (Univalue objects), and provides
+// utilities for sorting, finalizing, and extracting values and keys from these sequences.
+//
+
 package statestore
 
 import (
 	"sort"
 
 	"github.com/arcology-network/common-lib/exp/slice"
-	intf "github.com/arcology-network/storage-committer/common"
-	stgcommcommon "github.com/arcology-network/storage-committer/common"
-	stgtype "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	univalue "github.com/arcology-network/storage-committer/type/univalue"
 )
 
@@ -35,11 +40,11 @@ func (this DeltaSequence) sort() DeltaSequence {
 	}
 
 	sort.SliceStable(this, func(i, j int) bool {
-		if this[i].GetTx() == stgcommcommon.SYSTEM {
+		if this[i].GetTx() == stgcommon.SYSTEM {
 			return true
 		}
 
-		if this[j].GetTx() == stgcommcommon.SYSTEM {
+		if this[j].GetTx() == stgcommon.SYSTEM {
 			return false
 		}
 		return this[i].GetTx() < this[j].GetTx()
@@ -47,7 +52,7 @@ func (this DeltaSequence) sort() DeltaSequence {
 	return this
 }
 
-func (this DeltaSequence) Finalize(store intf.ReadOnlyStore) *univalue.Univalue {
+func (this DeltaSequence) Finalize(store stgcommon.ReadOnlyStore) *univalue.Univalue {
 	trans := []*univalue.Univalue(this)
 	slice.RemoveIf(&trans, func(_ int, v *univalue.Univalue) bool {
 		return v.GetPath() == nil
@@ -75,15 +80,15 @@ func (this DeltaSequence) Finalize(store intf.ReadOnlyStore) *univalue.Univalue 
 
 func (this DeltaSequence) Finalized() *univalue.Univalue { return this[0] }
 
-type DeltaSequencesV2 []DeltaSequence
+type DeltaSequences []DeltaSequence
 
-func (this DeltaSequencesV2) Finalized() []stgtype.Type {
-	return slice.Transform(this, func(_ int, v DeltaSequence) stgtype.Type {
-		return v[0].Value().(stgtype.Type)
+func (this DeltaSequences) Finalized() []stgcommon.Type {
+	return slice.Transform(this, func(_ int, v DeltaSequence) stgcommon.Type {
+		return v[0].Value().(stgcommon.Type)
 	})
 }
 
-func (this DeltaSequencesV2) Keys() []*string {
+func (this DeltaSequences) Keys() []*string {
 	return slice.Transform(this, func(_ int, v DeltaSequence) *string {
 		return v[0].GetPath()
 	})

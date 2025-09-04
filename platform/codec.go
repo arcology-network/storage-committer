@@ -18,7 +18,7 @@
 package ethplatform
 
 import (
-	stgintf "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
 	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
 )
@@ -27,18 +27,18 @@ type Codec struct {
 	ID uint8
 }
 
-func (Codec) Encode(_ string, value interface{}) []byte {
+func (Codec) Encode(_ string, value any) []byte {
 	if value == nil {
 
 		return []byte{} // Deletion
 	}
 
-	encoded := value.(stgintf.Type).Encode()
-	encoded = append(encoded, value.(stgintf.Type).TypeID())
+	encoded := value.(stgcommon.Type).Encode()
+	encoded = append(encoded, value.(stgcommon.Type).TypeID())
 	return encoded
 }
 
-func (this Codec) Decode(_ string, buffer []byte, _ any) interface{} {
+func (this Codec) Decode(_ string, buffer []byte, _ any) any {
 	if len(buffer) == 0 {
 		return nil
 	}
@@ -46,6 +46,11 @@ func (this Codec) Decode(_ string, buffer []byte, _ any) interface{} {
 	if len(buffer) == 0 || this.ID == 0 {
 		this.ID = buffer[len(buffer)-1]
 		buffer = buffer[0 : len(buffer)-1]
+	}
+
+	if this.ID == noncommutative.STRING { // delta big int
+		stringer := noncommutative.String("")
+		return stringer.Decode(buffer)
 	}
 
 	switch this.ID {
@@ -74,8 +79,13 @@ func (this Codec) Decode(_ string, buffer []byte, _ any) interface{} {
 	case noncommutative.INT64:
 		i64 := noncommutative.Int64(0)
 		return i64.Decode(buffer)
+
+		// case commutative.GROWONLY_SET: // GrowOnlySet
+		// 	// panic("GrowOnlySet is not supported in this codec")
+		// 	return (&commutative.GrowOnlySet[[]byte]{}).Decode(buffer)
 	}
 
+	// panic("Unknown type ID: " + string(this.ID))
 	return nil
 }
 

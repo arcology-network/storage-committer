@@ -30,14 +30,16 @@ type EthStorageWriter struct {
 	*EthIndexer
 	buffer   []*EthIndexer
 	ethStore *EthDataStore
+	filter   func(*univalue.Univalue) bool // Filter function to select transitions to be indexed
 	Err      error
 }
 
-func NewEthStorageWriter(ethStore *EthDataStore, version int64) *EthStorageWriter {
+func NewEthStorageWriter(ethStore *EthDataStore, version int64, filter func(*univalue.Univalue) bool) *EthStorageWriter {
 	return &EthStorageWriter{
-		EthIndexer: NewEthIndexer(ethStore, version),
+		EthIndexer: NewEthIndexer(ethStore, version, filter),
 		ethStore:   ethStore,
 		buffer:     []*EthIndexer{},
+		filter:     filter,
 	}
 }
 
@@ -66,8 +68,8 @@ func (this *EthStorageWriter) Precommit(isSync bool) {
 		}
 	})
 
-	this.ethStore.WriteWorldTrie(this.EthIndexer.dirtyAccounts) // Update the world trie
-	this.EthIndexer = NewEthIndexer(this.ethStore, -1)          // Reset the indexer with a default version number.
+	this.ethStore.WriteWorldTrie(this.EthIndexer.dirtyAccounts)     // Update the world trie
+	this.EthIndexer = NewEthIndexer(this.ethStore, -1, this.filter) // Reset the indexer with a default version number.
 	this.EthIndexer.UnorderedIndexer.Clear()
 }
 
@@ -78,4 +80,5 @@ func (this *EthStorageWriter) Commit(version uint64) {
 	this.buffer = this.buffer[:0]
 }
 
+func (this *EthStorageWriter) IsSync() bool { return false }
 func (this *EthStorageWriter) Name() string { return "Eth Storage Writer" }

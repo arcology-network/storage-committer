@@ -27,7 +27,7 @@ import (
 
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/slice"
-	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	platform "github.com/arcology-network/storage-committer/platform"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
@@ -57,8 +57,8 @@ type EthDataStore struct {
 	lock     sync.RWMutex
 	rootDict map[uint64][32]byte // lookup the root hash for a block number
 
-	encoder func(string, interface{}) []byte
-	decoder func(string, []byte, any) interface{}
+	encoder func(string, any) []byte
+	decoder func(string, []byte, any) any
 
 	dbErr error
 
@@ -130,7 +130,7 @@ func NewLevelDBDataStore(dir string) *EthDataStore {
 
 // Preload loads an existing account from the trie and the disk db.
 // If the account is not found, it creates a new account with default account state and shared cache.
-func (this *EthDataStore) Preload(addr []byte) interface{} {
+func (this *EthDataStore) Preload(addr []byte) any {
 	// AccessListCache doesn't serve any purpose for now. It is only a place holder, the parallelized trie update requires its presence.
 	acct, _ := this.GetAccount(ethcommon.BytesToAddress(addr), common.Reference(ethmpt.AccessListCache{}))
 	if acct == nil {
@@ -189,7 +189,7 @@ func (this *EthDataStore) IfExists(key string) bool {
 
 	address := ethcommon.BytesToAddress(acctBytes)
 	if v := this.accountCache[address]; v != nil {
-		return len(key) == stgcommcommon.ETH10_ACCOUNT_FULL_LENGTH+1 || v.Has(key) // If the account has the key
+		return len(key) == stgcommon.ETH10_ACCOUNT_FULL_LENGTH+1 || v.Has(key) // If the account has the key
 	}
 
 	// Not in cache, look up in the trie
@@ -235,7 +235,7 @@ func (this *EthDataStore) GetAccountFromTrie(address ethcommon.Address, accesses
 			return &Account{
 				address,
 				acctState,
-				common.FilterFirst(this.diskdbs[0].Get(acctState.CodeHash)), // code
+				common.FilterFirst(this.diskdbs[0].Get(acctState.CodeHash)).([]byte), // code
 				stgTrie,
 				false,
 				this.ethdb,
@@ -249,7 +249,7 @@ func (this *EthDataStore) GetAccountFromTrie(address ethcommon.Address, accesses
 }
 
 // Skip the cache and get from the trie
-func (this *EthDataStore) Retrive(key string, T any) (interface{}, error) {
+func (this *EthDataStore) Retrive(key string, T any) (any, error) {
 	accesses := ethmpt.AccessListCache{}
 	_, acctKey, _ := platform.ParseAccountAddr(key) // Get the address
 	if len(acctKey) == 0 {
@@ -338,8 +338,8 @@ func (this *EthDataStore) WriteToEthStorage(blockNum uint64, dirtyAccounts []*Ac
 	}
 }
 
-func (this *EthDataStore) BatchRetrive(keys []string, T []any) []interface{} {
-	values := make([]interface{}, len(keys))
+func (this *EthDataStore) BatchRetrive(keys []string, T []any) []any {
+	values := make([]any, len(keys))
 	for i := 0; i < len(keys); i++ {
 		values[i], _ = this.Retrive(keys[i], T[i])
 	}
@@ -351,14 +351,14 @@ func (this *EthDataStore) DiskDBs() [16]ethdb.Database {
 }
 
 // Place holders
-func (this *EthDataStore) Root() [32]byte                                    { return this.worldStateTrie.Hash() }
-func (this *EthDataStore) Encoder(any) func(string, interface{}) []byte      { return this.encoder }
-func (this *EthDataStore) Decoder(any) func(string, []byte, any) interface{} { return this.decoder }
-func (this *EthDataStore) EthDB() *triedb.Database                           { return this.ethdb }
-func (this *EthDataStore) Trie() *ethmpt.Trie                                { return this.worldStateTrie }
-func (this *EthDataStore) UpdateCacheStats([]interface{})                    {}
-func (this *EthDataStore) Print()                                            {}
-func (this *EthDataStore) CheckSum() [32]byte                                { return [32]byte{} }
+func (this *EthDataStore) Root() [32]byte                            { return this.worldStateTrie.Hash() }
+func (this *EthDataStore) Encoder(any) func(string, any) []byte      { return this.encoder }
+func (this *EthDataStore) Decoder(any) func(string, []byte, any) any { return this.decoder }
+func (this *EthDataStore) EthDB() *triedb.Database                   { return this.ethdb }
+func (this *EthDataStore) Trie() *ethmpt.Trie                        { return this.worldStateTrie }
+func (this *EthDataStore) UpdateCacheStats([]any)                    {}
+func (this *EthDataStore) Print()                                    {}
+func (this *EthDataStore) CheckSum() [32]byte                        { return [32]byte{} }
 func (this *EthDataStore) Query(string, func(string, string) bool) ([]string, [][]byte, error) {
 	return nil, nil, nil
 }
@@ -368,7 +368,7 @@ func (this *EthDataStore) DisableAccountCache()                        { this.ac
 func (this *EthDataStore) AccountDict() map[ethcommon.Address]*Account { return this.accountCache }
 func (this *EthDataStore) Clear()                                      {}
 
-func (this *EthDataStore) Inject(key string, value interface{}) error { return nil }
+func (this *EthDataStore) Inject(key string, value any) error { return nil }
 
 func (this *EthDataStore) GetRootHash(blockNum uint64) [32]byte {
 	this.lock.RLock()

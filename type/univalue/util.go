@@ -1,5 +1,5 @@
 /*
- *   Copyright (c) 2023 Arcology Network
+ *   Copyright (c) 2025 Arcology Network
 
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -15,14 +15,14 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package commutative
+package univalue
 
-const (
-	PATH    uint8 = 100
-	INT64   uint8 = 101
-	UINT64  uint8 = 102
-	UINT256 uint8 = 103
+import "strings"
 
-	RANGE              = 9
-	GROWONLY_SET uint8 = 50 // 50 ~
-)
+func IsCommittedPath(path string) (bool, string) {
+	if strings.HasSuffix(path, "/*") {
+		idx := strings.IndexByte(path, '*')
+		return true, path[:idx]
+	}
+	return false, (path)
+}
