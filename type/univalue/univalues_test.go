@@ -103,7 +103,7 @@ func TestUnivaluesCodecU256(t *testing.T) {
 		*in.GetPath() != *v.GetPath() ||
 		in.Writes() != v.Writes() ||
 		in.DeltaWrites() != v.DeltaWrites() ||
-		in.Preexist() != v.Preexist() {
+		in.IsCommitted() != v.IsCommitted() {
 		t.Error("Error: mismatch after decoding")
 	}
 }
