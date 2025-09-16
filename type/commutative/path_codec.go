@@ -61,6 +61,7 @@ func (this *Path) EncodeTo(buffer []byte) int {
 
 	return offset
 }
+
 func (*Path) Decode(buffer []byte) any {
 	if len(buffer) == 0 {
 		return NewPath()

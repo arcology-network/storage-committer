@@ -42,7 +42,6 @@ func TestUnivalueCodecUint64(t *testing.T) {
 	/* Commutative Int64 Test */
 	alice := AliceAccount()
 
-	// meta:= commutative.NewPath()
 	u64 := commutative.NewBoundedUint64(0, 100)
 	in := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, u64, nil)
 	in.reads = 1
@@ -68,8 +67,6 @@ func TestUnivalueCodecUint64(t *testing.T) {
 
 func TestUnivalueCodecU256(t *testing.T) {
 	alice := AliceAccount() /* Commutative Int64 Test */
-
-	// meta:= commutative.NewPath()
 	u256 := commutative.NewBoundedU256(uint256.NewInt(0), uint256.NewInt(100))
 
 	in := NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, u256, nil)
@@ -141,7 +138,6 @@ func TestPropertyCodecUint64(t *testing.T) {
 	/* Commutative Int64 Test */
 	alice := AliceAccount()
 
-	// meta:= commutative.NewPath()
 	u256 := commutative.NewBoundedUint64(0, 100).(*commutative.Uint64)
 	in := NewProperty(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000", 3, 4, 0, u256.TypeID(), true, false)
 	in.reads = 1

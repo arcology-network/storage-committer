@@ -45,7 +45,7 @@ type Path struct {
 func NewPath(newPaths ...string) stgcommon.Type {
 	this := &Path{
 		ElemType: 0,
-		DeltaSet: softdeltaset.NewDeltaSet("", 1000, codec.Sizer, codec.EncodeTo, new(codec.String).DecodeTo, nil, newPaths...),
+		DeltaSet: softdeltaset.NewDeltaSet("", 10, codec.Sizer, codec.EncodeTo, new(codec.String).DecodeTo, nil, newPaths...),
 	}
 	return this
 }
