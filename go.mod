@@ -21,7 +21,7 @@ require (
 )
 
 require (
-	github.com/arcology-network/common-lib v1.9.1-0.20250904084038-46913d516a25
+	github.com/arcology-network/common-lib v1.9.1-0.20250918121719-e35aaab097f3
 	github.com/cespare/xxhash v1.1.0
 )
 
