@@ -158,7 +158,7 @@ func (this *WriteCache) write(tx uint64, path string, value any) (*univalue.Univ
 		var err error
 		var inCache bool
 
-		// If is a Committed Deletion operation
+		// Not a special expression, just a value update.
 		if !strings.HasSuffix(path, "*") && !strings.HasSuffix(path, "[:]") {
 			_, univ, inCache = this.FindForWrite(tx, path, value, this.AddToDict) // Get a univalue wrapper
 			err = univ.Set(tx, path, value, inCache, this)                        // set the new value
@@ -281,7 +281,7 @@ func (this *WriteCache) set(v *univalue.Univalue) *WriteCache {
 		return this
 	}
 
-	if common.IsPath(*v.GetPath()) && v.Preexist() {
+	if common.IsPath(*v.GetPath()) && v.IsCommitted() {
 		return this
 	}
 
@@ -298,7 +298,7 @@ func (this *WriteCache) Insert(transitions []*univalue.Univalue) *WriteCache {
 
 	// Filter out the path creations transitions as they will be treated differently.
 	newPathCreations := slice.MoveIf(&transitions, func(_ int, v *univalue.Univalue) bool {
-		return common.IsPath(*v.GetPath()) && !v.Preexist()
+		return common.IsPath(*v.GetPath()) && !v.IsCommitted()
 	})
 
 	// Not necessary to sort the path creations at the moment,

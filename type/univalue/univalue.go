@@ -28,7 +28,6 @@ import (
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/slice"
 	intf "github.com/arcology-network/storage-committer/common"
-	"github.com/arcology-network/storage-committer/type/commutative"
 	"github.com/arcology-network/storage-committer/type/noncommutative"
 	"github.com/cespare/xxhash"
 )
@@ -267,13 +266,13 @@ func (this *Univalue) PathLookupOnly() bool {
 
 // If all the entries in the isCommitted set have been removed.
 // only work for Path type
-func (this *Univalue) IsCommittedDeleted() (bool, string) {
-	if common.IsType[*commutative.Path](this.Value()) {
-		return this.Value().(*commutative.Path).DeltaSet.Removed().AllDeleted, *this.path
-	}
+// func (this *Univalue) IsCommittedDeleted() (bool, string) {
+// 	if common.IsType[*commutative.Path](this.Value()) {
+// 		return this.Value().(*commutative.Path).DeltaSet.Removed().AllDeleted, *this.path
+// 	}
 
-	return IsCommittedPath(*this.path)
-}
+//		return IsCommittedPath(*this.path)
+//	}
 func (this *Univalue) IsReadOnly() bool       { return (this.writes == 0 && this.deltaWrites == 0) }
 func (this *Univalue) IsWriteOnly() bool      { return (this.reads == 0 && this.deltaWrites == 0) }
 func (this *Univalue) IsDeltaWriteOnly() bool { return (this.reads == 0 && this.writes == 0) }
@@ -409,7 +408,7 @@ func (this *Univalue) Equal(other *Univalue) bool {
 		this.reads == other.Reads() &&
 		this.writes == other.Writes() &&
 		vFlag &&
-		this.isCommitted == other.Preexist()
+		this.isCommitted == other.IsCommitted()
 }
 
 // func (this *Univalue) GetCascadeSub(prefix string, source any) []string {

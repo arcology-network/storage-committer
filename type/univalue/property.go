@@ -44,6 +44,7 @@ type Property struct {
 	isBlockBound        bool // If true, it is not persisted to the storage.
 	isCommitted         bool // If the key exists in the source, which can be a cache or a storage.
 	isDeleted           bool // If the value is deleted. Without this the conflict detection will mixed deletes up with normal wirtes whose values are removed for serialization speed.
+	IsInConflict        bool // This is for the conflict detection module
 
 	reclaimFunc func(any)
 }
@@ -130,7 +131,7 @@ func (this *Property) IncrementWrites(writes uint32)           { this.writes += 
 func (this *Property) IncrementDeltaWrites(deltaWrites uint32) { this.deltaWrites += deltaWrites }
 
 func (this *Property) IsReadOnly() bool   { return this.Writes() == 0 && this.DeltaWrites() == 0 }
-func (this *Property) Preexist() bool     { return this.isCommitted } // Exist in cache as a failed read
+func (this *Property) IsCommitted() bool  { return this.isCommitted } // Exist in cache as a failed read
 func (this *Property) SetPreexist(v bool) { this.isCommitted = v }    // Exist in cache as a failed read
 
 // func (this *Property) Persistent() bool { return this.ifSkipConflictCheck }

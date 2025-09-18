@@ -35,7 +35,7 @@ type IPTransition struct {
 func (this IPTransition) From(v *Univalue) *Univalue {
 	if v == nil ||
 		v.IsReadOnly() ||
-		(v.Value() == nil && !v.Preexist()) { // Deletion of an non-existing entry or a read-only entry
+		(v.Value() == nil && !v.IsCommitted()) { // Deletion of an non-existing entry or a read-only entry
 		return nil
 	}
 

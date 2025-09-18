@@ -33,19 +33,19 @@ import (
 // It keeps track of the all the sub paths that are added, removed or updated.
 type Path struct {
 	*softdeltaset.DeltaSet[string]
-	preloaded    *orderedset.OrderedSet[string]
-	isBlockBound bool // If true, it is not persisted to the storage after each block
-	//When it is set to non zero, it can only store one type of data, otherwise it can store multiple types.
-	//This is no type checking, it is up to the developer to make sure the data type is correct.
-	TotalSize  uint64 // The size of the elements under the path in bytes.
-	ElemType   uint8
-	Expression string
+	ElemType     uint8  // System paths may hold different types, when ElemType == 0, it's up to the developers to decide.
+	Expression   string // type id
+	IsSysPath    bool   // If true, it is a system path, which may hold different types of elements.
+	isBlockBound bool   // If true, it is not persisted to the storage after each block
+
+	preloaded *orderedset.OrderedSet[string]
+	TotalSize uint64 // The size of the elements under the path in bytes.
 }
 
 func NewPath(newPaths ...string) stgcommon.Type {
 	this := &Path{
-		ElemType: 0, // The default data type is 0. It can store multiple types of data in the same path.
-		DeltaSet: softdeltaset.NewDeltaSet("", 1000, codec.Sizer, codec.EncodeTo, new(codec.String).DecodeTo, nil, newPaths...),
+		ElemType: 0,
+		DeltaSet: softdeltaset.NewDeltaSet("", 10, codec.Sizer, codec.EncodeTo, new(codec.String).DecodeTo, nil, newPaths...),
 	}
 	return this
 }
@@ -133,6 +133,7 @@ func (this *Path) Preload(k string, source any) {
 func (this *Path) Clone() any {
 	return &Path{
 		DeltaSet:     this.DeltaSet.Clone(),
+		Expression:   this.Expression,
 		preloaded:    this.preloaded,
 		ElemType:     this.ElemType,
 		isBlockBound: this.isBlockBound,
@@ -151,6 +152,7 @@ func (this *Path) New(_, _, _, _, _ any) any {
 	deltaSet := &Path{
 		DeltaSet:     this.DeltaSet.CloneDelta(),
 		ElemType:     this.ElemType,
+		Expression:   this.Expression,
 		isBlockBound: this.isBlockBound,
 		TotalSize:    this.TotalSize,
 	}
@@ -190,7 +192,7 @@ func (this *Path) ApplyDelta(typedVals []stgcommon.Type) (stgcommon.Type, int, e
 // Set sets the value of the key to the given value and returns the new value, the number of keys added, the number of
 // keys removed and the number of keys updated.
 func (this *Path) Set(value any, source any) (any, uint32, uint32, uint32, error) {
-	path := source.([]any)[0].(string)
+	fullPath := source.([]any)[0].(string)
 	containerRoot := source.([]any)[1].(string)
 	tx := source.([]any)[2].(uint64)
 	cache := source.([]any)[3].(interface {
@@ -202,27 +204,29 @@ func (this *Path) Set(value any, source any) (any, uint32, uint32, uint32, error
 	// Delete or rewrite the path. The path is the root of the container.
 	// A rewrite is not allowed. But it can be deleted.
 	// When that happens, all the sub paths are also deleted.
-	parentPath, expression := common.TrimWildcardSuffix(path) // Remove the trailing wildcard suffix if it exists.
-	if common.IsPath(parentPath) && len(parentPath) == len(containerRoot) {
+	clearPath, subPath := common.TrimWildcardSuffix(fullPath) // Remove the trailing wildcard suffix if it exists.
+
+	// The clear path could be a sub path rather than a regular value.
+	if common.IsPath(clearPath) && len(clearPath) == len(containerRoot) {
 		// Either Delete the path and all its elements OR just the elements under the path with a wildcard suffix.
 		if value != nil {
 			return this, 0, 1, 0, errors.New("Error: Cannot rewrite a path!")
 		}
 
 		// Delete all elements under the path.
-		if expression == "*" {
+		if subPath == "*" {
 			elems := this.DeltaSet.Elements() // Get all the elements under the path
-			return this.deleteInPath(tx, parentPath, elems, func() { this.DeleteAll() }, cache)
+			return this.deleteInPath(tx, clearPath, elems, func() { this.DeleteAll() }, cache)
 		}
 
 		// Delete the committed elements only
-		if expression == "[:]" {
+		if subPath == "[:]" {
 			elems := this.DeltaSet.Committed().Elements() // Get all the elements under the path
-			return this.deleteInPath(tx, parentPath, elems, func() { this.DeleteCommitted() }, cache)
+			return this.deleteInPath(tx, clearPath, elems, func() { this.DeleteCommitted() }, cache)
 		}
 	}
 
-	subkey := parentPath[len(parentPath)-(len(parentPath)-len(containerRoot)):] // Extract the sub key from the path
+	subkey := clearPath[len(clearPath)-(len(clearPath)-len(containerRoot)):] // Extract the sub key from the path
 	if ok, _ := this.DeltaSet.Exists(subkey); (ok && value != nil) || (!ok && value == nil) {
 		// Update an existing or delete a non-existent one won't change the set itself. So we return 0, 0, 0.
 		// Otherwise it will cause a lot of conflicts, when multiple transactions are trying
